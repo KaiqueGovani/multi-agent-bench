@@ -36,8 +36,18 @@ class LocalStorageAdapter:
             path=destination,
         )
 
+    def resolve(self, storage_key: str) -> Path:
+        relative_path = Path(storage_key)
+        if relative_path.is_absolute() or ".." in relative_path.parts:
+            raise ValueError("Invalid storage key")
+        path = self._base_path / relative_path
+        resolved_base = self._base_path.resolve()
+        resolved_path = path.resolve()
+        if not str(resolved_path).startswith(str(resolved_base)):
+            raise ValueError("Invalid storage key")
+        return resolved_path
+
     @staticmethod
     def _safe_filename(filename: str) -> str:
         cleaned = re.sub(r"[^A-Za-z0-9._-]+", "_", filename).strip("._")
         return cleaned or "attachment"
-

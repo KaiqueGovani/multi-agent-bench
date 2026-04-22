@@ -37,6 +37,10 @@ export function getApiBaseUrl(): string {
   return API_BASE_URL;
 }
 
+export function getAttachmentUrl(attachmentId: string): string {
+  return `${API_BASE_URL}/attachments/${attachmentId}`;
+}
+
 export function createConversation(): Promise<CreateConversationResponse> {
   return request<CreateConversationResponse>("/conversations", {
     method: "POST",
@@ -56,19 +60,28 @@ export function getConversationMessages(conversationId: string): Promise<Message
   return request<MessageListResponse>(`/conversations/${conversationId}/messages`);
 }
 
-export function sendTextMessage(conversationId: string, text: string): Promise<SendMessageResponse> {
+export function sendMessage(
+  conversationId: string,
+  text: string,
+  files: File[] = []
+): Promise<SendMessageResponse> {
   const body = new FormData();
   body.append("conversationId", conversationId);
-  body.append("text", text);
+  if (text.trim()) {
+    body.append("text", text);
+  }
   body.append(
     "metadata_json",
     JSON.stringify({
       ...getClientMetadata(),
-      fileCount: 0,
-      fileTypes: [],
-      fileSizes: []
+      fileCount: files.length,
+      fileTypes: files.map((file) => file.type),
+      fileSizes: files.map((file) => file.size)
     })
   );
+  for (const file of files) {
+    body.append("files", file);
+  }
 
   return request<SendMessageResponse>("/messages", {
     method: "POST",
@@ -99,4 +112,3 @@ function getLocalSessionId(): string {
   window.localStorage.setItem(key, next);
   return next;
 }
-

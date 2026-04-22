@@ -6,7 +6,7 @@ import {
   createConversation,
   getConversation,
   getConversationMessages,
-  sendTextMessage
+  sendMessage as sendMultipartMessage
 } from "@/lib/api/client";
 import { openConversationEventStream } from "@/lib/sse/events";
 import type { Attachment, Message, ProcessingEvent } from "@/lib/types";
@@ -39,14 +39,14 @@ export function useConversation() {
   }, []);
 
   const sendMessage = useCallback(
-    async (text: string) => {
-      if (!conversationId || !text.trim()) {
+    async (text: string, files: File[]) => {
+      if (!conversationId || (!text.trim() && files.length === 0)) {
         return;
       }
       setIsSending(true);
       setError(null);
       try {
-        await sendTextMessage(conversationId, text.trim());
+        await sendMultipartMessage(conversationId, text.trim(), files);
         await refreshMessages(conversationId);
         window.setTimeout(() => {
           void refreshMessages(conversationId);
@@ -88,15 +88,18 @@ export function useConversation() {
     };
   }, [conversationId, refreshMessages]);
 
-  const attachmentCountByMessage = useMemo(() => {
-    return attachments.reduce<Record<string, number>>((accumulator, attachment) => {
-      accumulator[attachment.messageId] = (accumulator[attachment.messageId] ?? 0) + 1;
+  const attachmentsByMessage = useMemo(() => {
+    return attachments.reduce<Record<string, Attachment[]>>((accumulator, attachment) => {
+      accumulator[attachment.messageId] = [
+        ...(accumulator[attachment.messageId] ?? []),
+        attachment
+      ];
       return accumulator;
     }, {});
   }, [attachments]);
 
   return {
-    attachmentCountByMessage,
+    attachmentsByMessage,
     connectionStatus,
     conversationId,
     error,
@@ -107,4 +110,3 @@ export function useConversation() {
     startConversation
   };
 }
-

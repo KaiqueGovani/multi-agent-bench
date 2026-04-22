@@ -7,7 +7,7 @@ import { MessageList } from "./message-list";
 
 export function ChatWorkspace() {
   const {
-    attachmentCountByMessage,
+    attachmentsByMessage,
     connectionStatus,
     conversationId,
     error,
@@ -46,7 +46,7 @@ export function ChatWorkspace() {
 
         <div className="min-h-0 flex-1 overflow-y-auto">
           <MessageList
-            attachmentCountByMessage={attachmentCountByMessage}
+            attachmentsByMessage={attachmentsByMessage}
             messages={messages}
           />
         </div>
