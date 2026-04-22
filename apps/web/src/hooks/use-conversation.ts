@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   createConversation,
   getConversation,
+  getConversationEvents,
   getConversationMessages,
   sendMessage as sendMultipartMessage
 } from "@/lib/api/client";
@@ -26,6 +27,15 @@ export function useConversation() {
     const response = await getConversationMessages(id);
     setMessages(response.messages);
     setAttachments(response.attachments);
+  }, []);
+
+  const refreshEvents = useCallback(async (id: string) => {
+    try {
+      const response = await getConversationEvents(id);
+      setEvents((current) => mergeEvents(current, response));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Failed to refresh events");
+    }
   }, []);
 
   const startConversation = useCallback(async () => {
@@ -69,24 +79,28 @@ export function useConversation() {
       conversationId,
       (event) => {
         setEvents((current) => {
-          if (current.some((item) => item.id === event.id)) {
-            return current;
-          }
-          return [...current, event];
+          return mergeEvents(current, [event]);
         });
 
         if (event.eventType === "response.final" || event.eventType === "processing.completed") {
           void refreshMessages(conversationId);
         }
       },
-      setConnectionStatus
+      (status) => {
+        setConnectionStatus(status);
+        if (status === "open") {
+          void refreshEvents(conversationId);
+        }
+      }
     );
+
+    void refreshEvents(conversationId);
 
     return () => {
       setConnectionStatus("closed");
       source.close();
     };
-  }, [conversationId, refreshMessages]);
+  }, [conversationId, refreshEvents, refreshMessages]);
 
   const attachmentsByMessage = useMemo(() => {
     return attachments.reduce<Record<string, Attachment[]>>((accumulator, attachment) => {
@@ -109,4 +123,23 @@ export function useConversation() {
     sendMessage,
     startConversation
   };
+}
+
+function mergeEvents(
+  currentEvents: ProcessingEvent[],
+  incomingEvents: ProcessingEvent[]
+): ProcessingEvent[] {
+  const byId = new Map<string, ProcessingEvent>();
+  for (const event of currentEvents) {
+    byId.set(event.id, event);
+  }
+  for (const event of incomingEvents) {
+    byId.set(event.id, event);
+  }
+
+  return Array.from(byId.values()).sort((left, right) => {
+    const timeDifference =
+      new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime();
+    return timeDifference === 0 ? left.id.localeCompare(right.id) : timeDifference;
+  });
 }

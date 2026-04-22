@@ -2,6 +2,7 @@ import type {
   ConversationDetailResponse,
   CreateConversationResponse,
   MessageListResponse,
+  ProcessingEvent,
   SendMessageResponse
 } from "@/lib/types";
 
@@ -58,6 +59,10 @@ export function getConversation(conversationId: string): Promise<ConversationDet
 
 export function getConversationMessages(conversationId: string): Promise<MessageListResponse> {
   return request<MessageListResponse>(`/conversations/${conversationId}/messages`);
+}
+
+export function getConversationEvents(conversationId: string): Promise<ProcessingEvent[]> {
+  return request<ProcessingEvent[]>(`/conversations/${conversationId}/events`);
 }
 
 export function sendMessage(
