@@ -54,7 +54,27 @@ Useful endpoints in this phase:
 - `POST /conversations`
 - `GET /conversations/{conversation_id}`
 - `GET /conversations/{conversation_id}/messages`
+- `POST /messages`
 - `GET /conversations/{conversation_id}/events`
 - `GET /conversations/{conversation_id}/events/stream`
 
 The SSE endpoint streams new events for active subscribers. Persisted events remain available through the standard conversation detail and events endpoints.
+
+Send a text-only message:
+
+```bash
+curl -X POST http://localhost:8000/messages \
+  -F "conversationId=<conversation-id>" \
+  -F "text=Ola, voces tem dipirona em gotas?" \
+  -F 'metadata_json={"timezone":"America/Sao_Paulo","locale":"pt-BR","channel":"web_chat"}'
+```
+
+Send a message with an image:
+
+```bash
+curl -X POST http://localhost:8000/messages \
+  -F "conversationId=<conversation-id>" \
+  -F "text=Pode me ajudar a identificar esse produto?" \
+  -F 'metadata_json={"timezone":"America/Sao_Paulo","locale":"pt-BR","channel":"web_chat","fileCount":1}' \
+  -F "files=@/path/to/image.png;type=image/png"
+```

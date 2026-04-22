@@ -21,5 +21,6 @@ build/
 
 # Local artifacts
 uploads/
-storage/
+/storage/
+var/
 *.log
