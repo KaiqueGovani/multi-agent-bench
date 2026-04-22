@@ -1,14 +1,16 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
+from app.db import get_db_session
 from app.schemas.api import (
     ConversationDetailResponse,
     CreateConversationRequest,
     CreateConversationResponse,
     MessageListResponse,
 )
-from app.services import ConversationService, get_conversation_service
+from app.services import ConversationService
 
 router = APIRouter()
 
@@ -16,12 +18,13 @@ router = APIRouter()
 @router.post("", response_model=CreateConversationResponse, status_code=status.HTTP_201_CREATED)
 def create_conversation(
     request: CreateConversationRequest,
-    service: ConversationService = Depends(get_conversation_service),
+    db: Session = Depends(get_db_session),
 ) -> CreateConversationResponse:
+    service = ConversationService(db)
     conversation = service.create_conversation(request)
     return CreateConversationResponse(
         conversation_id=conversation.id,
-        status=conversation.status.value,
+        status=conversation.status,
         channel=conversation.channel,
         created_at=conversation.created_at,
     )
@@ -30,8 +33,9 @@ def create_conversation(
 @router.get("/{conversation_id}", response_model=ConversationDetailResponse)
 def get_conversation(
     conversation_id: UUID,
-    service: ConversationService = Depends(get_conversation_service),
+    db: Session = Depends(get_db_session),
 ) -> ConversationDetailResponse:
+    service = ConversationService(db)
     conversation = service.get_conversation(conversation_id)
     if conversation is None:
         raise HTTPException(
@@ -44,8 +48,9 @@ def get_conversation(
 @router.get("/{conversation_id}/messages", response_model=MessageListResponse)
 def get_conversation_messages(
     conversation_id: UUID,
-    service: ConversationService = Depends(get_conversation_service),
+    db: Session = Depends(get_db_session),
 ) -> MessageListResponse:
+    service = ConversationService(db)
     conversation = service.get_conversation(conversation_id)
     if conversation is None:
         raise HTTPException(
@@ -53,4 +58,3 @@ def get_conversation_messages(
             detail="Conversation not found",
         )
     return MessageListResponse(conversation_id=conversation.id)
-

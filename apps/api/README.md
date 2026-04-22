@@ -15,7 +15,29 @@ Persistence, file storage, SSE implementation, and the mock runtime are implemen
 
 ## Local run
 
-After installing dependencies:
+Create a local environment and install dependencies from the repository root:
+
+```bash
+python -m venv .venv
+source .venv/Scripts/activate
+python -m pip install --upgrade pip
+python -m pip install -e ./apps/api
+```
+
+Start PostgreSQL:
+
+```bash
+docker compose -f infra/docker/docker-compose.yml up -d postgres
+```
+
+Run migrations from `apps/api`:
+
+```bash
+cd apps/api
+alembic upgrade head
+```
+
+Start the API:
 
 ```bash
 uvicorn app.main:app --reload
