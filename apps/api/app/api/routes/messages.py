@@ -6,11 +6,12 @@ from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPExcepti
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
+from app.adapters.inbound import WebChatAdapter
 from app.db import get_db_session
 from app.schemas.api import SendMessageResponse
 from app.schemas.domain import OperationalMetadata
 from app.runtime.mock import MockProcessingRuntime
-from app.services import IncomingAttachment, MessageService, MessageValidationError
+from app.services import MessageService, MessageValidationError
 
 router = APIRouter()
 
@@ -26,21 +27,17 @@ async def send_message(
     db: Session = Depends(get_db_session),
 ) -> SendMessageResponse:
     metadata = _parse_metadata(metadata_json, client_message_id)
-    incoming_attachments = [
-        IncomingAttachment(
-            filename=file.filename or "attachment",
-            content_type=file.content_type or "application/octet-stream",
-            content=await file.read(),
-        )
-        for file in (files or [])
-    ]
+    inbound_message = await WebChatAdapter().normalize_inbound_message(
+        conversation_id=conversation_id,
+        text=text,
+        metadata=metadata,
+        client_message_id=client_message_id,
+        files=files,
+    )
 
     try:
         response = MessageService(db).create_message(
-            conversation_id=conversation_id,
-            text=text,
-            metadata=metadata,
-            attachments=incoming_attachments,
+            inbound=inbound_message,
         )
         background_tasks.add_task(
             MockProcessingRuntime().process_message,

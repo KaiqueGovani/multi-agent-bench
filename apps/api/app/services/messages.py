@@ -1,5 +1,4 @@
 import hashlib
-from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
@@ -10,8 +9,9 @@ from app.adapters.storage import LocalStorageAdapter
 from app.core.config import get_settings
 from app.db.mappers import attachment_to_schema, message_to_schema
 from app.db.models import AttachmentModel, ConversationModel, MessageModel
+from app.domain.channels import ChannelAttachment, ChannelInboundMessage
 from app.schemas.api import SendMessageResponse
-from app.schemas.domain import Attachment, Message, OperationalMetadata
+from app.schemas.domain import Attachment, Message
 from app.schemas.enums import (
     AttachmentStatus,
     MessageDirection,
@@ -30,13 +30,6 @@ SUPPORTED_IMAGE_MIME_TYPES = {
 }
 
 
-@dataclass(frozen=True)
-class IncomingAttachment:
-    filename: str
-    content_type: str
-    content: bytes
-
-
 class MessageValidationError(ValueError):
     pass
 
@@ -50,20 +43,19 @@ class MessageService:
     def create_message(
         self,
         *,
-        conversation_id: UUID,
-        text: str | None,
-        metadata: OperationalMetadata,
-        attachments: list[IncomingAttachment],
+        inbound: ChannelInboundMessage,
     ) -> SendMessageResponse:
-        self._validate_message(text=text, attachments=attachments)
+        self._validate_message(text=inbound.text, attachments=inbound.attachments)
+        if inbound.conversation_id is None:
+            raise MessageValidationError("Conversation is required")
 
-        conversation = self._db.get(ConversationModel, conversation_id)
+        conversation = self._db.get(ConversationModel, inbound.conversation_id)
         if conversation is None:
             raise MessageValidationError("Conversation not found")
 
         correlation_id = uuid4()
         now = datetime.now(UTC)
-        metadata_json = metadata.model_dump(
+        metadata_json = inbound.metadata.model_dump(
             by_alias=True,
             mode="json",
             exclude_none=True,
@@ -71,10 +63,10 @@ class MessageService:
 
         message = MessageModel(
             id=uuid4(),
-            conversation_id=conversation_id,
+            conversation_id=inbound.conversation_id,
             direction=MessageDirection.INBOUND.value,
-            content_text=text,
-            created_at_client=metadata.client_timestamp,
+            content_text=inbound.text,
+            created_at_client=inbound.created_at_client,
             created_at_server=now,
             status=MessageStatus.ACCEPTED.value,
             correlation_id=correlation_id,
@@ -86,25 +78,26 @@ class MessageService:
         event_service = EventService(self._db)
         events = [
             event_service.record_event(
-                conversation_id=conversation_id,
+                conversation_id=inbound.conversation_id,
                 message_id=message.id,
                 event_type=ProcessingEventType.MESSAGE_RECEIVED,
                 correlation_id=correlation_id,
                 status=ProcessingStatus.COMPLETED,
                 payload={
-                    "textLength": len(text or ""),
-                    "fileCount": len(attachments),
+                    "channel": inbound.channel.value,
+                    "textLength": len(inbound.text or ""),
+                    "fileCount": len(inbound.attachments),
                 },
                 commit=False,
                 publish=False,
             )
         ]
 
-        for incoming in attachments:
+        for incoming in inbound.attachments:
             events.extend(
                 self._persist_attachment(
                     event_service=event_service,
-                    conversation_id=conversation_id,
+                    conversation_id=inbound.conversation_id,
                     message_id=message.id,
                     correlation_id=correlation_id,
                     incoming=incoming,
@@ -151,7 +144,7 @@ class MessageService:
         conversation_id: UUID,
         message_id: UUID,
         correlation_id: UUID,
-        incoming: IncomingAttachment,
+        incoming: ChannelAttachment,
     ):
         upload_started = event_service.record_event(
             conversation_id=conversation_id,
@@ -160,8 +153,8 @@ class MessageService:
             correlation_id=correlation_id,
             status=ProcessingStatus.RUNNING,
             payload={
-                "filename": incoming.filename,
-                "mimeType": incoming.content_type,
+                "filename": incoming.original_filename,
+                "mimeType": incoming.mime_type,
             },
             commit=False,
             publish=False,
@@ -174,7 +167,7 @@ class MessageService:
             conversation_id=conversation_id,
             message_id=message_id,
             attachment_id=attachment_id,
-            original_filename=incoming.filename,
+            original_filename=incoming.original_filename,
             content=incoming.content,
         )
 
@@ -182,12 +175,16 @@ class MessageService:
             id=attachment_id,
             message_id=message_id,
             storage_key=stored_file.storage_key,
-            original_filename=incoming.filename,
-            mime_type=incoming.content_type,
+            original_filename=incoming.original_filename,
+            mime_type=incoming.mime_type,
             size_bytes=len(incoming.content),
             checksum=checksum,
             status=AttachmentStatus.VALIDATED.value,
-            metadata_json={},
+            metadata_json=incoming.metadata.model_dump(
+                by_alias=True,
+                mode="json",
+                exclude_none=True,
+            ),
         )
         self._db.add(attachment)
         self._db.flush()
@@ -214,8 +211,8 @@ class MessageService:
             status=ProcessingStatus.RUNNING,
             payload={
                 "attachmentId": str(attachment.id),
-                "filename": incoming.filename,
-                "mimeType": incoming.content_type,
+                "filename": incoming.original_filename,
+                "mimeType": incoming.mime_type,
                 "sizeBytes": len(incoming.content),
             },
             commit=False,
@@ -245,7 +242,7 @@ class MessageService:
             validation_completed,
         ]
 
-    def _validate_message(self, *, text: str | None, attachments: list[IncomingAttachment]) -> None:
+    def _validate_message(self, *, text: str | None, attachments: list[ChannelAttachment]) -> None:
         if not (text and text.strip()) and not attachments:
             raise MessageValidationError("Message must include text or at least one file")
         if len(attachments) > self._settings.max_files_per_message:
@@ -253,10 +250,10 @@ class MessageService:
                 f"At most {self._settings.max_files_per_message} files are allowed per message"
             )
 
-    def _validate_attachment(self, attachment: IncomingAttachment) -> None:
-        if attachment.content_type not in SUPPORTED_IMAGE_MIME_TYPES:
+    def _validate_attachment(self, attachment: ChannelAttachment) -> None:
+        if attachment.mime_type not in SUPPORTED_IMAGE_MIME_TYPES:
             raise MessageValidationError(
-                f"Unsupported file type: {attachment.content_type}"
+                f"Unsupported file type: {attachment.mime_type}"
             )
         if len(attachment.content) > self._settings.max_file_size_bytes:
             raise MessageValidationError(
