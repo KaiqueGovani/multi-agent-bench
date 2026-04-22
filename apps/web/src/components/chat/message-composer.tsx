@@ -1,6 +1,13 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Loader2, Paperclip, Send, X } from "lucide-react";
+
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 interface MessageComposerProps {
   disabled: boolean;
@@ -21,6 +28,7 @@ export function MessageComposer({ disabled, isSending, onSend }: MessageComposer
   const [text, setText] = useState("");
   const [images, setImages] = useState<SelectedImage[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [fileInputKey, setFileInputKey] = useState(0);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const imagesRef = useRef<SelectedImage[]>([]);
 
@@ -52,6 +60,7 @@ export function MessageComposer({ disabled, isSending, onSend }: MessageComposer
     }
     setText("");
     setImages([]);
+    setFileInputKey((current) => current + 1);
     await onSend(currentText, currentFiles);
   }
 
@@ -98,68 +107,100 @@ export function MessageComposer({ disabled, isSending, onSend }: MessageComposer
   }
 
   return (
-    <form className="border-t border-line bg-panel p-3" onSubmit={handleSubmit}>
-      {images.length > 0 ? (
-        <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {images.map((image, index) => (
-            <div className="relative border border-line bg-surface" key={image.previewUrl}>
-              <img
-                alt={image.file.name}
-                className="h-24 w-full object-cover"
-                src={image.previewUrl}
-              />
-              <button
-                className="absolute right-1 top-1 border border-line bg-panel px-2 py-1 text-xs text-ink"
-                disabled={disabled || isSending}
-                onClick={() => removeImage(index)}
-                type="button"
-              >
-                Remover
-              </button>
-              <p className="truncate px-2 py-1 text-xs text-muted">{image.file.name}</p>
-            </div>
-          ))}
+    <form className="border-t bg-card/95 p-3 shadow-sm" onSubmit={handleSubmit}>
+      <div className="mx-auto w-full max-w-5xl">
+        {images.length > 0 ? (
+          <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {images.map((image, index) => (
+              <Card className="relative overflow-hidden" key={image.previewUrl}>
+                <CardContent className="p-0">
+                  <img
+                    alt={image.file.name}
+                    className="h-24 w-full object-cover"
+                    src={image.previewUrl}
+                  />
+                  <Button
+                    className="absolute right-1 top-1 h-7 w-7"
+                    disabled={disabled || isSending}
+                    onClick={() => removeImage(index)}
+                    size="icon"
+                    type="button"
+                    variant="secondary"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                  <div className="p-2">
+                    <p className="truncate text-xs">{image.file.name}</p>
+                    <p className="text-[11px] text-muted-foreground">{formatBytes(image.file.size)}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : null}
+
+        {fileError ? (
+          <Alert className="mb-2 py-2" variant="warning">
+            <AlertDescription>{fileError}</AlertDescription>
+          </Alert>
+        ) : null}
+
+        <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-stretch gap-2">
+          <Input
+            accept={ACCEPTED_IMAGE_TYPES.join(",")}
+            className="hidden"
+            disabled={disabled || isSending}
+            key={fileInputKey}
+            multiple
+            onChange={handleFileChange}
+            ref={fileInputRef}
+            type="file"
+          />
+          <Button
+            className="h-full min-h-20 self-stretch px-3"
+            disabled={disabled || isSending}
+            onClick={() => fileInputRef.current?.click()}
+            type="button"
+            variant="outline"
+          >
+            <Paperclip className="h-4 w-4" />
+            <span className="hidden sm:inline">Anexar</span>
+          </Button>
+          <Textarea
+            className="min-h-20 resize-none text-sm"
+            disabled={disabled || isSending}
+            placeholder={disabled ? "Crie uma conversa para enviar mensagens" : "Digite sua mensagem"}
+            rows={3}
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+          />
+          <Button
+            className="h-full min-h-20 self-stretch px-3"
+            disabled={disabled || isSending || !canSubmit}
+            type="submit"
+          >
+            {isSending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                <Send className="h-4 w-4" />
+                <span className="hidden sm:inline">Enviar</span>
+              </>
+            )}
+          </Button>
         </div>
-      ) : null}
-
-      {fileError ? (
-        <p className="mb-2 text-sm text-danger">{fileError}</p>
-      ) : null}
-
-      <div className="flex items-end gap-2">
-        <input
-          accept={ACCEPTED_IMAGE_TYPES.join(",")}
-          className="hidden"
-          disabled={disabled || isSending}
-          multiple
-          onChange={handleFileChange}
-          ref={fileInputRef}
-          type="file"
-        />
-        <button
-          className="h-12 border border-line px-3 text-sm font-medium text-ink disabled:bg-surface disabled:text-muted"
-          disabled={disabled || isSending}
-          onClick={() => fileInputRef.current?.click()}
-          type="button"
-        >
-          Anexar
-        </button>
-        <textarea
-          className="min-h-12 flex-1 resize-none border border-line bg-white px-3 py-2 text-sm text-ink outline-none focus:border-action"
-          disabled={disabled || isSending}
-          placeholder={disabled ? "Crie uma conversa para enviar mensagens" : "Digite sua mensagem"}
-          rows={2}
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-        />
-        <button
-          className="h-12 border border-action bg-action px-4 text-sm font-medium text-white disabled:border-line disabled:bg-surface disabled:text-muted"
-          disabled={disabled || isSending || !canSubmit}
-          type="submit"
-        >
-          {isSending ? "Enviando" : "Enviar"}
-        </button>
       </div>
     </form>
   );
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  const kilobytes = bytes / 1024;
+  if (kilobytes < 1024) {
+    return `${kilobytes.toFixed(1)} KB`;
+  }
+  return `${(kilobytes / 1024).toFixed(1)} MB`;
 }
