@@ -18,6 +18,7 @@ class Settings:
     default_channel: str = "web_chat"
     default_architecture_mode: str = "centralized_orchestration"
     runtime_mode: str = "mock"
+    log_level: str = "INFO"
     max_files_per_message: int = 4
     max_file_size_bytes: int = 5 * 1024 * 1024
     cors_allowed_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
@@ -37,6 +38,7 @@ def get_settings() -> Settings:
             Settings.default_architecture_mode,
         ),
         runtime_mode=os.getenv("RUNTIME_MODE", Settings.runtime_mode),
+        log_level=os.getenv("LOG_LEVEL", Settings.log_level),
         max_files_per_message=int(os.getenv("MAX_FILES_PER_MESSAGE", Settings.max_files_per_message)),
         max_file_size_bytes=int(os.getenv("MAX_FILE_SIZE_BYTES", Settings.max_file_size_bytes)),
         cors_allowed_origins=os.getenv("CORS_ALLOWED_ORIGINS", Settings.cors_allowed_origins),

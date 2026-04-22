@@ -3,6 +3,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.db.mappers import conversation_to_schema
 from app.db.models import ConversationModel
 from app.schemas.api import CreateConversationRequest
@@ -14,10 +15,21 @@ from app.services.events import EventService
 class ConversationService:
     def __init__(self, db: Session) -> None:
         self._db = db
+        self._settings = get_settings()
 
     def create_conversation(self, request: CreateConversationRequest) -> Conversation:
         now = datetime.now(UTC)
-        metadata_json = request.metadata.model_dump(
+        metadata = request.metadata.model_copy(
+            update={
+                "architecture_mode": (
+                    request.metadata.architecture_mode
+                    or self._settings.default_architecture_mode
+                ),
+                "channel": request.channel,
+                "runtime_mode": request.metadata.runtime_mode or self._settings.runtime_mode,
+            }
+        )
+        metadata_json = metadata.model_dump(
             by_alias=True,
             mode="json",
             exclude_none=True,
@@ -40,7 +52,10 @@ class ConversationService:
             correlation_id=uuid4(),
             status=ProcessingStatus.COMPLETED,
             payload={
+                "architectureMode": metadata.architecture_mode,
                 "channel": request.channel.value,
+                "requestId": str(metadata.request_id) if metadata.request_id else None,
+                "runtimeMode": metadata.runtime_mode,
                 "userSessionId": request.user_session_id,
             },
             commit=False,

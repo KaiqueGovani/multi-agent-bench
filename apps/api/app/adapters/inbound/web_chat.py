@@ -3,6 +3,7 @@ from uuid import UUID
 
 from fastapi import UploadFile
 
+from app.core.config import get_settings
 from app.domain.channels import ChannelAttachment, ChannelInboundMessage
 from app.schemas.domain import OperationalMetadata
 from app.schemas.enums import ChannelType
@@ -20,10 +21,15 @@ class WebChatAdapter:
         client_message_id: str | None = None,
         files: Sequence[UploadFile] | None = None,
     ) -> ChannelInboundMessage:
+        settings = get_settings()
         channel_metadata = metadata.model_copy(
             update={
                 "channel": self.channel,
+                "architecture_mode": (
+                    metadata.architecture_mode or settings.default_architecture_mode
+                ),
                 "file_count": len(files or []),
+                "runtime_mode": metadata.runtime_mode or settings.runtime_mode,
             }
         )
         attachments = [

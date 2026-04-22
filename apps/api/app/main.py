@@ -3,16 +3,19 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import api_router
 from app.core.config import get_settings
+from app.core.observability import RequestContextMiddleware, configure_logging
 
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    configure_logging(settings.log_level)
     application = FastAPI(
         title=settings.app_name,
         version=settings.app_version,
         docs_url="/docs",
         redoc_url="/redoc",
     )
+    application.add_middleware(RequestContextMiddleware)
     application.add_middleware(
         CORSMiddleware,
         allow_origins=[

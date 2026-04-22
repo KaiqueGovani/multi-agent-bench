@@ -55,7 +55,18 @@ class MessageService:
 
         correlation_id = uuid4()
         now = datetime.now(UTC)
-        metadata_json = inbound.metadata.model_dump(
+        metadata = inbound.metadata.model_copy(
+            update={
+                "architecture_mode": (
+                    inbound.metadata.architecture_mode
+                    or self._settings.default_architecture_mode
+                ),
+                "channel": inbound.channel,
+                "correlation_id": correlation_id,
+                "runtime_mode": inbound.metadata.runtime_mode or self._settings.runtime_mode,
+            }
+        )
+        metadata_json = metadata.model_dump(
             by_alias=True,
             mode="json",
             exclude_none=True,
@@ -84,9 +95,13 @@ class MessageService:
                 correlation_id=correlation_id,
                 status=ProcessingStatus.COMPLETED,
                 payload={
+                    "architectureMode": metadata.architecture_mode,
                     "channel": inbound.channel.value,
+                    "correlationId": str(correlation_id),
                     "textLength": len(inbound.text or ""),
                     "fileCount": len(inbound.attachments),
+                    "requestId": str(metadata.request_id) if metadata.request_id else None,
+                    "runtimeMode": metadata.runtime_mode,
                 },
                 commit=False,
                 publish=False,

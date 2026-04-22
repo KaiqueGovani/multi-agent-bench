@@ -3,6 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.observability import get_request_id
 from app.db import get_db_session
 from app.schemas.api import (
     ConversationDetailResponse,
@@ -20,10 +21,19 @@ router = APIRouter()
 @router.post("", response_model=CreateConversationResponse, status_code=status.HTTP_201_CREATED)
 def create_conversation(
     request: CreateConversationRequest,
+    request_id: UUID = Depends(get_request_id),
     db: Session = Depends(get_db_session),
 ) -> CreateConversationResponse:
     service = ConversationService(db)
-    conversation = service.create_conversation(request)
+    conversation = service.create_conversation(
+        request.model_copy(
+            update={
+                "metadata": request.metadata.model_copy(
+                    update={"request_id": request_id}
+                )
+            }
+        )
+    )
     return CreateConversationResponse(
         conversation_id=conversation.id,
         status=conversation.status,

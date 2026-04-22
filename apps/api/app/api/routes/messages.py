@@ -7,6 +7,7 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from app.adapters.inbound import WebChatAdapter
+from app.core.observability import get_request_id
 from app.db import get_db_session
 from app.schemas.api import SendMessageResponse
 from app.schemas.domain import OperationalMetadata
@@ -24,9 +25,12 @@ async def send_message(
     metadata_json: Annotated[str, Form()] = "{}",
     client_message_id: Annotated[str | None, Form(alias="clientMessageId")] = None,
     files: Annotated[list[UploadFile] | None, File()] = None,
+    request_id: UUID = Depends(get_request_id),
     db: Session = Depends(get_db_session),
 ) -> SendMessageResponse:
-    metadata = _parse_metadata(metadata_json, client_message_id)
+    metadata = _parse_metadata(metadata_json, client_message_id).model_copy(
+        update={"request_id": request_id}
+    )
     inbound_message = await WebChatAdapter().normalize_inbound_message(
         conversation_id=conversation_id,
         text=text,

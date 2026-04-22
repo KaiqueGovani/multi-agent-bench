@@ -38,6 +38,7 @@ class MockProcessingRuntime:
 
             event_service = EventService(db)
             started_at = datetime.now(UTC)
+            event_context = self._event_context(message)
             self._record(
                 event_service,
                 conversation_id=conversation_id,
@@ -45,7 +46,7 @@ class MockProcessingRuntime:
                 correlation_id=correlation_id,
                 event_type=ProcessingEventType.PROCESSING_STARTED,
                 status=ProcessingStatus.RUNNING,
-                payload=self._base_payload({"messageId": str(message_id)}),
+                payload=self._base_payload({"messageId": str(message_id)}, event_context),
             )
 
             self._invoke_actor(
@@ -57,6 +58,7 @@ class MockProcessingRuntime:
                 actor_name="router_agent",
                 reason="classifying incoming request",
                 result={"route": self._select_route(db, message)},
+                event_context=event_context,
             )
 
             selected_actor = self._select_actor(db, message)
@@ -69,6 +71,7 @@ class MockProcessingRuntime:
                 actor_name=selected_actor,
                 reason="handling request with mocked domain actor",
                 result={"handledBy": selected_actor},
+                event_context=event_context,
             )
 
             self._invoke_actor(
@@ -80,6 +83,7 @@ class MockProcessingRuntime:
                 actor_name="supervisor_agent",
                 reason="checking mocked response before final answer",
                 result={"reviewRequired": False},
+                event_context=event_context,
             )
 
             outbound_message = self._create_outbound_message(
@@ -101,11 +105,19 @@ class MockProcessingRuntime:
                         "messageId": str(outbound_message.id),
                         "contentText": outbound_message.content_text,
                         "reviewRequired": False,
-                    }
+                    },
+                    event_context,
                 ),
             )
 
             total_duration_ms = int((datetime.now(UTC) - started_at).total_seconds() * 1000)
+            completed_at = datetime.now(UTC)
+            message.metadata_json = {
+                **(message.metadata_json or {}),
+                "processingStartAt": started_at.isoformat(),
+                "processingEndAt": completed_at.isoformat(),
+                "totalDurationMs": total_duration_ms,
+            }
             message.status = MessageStatus.COMPLETED.value
             db.commit()
 
@@ -121,7 +133,8 @@ class MockProcessingRuntime:
                     {
                         "totalDurationMs": total_duration_ms,
                         "runtimeMode": self._settings.runtime_mode,
-                    }
+                    },
+                    event_context,
                 ),
             )
 
@@ -136,6 +149,7 @@ class MockProcessingRuntime:
         actor_name: str,
         reason: str,
         result: dict,
+        event_context: dict,
     ) -> None:
         started_at = datetime.now(UTC)
         self._record(
@@ -146,7 +160,7 @@ class MockProcessingRuntime:
             event_type=ProcessingEventType.ACTOR_INVOKED,
             actor_name=actor_name,
             status=ProcessingStatus.RUNNING,
-            payload=self._base_payload({"reason": reason}),
+            payload=self._base_payload({"reason": reason}, event_context),
         )
         time.sleep(self._step_delay_seconds)
         duration_ms = int((datetime.now(UTC) - started_at).total_seconds() * 1000)
@@ -159,7 +173,7 @@ class MockProcessingRuntime:
             actor_name=actor_name,
             status=ProcessingStatus.COMPLETED,
             duration_ms=duration_ms,
-            payload=self._base_payload(result | {"durationMs": duration_ms}),
+            payload=self._base_payload(result | {"durationMs": duration_ms}, event_context),
         )
         db.expire_all()
 
@@ -255,10 +269,21 @@ class MockProcessingRuntime:
             is not None
         )
 
-    def _base_payload(self, payload: dict) -> dict:
+    def _event_context(self, message: MessageModel) -> dict:
+        metadata = message.metadata_json or {}
+        return {
+            "architectureMode": metadata.get(
+                "architectureMode",
+                self._settings.default_architecture_mode,
+            ),
+            "requestId": metadata.get("requestId"),
+            "runtimeMode": metadata.get("runtimeMode", self._settings.runtime_mode),
+        }
+
+    def _base_payload(self, payload: dict, event_context: dict | None = None) -> dict:
         return {
             "architectureMode": self._settings.default_architecture_mode,
             "runtimeMode": self._settings.runtime_mode,
+            **(event_context or {}),
             **payload,
         }
-
