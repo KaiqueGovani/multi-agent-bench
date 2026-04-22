@@ -240,9 +240,9 @@ class MessageService:
 
         return [
             upload_started,
+            upload_completed,
             validation_started,
             validation_completed,
-            upload_completed,
         ]
 
     def _validate_message(self, *, text: str | None, attachments: list[IncomingAttachment]) -> None:

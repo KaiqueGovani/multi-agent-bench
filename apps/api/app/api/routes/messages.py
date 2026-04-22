@@ -2,13 +2,14 @@ import json
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from app.db import get_db_session
 from app.schemas.api import SendMessageResponse
 from app.schemas.domain import OperationalMetadata
+from app.runtime.mock import MockProcessingRuntime
 from app.services import IncomingAttachment, MessageService, MessageValidationError
 
 router = APIRouter()
@@ -16,6 +17,7 @@ router = APIRouter()
 
 @router.post("", response_model=SendMessageResponse, status_code=status.HTTP_202_ACCEPTED)
 async def send_message(
+    background_tasks: BackgroundTasks,
     conversation_id: Annotated[UUID, Form(alias="conversationId")],
     text: Annotated[str | None, Form()] = None,
     metadata_json: Annotated[str, Form()] = "{}",
@@ -34,12 +36,19 @@ async def send_message(
     ]
 
     try:
-        return MessageService(db).create_message(
+        response = MessageService(db).create_message(
             conversation_id=conversation_id,
             text=text,
             metadata=metadata,
             attachments=incoming_attachments,
         )
+        background_tasks.add_task(
+            MockProcessingRuntime().process_message,
+            conversation_id=response.conversation_id,
+            message_id=response.message_id,
+            correlation_id=response.correlation_id,
+        )
+        return response
     except MessageValidationError as exc:
         if str(exc) == "Conversation not found":
             raise HTTPException(

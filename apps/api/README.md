@@ -60,6 +60,8 @@ Useful endpoints in this phase:
 
 The SSE endpoint streams new events for active subscribers. Persisted events remain available through the standard conversation detail and events endpoints.
 
+After `POST /messages`, the API accepts the inbound message and starts a mocked background runtime. The runtime emits processing and actor events, then persists a simulated outbound response. It does not call LLMs or execute real pharmacy logic.
+
 Send a text-only message:
 
 ```bash
