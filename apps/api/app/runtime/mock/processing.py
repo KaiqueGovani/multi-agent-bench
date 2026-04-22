@@ -5,13 +5,15 @@ from uuid import UUID, uuid4
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.db.models import AttachmentModel, MessageModel
+from app.db.models import AttachmentModel, ConversationModel, MessageModel, ReviewTaskModel
 from app.db.session import SessionLocal
 from app.schemas.enums import (
+    ConversationStatus,
     MessageDirection,
     MessageStatus,
     ProcessingEventType,
     ProcessingStatus,
+    ReviewTaskStatus,
 )
 from app.services.events import EventService
 
@@ -39,6 +41,7 @@ class MockProcessingRuntime:
             event_service = EventService(db)
             started_at = datetime.now(UTC)
             event_context = self._event_context(message)
+            review_required = self._requires_review(message)
             self._record(
                 event_service,
                 conversation_id=conversation_id,
@@ -82,14 +85,25 @@ class MockProcessingRuntime:
                 correlation_id=correlation_id,
                 actor_name="supervisor_agent",
                 reason="checking mocked response before final answer",
-                result={"reviewRequired": False},
+                result={"reviewRequired": review_required},
                 event_context=event_context,
             )
+
+            if review_required:
+                self._create_review_task(
+                    db,
+                    event_service,
+                    conversation_id=conversation_id,
+                    message_id=message_id,
+                    correlation_id=correlation_id,
+                    event_context=event_context,
+                )
 
             outbound_message = self._create_outbound_message(
                 db,
                 inbound_message=message,
                 correlation_id=correlation_id,
+                review_required=review_required,
             )
 
             self._record(
@@ -104,7 +118,7 @@ class MockProcessingRuntime:
                     {
                         "messageId": str(outbound_message.id),
                         "contentText": outbound_message.content_text,
-                        "reviewRequired": False,
+                        "reviewRequired": review_required,
                     },
                     event_context,
                 ),
@@ -116,9 +130,14 @@ class MockProcessingRuntime:
                 **(message.metadata_json or {}),
                 "processingStartAt": started_at.isoformat(),
                 "processingEndAt": completed_at.isoformat(),
+                "reviewRequired": review_required,
                 "totalDurationMs": total_duration_ms,
             }
-            message.status = MessageStatus.COMPLETED.value
+            message.status = (
+                MessageStatus.HUMAN_REVIEW_REQUIRED.value
+                if review_required
+                else MessageStatus.COMPLETED.value
+            )
             db.commit()
 
             self._record(
@@ -207,14 +226,19 @@ class MockProcessingRuntime:
         *,
         inbound_message: MessageModel,
         correlation_id: UUID,
+        review_required: bool,
     ) -> MessageModel:
         outbound = MessageModel(
             id=uuid4(),
             conversation_id=inbound_message.conversation_id,
             direction=MessageDirection.OUTBOUND.value,
             content_text=(
-                "Recebi sua solicitacao. Esta e uma resposta simulada da POC; "
-                "nenhum agente real ou decisao farmaceutica foi executado."
+                "Recebi sua solicitacao e encaminhei este caso para revisao humana simulada."
+                if review_required
+                else (
+                    "Recebi sua solicitacao. Esta e uma resposta simulada da POC; "
+                    "nenhum agente real ou decisao farmaceutica foi executado."
+                )
             ),
             created_at_server=datetime.now(UTC),
             status=MessageStatus.COMPLETED.value,
@@ -223,7 +247,7 @@ class MockProcessingRuntime:
                 "channel": self._settings.default_channel,
                 "architectureMode": self._settings.default_architecture_mode,
                 "runtimeMode": self._settings.runtime_mode,
-                "reviewRequired": False,
+                "reviewRequired": review_required,
             },
             model_context_json={
                 "language": "pt-BR",
@@ -234,6 +258,51 @@ class MockProcessingRuntime:
         db.commit()
         db.refresh(outbound)
         return outbound
+
+    def _create_review_task(
+        self,
+        db: Session,
+        event_service: EventService,
+        *,
+        conversation_id: UUID,
+        message_id: UUID,
+        correlation_id: UUID,
+        event_context: dict,
+    ) -> None:
+        review_task = ReviewTaskModel(
+            id=uuid4(),
+            conversation_id=conversation_id,
+            message_id=message_id,
+            reason="Mocked scenario requested human review",
+            status=ReviewTaskStatus.OPEN.value,
+            metadata_json={
+                **event_context,
+                "runtimeMode": self._settings.runtime_mode,
+            },
+        )
+        db.add(review_task)
+        conversation = db.get(ConversationModel, conversation_id)
+        if conversation is not None:
+            conversation.status = ConversationStatus.HUMAN_REVIEW_REQUIRED.value
+        db.flush()
+
+        self._record(
+            event_service,
+            conversation_id=conversation_id,
+            message_id=message_id,
+            correlation_id=correlation_id,
+            event_type=ProcessingEventType.REVIEW_REQUIRED,
+            actor_name="supervisor_agent",
+            status=ProcessingStatus.HUMAN_REVIEW_REQUIRED,
+            payload=self._base_payload(
+                {
+                    "reason": review_task.reason,
+                    "reviewTaskId": str(review_task.id),
+                    "reviewRequired": True,
+                },
+                event_context,
+            ),
+        )
 
     def _select_route(self, db: Session, message: MessageModel) -> str:
         if self._has_attachments(db, message.id):
@@ -251,6 +320,8 @@ class MockProcessingRuntime:
         return "faq_agent"
 
     def _infer_intent(self, text: str | None) -> str:
+        if self._looks_like_review_request(text):
+            return "human_review"
         if self._looks_like_stock_question(text):
             return "stock_availability"
         return "general_question"
@@ -259,6 +330,26 @@ class MockProcessingRuntime:
     def _looks_like_stock_question(text: str | None) -> bool:
         normalized = (text or "").lower()
         return any(term in normalized for term in ["tem ", "estoque", "disponivel", "disponível"])
+
+    @staticmethod
+    def _looks_like_review_request(text: str | None) -> bool:
+        normalized = (text or "").lower()
+        return any(
+            term in normalized
+            for term in [
+                "revisao humana",
+                "revisão humana",
+                "supervisor",
+                "farmaceutico",
+                "farmacêutico",
+            ]
+        )
+
+    def _requires_review(self, message: MessageModel) -> bool:
+        metadata = message.metadata_json or {}
+        return bool(metadata.get("forceReview")) or self._looks_like_review_request(
+            message.content_text
+        )
 
     @staticmethod
     def _has_attachments(db: Session, message_id: UUID) -> bool:

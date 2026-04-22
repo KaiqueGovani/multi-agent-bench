@@ -1,4 +1,10 @@
-from app.db.models import AttachmentModel, ConversationModel, MessageModel, ProcessingEventModel
+from app.db.models import (
+    AttachmentModel,
+    ConversationModel,
+    MessageModel,
+    ProcessingEventModel,
+    ReviewTaskModel,
+)
 from app.schemas.domain import (
     Attachment,
     Conversation,
@@ -6,6 +12,7 @@ from app.schemas.domain import (
     ModelContext,
     OperationalMetadata,
     ProcessingEvent,
+    ReviewTask,
 )
 from app.schemas.enums import (
     AttachmentStatus,
@@ -15,6 +22,7 @@ from app.schemas.enums import (
     MessageStatus,
     ProcessingEventType,
     ProcessingStatus,
+    ReviewTaskStatus,
 )
 
 
@@ -78,5 +86,18 @@ def attachment_to_schema(model: AttachmentModel) -> Attachment:
         height=model.height,
         created_at=model.created_at,
         status=AttachmentStatus(model.status),
+        metadata=OperationalMetadata.model_validate(model.metadata_json or {}),
+    )
+
+
+def review_task_to_schema(model: ReviewTaskModel) -> ReviewTask:
+    return ReviewTask(
+        id=model.id,
+        conversation_id=model.conversation_id,
+        message_id=model.message_id,
+        reason=model.reason,
+        status=ReviewTaskStatus(model.status),
+        created_at=model.created_at,
+        resolved_at=model.resolved_at,
         metadata=OperationalMetadata.model_validate(model.metadata_json or {}),
     )

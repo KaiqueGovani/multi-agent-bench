@@ -61,6 +61,7 @@ def get_conversation(
         messages=message_service.list_conversation_messages(conversation_id),
         attachments=message_service.list_conversation_attachments(conversation_id),
         events=events,
+        review_tasks=service.list_review_tasks(conversation_id),
     )
 
 

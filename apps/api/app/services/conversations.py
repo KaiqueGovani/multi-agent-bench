@@ -1,13 +1,14 @@
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.db.mappers import conversation_to_schema
-from app.db.models import ConversationModel
+from app.db.mappers import conversation_to_schema, review_task_to_schema
+from app.db.models import ConversationModel, ReviewTaskModel
 from app.schemas.api import CreateConversationRequest
-from app.schemas.domain import Conversation
+from app.schemas.domain import Conversation, ReviewTask
 from app.schemas.enums import ConversationStatus, ProcessingEventType, ProcessingStatus
 from app.services.events import EventService
 
@@ -71,3 +72,11 @@ class ConversationService:
         if conversation is None:
             return None
         return conversation_to_schema(conversation)
+
+    def list_review_tasks(self, conversation_id: UUID) -> list[ReviewTask]:
+        statement = (
+            select(ReviewTaskModel)
+            .where(ReviewTaskModel.conversation_id == conversation_id)
+            .order_by(ReviewTaskModel.created_at, ReviewTaskModel.id)
+        )
+        return [review_task_to_schema(task) for task in self._db.scalars(statement).all()]
