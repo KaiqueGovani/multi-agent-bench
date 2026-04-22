@@ -1,0 +1,21 @@
+{
+  "id": "c3ad3511-0b98-49b4-9dc1-bb967f4ab9cd",
+  "conversationId": "8d7df8b7-6d8f-49d6-86a8-1f33c2dbb983",
+  "direction": "outbound",
+  "contentText": "Recebi sua solicitacao. Esta e uma resposta simulada da POC; nenhum agente real ou decisao farmaceutica foi executado.",
+  "createdAtServer": "2026-04-22T15:01:06Z",
+  "status": "completed",
+  "correlationId": "3dd164fb-a07f-4cf9-83e9-cfe1d77efb2e",
+  "metadata": {
+    "channel": "web_chat",
+    "architectureMode": "centralized_orchestration",
+    "runtimeMode": "mock",
+    "reviewRequired": false,
+    "totalDurationMs": 4100
+  },
+  "modelContext": {
+    "language": "pt-BR",
+    "inferredIntent": "product_identification"
+  }
+}
+

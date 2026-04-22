@@ -1,0 +1,15 @@
+{
+  "id": "7f8060e6-43a5-448b-a7ed-fae58806a4cb",
+  "conversationId": "8d7df8b7-6d8f-49d6-86a8-1f33c2dbb983",
+  "messageId": "d5c2fbb5-0a17-4c0f-a924-08a35de66203",
+  "reason": "Mock runtime flagged this request for human supervision.",
+  "status": "open",
+  "createdAt": "2026-04-22T15:01:04Z",
+  "metadata": {
+    "channel": "web_chat",
+    "architectureMode": "centralized_orchestration",
+    "runtimeMode": "mock",
+    "reviewRequired": true
+  }
+}
+

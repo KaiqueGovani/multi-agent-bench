@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://multi-agent-bench.local/contracts/domain.schema.json",
+  "title": "Multi-agent pharmacy POC domain contracts",
+  "type": "object",
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "isoDateTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "jsonObject": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "channelType": {
+      "type": "string",
+      "enum": ["web_chat", "whatsapp"]
+    },
+    "conversationStatus": {
+      "type": "string",
+      "enum": ["active", "waiting", "completed", "error", "human_review_required"]
+    },
+    "messageDirection": {
+      "type": "string",
+      "enum": ["inbound", "outbound", "system"]
+    },
+    "messageStatus": {
+      "type": "string",
+      "enum": ["draft", "received", "accepted", "validating", "processing", "forwarded", "waiting", "completed", "error", "human_review_required"]
+    },
+    "attachmentStatus": {
+      "type": "string",
+      "enum": ["received", "uploading", "uploaded", "validating", "validated", "rejected", "error"]
+    },
+    "processingEventType": {
+      "type": "string",
+      "enum": [
+        "conversation.created",
+        "message.received",
+        "attachment.upload.started",
+        "attachment.upload.completed",
+        "attachment.validation.started",
+        "attachment.validation.completed",
+        "processing.started",
+        "actor.invoked",
+        "actor.progress",
+        "actor.completed",
+        "actor.failed",
+        "handoff.requested",
+        "review.required",
+        "response.partial",
+        "response.final",
+        "processing.completed"
+      ]
+    },
+    "processingStatus": {
+      "type": "string",
+      "enum": ["pending", "running", "completed", "failed", "waiting", "human_review_required"]
+    },
+    "reviewTaskStatus": {
+      "type": "string",
+      "enum": ["open", "in_review", "resolved", "cancelled"]
+    },
+    "operationalMetadata": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "modelContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "language": { "type": "string" },
+        "currentTime": { "$ref": "#/$defs/isoDateTime" },
+        "conversationSummary": { "type": "string" },
+        "attachmentTypes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "inferredIntent": { "type": "string" }
+      }
+    },
+    "conversation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "channel", "createdAt", "updatedAt", "status", "metadata"],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "channel": { "$ref": "#/$defs/channelType" },
+        "createdAt": { "$ref": "#/$defs/isoDateTime" },
+        "updatedAt": { "$ref": "#/$defs/isoDateTime" },
+        "status": { "$ref": "#/$defs/conversationStatus" },
+        "userSessionId": { "type": "string" },
+        "metadata": { "$ref": "#/$defs/operationalMetadata" }
+      }
+    },
+    "message": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "conversationId", "direction", "createdAtServer", "status", "correlationId", "metadata"],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "conversationId": { "$ref": "#/$defs/uuid" },
+        "direction": { "$ref": "#/$defs/messageDirection" },
+        "contentText": { "type": "string" },
+        "createdAtClient": { "$ref": "#/$defs/isoDateTime" },
+        "createdAtServer": { "$ref": "#/$defs/isoDateTime" },
+        "status": { "$ref": "#/$defs/messageStatus" },
+        "correlationId": { "$ref": "#/$defs/uuid" },
+        "metadata": { "$ref": "#/$defs/operationalMetadata" },
+        "modelContext": { "$ref": "#/$defs/modelContext" }
+      }
+    },
+    "attachment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "messageId", "storageKey", "originalFilename", "mimeType", "sizeBytes", "checksum", "createdAt", "status", "metadata"],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "messageId": { "$ref": "#/$defs/uuid" },
+        "storageKey": { "type": "string" },
+        "originalFilename": { "type": "string" },
+        "mimeType": { "type": "string" },
+        "sizeBytes": { "type": "integer", "minimum": 0 },
+        "checksum": { "type": "string" },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "createdAt": { "$ref": "#/$defs/isoDateTime" },
+        "status": { "$ref": "#/$defs/attachmentStatus" },
+        "metadata": { "$ref": "#/$defs/operationalMetadata" }
+      }
+    },
+    "processingEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "conversationId", "eventType", "correlationId", "payload", "createdAt", "status"],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "conversationId": { "$ref": "#/$defs/uuid" },
+        "messageId": { "$ref": "#/$defs/uuid" },
+        "eventType": { "$ref": "#/$defs/processingEventType" },
+        "actorName": { "type": "string" },
+        "parentEventId": { "$ref": "#/$defs/uuid" },
+        "correlationId": { "$ref": "#/$defs/uuid" },
+        "payload": { "$ref": "#/$defs/jsonObject" },
+        "createdAt": { "$ref": "#/$defs/isoDateTime" },
+        "durationMs": { "type": "integer", "minimum": 0 },
+        "status": { "$ref": "#/$defs/processingStatus" }
+      }
+    },
+    "reviewTask": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "conversationId", "messageId", "reason", "status", "createdAt", "metadata"],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "conversationId": { "$ref": "#/$defs/uuid" },
+        "messageId": { "$ref": "#/$defs/uuid" },
+        "reason": { "type": "string" },
+        "status": { "$ref": "#/$defs/reviewTaskStatus" },
+        "createdAt": { "$ref": "#/$defs/isoDateTime" },
+        "resolvedAt": { "$ref": "#/$defs/isoDateTime" },
+        "metadata": { "$ref": "#/$defs/operationalMetadata" }
+      }
+    }
+  },
+  "oneOf": [
+    { "$ref": "#/$defs/conversation" },
+    { "$ref": "#/$defs/message" },
+    { "$ref": "#/$defs/attachment" },
+    { "$ref": "#/$defs/processingEvent" },
+    { "$ref": "#/$defs/reviewTask" }
+  ]
+}
+

@@ -1,0 +1,20 @@
+{
+  "conversationId": "8d7df8b7-6d8f-49d6-86a8-1f33c2dbb983",
+  "text": "Ola, voces tem dipirona em gotas?",
+  "metadataJson": {
+    "clientTimestamp": "2026-04-22T15:00:05Z",
+    "timezone": "America/Sao_Paulo",
+    "locale": "pt-BR",
+    "userAgent": "Mozilla/5.0",
+    "deviceType": "desktop",
+    "messageInputDurationMs": 4200,
+    "fileCount": 0,
+    "fileTypes": [],
+    "fileSizes": [],
+    "channel": "web_chat",
+    "architectureMode": "centralized_orchestration",
+    "runtimeMode": "mock"
+  },
+  "clientMessageId": "client-msg-001"
+}
+

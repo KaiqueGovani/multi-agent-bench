@@ -1,0 +1,17 @@
+{
+  "eventId": "fe9324e1-2236-4925-97e7-9b68d51c53a2",
+  "eventType": "response.final",
+  "actorName": "supervisor_agent",
+  "messageId": "d5c2fbb5-0a17-4c0f-a924-08a35de66203",
+  "conversationId": "8d7df8b7-6d8f-49d6-86a8-1f33c2dbb983",
+  "correlationId": "3dd164fb-a07f-4cf9-83e9-cfe1d77efb2e",
+  "status": "completed",
+  "createdAt": "2026-04-22T15:01:06Z",
+  "durationMs": 4100,
+  "payload": {
+    "messageId": "c3ad3511-0b98-49b4-9dc1-bb967f4ab9cd",
+    "contentText": "Recebi sua solicitacao. Esta e uma resposta simulada da POC; nenhum agente real ou decisao farmaceutica foi executado.",
+    "reviewRequired": false
+  }
+}
+
