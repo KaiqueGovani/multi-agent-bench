@@ -11,6 +11,7 @@ from app.schemas.api import (
     MessageListResponse,
 )
 from app.services import ConversationService
+from app.services.events import EventService
 
 router = APIRouter()
 
@@ -42,7 +43,8 @@ def get_conversation(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Conversation not found",
         )
-    return ConversationDetailResponse(conversation=conversation)
+    events = EventService(db).list_conversation_events(conversation_id)
+    return ConversationDetailResponse(conversation=conversation, events=events)
 
 
 @router.get("/{conversation_id}/messages", response_model=MessageListResponse)

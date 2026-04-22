@@ -48,3 +48,13 @@ Health check:
 ```bash
 curl http://localhost:8000/health
 ```
+
+Useful endpoints in this phase:
+
+- `POST /conversations`
+- `GET /conversations/{conversation_id}`
+- `GET /conversations/{conversation_id}/messages`
+- `GET /conversations/{conversation_id}/events`
+- `GET /conversations/{conversation_id}/events/stream`
+
+The SSE endpoint streams new events for active subscribers. Persisted events remain available through the standard conversation detail and events endpoints.

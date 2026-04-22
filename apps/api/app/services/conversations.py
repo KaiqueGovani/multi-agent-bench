@@ -7,7 +7,8 @@ from app.db.mappers import conversation_to_schema
 from app.db.models import ConversationModel
 from app.schemas.api import CreateConversationRequest
 from app.schemas.domain import Conversation
-from app.schemas.enums import ConversationStatus
+from app.schemas.enums import ConversationStatus, ProcessingEventType, ProcessingStatus
+from app.services.events import EventService
 
 
 class ConversationService:
@@ -31,6 +32,21 @@ class ConversationService:
             metadata_json=metadata_json,
         )
         self._db.add(conversation)
+        self._db.flush()
+
+        EventService(self._db).record_event(
+            conversation_id=conversation.id,
+            event_type=ProcessingEventType.CONVERSATION_CREATED,
+            correlation_id=uuid4(),
+            status=ProcessingStatus.COMPLETED,
+            payload={
+                "channel": request.channel.value,
+                "userSessionId": request.user_session_id,
+            },
+            commit=False,
+            publish=False,
+        )
+
         self._db.commit()
         self._db.refresh(conversation)
         return conversation_to_schema(conversation)
