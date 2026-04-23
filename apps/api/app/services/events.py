@@ -100,8 +100,12 @@ class EventService:
         *,
         conversation_id: UUID,
         external_event_id: str,
+        run_id: UUID | None = None,
     ) -> ProcessingEvent | None:
         for event in self.list_conversation_events(conversation_id):
-            if event.payload.get("externalEventId") == external_event_id:
-                return event
+            if event.payload.get("externalEventId") != external_event_id:
+                continue
+            if run_id is not None and event.payload.get("runId") != str(run_id):
+                continue
+            return event
         return None

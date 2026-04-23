@@ -17,6 +17,7 @@ Exemplo:
 {
   "conversationId": "00000000-0000-0000-0000-000000000000",
   "messageId": "00000000-0000-0000-0000-000000000000",
+  "runId": "00000000-0000-0000-0000-000000000000",
   "eventType": "actor.progress",
   "actorName": "external_ai_service",
   "correlationId": "00000000-0000-0000-0000-000000000000",
@@ -31,8 +32,12 @@ Exemplo:
 }
 ```
 
-`externalEventId` e usado para idempotencia. Se o mesmo valor for reenviado para
-a mesma conversa, a API retorna o evento persistido anteriormente.
+`runId` e usado para vincular o evento externo a uma execucao especifica. Quando
+informado, o chat-api valida se a run pertence a `conversationId` e `messageId`.
+
+`externalEventId` e usado para idempotencia junto da run. Se o mesmo valor for
+reenviado para a mesma conversa e run, a API retorna o evento persistido
+anteriormente.
 
 ## Conclusao de run
 

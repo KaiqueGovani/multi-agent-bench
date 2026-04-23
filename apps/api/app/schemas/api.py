@@ -96,6 +96,7 @@ class SseProcessingEvent(ApiModel):
 class IngestProcessingEventRequest(ApiModel):
     conversation_id: UUID
     message_id: UUID | None = None
+    run_id: UUID | None = None
     event_type: ProcessingEventType
     actor_name: str | None = None
     parent_event_id: UUID | None = None

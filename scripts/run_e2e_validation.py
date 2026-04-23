@@ -215,6 +215,7 @@ def validate_external_ai_event(api_base: str, timeout: float) -> None:
     payload = {
         "conversationId": conversation["conversationId"],
         "messageId": message["messageId"],
+        "runId": message["runId"],
         "eventType": "actor.progress",
         "actorName": "external_ai_service",
         "correlationId": message["correlationId"],
@@ -239,9 +240,10 @@ def validate_external_ai_event(api_base: str, timeout: float) -> None:
     detail = poll_detail(api_base, conversation["conversationId"], timeout)
     if not any(
         event.get("payload", {}).get("externalEventId") == external_event_id
+        and event.get("payload", {}).get("runId") == message["runId"]
         for event in detail["events"]
     ):
-        raise AssertionError("external AI event was not persisted in conversation history")
+        raise AssertionError("external AI event was not persisted with run linkage")
 
 
 def collect_sse_events(

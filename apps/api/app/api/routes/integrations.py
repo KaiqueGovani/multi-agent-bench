@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import verify_ai_service_secret
 from app.db import get_db_session
-from app.db.models import MessageModel
+from app.db.models import MessageModel, RunModel
 from app.schemas.api import IngestProcessingEventRequest
 from app.schemas.domain import ProcessingEvent
 from app.services import ConversationService
@@ -29,8 +29,26 @@ def ingest_ai_event(
             detail="Conversation not found",
         )
 
-    if request.message_id is not None:
-        message = db.get(MessageModel, request.message_id)
+    event_message_id = request.message_id
+
+    if request.run_id is not None:
+        run = db.get(RunModel, request.run_id)
+        if (
+            run is None
+            or run.conversation_id != request.conversation_id
+            or (
+                request.message_id is not None
+                and run.message_id != request.message_id
+            )
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Run not found for conversation and message",
+            )
+        event_message_id = run.message_id
+
+    if event_message_id is not None:
+        message = db.get(MessageModel, event_message_id)
         if message is None or message.conversation_id != request.conversation_id:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -42,6 +60,7 @@ def ingest_ai_event(
         existing_event = event_service.get_external_event(
             conversation_id=request.conversation_id,
             external_event_id=request.external_event_id,
+            run_id=request.run_id,
         )
         if existing_event is not None:
             return existing_event
@@ -52,10 +71,12 @@ def ingest_ai_event(
     }
     if request.external_event_id:
         payload["externalEventId"] = request.external_event_id
+    if request.run_id:
+        payload["runId"] = str(request.run_id)
 
     return event_service.record_event(
         conversation_id=request.conversation_id,
-        message_id=request.message_id,
+        message_id=event_message_id,
         event_type=request.event_type,
         actor_name=request.actor_name,
         parent_event_id=request.parent_event_id,

@@ -70,6 +70,21 @@ export interface SseProcessingEvent {
   payload: JsonObject;
 }
 
+export interface IngestProcessingEventRequest {
+  conversationId: Uuid;
+  messageId?: Uuid;
+  runId?: Uuid;
+  eventType: ProcessingEvent["eventType"];
+  actorName?: string;
+  parentEventId?: Uuid;
+  correlationId: Uuid;
+  payload?: JsonObject;
+  durationMs?: number;
+  status: ProcessingStatus;
+  externalEventId?: string;
+  source?: "mock_runtime" | "ai_service" | "system";
+}
+
 export interface CreateRunRequest {
   conversationId: Uuid;
   messageId: Uuid;
