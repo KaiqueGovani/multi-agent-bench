@@ -17,7 +17,7 @@ from urllib.request import Request, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES_ROOT = ROOT / "packages" / "test-fixtures"
 SCENARIOS_ROOT = FIXTURES_ROOT / "scenarios"
-API_KEY = os.getenv("POC_API_KEY") or os.getenv("API_KEY")
+API_KEY: str | None
 
 
 @dataclass(frozen=True)
@@ -186,6 +186,23 @@ def read_attachment_content(scenario_dir: Path, attachment: dict[str, Any]) -> b
     if attachment["source"] == "base64":
         return base64.b64decode(path.read_text(encoding="utf-8").strip())
     return path.read_bytes()
+
+
+def read_env_file_value(name: str) -> str | None:
+    env_path = ROOT / "apps" / "api" / ".env"
+    if not env_path.exists():
+        return None
+    prefix = f"{name}="
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or not stripped.startswith(prefix):
+            continue
+        value = stripped.removeprefix(prefix).strip().strip('"').strip("'")
+        return value or None
+    return None
+
+
+API_KEY = os.getenv("POC_API_KEY") or os.getenv("API_KEY") or read_env_file_value("API_KEY")
 
 
 def poll_conversation(

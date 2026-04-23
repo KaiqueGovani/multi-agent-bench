@@ -18,11 +18,16 @@ from run_fixture_scenarios import (
     create_conversation,
     load_scenarios,
     raw_request,
+    read_env_file_value,
     run_scenario,
     send_message,
 )
 
-AI_SERVICE_SECRET = os.getenv("POC_AI_SERVICE_SECRET") or os.getenv("AI_SERVICE_SECRET")
+AI_SERVICE_SECRET = (
+    os.getenv("POC_AI_SERVICE_SECRET")
+    or os.getenv("AI_SERVICE_SECRET")
+    or read_env_file_value("AI_SERVICE_SECRET")
+)
 
 
 def main() -> int:
