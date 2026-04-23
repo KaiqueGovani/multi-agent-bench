@@ -33,3 +33,38 @@ Exemplo:
 
 `externalEventId` e usado para idempotencia. Se o mesmo valor for reenviado para
 a mesma conversa, a API retorna o evento persistido anteriormente.
+
+## Conclusao de run
+
+O servico de IA deve concluir a execucao chamando `PATCH /runs/{run_id}` com o
+mesmo `X-API-Key` e `X-AI-Service-Secret`. Esse payload consolida somente o
+resumo transacional necessario para comparacao futura; spans, logs e metricas
+detalhadas permanecem no backend OpenTelemetry.
+
+Exemplo:
+
+```json
+{
+  "status": "completed",
+  "externalRunId": "strands-run-001",
+  "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+  "totalDurationMs": 4012,
+  "humanReviewRequired": false,
+  "finalOutcome": "answered",
+  "summary": {
+    "timeToFirstPublicEventMs": 180,
+    "timeToFirstPartialResponseMs": 712,
+    "inputTokens": 3210,
+    "outputTokens": 410,
+    "totalTokens": 3620,
+    "toolCallCount": 4,
+    "toolErrorCount": 0,
+    "loopCount": 3,
+    "stopReason": "completed"
+  }
+}
+```
+
+Ao receber a conclusao, o chat-api atualiza a `run` e emite um evento publico na
+timeline: `processing.completed`, `review.required` ou `actor.failed`,
+dependendo do status final.

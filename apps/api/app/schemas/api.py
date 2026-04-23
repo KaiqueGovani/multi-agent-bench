@@ -13,6 +13,7 @@ from app.schemas.domain import (
     ProcessingEvent,
     ReviewTask,
     Run,
+    RunSummary,
 )
 from app.schemas.enums import (
     ChannelType,
@@ -20,6 +21,7 @@ from app.schemas.enums import (
     MessageStatus,
     ProcessingEventType,
     ProcessingStatus,
+    RunStatus,
 )
 
 
@@ -65,6 +67,17 @@ class SendMessageResponse(ApiModel):
     correlation_id: UUID
     accepted_at: datetime
     run_id: UUID | None = None
+
+
+class CompleteRunRequest(ApiModel):
+    status: RunStatus = RunStatus.COMPLETED
+    external_run_id: str | None = None
+    trace_id: str | None = None
+    finished_at: datetime | None = None
+    total_duration_ms: int | None = None
+    human_review_required: bool | None = None
+    final_outcome: str | None = None
+    summary: RunSummary = Field(default_factory=RunSummary)
 
 
 class SseProcessingEvent(ApiModel):

@@ -1,6 +1,14 @@
 from fastapi import APIRouter, Depends
 
-from app.api.routes import attachments, conversations, events, health, integrations, messages
+from app.api.routes import (
+    attachments,
+    conversations,
+    events,
+    health,
+    integrations,
+    messages,
+    runs,
+)
 from app.core.security import verify_api_key
 
 api_router = APIRouter()
@@ -16,6 +24,12 @@ api_router.include_router(
     messages.router,
     prefix="/messages",
     tags=["messages"],
+    dependencies=protected_dependencies,
+)
+api_router.include_router(
+    runs.router,
+    prefix="/runs",
+    tags=["runs"],
     dependencies=protected_dependencies,
 )
 api_router.include_router(events.router, tags=["events"], dependencies=protected_dependencies)

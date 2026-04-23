@@ -18,6 +18,12 @@ class RunService:
     def __init__(self, db: Session) -> None:
         self._db = db
 
+    def get_run(self, run_id: UUID) -> Run | None:
+        model = self._db.get(RunModel, run_id)
+        if model is None:
+            return None
+        return run_to_schema(model)
+
     def create_run(
         self,
         *,
@@ -84,6 +90,7 @@ class RunService:
         status: RunStatus = RunStatus.COMPLETED,
         external_run_id: str | None = None,
         trace_id: str | None = None,
+        finished_at: datetime | None = None,
         total_duration_ms: int | None = None,
         human_review_required: bool | None = None,
         final_outcome: str | None = None,
@@ -95,7 +102,7 @@ class RunService:
         model.status = status.value
         model.external_run_id = external_run_id or model.external_run_id
         model.trace_id = trace_id or model.trace_id
-        model.finished_at = datetime.now(UTC)
+        model.finished_at = finished_at or datetime.now(UTC)
         model.total_duration_ms = total_duration_ms
         model.human_review_required = human_review_required
         model.final_outcome = final_outcome
