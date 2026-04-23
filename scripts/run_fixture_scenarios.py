@@ -254,6 +254,15 @@ def validate_detail(detail: dict[str, Any], expected: dict[str, Any]) -> None:
                 f"expected attachment dimensions {attachment_dimensions!r}"
             )
 
+    expected_mime_types = set(expected.get("attachmentMimeTypes", []))
+    if expected_mime_types:
+        actual_mime_types = {
+            attachment.get("mimeType")
+            for attachment in detail.get("attachments", [])
+        }
+        if not expected_mime_types.issubset(actual_mime_types):
+            raise AssertionError(f"expected attachment MIME types {expected_mime_types!r}")
+
 
 def json_request(
     api_base: str,

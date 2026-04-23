@@ -2,6 +2,7 @@ import { getAttachmentUrl } from "@/lib/api/client";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import type { Attachment, Message } from "@/lib/types";
+import { FileText } from "lucide-react";
 
 interface MessageListProps {
   messages: Message[];
@@ -18,7 +19,7 @@ export function MessageList({ messages, attachmentsByMessage }: MessageListProps
             Nenhuma mensagem ainda
             </CardTitle>
             <CardDescription className="mt-2">
-            Inicie uma conversa e envie texto ou imagem para acompanhar o processamento.
+            Inicie uma conversa e envie texto, imagem ou PDF para acompanhar o processamento.
             </CardDescription>
           </CardContent>
         </Card>
@@ -65,11 +66,17 @@ export function MessageList({ messages, attachmentsByMessage }: MessageListProps
                       rel="noreferrer"
                       target="_blank"
                     >
-                      <img
-                        alt={attachment.originalFilename}
-                        className="h-28 w-full object-cover"
-                        src={getAttachmentUrl(attachment.id)}
-                      />
+                      {attachment.mimeType.startsWith("image/") ? (
+                        <img
+                          alt={attachment.originalFilename}
+                          className="h-28 w-full object-cover"
+                          src={getAttachmentUrl(attachment.id)}
+                        />
+                      ) : (
+                        <div className="flex h-28 items-center justify-center bg-muted">
+                          <FileText className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                      )}
                       <p className="truncate px-2 py-1 text-xs text-muted-foreground group-hover:text-foreground">
                         {attachment.originalFilename}
                       </p>

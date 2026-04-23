@@ -8,6 +8,7 @@ Each scenario in `scenarios/` describes:
 - message text and optional attachments
 - expected HTTP status
 - expected mock route, actor, events, and review state
+- image and PDF attachments used to validate multimodal input
 
 Run all scenarios against a local API:
 

@@ -1,4 +1,5 @@
 import struct
+import re
 
 
 def detect_image_dimensions(mime_type: str, content: bytes) -> tuple[int | None, int | None]:
@@ -9,6 +10,16 @@ def detect_image_dimensions(mime_type: str, content: bytes) -> tuple[int | None,
     if mime_type == "image/webp":
         return _detect_webp_dimensions(content)
     return None, None
+
+
+def detect_pdf_page_count(content: bytes) -> int | None:
+    if not content.startswith(b"%PDF-"):
+        return None
+    count_matches = re.findall(rb"/Type\s*/Pages\b[^>]*?/Count\s+(\d+)", content)
+    if count_matches:
+        return int(count_matches[-1])
+    page_matches = re.findall(rb"/Type\s*/Page\b", content)
+    return len(page_matches) or None
 
 
 def _detect_png_dimensions(content: bytes) -> tuple[int | None, int | None]:

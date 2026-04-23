@@ -21,10 +21,11 @@ from app.schemas.enums import (
 )
 from app.services.event_bus import event_bus
 from app.services.events import EventService
-from app.services.file_metadata import detect_image_dimensions
+from app.services.file_metadata import detect_image_dimensions, detect_pdf_page_count
 
 
-SUPPORTED_IMAGE_MIME_TYPES = {
+SUPPORTED_ATTACHMENT_MIME_TYPES = {
+    "application/pdf",
     "image/jpeg",
     "image/png",
     "image/webp",
@@ -179,6 +180,11 @@ class MessageService:
         self._validate_attachment(incoming)
         checksum = f"sha256:{hashlib.sha256(incoming.content).hexdigest()}"
         width, height = detect_image_dimensions(incoming.mime_type, incoming.content)
+        page_count = (
+            detect_pdf_page_count(incoming.content)
+            if incoming.mime_type == "application/pdf"
+            else None
+        )
         attachment_id = uuid4()
         stored_file = self._storage.save(
             conversation_id=conversation_id,
@@ -198,6 +204,7 @@ class MessageService:
                 "storageProvider": stored_file.provider,
                 "storageBucket": stored_file.bucket,
                 "objectKey": stored_file.storage_key,
+                "pageCount": page_count,
             }
         )
 
@@ -260,6 +267,7 @@ class MessageService:
                 "checksum": attachment.checksum,
                 "width": attachment.width,
                 "height": attachment.height,
+                "pageCount": page_count,
             },
             commit=False,
             publish=False,
@@ -281,7 +289,7 @@ class MessageService:
             )
 
     def _validate_attachment(self, attachment: ChannelAttachment) -> None:
-        if attachment.mime_type not in SUPPORTED_IMAGE_MIME_TYPES:
+        if attachment.mime_type not in SUPPORTED_ATTACHMENT_MIME_TYPES:
             raise MessageValidationError(
                 f"Unsupported file type: {attachment.mime_type}"
             )

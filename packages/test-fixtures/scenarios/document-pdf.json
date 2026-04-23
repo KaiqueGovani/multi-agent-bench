@@ -1,0 +1,47 @@
+{
+  "id": "document-pdf",
+  "title": "Documento PDF",
+  "description": "Mensagem com PDF valido que deve ser aceita como anexo rastreavel.",
+  "conversation": {
+    "channel": "web_chat",
+    "userSessionId": "fixture-document-pdf",
+    "metadata": {
+      "locale": "pt-BR",
+      "timezone": "America/Sao_Paulo"
+    }
+  },
+  "message": {
+    "text": "Segue um documento para analise simulada.",
+    "metadata": {
+      "locale": "pt-BR",
+      "fileCount": 1,
+      "fileTypes": ["application/pdf"]
+    },
+    "attachments": [
+      {
+        "fieldName": "files",
+        "filename": "tiny-document.pdf",
+        "mimeType": "application/pdf",
+        "source": "base64",
+        "path": "../assets/tiny-document.pdf.base64"
+      }
+    ]
+  },
+  "expected": {
+    "httpStatus": 202,
+    "route": "image_intake",
+    "actor": "image_intake_agent",
+    "eventTypes": [
+      "attachment.upload.started",
+      "attachment.upload.completed",
+      "attachment.validation.started",
+      "attachment.validation.completed",
+      "processing.started",
+      "actor.progress",
+      "response.final",
+      "processing.completed"
+    ],
+    "attachmentMimeTypes": ["application/pdf"],
+    "reviewRequired": false
+  }
+}
