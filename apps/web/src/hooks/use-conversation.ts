@@ -8,6 +8,8 @@ import {
   getConversationEvents,
   getConversationMessages,
   listConversations,
+  listOpenReviewTasks,
+  resolveReviewTask as resolveReviewTaskRequest,
   sendMessage as sendMultipartMessage
 } from "@/lib/api/client";
 import { openConversationEventStream } from "@/lib/sse/events";
@@ -18,6 +20,7 @@ import type {
   Message,
   ProcessingEvent,
   ReviewTask,
+  ReviewTaskStatus,
   Run
 } from "@/lib/types";
 
@@ -30,6 +33,7 @@ export function useConversation(architectureMode: ArchitectureMode) {
   const [events, setEvents] = useState<ProcessingEvent[]>([]);
   const [runs, setRuns] = useState<Run[]>([]);
   const [reviewTasks, setReviewTasks] = useState<ReviewTask[]>([]);
+  const [openReviewTasks, setOpenReviewTasks] = useState<ReviewTask[]>([]);
   const [conversationSummaries, setConversationSummaries] = useState<ConversationSummary[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("idle");
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
@@ -46,6 +50,17 @@ export function useConversation(architectureMode: ArchitectureMode) {
       return response.conversations;
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Failed to refresh conversations");
+      return [];
+    }
+  }, []);
+
+  const refreshOpenReviewTasks = useCallback(async () => {
+    try {
+      const response = await listOpenReviewTasks();
+      setOpenReviewTasks(response.reviewTasks);
+      return response.reviewTasks;
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Failed to refresh reviews");
       return [];
     }
   }, []);
@@ -107,6 +122,7 @@ export function useConversation(architectureMode: ArchitectureMode) {
       setReviewTasks(detail.reviewTasks);
       lastEventIdRef.current = getLastEventId(detail.events) ?? lastEventIdRef.current;
       void refreshConversations();
+      void refreshOpenReviewTasks();
       return detail;
     } catch (caught) {
       if (activeConversationIdRef.current === id) {
@@ -153,6 +169,26 @@ export function useConversation(architectureMode: ArchitectureMode) {
     [loadConversation, refreshConversations]
   );
 
+  const updateReviewTask = useCallback(
+    async (
+      reviewTaskId: string,
+      status: Extract<ReviewTaskStatus, "resolved" | "cancelled" | "in_review">,
+      note: string
+    ) => {
+      setError(null);
+      await resolveReviewTaskRequest(reviewTaskId, {
+        note: note.trim() || undefined,
+        resolvedBy: "local_human_reviewer",
+        status
+      });
+      await refreshOpenReviewTasks();
+      if (conversationId) {
+        await refreshConversationDetail(conversationId);
+      }
+    },
+    [conversationId, refreshConversationDetail, refreshOpenReviewTasks]
+  );
+
   const sendMessage = useCallback(
     async (text: string, files: File[]) => {
       if (!conversationId || (!text.trim() && files.length === 0)) {
@@ -178,7 +214,8 @@ export function useConversation(architectureMode: ArchitectureMode) {
 
   useEffect(() => {
     void refreshConversations();
-  }, [refreshConversations]);
+    void refreshOpenReviewTasks();
+  }, [refreshConversations, refreshOpenReviewTasks]);
 
   useEffect(() => {
     if (!conversationId) {
@@ -250,12 +287,14 @@ export function useConversation(architectureMode: ArchitectureMode) {
     isLoadingConversation,
     isSending,
     messages,
+    openReviewTasks,
     reviewTasks,
     refreshConversations,
     runs,
     sendMessage,
     selectConversation,
-    startConversation
+    startConversation,
+    updateReviewTask
   };
 }
 

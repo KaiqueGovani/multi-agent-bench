@@ -4,6 +4,7 @@ from app.services.events import EventService
 from app.services.messages import MessageService, MessageValidationError
 from app.services.runs import RunService, RunValidationError
 from app.services.processing_dispatcher import ProcessingDispatcher
+from app.services.reviews import ReviewService, ReviewValidationError
 
 __all__ = [
     "ConversationService",
@@ -14,5 +15,7 @@ __all__ = [
     "ProcessingDispatcher",
     "RunService",
     "RunValidationError",
+    "ReviewService",
+    "ReviewValidationError",
     "event_bus",
 ]

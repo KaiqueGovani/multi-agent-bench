@@ -5,6 +5,9 @@ import type {
   CreateConversationResponse,
   MessageListResponse,
   ProcessingEvent,
+  ResolveReviewTaskRequest,
+  ReviewTask,
+  ReviewTaskListResponse,
   SendMessageResponse
 } from "@/lib/types";
 
@@ -89,6 +92,20 @@ export function getConversationMessages(conversationId: string): Promise<Message
 
 export function getConversationEvents(conversationId: string): Promise<ProcessingEvent[]> {
   return request<ProcessingEvent[]>(`/conversations/${conversationId}/events`);
+}
+
+export function listOpenReviewTasks(): Promise<ReviewTaskListResponse> {
+  return request<ReviewTaskListResponse>("/reviews");
+}
+
+export function resolveReviewTask(
+  reviewTaskId: string,
+  payload: ResolveReviewTaskRequest
+): Promise<ReviewTask> {
+  return request<ReviewTask>(`/reviews/${reviewTaskId}/resolve`, {
+    method: "PATCH",
+    body: JSON.stringify(payload)
+  });
 }
 
 export function sendMessage(

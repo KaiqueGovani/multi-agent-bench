@@ -77,6 +77,10 @@ When the runtime requires supervision, it emits `review.required` and creates a 
 
 Review task example: `examples/review-task.json`
 
+Open review tasks are available through `GET /reviews`. A task can be resolved
+with `PATCH /reviews/{reviewTaskId}/resolve`, sending status, optional note and
+reviewer identifier.
+
 ## Runs
 
 Each model or agent execution for a message should be represented by a run.

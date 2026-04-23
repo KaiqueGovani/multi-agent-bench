@@ -21,6 +21,7 @@ from app.schemas.enums import (
     MessageStatus,
     ProcessingEventType,
     ProcessingStatus,
+    ReviewTaskStatus,
     RunStatus,
 )
 
@@ -69,6 +70,16 @@ class ConversationSummary(ApiModel):
 
 class ConversationListResponse(ApiModel):
     conversations: list[ConversationSummary] = Field(default_factory=list)
+
+
+class ReviewTaskListResponse(ApiModel):
+    review_tasks: list[ReviewTask] = Field(default_factory=list)
+
+
+class ResolveReviewTaskRequest(ApiModel):
+    status: ReviewTaskStatus = ReviewTaskStatus.RESOLVED
+    note: str | None = None
+    resolved_by: str | None = None
 
 
 class MessageListResponse(ApiModel):

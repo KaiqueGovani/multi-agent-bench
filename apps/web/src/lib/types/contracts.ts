@@ -196,6 +196,16 @@ export interface ConversationListResponse {
   conversations: ConversationSummary[];
 }
 
+export interface ReviewTaskListResponse {
+  reviewTasks: ReviewTask[];
+}
+
+export interface ResolveReviewTaskRequest {
+  status: Extract<ReviewTaskStatus, "resolved" | "cancelled" | "in_review">;
+  note?: string;
+  resolvedBy?: string;
+}
+
 export interface MessageListResponse {
   conversationId: string;
   messages: Message[];

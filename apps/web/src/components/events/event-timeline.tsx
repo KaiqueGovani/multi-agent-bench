@@ -1,5 +1,6 @@
 "use client";
 
+import type * as React from "react";
 import { useEffect, useMemo, useRef } from "react";
 import {
   Activity,
@@ -34,6 +35,7 @@ interface EventTimelineProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   architectureMode: ArchitectureMode;
+  reviewPanel?: React.ReactNode;
 }
 
 const statusVariants: Record<string, BadgeProps["variant"]> = {
@@ -77,7 +79,8 @@ export function EventTimeline({
   events,
   connectionStatus,
   isOpen,
-  onOpenChange
+  onOpenChange,
+  reviewPanel
 }: EventTimelineProps) {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const counters = useMemo(() => summarizeEvents(events), [events]);
@@ -147,6 +150,11 @@ export function EventTimeline({
           />
         ) : null}
       </div>
+      {isOpen && reviewPanel ? (
+        <div className="border-b bg-card">
+          {reviewPanel}
+        </div>
+      ) : null}
       {isOpen ? (
         <div className="min-h-0 flex-1 overflow-y-auto p-3">
         {events.length === 0 ? (

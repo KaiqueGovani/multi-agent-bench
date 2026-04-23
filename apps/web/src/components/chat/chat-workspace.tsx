@@ -7,6 +7,8 @@ import {
   Bot,
   CheckCircle2,
   Clock3,
+  ClipboardCheck,
+  ClipboardX,
   Globe2,
   History,
   MessageSquare,
@@ -25,7 +27,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useConversation } from "@/hooks/use-conversation";
-import type { ArchitectureMode, ConversationSummary } from "@/lib/types";
+import type { ArchitectureMode, ConversationSummary, ReviewTask } from "@/lib/types";
 import { MessageComposer } from "./message-composer";
 import { MessageList } from "./message-list";
 
@@ -52,11 +54,13 @@ export function ChatWorkspace() {
     isLoadingConversation,
     isSending,
     messages,
+    openReviewTasks,
     reviewTasks,
     runs,
     sendMessage,
     selectConversation,
-    startConversation
+    startConversation,
+    updateReviewTask
   } = useConversation(architectureMode);
   const layoutColumns = getLayoutColumns(isHistoryOpen, isEventsOpen);
 
@@ -70,6 +74,7 @@ export function ChatWorkspace() {
         isOpen={isHistoryOpen}
         isCreatingConversation={isCreatingConversation}
         isLoadingConversation={isLoadingConversation}
+        openReviewCount={openReviewTasks.length}
         onCreateConversation={() => void startConversation()}
         onOpenChange={setIsHistoryOpen}
         onSelectConversation={(summary) => {
@@ -206,6 +211,14 @@ export function ChatWorkspace() {
         events={events}
         isOpen={isEventsOpen}
         onOpenChange={setIsEventsOpen}
+        reviewPanel={
+          <ReviewPanel
+            onUpdate={(reviewTaskId, status, note) =>
+              void updateReviewTask(reviewTaskId, status, note)
+            }
+            reviewTasks={reviewTasks}
+          />
+        }
       />
     </main>
   );
@@ -217,6 +230,7 @@ function ConversationHistory({
   isOpen,
   isCreatingConversation,
   isLoadingConversation,
+  openReviewCount,
   onCreateConversation,
   onOpenChange,
   onSelectConversation
@@ -226,6 +240,7 @@ function ConversationHistory({
   isOpen: boolean;
   isCreatingConversation: boolean;
   isLoadingConversation: boolean;
+  openReviewCount: number;
   onCreateConversation: () => void;
   onOpenChange: (open: boolean) => void;
   onSelectConversation: (summary: ConversationSummary) => void;
@@ -238,6 +253,7 @@ function ConversationHistory({
             <h2 className="truncate text-sm font-semibold">Conversas</h2>
             <p className="truncate text-xs text-muted-foreground">
               {conversations.length} recentes
+              {openReviewCount > 0 ? ` - ${openReviewCount} revisoes abertas` : ""}
             </p>
           </div>
         ) : null}
@@ -347,6 +363,113 @@ function ConversationHistory({
         </div>
       )}
     </aside>
+  );
+}
+
+function ReviewPanel({
+  onUpdate,
+  reviewTasks
+}: {
+  onUpdate: (
+    reviewTaskId: string,
+    status: "resolved" | "cancelled" | "in_review",
+    note: string
+  ) => void;
+  reviewTasks: ReviewTask[];
+}) {
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const openTasks = reviewTasks.filter(
+    (task) => task.status === "open" || task.status === "in_review"
+  );
+
+  if (reviewTasks.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="bg-amber-50/80 p-3">
+      <div className="mb-3 flex items-start justify-between gap-3 rounded-md border border-amber-200 bg-amber-100/80 p-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-700" />
+            <h3 className="text-sm font-semibold">Acao humana necessaria</h3>
+          </div>
+          <p className="mt-1 text-xs text-amber-900">
+            Revise a solicitacao e escolha uma decisao rapida. A observacao e opcional.
+          </p>
+        </div>
+        <Badge className="shrink-0" variant={openTasks.length > 0 ? "warning" : "success"}>
+          {openTasks.length > 0 ? `${openTasks.length} pendente` : "sem pendencias"}
+        </Badge>
+      </div>
+      <div className="space-y-3">
+        {reviewTasks.map((task) => {
+          const isOpen = task.status === "open" || task.status === "in_review";
+          const note = notes[task.id] ?? "";
+
+          return (
+            <div className="rounded-md border bg-background p-3" key={task.id}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-xs font-medium">{task.reason}</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    Mensagem {shortId(task.messageId)} - {formatUpdatedAt(task.createdAt)}
+                  </p>
+                </div>
+                <Badge variant={isOpen ? "warning" : "success"}>{task.status}</Badge>
+              </div>
+              {isOpen ? (
+                <div className="mt-3 grid gap-2">
+                  <textarea
+                    className="min-h-16 rounded-md border bg-background px-3 py-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onChange={(event) =>
+                      setNotes((current) => ({
+                        ...current,
+                        [task.id]: event.target.value
+                      }))
+                    }
+                    placeholder="Observacao da revisao"
+                    value={note}
+                  />
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    <Button
+                      onClick={() => onUpdate(task.id, "resolved", note)}
+                      size="sm"
+                      type="button"
+                    >
+                      <ClipboardCheck className="h-4 w-4" />
+                      Aprovar
+                    </Button>
+                    <Button
+                      onClick={() => onUpdate(task.id, "cancelled", note)}
+                      size="sm"
+                      type="button"
+                      variant="destructive"
+                    >
+                      <ClipboardX className="h-4 w-4" />
+                      Rejeitar
+                    </Button>
+                    <Button
+                      onClick={() => onUpdate(task.id, "in_review", note)}
+                      size="sm"
+                      type="button"
+                      variant="outline"
+                    >
+                      <Clock3 className="h-4 w-4" />
+                      Manter em revisao
+                    </Button>
+                  </div>
+                </div>
+              ) : task.resolvedAt ? (
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  Resolvida em {formatUpdatedAt(task.resolvedAt)}
+                </p>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
