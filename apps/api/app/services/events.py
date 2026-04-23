@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
 from app.db.mappers import processing_event_to_schema
@@ -66,3 +66,31 @@ class EventService:
             for event_model in self._db.scalars(statement).all()
         ]
 
+    def list_conversation_events_after(
+        self,
+        *,
+        conversation_id: UUID,
+        last_event_id: UUID,
+    ) -> list[ProcessingEvent]:
+        anchor = self._db.get(ProcessingEventModel, last_event_id)
+        if anchor is None or anchor.conversation_id != conversation_id:
+            return self.list_conversation_events(conversation_id)
+
+        statement = (
+            select(ProcessingEventModel)
+            .where(
+                ProcessingEventModel.conversation_id == conversation_id,
+                or_(
+                    ProcessingEventModel.created_at > anchor.created_at,
+                    and_(
+                        ProcessingEventModel.created_at == anchor.created_at,
+                        ProcessingEventModel.id > anchor.id,
+                    ),
+                ),
+            )
+            .order_by(ProcessingEventModel.created_at, ProcessingEventModel.id)
+        )
+        return [
+            processing_event_to_schema(event_model)
+            for event_model in self._db.scalars(statement).all()
+        ]

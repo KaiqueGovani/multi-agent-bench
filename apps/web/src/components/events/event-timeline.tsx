@@ -38,7 +38,8 @@ const connectionVariants: Record<string, BadgeProps["variant"]> = {
   connecting: "warning",
   error: "destructive",
   idle: "muted",
-  open: "success"
+  open: "success",
+  reconnecting: "warning"
 };
 
 const connectionLabels: Record<string, string> = {
@@ -46,7 +47,8 @@ const connectionLabels: Record<string, string> = {
   connecting: "conectando",
   error: "erro",
   idle: "inativo",
-  open: "conectado"
+  open: "conectado",
+  reconnecting: "reconectando"
 };
 
 export function EventTimeline({

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   createConversation,
@@ -12,7 +12,7 @@ import {
 import { openConversationEventStream } from "@/lib/sse/events";
 import type { Attachment, Message, ProcessingEvent } from "@/lib/types";
 
-type ConnectionStatus = "idle" | "connecting" | "open" | "closed" | "error";
+type ConnectionStatus = "idle" | "connecting" | "open" | "closed" | "error" | "reconnecting";
 
 export function useConversation() {
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -22,6 +22,7 @@ export function useConversation() {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("idle");
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const lastEventIdRef = useRef<string | null>(null);
 
   const refreshMessages = useCallback(async (id: string) => {
     const response = await getConversationMessages(id);
@@ -33,8 +34,11 @@ export function useConversation() {
     try {
       const response = await getConversationEvents(id);
       setEvents((current) => mergeEvents(current, response));
+      lastEventIdRef.current = getLastEventId(response) ?? lastEventIdRef.current;
+      return response;
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Failed to refresh events");
+      return [];
     }
   }, []);
 
@@ -46,6 +50,7 @@ export function useConversation() {
     setMessages(detail.messages);
     setAttachments(detail.attachments);
     setEvents(detail.events);
+    lastEventIdRef.current = getLastEventId(detail.events);
   }, []);
 
   const sendMessage = useCallback(
@@ -75,30 +80,41 @@ export function useConversation() {
       return;
     }
 
-    const source = openConversationEventStream(
-      conversationId,
-      (event) => {
-        setEvents((current) => {
-          return mergeEvents(current, [event]);
-        });
+    let source: EventSource | null = null;
+    let isCancelled = false;
 
-        if (event.eventType === "response.final" || event.eventType === "processing.completed") {
-          void refreshMessages(conversationId);
-        }
-      },
-      (status) => {
-        setConnectionStatus(status);
-        if (status === "open") {
-          void refreshEvents(conversationId);
-        }
+    void refreshEvents(conversationId).then((backlogEvents) => {
+      if (isCancelled) {
+        return;
       }
-    );
+      source = openConversationEventStream(
+        conversationId,
+        (event) => {
+          lastEventIdRef.current = event.id;
+          setEvents((current) => {
+            return mergeEvents(current, [event]);
+          });
 
-    void refreshEvents(conversationId);
+          if (event.eventType === "response.final" || event.eventType === "processing.completed") {
+            void refreshMessages(conversationId);
+          }
+        },
+        (status) => {
+          setConnectionStatus(status);
+          if (status === "open") {
+            void refreshEvents(conversationId);
+          }
+        },
+        {
+          lastEventId: getLastEventId(backlogEvents) ?? lastEventIdRef.current
+        }
+      );
+    });
 
     return () => {
+      isCancelled = true;
       setConnectionStatus("closed");
-      source.close();
+      source?.close();
     };
   }, [conversationId, refreshEvents, refreshMessages]);
 
@@ -123,6 +139,10 @@ export function useConversation() {
     sendMessage,
     startConversation
   };
+}
+
+function getLastEventId(events: ProcessingEvent[]): string | null {
+  return events.length > 0 ? events[events.length - 1].id : null;
 }
 
 function mergeEvents(
