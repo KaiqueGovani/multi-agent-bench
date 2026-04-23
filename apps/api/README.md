@@ -65,6 +65,26 @@ send this in development through `apps/web/.env.local`:
 NEXT_PUBLIC_API_KEY=replace-with-a-local-development-key
 ```
 
+The value must match exactly. For the local POC setup used in this repository,
+both files can use:
+
+```bash
+API_KEY=poc-dev-key-2026
+NEXT_PUBLIC_API_KEY=poc-dev-key-2026
+```
+
+If the web app starts on a port other than `3000`, include that origin in
+`CORS_ALLOWED_ORIGINS` and restart the API. The default example allows both
+`3000` and `3001`.
+
+If conversation history or message sending returns HTTP 500 after pulling new
+commits, run pending migrations before restarting the API:
+
+```bash
+cd apps/api
+alembic upgrade head
+```
+
 ## Storage
 
 The default attachment storage provider is `local`. To use MinIO locally, start

@@ -12,14 +12,21 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY ?? "";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      ...getApiKeyHeaders(),
-      ...(init?.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
-      ...init?.headers
-    }
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers: {
+        ...getApiKeyHeaders(),
+        ...(init?.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+        ...init?.headers
+      }
+    });
+  } catch {
+    throw new Error(
+      `Could not reach API at ${API_BASE_URL}. Check that the API is running and CORS allows this web origin.`
+    );
+  }
 
   if (!response.ok) {
     const detail = await readError(response);
@@ -32,10 +39,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 async function readError(response: Response): Promise<string> {
   try {
     const body = (await response.json()) as { detail?: string };
-    return body.detail ?? "";
+    if (body.detail) {
+      return `${body.detail} (HTTP ${response.status})`;
+    }
   } catch {
-    return "";
+    // Fall through to the generic status message.
   }
+  return `Request failed with status ${response.status}`;
 }
 
 export function getApiBaseUrl(): string {

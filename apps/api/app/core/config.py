@@ -37,6 +37,7 @@ class Settings:
     default_toolset_version: str = "mock-tools-v1"
     default_experiment_id: str = "poc-local"
     runtime_mode: str = "mock"
+    mock_runtime_step_delay_seconds: float = 0.9
     ai_runtime_url: str | None = None
     ai_runtime_timeout_seconds: int = 10
     log_level: str = "INFO"
@@ -45,7 +46,10 @@ class Settings:
     ai_service_secret: str | None = None
     max_files_per_message: int = 4
     max_file_size_bytes: int = 5 * 1024 * 1024
-    cors_allowed_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+    cors_allowed_origins: str = (
+        "http://localhost:3000,http://127.0.0.1:3000,"
+        "http://localhost:3001,http://127.0.0.1:3001"
+    )
 
 
 @lru_cache
@@ -105,6 +109,12 @@ def get_settings() -> Settings:
         default_toolset_version=os.getenv("DEFAULT_TOOLSET_VERSION", Settings.default_toolset_version),
         default_experiment_id=os.getenv("DEFAULT_EXPERIMENT_ID", Settings.default_experiment_id),
         runtime_mode=os.getenv("RUNTIME_MODE", Settings.runtime_mode),
+        mock_runtime_step_delay_seconds=float(
+            os.getenv(
+                "MOCK_RUNTIME_STEP_DELAY_SECONDS",
+                Settings.mock_runtime_step_delay_seconds,
+            )
+        ),
         ai_runtime_url=os.getenv("AI_RUNTIME_URL") or Settings.ai_runtime_url,
         ai_runtime_timeout_seconds=int(
             os.getenv("AI_RUNTIME_TIMEOUT_SECONDS", Settings.ai_runtime_timeout_seconds)

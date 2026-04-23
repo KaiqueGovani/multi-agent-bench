@@ -20,9 +20,13 @@ from app.services.events import EventService
 
 
 class MockProcessingRuntime:
-    def __init__(self, step_delay_seconds: float = 0.35) -> None:
-        self._step_delay_seconds = step_delay_seconds
+    def __init__(self, step_delay_seconds: float | None = None) -> None:
         self._settings = get_settings()
+        self._step_delay_seconds = (
+            step_delay_seconds
+            if step_delay_seconds is not None
+            else self._settings.mock_runtime_step_delay_seconds
+        )
 
     def process_message(
         self,
