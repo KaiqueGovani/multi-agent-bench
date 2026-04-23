@@ -126,6 +126,7 @@ export interface SendMessageResponse {
   status: MessageStatus;
   correlationId: string;
   acceptedAt: string;
+  runId?: string | null;
 }
 
 export interface ConversationDetailResponse {

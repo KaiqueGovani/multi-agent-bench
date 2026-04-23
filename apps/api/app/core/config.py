@@ -24,7 +24,16 @@ class Settings:
     storage_addressing_style: str = "path"
     default_channel: str = "web_chat"
     default_architecture_mode: str = "centralized_orchestration"
+    default_architecture_version: str = "poc"
+    default_model_provider: str = "mock"
+    default_model_name: str = "mock-agent-runtime"
+    default_model_version: str = "poc"
+    default_prompt_bundle_version: str = "mock-prompts-v1"
+    default_toolset_version: str = "mock-tools-v1"
+    default_experiment_id: str = "poc-local"
     runtime_mode: str = "mock"
+    ai_runtime_url: str | None = None
+    ai_runtime_timeout_seconds: int = 10
     log_level: str = "INFO"
     api_key: str | None = None
     internal_secret: str | None = None
@@ -57,7 +66,24 @@ def get_settings() -> Settings:
             "DEFAULT_ARCHITECTURE_MODE",
             Settings.default_architecture_mode,
         ),
+        default_architecture_version=os.getenv(
+            "DEFAULT_ARCHITECTURE_VERSION",
+            Settings.default_architecture_version,
+        ),
+        default_model_provider=os.getenv("DEFAULT_MODEL_PROVIDER", Settings.default_model_provider),
+        default_model_name=os.getenv("DEFAULT_MODEL_NAME", Settings.default_model_name),
+        default_model_version=os.getenv("DEFAULT_MODEL_VERSION", Settings.default_model_version),
+        default_prompt_bundle_version=os.getenv(
+            "DEFAULT_PROMPT_BUNDLE_VERSION",
+            Settings.default_prompt_bundle_version,
+        ),
+        default_toolset_version=os.getenv("DEFAULT_TOOLSET_VERSION", Settings.default_toolset_version),
+        default_experiment_id=os.getenv("DEFAULT_EXPERIMENT_ID", Settings.default_experiment_id),
         runtime_mode=os.getenv("RUNTIME_MODE", Settings.runtime_mode),
+        ai_runtime_url=os.getenv("AI_RUNTIME_URL") or Settings.ai_runtime_url,
+        ai_runtime_timeout_seconds=int(
+            os.getenv("AI_RUNTIME_TIMEOUT_SECONDS", Settings.ai_runtime_timeout_seconds)
+        ),
         log_level=os.getenv("LOG_LEVEL", Settings.log_level),
         api_key=os.getenv("API_KEY") or Settings.api_key,
         internal_secret=os.getenv("INTERNAL_SECRET") or Settings.internal_secret,

@@ -3,6 +3,7 @@ from app.services.event_bus import InMemoryEventBus, event_bus
 from app.services.events import EventService
 from app.services.messages import MessageService, MessageValidationError
 from app.services.runs import RunService, RunValidationError
+from app.services.processing_dispatcher import ProcessingDispatcher
 
 __all__ = [
     "ConversationService",
@@ -10,6 +11,7 @@ __all__ = [
     "InMemoryEventBus",
     "MessageService",
     "MessageValidationError",
+    "ProcessingDispatcher",
     "RunService",
     "RunValidationError",
     "event_bus",

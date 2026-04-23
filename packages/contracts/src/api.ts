@@ -54,6 +54,7 @@ export interface SendMessageResponse {
   status: MessageStatus;
   correlationId: Uuid;
   acceptedAt: IsoDateTime;
+  runId?: Uuid;
 }
 
 export interface SseProcessingEvent {

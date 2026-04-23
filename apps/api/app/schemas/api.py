@@ -64,6 +64,7 @@ class SendMessageResponse(ApiModel):
     status: MessageStatus
     correlation_id: UUID
     accepted_at: datetime
+    run_id: UUID | None = None
 
 
 class SseProcessingEvent(ApiModel):
