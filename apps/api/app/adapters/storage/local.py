@@ -1,18 +1,14 @@
 import re
-from dataclasses import dataclass
 from pathlib import Path
 from uuid import UUID
 
+from app.adapters.storage.base import StoredFile
 from app.core.config import get_settings
 
 
-@dataclass(frozen=True)
-class StoredFile:
-    storage_key: str
-    path: Path
-
-
 class LocalStorageAdapter:
+    provider = "local"
+
     def __init__(self, base_path: str | None = None) -> None:
         settings = get_settings()
         self._base_path = Path(base_path or settings.local_storage_path)
@@ -33,8 +29,12 @@ class LocalStorageAdapter:
         destination.write_bytes(content)
         return StoredFile(
             storage_key=relative_path.as_posix(),
+            provider=self.provider,
             path=destination,
         )
+
+    def read(self, storage_key: str) -> bytes:
+        return self.resolve(storage_key).read_bytes()
 
     def resolve(self, storage_key: str) -> Path:
         relative_path = Path(storage_key)

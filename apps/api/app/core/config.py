@@ -15,6 +15,13 @@ class Settings:
     environment: str = "local"
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/multi_agent_bench"
     local_storage_path: str = str(Path("var") / "storage")
+    storage_provider: str = "local"
+    storage_bucket: str = "multi-agent-bench-poc"
+    storage_endpoint_url: str | None = None
+    storage_access_key: str | None = None
+    storage_secret_key: str | None = None
+    storage_region: str = "us-east-1"
+    storage_addressing_style: str = "path"
     default_channel: str = "web_chat"
     default_architecture_mode: str = "centralized_orchestration"
     runtime_mode: str = "mock"
@@ -35,6 +42,16 @@ def get_settings() -> Settings:
         environment=os.getenv("APP_ENV", Settings.environment),
         database_url=os.getenv("DATABASE_URL", Settings.database_url),
         local_storage_path=os.getenv("LOCAL_STORAGE_PATH", Settings.local_storage_path),
+        storage_provider=os.getenv("STORAGE_PROVIDER", Settings.storage_provider),
+        storage_bucket=os.getenv("STORAGE_BUCKET", Settings.storage_bucket),
+        storage_endpoint_url=os.getenv("STORAGE_ENDPOINT_URL") or Settings.storage_endpoint_url,
+        storage_access_key=os.getenv("STORAGE_ACCESS_KEY") or Settings.storage_access_key,
+        storage_secret_key=os.getenv("STORAGE_SECRET_KEY") or Settings.storage_secret_key,
+        storage_region=os.getenv("STORAGE_REGION", Settings.storage_region),
+        storage_addressing_style=os.getenv(
+            "STORAGE_ADDRESSING_STYLE",
+            Settings.storage_addressing_style,
+        ),
         default_channel=os.getenv("DEFAULT_CHANNEL", Settings.default_channel),
         default_architecture_mode=os.getenv(
             "DEFAULT_ARCHITECTURE_MODE",

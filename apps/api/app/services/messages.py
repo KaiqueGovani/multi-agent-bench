@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.adapters.storage import LocalStorageAdapter
+from app.adapters.storage import StorageAdapter, get_storage_adapter
 from app.core.config import get_settings
 from app.db.mappers import attachment_to_schema, message_to_schema
 from app.db.models import AttachmentModel, ConversationModel, MessageModel
@@ -36,9 +36,9 @@ class MessageValidationError(ValueError):
 
 
 class MessageService:
-    def __init__(self, db: Session, storage: LocalStorageAdapter | None = None) -> None:
+    def __init__(self, db: Session, storage: StorageAdapter | None = None) -> None:
         self._db = db
-        self._storage = storage or LocalStorageAdapter()
+        self._storage = storage or get_storage_adapter()
         self._settings = get_settings()
 
     def create_message(
@@ -188,6 +188,19 @@ class MessageService:
             content=incoming.content,
         )
 
+        metadata_json = incoming.metadata.model_dump(
+            by_alias=True,
+            mode="json",
+            exclude_none=True,
+        )
+        metadata_json.update(
+            {
+                "storageProvider": stored_file.provider,
+                "storageBucket": stored_file.bucket,
+                "objectKey": stored_file.storage_key,
+            }
+        )
+
         attachment = AttachmentModel(
             id=attachment_id,
             message_id=message_id,
@@ -199,11 +212,7 @@ class MessageService:
             width=width,
             height=height,
             status=AttachmentStatus.VALIDATED.value,
-            metadata_json=incoming.metadata.model_dump(
-                by_alias=True,
-                mode="json",
-                exclude_none=True,
-            ),
+            metadata_json=metadata_json,
         )
         self._db.add(attachment)
         self._db.flush()

@@ -1,10 +1,10 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from app.adapters.storage import LocalStorageAdapter
+from app.adapters.storage import get_storage_adapter
 from app.db import get_db_session
 from app.db.models import AttachmentModel
 
@@ -15,7 +15,7 @@ router = APIRouter()
 def get_attachment(
     attachment_id: UUID,
     db: Session = Depends(get_db_session),
-) -> FileResponse:
+) -> Response:
     attachment = db.get(AttachmentModel, attachment_id)
     if attachment is None:
         raise HTTPException(
@@ -24,21 +24,22 @@ def get_attachment(
         )
 
     try:
-        path = LocalStorageAdapter().resolve(attachment.storage_key)
+        content = get_storage_adapter().read(attachment.storage_key)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid attachment storage key",
         ) from exc
-
-    if not path.exists():
+    except FileNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Attachment file not found",
-        )
+        ) from exc
 
-    return FileResponse(
-        path,
+    return Response(
+        content=content,
         media_type=attachment.mime_type,
-        filename=attachment.original_filename,
+        headers={
+            "Content-Disposition": f'inline; filename="{attachment.original_filename}"'
+        },
     )

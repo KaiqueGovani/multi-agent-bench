@@ -65,6 +65,13 @@ send this in development through `apps/web/.env.local`:
 NEXT_PUBLIC_API_KEY=replace-with-a-local-development-key
 ```
 
+## Storage
+
+The default attachment storage provider is `local`. To use MinIO locally, start
+the storage service and set the S3-compatible variables from `infra/storage/README.md`.
+For production, use the same adapter with `STORAGE_PROVIDER=s3` and cloud bucket
+credentials.
+
 Useful endpoints in this phase:
 
 - `POST /conversations`
