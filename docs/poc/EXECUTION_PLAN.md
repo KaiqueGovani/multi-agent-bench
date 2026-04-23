@@ -308,6 +308,179 @@ Tarefas:
 
 Criterio de sucesso: a POC executa o fluxo completo sem operacoes manuais fora da aplicacao.
 
+## 16. Refinar eventos do runtime e metadados de anexos
+
+Objetivo: completar lacunas dos contratos atuais sem alterar o fluxo principal da POC.
+
+Tarefas:
+
+- Emitir `actor.progress` no `MockProcessingRuntime`.
+- Definir payload padrao para progresso de ator:
+  - `step`
+  - `message`
+  - `progressPercent`
+  - `actorName`
+  - `architectureMode`
+  - `runtimeMode`
+- Persistir e publicar eventos de progresso pelo mesmo pipeline dos demais eventos.
+- Extrair dimensoes de imagens aceitas:
+  - `width`
+  - `height`
+- Persistir dimensoes em `attachments`.
+- Manter checksum, MIME, tamanho e storage key como metadados obrigatorios.
+- Atualizar fixtures para validar eventos de progresso e metadados de imagem.
+
+Criterio de sucesso: o processamento mockado exibe progresso intermediario e anexos de imagem sao salvos com dimensoes rastreaveis.
+
+## 17. Fortalecer replay e reconexao SSE
+
+Objetivo: tornar o stream de eventos mais confiavel em refresh, queda temporaria de conexao e retomada de historico.
+
+Tarefas:
+
+- Suportar retomada por cursor ou `Last-Event-ID`.
+- Enviar eventos persistidos posteriores ao ultimo evento conhecido ao reconectar.
+- Manter heartbeat para conexoes abertas sem eventos.
+- Evitar eventos duplicados no frontend durante reconexao.
+- Persistir ordenacao estavel por `created_at` e `id`.
+- Atualizar cliente SSE para:
+  - armazenar ultimo evento recebido
+  - recuperar backlog ao abrir conexao
+  - sinalizar estados de reconexao
+  - cair para polling pontual quando necessario
+- Cobrir fluxo em fixture ou script E2E.
+
+Criterio de sucesso: apos refresh ou queda de conexao, o frontend reconstrui a timeline sem perda ou duplicacao relevante de eventos.
+
+## 18. Adicionar selecao de arquitetura no front
+
+Objetivo: permitir que a POC comece a registrar qual modo arquitetural esta sendo exercitado em cada interacao.
+
+Tarefas:
+
+- Adicionar select de `architecture_mode` no frontend:
+  - `centralized_orchestration`
+  - `structured_workflow`
+  - `decentralized_swarm`
+- Enviar o modo selecionado na criacao de conversa e/ou no envio de mensagem.
+- Persistir `architecture_mode` nos metadados da conversa, mensagem e eventos.
+- Exibir o modo arquitetural ativo na UI.
+- Garantir que o runtime mockado use o valor recebido nos payloads dos eventos.
+- Atualizar contratos e exemplos quando necessario.
+
+Criterio de sucesso: cada mensagem processada fica associada ao modo arquitetural escolhido pelo usuario e essa informacao aparece no historico de eventos.
+
+## 19. Adicionar seguranca inicial da API
+
+Objetivo: proteger a API da POC com controles simples, adequados para ambiente local e demonstracao controlada.
+
+Tarefas:
+
+- Adicionar configuracao por variaveis de ambiente para:
+  - API key
+  - secrets internos
+  - URLs de servicos externos
+  - credenciais de storage
+- Criar `.env.example` sem valores sensiveis reais.
+- Implementar validacao de API key para endpoints protegidos.
+- Definir quais endpoints continuam publicos:
+  - `GET /health`
+  - documentacao local, quando habilitada
+- Evitar commit de secrets reais.
+- Documentar setup local de secrets.
+- Atualizar cliente frontend para enviar a chave quando aplicavel em ambiente de desenvolvimento.
+
+Criterio de sucesso: endpoints principais rejeitam chamadas sem credencial valida e o projeto continua executavel localmente com `.env.example`.
+
+## 20. Evoluir storage para MinIO e S3 compativel
+
+Objetivo: substituir o armazenamento puramente local por um adapter compativel com buckets, mantendo caminho simples para producao em S3 ou equivalente.
+
+Tarefas:
+
+- Adicionar MinIO ao ambiente local em `infra/docker`.
+- Criar configuracoes de bucket para desenvolvimento.
+- Criar adapter de storage S3 compativel.
+- Manter `LocalStorageAdapter` como fallback ou modo simplificado.
+- Definir settings para selecionar provider:
+  - `local`
+  - `minio`
+  - `s3`
+- Salvar arquivos em bucket com chave deterministica e rastreavel.
+- Persistir provider, bucket e object key nos metadados do anexo quando necessario.
+- Preparar documentacao para migrar de MinIO local para S3/cloud.
+- Garantir que download/visualizacao de anexos continue funcionando pela API.
+
+Criterio de sucesso: a POC salva e recupera anexos via MinIO local, sem acoplar o dominio ao provider fisico, e fica preparada para bucket cloud em producao.
+
+## 21. Expandir formatos de anexo
+
+Objetivo: permitir que o fluxo multimodal aceite mais formatos sem quebrar a validacao e a rastreabilidade existentes.
+
+Tarefas:
+
+- Passar a aceitar PDF alem de imagens.
+- Revisar lista de MIME types permitidos.
+- Definir limites por tipo de arquivo:
+  - imagens
+  - PDFs
+- Persistir metadados especificos por tipo:
+  - dimensoes para imagem
+  - numero de paginas para PDF, quando viavel
+  - tamanho em bytes
+  - checksum
+- Ajustar previews no frontend:
+  - preview visual para imagem
+  - card de arquivo para PDF
+- Atualizar eventos de validacao para indicar tipo de anexo.
+- Atualizar fixtures com PDF valido e PDF invalido.
+
+Criterio de sucesso: o usuario consegue anexar PDF valido, o backend valida e persiste o arquivo, e a UI representa o anexo de forma clara.
+
+## 22. Preparar ingestao de eventos do servico de IA
+
+Objetivo: abrir um ponto de integracao para que um servico externo de IA publique eventos de processamento no mesmo historico da POC.
+
+Tarefas:
+
+- Criar endpoint protegido para receber eventos externos do servico de IA.
+- Validar payload recebido contra os contratos de `ProcessingEvent`.
+- Exigir identificadores de rastreabilidade:
+  - `conversation_id`
+  - `message_id`
+  - `correlation_id`
+  - `event_type`
+  - `actor_name`, quando aplicavel
+- Garantir idempotencia para evitar duplicacao de eventos.
+- Persistir eventos recebidos antes de publica-los no SSE.
+- Publicar eventos externos para assinantes ativos da conversa.
+- Registrar origem do evento no payload ou metadata:
+  - `mock_runtime`
+  - `ai_service`
+  - `system`
+- Documentar contrato esperado para o servico de IA.
+
+Criterio de sucesso: um servico externo consegue enviar eventos que aparecem na timeline do frontend e ficam persistidos no historico da conversa.
+
+## 23. Validar escopo expandido da POC
+
+Objetivo: confirmar que os novos requisitos nao quebraram o fluxo principal ja existente.
+
+Tarefas:
+
+- Testar `actor.progress` no runtime mockado.
+- Testar captura de dimensoes de imagem.
+- Testar envio e persistencia de PDF.
+- Testar reconexao SSE com replay de eventos.
+- Testar selecao de arquitetura no frontend e persistencia na API.
+- Testar API key em endpoints protegidos.
+- Testar storage MinIO local.
+- Testar fallback ou configuracao alternativa de storage.
+- Testar ingestao de evento externo do servico de IA.
+- Atualizar scripts de validacao e documentacao operacional.
+
+Criterio de sucesso: a POC expandida executa o fluxo completo com texto, imagem, PDF, eventos internos, eventos externos, storage por bucket, seguranca basica e reconexao confiavel.
+
 ## Ordem resumida
 
 1. Contratos compartilhados.
@@ -325,4 +498,11 @@ Criterio de sucesso: a POC executa o fluxo completo sem operacoes manuais fora d
 13. Observabilidade.
 14. Fixtures.
 15. Validacao ponta a ponta.
-
+16. Eventos de progresso e metadados de anexos.
+17. Replay e reconexao SSE.
+18. Selecao de arquitetura no frontend.
+19. Seguranca inicial da API.
+20. Storage MinIO e S3 compativel.
+21. Novos formatos de anexo.
+22. Ingestao de eventos do servico de IA.
+23. Validacao do escopo expandido.
