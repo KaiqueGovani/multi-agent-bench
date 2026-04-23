@@ -14,6 +14,9 @@ from app.schemas.domain import (
     NormalizedOutboundMessage,
     ProcessingEvent,
     ReviewTask,
+    Run,
+    RunExperimentMetadata,
+    RunSummary,
 )
 from app.schemas.enums import (
     ArchitectureMode,
@@ -26,6 +29,7 @@ from app.schemas.enums import (
     ProcessingStatus,
     ReviewTaskStatus,
     RuntimeMode,
+    RunStatus,
 )
 
 __all__ = [
@@ -50,6 +54,10 @@ __all__ = [
     "ReviewTask",
     "ReviewTaskStatus",
     "RuntimeMode",
+    "Run",
+    "RunExperimentMetadata",
+    "RunStatus",
+    "RunSummary",
     "SendMessageResponse",
     "SseProcessingEvent",
 ]

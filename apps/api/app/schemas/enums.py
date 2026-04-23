@@ -88,3 +88,11 @@ class RuntimeMode(StrEnum):
     MOCK = "mock"
     REAL = "real"
 
+
+class RunStatus(StrEnum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+    HUMAN_REVIEW_REQUIRED = "human_review_required"

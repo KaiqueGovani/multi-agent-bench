@@ -4,6 +4,7 @@ from app.db.models import (
     MessageModel,
     ProcessingEventModel,
     ReviewTaskModel,
+    RunModel,
 )
 from app.schemas.domain import (
     Attachment,
@@ -13,6 +14,9 @@ from app.schemas.domain import (
     OperationalMetadata,
     ProcessingEvent,
     ReviewTask,
+    Run,
+    RunExperimentMetadata,
+    RunSummary,
 )
 from app.schemas.enums import (
     AttachmentStatus,
@@ -23,6 +27,7 @@ from app.schemas.enums import (
     ProcessingEventType,
     ProcessingStatus,
     ReviewTaskStatus,
+    RunStatus,
 )
 
 
@@ -100,4 +105,26 @@ def review_task_to_schema(model: ReviewTaskModel) -> ReviewTask:
         created_at=model.created_at,
         resolved_at=model.resolved_at,
         metadata=OperationalMetadata.model_validate(model.metadata_json or {}),
+    )
+
+
+def run_to_schema(model: RunModel) -> Run:
+    return Run(
+        id=model.id,
+        conversation_id=model.conversation_id,
+        message_id=model.message_id,
+        correlation_id=model.correlation_id,
+        external_run_id=model.external_run_id,
+        ai_session_id=model.ai_session_id,
+        trace_id=model.trace_id,
+        status=RunStatus(model.status),
+        started_at=model.started_at,
+        finished_at=model.finished_at,
+        total_duration_ms=model.total_duration_ms,
+        human_review_required=model.human_review_required,
+        final_outcome=model.final_outcome,
+        experiment=RunExperimentMetadata.model_validate(model.experiment_json or {}),
+        summary=RunSummary.model_validate(model.summary_json or {}),
+        created_at=model.created_at,
+        updated_at=model.updated_at,
     )

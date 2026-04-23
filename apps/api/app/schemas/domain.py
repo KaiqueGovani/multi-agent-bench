@@ -13,6 +13,7 @@ from app.schemas.enums import (
     ProcessingEventType,
     ProcessingStatus,
     ReviewTaskStatus,
+    RunStatus,
 )
 
 JsonObject = dict[str, Any]
@@ -118,6 +119,76 @@ class ProcessingEvent(ApiModel):
     created_at: datetime
     duration_ms: int | None = None
     status: ProcessingStatus
+
+
+class RunExperimentMetadata(ApiModel):
+    model_config = ConfigDict(
+        alias_generator=lambda field_name: "".join(
+            word.capitalize() if index else word
+            for index, word in enumerate(field_name.split("_"))
+        ),
+        populate_by_name=True,
+        extra="allow",
+    )
+
+    architecture_family: str | None = None
+    architecture_key: str
+    architecture_version: str | None = None
+    routing_strategy: str | None = None
+    memory_strategy: str | None = None
+    tool_executor_mode: str | None = None
+    review_policy_version: str | None = None
+    model_provider: str | None = None
+    model_name: str | None = None
+    model_version: str | None = None
+    prompt_bundle_version: str | None = None
+    toolset_version: str | None = None
+    experiment_id: str | None = None
+    scenario_id: str | None = None
+    runtime_commit_sha: str | None = None
+
+
+class RunSummary(ApiModel):
+    model_config = ConfigDict(
+        alias_generator=lambda field_name: "".join(
+            word.capitalize() if index else word
+            for index, word in enumerate(field_name.split("_"))
+        ),
+        populate_by_name=True,
+        extra="allow",
+    )
+
+    time_to_first_public_event_ms: int | None = None
+    time_to_first_partial_response_ms: int | None = None
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    total_tokens: int | None = None
+    tool_call_count: int | None = None
+    tool_error_count: int | None = None
+    loop_count: int | None = None
+    stop_reason: str | None = None
+    estimated_cost: float | None = None
+    final_outcome: str | None = None
+
+
+class Run(ApiModel):
+    id: UUID
+    conversation_id: UUID
+    message_id: UUID
+    correlation_id: UUID
+    external_run_id: str | None = None
+    ai_session_id: str | None = None
+    trace_id: str | None = None
+    status: RunStatus
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    total_duration_ms: int | None = None
+    human_review_required: bool | None = None
+    final_outcome: str | None = None
+    experiment: RunExperimentMetadata
+    summary: RunSummary = Field(default_factory=RunSummary)
+    created_at: datetime
+    updated_at: datetime
 
 
 class ReviewTask(ApiModel):

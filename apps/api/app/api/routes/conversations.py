@@ -14,6 +14,7 @@ from app.schemas.api import (
 from app.services import ConversationService
 from app.services.events import EventService
 from app.services.messages import MessageService
+from app.services.runs import RunService
 
 router = APIRouter()
 
@@ -60,6 +61,7 @@ def get_conversation(
         conversation=conversation,
         messages=message_service.list_conversation_messages(conversation_id),
         attachments=message_service.list_conversation_attachments(conversation_id),
+        runs=RunService(db).list_conversation_runs(conversation_id),
         events=events,
         review_tasks=service.list_review_tasks(conversation_id),
     )

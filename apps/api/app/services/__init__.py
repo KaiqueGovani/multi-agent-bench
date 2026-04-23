@@ -2,6 +2,7 @@ from app.services.conversations import ConversationService
 from app.services.event_bus import InMemoryEventBus, event_bus
 from app.services.events import EventService
 from app.services.messages import MessageService, MessageValidationError
+from app.services.runs import RunService, RunValidationError
 
 __all__ = [
     "ConversationService",
@@ -9,5 +10,7 @@ __all__ = [
     "InMemoryEventBus",
     "MessageService",
     "MessageValidationError",
+    "RunService",
+    "RunValidationError",
     "event_bus",
 ]

@@ -26,6 +26,7 @@ class ConversationModel(Base):
     metadata_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
 
     messages: Mapped[list["MessageModel"]] = relationship(back_populates="conversation")
+    runs: Mapped[list["RunModel"]] = relationship(back_populates="conversation")
     events: Mapped[list["ProcessingEventModel"]] = relationship(back_populates="conversation")
     review_tasks: Mapped[list["ReviewTaskModel"]] = relationship(back_populates="conversation")
 
@@ -51,6 +52,7 @@ class MessageModel(Base):
 
     conversation: Mapped[ConversationModel] = relationship(back_populates="messages")
     attachments: Mapped[list["AttachmentModel"]] = relationship(back_populates="message")
+    runs: Mapped[list["RunModel"]] = relationship(back_populates="message")
     events: Mapped[list["ProcessingEventModel"]] = relationship(back_populates="message")
     review_tasks: Mapped[list["ReviewTaskModel"]] = relationship(back_populates="message")
 
@@ -112,6 +114,46 @@ class ProcessingEventModel(Base):
     message: Mapped[MessageModel | None] = relationship(back_populates="events")
 
 
+class RunModel(Base):
+    __tablename__ = "runs"
+
+    id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True, default=uuid4)
+    conversation_id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        ForeignKey("conversations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    message_id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        ForeignKey("messages.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    correlation_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False, index=True)
+    external_run_id: Mapped[str | None] = mapped_column(String(160), nullable=True, index=True)
+    ai_session_id: Mapped[str | None] = mapped_column(String(500), nullable=True, index=True)
+    trace_id: Mapped[str | None] = mapped_column(String(80), nullable=True, index=True)
+    status: Mapped[str] = mapped_column(String(60), nullable=False, index=True)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    total_duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    human_review_required: Mapped[bool | None] = mapped_column(nullable=True)
+    final_outcome: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    experiment_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    summary_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    conversation: Mapped[ConversationModel] = relationship(back_populates="runs")
+    message: Mapped[MessageModel] = relationship(back_populates="runs")
+
+
 class ReviewTaskModel(Base):
     __tablename__ = "review_tasks"
 
@@ -140,4 +182,5 @@ class ReviewTaskModel(Base):
 
 Index("ix_processing_events_conversation_created", ProcessingEventModel.conversation_id, ProcessingEventModel.created_at)
 Index("ix_messages_conversation_created", MessageModel.conversation_id, MessageModel.created_at_server)
-
+Index("ix_runs_conversation_created", RunModel.conversation_id, RunModel.created_at)
+Index("ix_runs_message_created", RunModel.message_id, RunModel.created_at)

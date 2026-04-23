@@ -12,6 +12,7 @@ from app.schemas.domain import (
     OperationalMetadata,
     ProcessingEvent,
     ReviewTask,
+    Run,
 )
 from app.schemas.enums import (
     ChannelType,
@@ -46,6 +47,7 @@ class ConversationDetailResponse(ApiModel):
     conversation: Conversation
     messages: list[Message] = Field(default_factory=list)
     attachments: list[Attachment] = Field(default_factory=list)
+    runs: list[Run] = Field(default_factory=list)
     events: list[ProcessingEvent] = Field(default_factory=list)
     review_tasks: list[ReviewTask] = Field(default_factory=list)
 
