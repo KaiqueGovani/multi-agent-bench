@@ -1,0 +1,21 @@
+{
+  "status": "completed",
+  "externalRunId": "strands-run-001",
+  "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+  "finishedAt": "2026-04-23T12:30:06Z",
+  "totalDurationMs": 4012,
+  "humanReviewRequired": false,
+  "finalOutcome": "answered",
+  "summary": {
+    "timeToFirstPublicEventMs": 180,
+    "timeToFirstPartialResponseMs": 712,
+    "inputTokens": 3210,
+    "outputTokens": 410,
+    "totalTokens": 3620,
+    "toolCallCount": 4,
+    "toolErrorCount": 0,
+    "loopCount": 3,
+    "stopReason": "completed",
+    "finalOutcome": "answered"
+  }
+}

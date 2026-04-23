@@ -71,6 +71,21 @@ When the runtime requires supervision, it emits `review.required` and creates a 
 
 Review task example: `examples/review-task.json`
 
+## Runs
+
+Each model or agent execution for a message should be represented by a run.
+
+Run example: `examples/run.json`
+
+Create run request example: `examples/create-run-request.json`
+
+Complete run request example: `examples/complete-run-request.json`
+
+The `runId` is the analytical unit for future architecture/model comparison.
+Detailed spans and logs remain in the AI service/OpenTelemetry backend; the
+chat API stores the transactional state and summary needed to link product
+history to telemetry.
+
 ## Mock processing sequence
 
 The initial runtime should emit this sequence for a standard successful flow:
@@ -83,4 +98,3 @@ The initial runtime should emit this sequence for a standard successful flow:
 6. `actor.completed`
 7. `response.final`
 8. `processing.completed`
-

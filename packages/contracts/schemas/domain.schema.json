@@ -65,6 +65,10 @@
       "type": "string",
       "enum": ["open", "in_review", "resolved", "cancelled"]
     },
+    "runStatus": {
+      "type": "string",
+      "enum": ["pending", "running", "completed", "failed", "cancelled", "human_review_required"]
+    },
     "operationalMetadata": {
       "type": "object",
       "additionalProperties": true
@@ -151,6 +155,79 @@
         "status": { "$ref": "#/$defs/processingStatus" }
       }
     },
+    "runExperimentMetadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["architectureKey"],
+      "properties": {
+        "architectureFamily": { "type": "string" },
+        "architectureKey": { "type": "string" },
+        "architectureVersion": { "type": "string" },
+        "routingStrategy": { "type": "string" },
+        "memoryStrategy": { "type": "string" },
+        "toolExecutorMode": { "type": "string" },
+        "reviewPolicyVersion": { "type": "string" },
+        "modelProvider": { "type": "string" },
+        "modelName": { "type": "string" },
+        "modelVersion": { "type": "string" },
+        "promptBundleVersion": { "type": "string" },
+        "toolsetVersion": { "type": "string" },
+        "experimentId": { "type": "string" },
+        "scenarioId": { "type": "string" },
+        "runtimeCommitSha": { "type": "string" }
+      }
+    },
+    "runSummary": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "timeToFirstPublicEventMs": { "type": "integer", "minimum": 0 },
+        "timeToFirstPartialResponseMs": { "type": "integer", "minimum": 0 },
+        "inputTokens": { "type": "integer", "minimum": 0 },
+        "outputTokens": { "type": "integer", "minimum": 0 },
+        "totalTokens": { "type": "integer", "minimum": 0 },
+        "toolCallCount": { "type": "integer", "minimum": 0 },
+        "toolErrorCount": { "type": "integer", "minimum": 0 },
+        "loopCount": { "type": "integer", "minimum": 0 },
+        "stopReason": { "type": "string" },
+        "estimatedCost": { "type": "number", "minimum": 0 },
+        "finalOutcome": { "type": "string" }
+      }
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "conversationId",
+        "messageId",
+        "correlationId",
+        "status",
+        "experiment",
+        "summary",
+        "createdAt",
+        "updatedAt"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/uuid" },
+        "conversationId": { "$ref": "#/$defs/uuid" },
+        "messageId": { "$ref": "#/$defs/uuid" },
+        "correlationId": { "$ref": "#/$defs/uuid" },
+        "externalRunId": { "type": "string" },
+        "aiSessionId": { "type": "string" },
+        "traceId": { "type": "string" },
+        "status": { "$ref": "#/$defs/runStatus" },
+        "startedAt": { "$ref": "#/$defs/isoDateTime" },
+        "finishedAt": { "$ref": "#/$defs/isoDateTime" },
+        "totalDurationMs": { "type": "integer", "minimum": 0 },
+        "humanReviewRequired": { "type": "boolean" },
+        "finalOutcome": { "type": "string" },
+        "experiment": { "$ref": "#/$defs/runExperimentMetadata" },
+        "summary": { "$ref": "#/$defs/runSummary" },
+        "createdAt": { "$ref": "#/$defs/isoDateTime" },
+        "updatedAt": { "$ref": "#/$defs/isoDateTime" }
+      }
+    },
     "reviewTask": {
       "type": "object",
       "additionalProperties": false,
@@ -172,7 +249,7 @@
     { "$ref": "#/$defs/message" },
     { "$ref": "#/$defs/attachment" },
     { "$ref": "#/$defs/processingEvent" },
+    { "$ref": "#/$defs/run" },
     { "$ref": "#/$defs/reviewTask" }
   ]
 }
-

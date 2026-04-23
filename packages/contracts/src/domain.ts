@@ -8,6 +8,7 @@ import type {
   ProcessingEventType,
   ProcessingStatus,
   ReviewTaskStatus,
+  RunStatus,
   RuntimeMode,
 } from "./enums";
 
@@ -102,6 +103,59 @@ export interface ProcessingEvent {
   status: ProcessingStatus;
 }
 
+export interface RunExperimentMetadata {
+  architectureFamily?: string;
+  architectureKey: string;
+  architectureVersion?: string;
+  routingStrategy?: string;
+  memoryStrategy?: string;
+  toolExecutorMode?: string;
+  reviewPolicyVersion?: string;
+  modelProvider?: string;
+  modelName?: string;
+  modelVersion?: string;
+  promptBundleVersion?: string;
+  toolsetVersion?: string;
+  experimentId?: string;
+  scenarioId?: string;
+  runtimeCommitSha?: string;
+}
+
+export interface RunSummary {
+  timeToFirstPublicEventMs?: number;
+  timeToFirstPartialResponseMs?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+  toolCallCount?: number;
+  toolErrorCount?: number;
+  loopCount?: number;
+  stopReason?: string;
+  estimatedCost?: number;
+  finalOutcome?: string;
+  [key: string]: JsonValue | undefined;
+}
+
+export interface Run {
+  id: Uuid;
+  conversationId: Uuid;
+  messageId: Uuid;
+  correlationId: Uuid;
+  externalRunId?: string;
+  aiSessionId?: string;
+  traceId?: string;
+  status: RunStatus;
+  startedAt?: IsoDateTime;
+  finishedAt?: IsoDateTime;
+  totalDurationMs?: number;
+  humanReviewRequired?: boolean;
+  finalOutcome?: string;
+  experiment: RunExperimentMetadata;
+  summary: RunSummary;
+  createdAt: IsoDateTime;
+  updatedAt: IsoDateTime;
+}
+
 export interface ReviewTask {
   id: Uuid;
   conversationId: Uuid;
@@ -147,4 +201,3 @@ export interface NormalizedOutboundMessage {
   metadata: OperationalMetadata;
   modelContext?: ModelContext;
 }
-

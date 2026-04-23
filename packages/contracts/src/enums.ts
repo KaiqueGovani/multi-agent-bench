@@ -106,6 +106,17 @@ export const RUNTIME_MODES = [
 
 export type RuntimeMode = (typeof RUNTIME_MODES)[number];
 
+export const RUN_STATUSES = [
+  "pending",
+  "running",
+  "completed",
+  "failed",
+  "cancelled",
+  "human_review_required",
+] as const;
+
+export type RunStatus = (typeof RUN_STATUSES)[number];
+
 export const MOCK_ACTOR_NAMES = [
   "router_agent",
   "faq_agent",
@@ -115,4 +126,3 @@ export const MOCK_ACTOR_NAMES = [
 ] as const;
 
 export type MockActorName = (typeof MOCK_ACTOR_NAMES)[number];
-

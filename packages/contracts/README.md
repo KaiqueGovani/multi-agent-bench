@@ -22,6 +22,8 @@ The goal is to keep backend, frontend, event streaming, persistence, and future 
 - `metadata` stores operational metadata and must not be blindly forwarded to model prompts.
 - `modelContext` stores information that may become useful to an LLM later.
 - Every message-processing flow must carry a `correlationId`.
+- Every model/agent execution should create a `runId`; `correlationId` is for
+  request correlation, while `runId` is the analytical unit for comparison.
 - Events must be persisted and associated with a conversation; message-specific events should also include `messageId`.
 
 ## Initial POC assumptions
@@ -29,6 +31,6 @@ The goal is to keep backend, frontend, event streaming, persistence, and future 
 - Initial channel is `web_chat`.
 - Runtime mode is `mock`.
 - Default architecture mode is `centralized_orchestration` until comparative modes are implemented.
-- Supported attachment MIME types for the POC are `image/jpeg`, `image/png`, and `image/webp`.
-- Suggested maximum file size is 5 MB per image.
-- Suggested maximum file count is 4 images per message.
+- Supported attachment MIME types for the POC are `image/jpeg`, `image/png`, `image/webp`, and `application/pdf`.
+- Suggested maximum file size is 5 MB per attachment.
+- Suggested maximum file count is 4 attachments per message.

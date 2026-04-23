@@ -7,12 +7,16 @@ import type {
   NormalizedInboundMessage,
   ProcessingEvent,
   ReviewTask,
+  Run,
+  RunExperimentMetadata,
+  RunSummary,
   Uuid,
 } from "./domain";
 import type {
   ChannelType,
   MessageStatus,
   ProcessingStatus,
+  RunStatus,
 } from "./enums";
 
 export interface CreateConversationRequest {
@@ -32,6 +36,7 @@ export interface ConversationDetailResponse {
   conversation: Conversation;
   messages: Message[];
   attachments: Attachment[];
+  runs: Run[];
   events: ProcessingEvent[];
   reviewTasks: ReviewTask[];
 }
@@ -64,6 +69,35 @@ export interface SseProcessingEvent {
   payload: JsonObject;
 }
 
+export interface CreateRunRequest {
+  conversationId: Uuid;
+  messageId: Uuid;
+  correlationId: Uuid;
+  aiSessionId?: string;
+  traceparent?: string;
+  experiment: RunExperimentMetadata;
+}
+
+export interface CreateRunResponse {
+  runId: Uuid;
+  conversationId: Uuid;
+  messageId: Uuid;
+  status: RunStatus;
+  aiSessionId?: string;
+  createdAt: IsoDateTime;
+}
+
+export interface CompleteRunRequest {
+  status: RunStatus;
+  externalRunId?: string;
+  traceId?: string;
+  finishedAt?: IsoDateTime;
+  totalDurationMs?: number;
+  humanReviewRequired?: boolean;
+  finalOutcome?: string;
+  summary?: RunSummary;
+}
+
 export interface MessageListResponse {
   conversationId: Uuid;
   messages: Message[];
@@ -75,4 +109,3 @@ export interface NormalizedInboundEnvelope {
   receivedAt: IsoDateTime;
   message: NormalizedInboundMessage;
 }
-
