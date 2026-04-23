@@ -1,15 +1,17 @@
 "use client";
 
 import type * as React from "react";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   AlertTriangle,
   Bot,
   BrainCircuit,
+  ChevronDown,
   CheckCircle2,
   Clock3,
   FileCheck2,
+  Filter,
   Loader2,
   MessageCircle,
   MessageSquareReply,
@@ -25,9 +27,16 @@ import {
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { ArchitectureMode, JsonValue, ProcessingEvent, ProcessingStatus } from "@/lib/types";
+import type {
+  ArchitectureMode,
+  JsonValue,
+  ProcessingEvent,
+  ProcessingEventType,
+  ProcessingStatus
+} from "@/lib/types";
 
 interface EventTimelineProps {
   events: ProcessingEvent[];
@@ -74,6 +83,26 @@ const connectionLabels: Record<string, string> = {
   reconnecting: "reconectando"
 };
 
+type TimelineDetailMode = "summary" | "detailed";
+
+interface TimelineFilters {
+  actorName: string;
+  eventType: string;
+  messageId: string;
+  runId: string;
+  source: string;
+  status: string;
+}
+
+const initialFilters: TimelineFilters = {
+  actorName: "all",
+  eventType: "all",
+  messageId: "all",
+  runId: "all",
+  source: "all",
+  status: "all"
+};
+
 export function EventTimeline({
   architectureMode,
   events,
@@ -83,15 +112,47 @@ export function EventTimeline({
   reviewPanel
 }: EventTimelineProps) {
   const bottomRef = useRef<HTMLDivElement | null>(null);
-  const counters = useMemo(() => summarizeEvents(events), [events]);
-  const activeEvent = useMemo(
-    () => [...events].reverse().find((event) => isActiveStatus(event.status)),
-    [events]
+  const [detailMode, setDetailMode] = useState<TimelineDetailMode>("summary");
+  const [expandedEventIds, setExpandedEventIds] = useState<Set<string>>(new Set());
+  const [filters, setFilters] = useState<TimelineFilters>(initialFilters);
+  const filterOptions = useMemo(() => buildFilterOptions(events), [events]);
+  const filteredEvents = useMemo(
+    () => events.filter((event) => matchesFilters(event, filters)),
+    [events, filters]
   );
+  const counters = useMemo(() => summarizeEvents(filteredEvents), [filteredEvents]);
+  const totalCounters = useMemo(() => summarizeEvents(events), [events]);
+  const activeEvent = useMemo(
+    () => [...filteredEvents].reverse().find((event) => isActiveStatus(event.status)),
+    [filteredEvents]
+  );
+  const hasActiveFilters = Object.values(filters).some((value) => value !== "all");
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" });
-  }, [events.length]);
+  }, [filteredEvents.length]);
+
+  function updateFilter(key: keyof TimelineFilters, value: string) {
+    setFilters((current) => ({ ...current, [key]: value }));
+  }
+
+  function resetFilters() {
+    setFilters(initialFilters);
+    setDetailMode("summary");
+    setExpandedEventIds(new Set());
+  }
+
+  function toggleEventPayload(eventId: string) {
+    setExpandedEventIds((current) => {
+      const next = new Set(current);
+      if (next.has(eventId)) {
+        next.delete(eventId);
+      } else {
+        next.add(eventId);
+      }
+      return next;
+    });
+  }
 
   return (
     <aside className="flex min-h-[320px] flex-col border-t bg-card lg:min-h-0 lg:border-l lg:border-t-0">
@@ -104,9 +165,9 @@ export function EventTimeline({
                 Eventos
               </h2>
               <p className="text-xs text-muted-foreground">
-                {counters.total === 0
+                {totalCounters.total === 0
                   ? `Timeline operacional - ${formatArchitectureMode(architectureMode)}`
-                  : `${counters.total} eventos - ${counters.running} em execucao`}
+                  : `${counters.total} de ${totalCounters.total} eventos - ${counters.running} em execucao`}
               </p>
             </div>
           ) : null}
@@ -143,6 +204,17 @@ export function EventTimeline({
             <Metric className="text-emerald-700" icon={CheckCircle2} label="concl." value={counters.completed} />
           </div>
         ) : null}
+        {isOpen && events.length > 0 ? (
+          <TimelineFiltersPanel
+            detailMode={detailMode}
+            filters={filters}
+            hasActiveFilters={hasActiveFilters}
+            onDetailModeChange={setDetailMode}
+            onFilterChange={updateFilter}
+            onReset={resetFilters}
+            options={filterOptions}
+          />
+        ) : null}
         {isOpen && activeEvent ? (
           <ThinkingIndicator
             actorName={activeEvent.actorName}
@@ -161,16 +233,23 @@ export function EventTimeline({
           <Alert>
             <AlertDescription>Nenhum evento ainda.</AlertDescription>
           </Alert>
+        ) : filteredEvents.length === 0 ? (
+          <Alert>
+            <AlertDescription>Nenhum evento corresponde aos filtros atuais.</AlertDescription>
+          </Alert>
         ) : (
           <ol className="relative space-y-3 border-l pl-4">
-            {events.map((event) => {
+            {filteredEvents.map((event) => {
               const payloadSummary = summarizePayload(event);
               const EventIcon = eventIcon(event.eventType);
+              const eventSource = getEventSource(event);
+              const eventRunId = getEventRunId(event);
+              const isPayloadExpanded = expandedEventIds.has(event.id);
 
               return (
                 <li className="relative" key={event.id}>
                   <span className={eventDotClass(event.status)} />
-                  <Card className={`${itemAccentStyles[event.status] ?? "border-l-border"} border-l-4 shadow-none`}>
+                  <Card className={`${eventCardAccent(event)} border-l-4 shadow-none`}>
                     <CardHeader className="p-3 pb-1">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex min-w-0 gap-2">
@@ -204,8 +283,35 @@ export function EventTimeline({
                             : "Sem mensagem"}
                           {` - Corr. ${shortId(event.correlationId)}`}
                         </p>
+                        {detailMode === "detailed" ? (
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            <EventMetaBadge label="run" value={eventRunId ? shortId(eventRunId) : "n/a"} />
+                            <EventMetaBadge label="origem" value={eventSource} />
+                            <EventMetaBadge label="ator" value={event.actorName ?? "n/a"} />
+                          </div>
+                        ) : null}
                         {payloadSummary ? (
                           <p className="break-words text-foreground/80">{payloadSummary}</p>
+                        ) : null}
+                        <div className="pt-1">
+                          <Button
+                            className="h-7 px-2 text-[11px]"
+                            onClick={() => toggleEventPayload(event.id)}
+                            type="button"
+                            variant="ghost"
+                          >
+                            <ChevronDown
+                              className={`h-3.5 w-3.5 transition-transform ${
+                                isPayloadExpanded ? "rotate-180" : ""
+                              }`}
+                            />
+                            Payload
+                          </Button>
+                        </div>
+                        {isPayloadExpanded ? (
+                          <pre className="max-h-52 overflow-auto rounded-md border bg-muted/40 p-2 text-[11px] text-foreground">
+                            {JSON.stringify(event.payload, null, 2)}
+                          </pre>
                         ) : null}
                     </CardContent>
                   </Card>
@@ -224,6 +330,228 @@ export function EventTimeline({
       ) : null}
     </aside>
   );
+}
+
+function TimelineFiltersPanel({
+  detailMode,
+  filters,
+  hasActiveFilters,
+  onDetailModeChange,
+  onFilterChange,
+  onReset,
+  options
+}: {
+  detailMode: TimelineDetailMode;
+  filters: TimelineFilters;
+  hasActiveFilters: boolean;
+  onDetailModeChange: (mode: TimelineDetailMode) => void;
+  onFilterChange: (key: keyof TimelineFilters, value: string) => void;
+  onReset: () => void;
+  options: ReturnType<typeof buildFilterOptions>;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <div className="mt-3 rounded-md border bg-background p-3">
+      <div className="flex items-center justify-between gap-2">
+        <button
+          className="flex min-w-0 flex-1 items-center gap-2 text-left text-xs font-medium"
+          onClick={() => setIsExpanded((current) => !current)}
+          type="button"
+        >
+          <Filter className="h-3.5 w-3.5 shrink-0 text-primary" />
+          <span>Filtros</span>
+          {hasActiveFilters ? <Badge variant="info">ativos</Badge> : null}
+          {detailMode === "detailed" ? <Badge variant="outline">detalhado</Badge> : null}
+        </button>
+        <div className="flex items-center gap-1">
+          <Button
+            className="h-7 px-2 text-[11px]"
+            disabled={!hasActiveFilters && detailMode === "summary"}
+            onClick={onReset}
+            type="button"
+            variant="ghost"
+          >
+            Limpar
+          </Button>
+          <Button
+            className="h-7 w-7"
+            onClick={() => setIsExpanded((current) => !current)}
+            size="icon"
+            type="button"
+            variant="ghost"
+          >
+            <ChevronDown
+              className={`h-3.5 w-3.5 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+            />
+          </Button>
+        </div>
+      </div>
+      {isExpanded ? (
+      <div className="mt-2 grid gap-2">
+        <div className="grid grid-cols-2 gap-2">
+          <FilterSelect
+            label="run"
+            onChange={(value) => onFilterChange("runId", value)}
+            options={options.runIds}
+            value={filters.runId}
+          />
+          <FilterSelect
+            label="tipo"
+            onChange={(value) => onFilterChange("eventType", value)}
+            options={options.eventTypes}
+            value={filters.eventType}
+          />
+          <FilterSelect
+            label="ator"
+            onChange={(value) => onFilterChange("actorName", value)}
+            options={options.actorNames}
+            value={filters.actorName}
+          />
+          <FilterSelect
+            label="status"
+            onChange={(value) => onFilterChange("status", value)}
+            options={options.statuses}
+            value={filters.status}
+          />
+          <FilterSelect
+            label="mensagem"
+            onChange={(value) => onFilterChange("messageId", value)}
+            options={options.messageIds}
+            value={filters.messageId}
+          />
+          <FilterSelect
+            label="origem"
+            onChange={(value) => onFilterChange("source", value)}
+            options={options.sources}
+            value={filters.source}
+          />
+        </div>
+        <div className="grid grid-cols-2 rounded-md border p-1">
+          <button
+            className={`rounded px-2 py-1 text-xs ${
+              detailMode === "summary" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+            }`}
+            onClick={() => onDetailModeChange("summary")}
+            type="button"
+          >
+            Resumo
+          </button>
+          <button
+            className={`rounded px-2 py-1 text-xs ${
+              detailMode === "detailed" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+            }`}
+            onClick={() => onDetailModeChange("detailed")}
+            type="button"
+          >
+            Detalhado
+          </button>
+        </div>
+      </div>
+      ) : null}
+    </div>
+  );
+}
+
+function FilterSelect({
+  label,
+  onChange,
+  options,
+  value
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  options: Array<{ label: string; value: string }>;
+  value: string;
+}) {
+  return (
+    <label className="grid gap-1">
+      <span className="text-[11px] font-medium uppercase text-muted-foreground">{label}</span>
+      <select
+        className="h-8 min-w-0 rounded-md border bg-background px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        onChange={(event) => onChange(event.target.value)}
+        value={value}
+      >
+        <option value="all">Todos</option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function EventMetaBadge({ label, value }: { label: string; value: string }) {
+  return (
+    <Badge className="gap-1" variant="outline">
+      <span className="text-muted-foreground">{label}</span>
+      {value}
+    </Badge>
+  );
+}
+
+function buildFilterOptions(events: ProcessingEvent[]) {
+  return {
+    actorNames: uniqueOptions(events.map((event) => event.actorName ?? null)),
+    eventTypes: uniqueOptions(events.map((event) => event.eventType)),
+    messageIds: uniqueOptions(events.map((event) => event.messageId ?? null), shortId),
+    runIds: uniqueOptions(events.map((event) => getEventRunId(event)), shortId),
+    sources: uniqueOptions(events.map((event) => getEventSource(event))),
+    statuses: uniqueOptions(events.map((event) => event.status))
+  };
+}
+
+function uniqueOptions(
+  values: Array<string | null | undefined>,
+  labelFormatter: (value: string) => string = (value) => value
+) {
+  return Array.from(new Set(values.filter((value): value is string => Boolean(value))))
+    .sort((left, right) => left.localeCompare(right))
+    .map((value) => ({ label: labelFormatter(value), value }));
+}
+
+function matchesFilters(event: ProcessingEvent, filters: TimelineFilters): boolean {
+  if (filters.runId !== "all" && getEventRunId(event) !== filters.runId) {
+    return false;
+  }
+  if (filters.eventType !== "all" && event.eventType !== filters.eventType) {
+    return false;
+  }
+  if (filters.actorName !== "all" && event.actorName !== filters.actorName) {
+    return false;
+  }
+  if (filters.status !== "all" && event.status !== filters.status) {
+    return false;
+  }
+  if (filters.messageId !== "all" && event.messageId !== filters.messageId) {
+    return false;
+  }
+  if (filters.source !== "all" && getEventSource(event) !== filters.source) {
+    return false;
+  }
+  return true;
+}
+
+function getEventRunId(event: ProcessingEvent): string | null {
+  return readPayloadString(event.payload.runId) ?? readPayloadString(event.payload.run_id);
+}
+
+function getEventSource(event: ProcessingEvent): string {
+  return readPayloadString(event.payload.source) ?? "chat_api";
+}
+
+function readPayloadString(value: JsonValue | undefined): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function eventCardAccent(event: ProcessingEvent): string {
+  const source = getEventSource(event);
+  if (source !== "chat_api" && source !== "mock_runtime") {
+    return "border-l-violet-700";
+  }
+  return itemAccentStyles[event.status] ?? "border-l-border";
 }
 
 function formatArchitectureMode(mode: ArchitectureMode): string {

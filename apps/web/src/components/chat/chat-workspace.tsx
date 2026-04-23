@@ -5,6 +5,7 @@ import {
   Activity,
   AlertTriangle,
   Bot,
+  ChevronDown,
   CheckCircle2,
   Clock3,
   ClipboardCheck,
@@ -388,6 +389,7 @@ function ReviewPanel({
     (task) => task.status === "open" || task.status === "in_review"
   );
   const hasOpenTasks = openTasks.length > 0;
+  const [isExpanded, setIsExpanded] = useState(hasOpenTasks);
 
   if (reviewTasks.length === 0) {
     return null;
@@ -396,13 +398,17 @@ function ReviewPanel({
   return (
     <div className={hasOpenTasks ? "bg-amber-50/80 p-3" : "bg-muted/30 p-3"}>
       <div
-        className={`mb-3 flex items-start justify-between gap-3 rounded-md border p-3 ${
+        className={`flex items-start justify-between gap-3 rounded-md border p-3 ${
           hasOpenTasks
             ? "border-amber-200 bg-amber-100/80"
             : "border-border bg-background"
         }`}
       >
-        <div className="min-w-0">
+        <button
+          className="min-w-0 flex-1 text-left"
+          onClick={() => setIsExpanded((current) => !current)}
+          type="button"
+        >
           <div className="flex items-center gap-2">
             {hasOpenTasks ? (
               <AlertTriangle className="h-4 w-4 text-amber-700" />
@@ -422,12 +428,26 @@ function ReviewPanel({
               ? "Revise a solicitacao e escolha uma decisao rapida. A observacao e opcional."
               : "Nao ha pendencias humanas abertas nesta conversa."}
           </p>
+        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <Badge variant={hasOpenTasks ? "warning" : "success"}>
+            {hasOpenTasks ? `${openTasks.length} pendente` : "sem pendencias"}
+          </Badge>
+          <Button
+            className="h-7 w-7"
+            onClick={() => setIsExpanded((current) => !current)}
+            size="icon"
+            type="button"
+            variant="ghost"
+          >
+            <ChevronDown
+              className={`h-3.5 w-3.5 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+            />
+          </Button>
         </div>
-        <Badge className="shrink-0" variant={hasOpenTasks ? "warning" : "success"}>
-          {hasOpenTasks ? `${openTasks.length} pendente` : "sem pendencias"}
-        </Badge>
       </div>
-      <div className="space-y-3">
+      {isExpanded ? (
+      <div className="mt-3 space-y-3">
         {reviewTasks.map((task) => {
           const isOpen = task.status === "open" || task.status === "in_review";
           const note = notes[task.id] ?? "";
@@ -497,6 +517,7 @@ function ReviewPanel({
           );
         })}
       </div>
+      ) : null}
     </div>
   );
 }
