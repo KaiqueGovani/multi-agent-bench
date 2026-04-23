@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from app.api.routes import (
     attachments,
     conversations,
+    dashboard,
     events,
     health,
     integrations,
@@ -49,5 +50,10 @@ api_router.include_router(
     attachments.router,
     prefix="/attachments",
     tags=["attachments"],
+    dependencies=protected_dependencies,
+)
+api_router.include_router(
+    dashboard.router,
+    tags=["dashboard"],
     dependencies=protected_dependencies,
 )

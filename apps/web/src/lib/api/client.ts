@@ -1,6 +1,7 @@
 import type {
   ArchitectureMode,
   ConversationListResponse,
+  DashboardMetricsResponse,
   ConversationDetailResponse,
   CreateConversationResponse,
   MessageListResponse,
@@ -80,6 +81,10 @@ export function createConversation(
 
 export function listConversations(): Promise<ConversationListResponse> {
   return request<ConversationListResponse>("/conversations");
+}
+
+export function getDashboardMetrics(): Promise<DashboardMetricsResponse> {
+  return request<DashboardMetricsResponse>("/dashboard/metrics");
 }
 
 export function getConversation(conversationId: string): Promise<ConversationDetailResponse> {

@@ -187,11 +187,12 @@ export function useConversation(architectureMode: ArchitectureMode) {
         status
       });
       await refreshOpenReviewTasks();
+      await refreshConversations();
       if (conversationId) {
         await refreshConversationDetail(conversationId);
       }
     },
-    [conversationId, refreshConversationDetail, refreshOpenReviewTasks]
+    [conversationId, refreshConversationDetail, refreshConversations, refreshOpenReviewTasks]
   );
 
   const sendMessage = useCallback(

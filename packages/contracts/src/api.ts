@@ -1,6 +1,9 @@
 import type {
   Attachment,
   Conversation,
+  DashboardConversationItem,
+  DashboardDistributionItem,
+  DashboardTotals,
   IsoDateTime,
   JsonObject,
   Message,
@@ -56,6 +59,16 @@ export interface ConversationSummary {
 
 export interface ConversationListResponse {
   conversations: ConversationSummary[];
+}
+
+export interface DashboardMetricsResponse {
+  generatedAt: IsoDateTime;
+  totals: DashboardTotals;
+  byArchitecture: DashboardDistributionItem[];
+  byModel: DashboardDistributionItem[];
+  byScenario: DashboardDistributionItem[];
+  byAttachmentType: DashboardDistributionItem[];
+  conversations: DashboardConversationItem[];
 }
 
 export interface ReviewTaskListResponse {

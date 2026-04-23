@@ -4,12 +4,11 @@ import { useState } from "react";
 import {
   Activity,
   AlertTriangle,
+  BarChart3,
   Bot,
   ChevronDown,
   CheckCircle2,
   Clock3,
-  ClipboardCheck,
-  ClipboardX,
   Globe2,
   Info,
   MessageSquare,
@@ -24,6 +23,7 @@ import {
   Workflow
 } from "lucide-react";
 
+import { PocDashboard } from "@/components/dashboard/poc-dashboard";
 import { EventTimeline } from "@/components/events/event-timeline";
 import { ConversationInspector } from "@/components/inspection/conversation-inspector";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -44,6 +44,7 @@ export function ChatWorkspace() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(true);
   const [isEventsOpen, setIsEventsOpen] = useState(true);
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
+  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [architectureMode, setArchitectureMode] = useState<ArchitectureMode>(
     "centralized_orchestration"
   );
@@ -120,22 +121,6 @@ export function ChatWorkspace() {
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <label className="sr-only" htmlFor="architecture-mode">
-              Arquitetura
-            </label>
-            <select
-              className="hidden h-9 max-w-56 rounded-md border bg-background px-3 text-sm text-foreground shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring xl:block"
-              disabled={isSending}
-              id="architecture-mode"
-              onChange={(event) => setArchitectureMode(event.target.value as ArchitectureMode)}
-              value={architectureMode}
-            >
-              {architectureOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
             <Button
               className="lg:hidden"
               onClick={() => setIsEventsOpen((current) => !current)}
@@ -158,6 +143,15 @@ export function ChatWorkspace() {
             >
               <Search className="h-4 w-4" />
               <span className="hidden sm:inline">Inspecao</span>
+            </Button>
+            <Button
+              onClick={() => setIsDashboardOpen(true)}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden sm:inline">Dashboard</span>
             </Button>
             <Button
               disabled={isCreatingConversation}
@@ -196,6 +190,15 @@ export function ChatWorkspace() {
           reviewTasks={reviewTasks}
           runs={runs}
         />
+        <PocDashboard
+          isOpen={isDashboardOpen}
+          onOpenChange={setIsDashboardOpen}
+          onResolveReviewTask={(reviewTaskId, status, note) =>
+            void updateReviewTask(reviewTaskId, status, note)
+          }
+          reviewTasks={openReviewTasks}
+          onSelectConversation={(id) => void selectConversation(id)}
+        />
 
         <div className="min-h-0 flex-1 overflow-y-auto bg-background">
           <MessageList
@@ -206,8 +209,10 @@ export function ChatWorkspace() {
         </div>
 
         <MessageComposer
+          architectureMode={architectureMode}
           disabled={!conversationId}
           isSending={isSending}
+          onArchitectureModeChange={setArchitectureMode}
           onSend={sendMessage}
         />
       </section>
@@ -219,12 +224,7 @@ export function ChatWorkspace() {
         isOpen={isEventsOpen}
         onOpenChange={setIsEventsOpen}
         reviewPanel={
-          <ReviewPanel
-            onUpdate={(reviewTaskId, status, note) =>
-              void updateReviewTask(reviewTaskId, status, note)
-            }
-            reviewTasks={reviewTasks}
-          />
+          <ReviewPanel reviewTasks={reviewTasks} />
         }
       />
     </main>
@@ -374,17 +374,10 @@ function ConversationHistory({
 }
 
 function ReviewPanel({
-  onUpdate,
   reviewTasks
 }: {
-  onUpdate: (
-    reviewTaskId: string,
-    status: "resolved" | "cancelled" | "in_review",
-    note: string
-  ) => void;
   reviewTasks: ReviewTask[];
 }) {
-  const [notes, setNotes] = useState<Record<string, string>>({});
   const openTasks = reviewTasks.filter(
     (task) => task.status === "open" || task.status === "in_review"
   );
@@ -450,7 +443,6 @@ function ReviewPanel({
       <div className="mt-3 space-y-3">
         {reviewTasks.map((task) => {
           const isOpen = task.status === "open" || task.status === "in_review";
-          const note = notes[task.id] ?? "";
 
           return (
             <div className="rounded-md border bg-background p-3" key={task.id}>
@@ -464,50 +456,9 @@ function ReviewPanel({
                 <Badge variant={isOpen ? "warning" : "success"}>{task.status}</Badge>
               </div>
               {isOpen ? (
-                <div className="mt-3 grid gap-2">
-                  <textarea
-                    className="min-h-16 rounded-md border bg-background px-3 py-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    onChange={(event) =>
-                      setNotes((current) => ({
-                        ...current,
-                        [task.id]: event.target.value
-                      }))
-                    }
-                    placeholder="Observacao da revisao"
-                    value={note}
-                  />
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(9.5rem,1.15fr)]">
-                    <Button
-                      className="whitespace-nowrap text-xs"
-                      onClick={() => onUpdate(task.id, "resolved", note)}
-                      size="sm"
-                      type="button"
-                    >
-                      <ClipboardCheck className="h-4 w-4" />
-                      Aprovar
-                    </Button>
-                    <Button
-                      className="whitespace-nowrap text-xs"
-                      onClick={() => onUpdate(task.id, "cancelled", note)}
-                      size="sm"
-                      type="button"
-                      variant="destructive"
-                    >
-                      <ClipboardX className="h-4 w-4" />
-                      Rejeitar
-                    </Button>
-                    <Button
-                      className="whitespace-nowrap border-amber-300 bg-amber-100 px-2 text-xs text-amber-950 hover:bg-amber-200"
-                      onClick={() => onUpdate(task.id, "in_review", note)}
-                      size="sm"
-                      type="button"
-                      variant="outline"
-                    >
-                      <Clock3 className="h-3.5 w-3.5 shrink-0 text-amber-800" />
-                      Manter em revisao
-                    </Button>
-                  </div>
-                </div>
+                <p className="mt-2 text-[11px] text-amber-800">
+                  Um profissional esta avaliando a resposta.
+                </p>
               ) : task.resolvedAt ? (
                 <p className="mt-2 text-[11px] text-muted-foreground">
                   Resolvida em {formatUpdatedAt(task.resolvedAt)}

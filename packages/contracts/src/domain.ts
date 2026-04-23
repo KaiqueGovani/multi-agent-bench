@@ -167,6 +167,34 @@ export interface ReviewTask {
   metadata: OperationalMetadata;
 }
 
+export interface DashboardTotals {
+  conversations: number;
+  runs: number;
+  runsCompleted: number;
+  runsFailed: number;
+  runsHumanReview: number;
+  messages: number;
+  attachments: number;
+  events: number;
+  averageRunDurationMs?: number;
+}
+
+export interface DashboardDistributionItem {
+  key: string;
+  count: number;
+  averageRunDurationMs?: number;
+}
+
+export interface DashboardConversationItem {
+  conversationId: Uuid;
+  status: ConversationStatus;
+  updatedAt: IsoDateTime;
+  latestRunId?: Uuid;
+  lastMessage?: string;
+  runCount: number;
+  reviewPending: boolean;
+}
+
 export interface NormalizedAttachmentInput {
   clientAttachmentId?: string;
   originalFilename: string;

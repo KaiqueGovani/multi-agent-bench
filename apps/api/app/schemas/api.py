@@ -72,6 +72,44 @@ class ConversationListResponse(ApiModel):
     conversations: list[ConversationSummary] = Field(default_factory=list)
 
 
+class DashboardTotals(ApiModel):
+    conversations: int = 0
+    runs: int = 0
+    runs_completed: int = 0
+    runs_failed: int = 0
+    runs_human_review: int = 0
+    messages: int = 0
+    attachments: int = 0
+    events: int = 0
+    average_run_duration_ms: int | None = None
+
+
+class DashboardDistributionItem(ApiModel):
+    key: str
+    count: int
+    average_run_duration_ms: int | None = None
+
+
+class DashboardConversationItem(ApiModel):
+    conversation_id: UUID
+    status: ConversationStatus
+    updated_at: datetime
+    latest_run_id: UUID | None = None
+    last_message: str | None = None
+    run_count: int
+    review_pending: bool
+
+
+class DashboardMetricsResponse(ApiModel):
+    generated_at: datetime
+    totals: DashboardTotals = Field(default_factory=DashboardTotals)
+    by_architecture: list[DashboardDistributionItem] = Field(default_factory=list)
+    by_model: list[DashboardDistributionItem] = Field(default_factory=list)
+    by_scenario: list[DashboardDistributionItem] = Field(default_factory=list)
+    by_attachment_type: list[DashboardDistributionItem] = Field(default_factory=list)
+    conversations: list[DashboardConversationItem] = Field(default_factory=list)
+
+
 class ReviewTaskListResponse(ApiModel):
     review_tasks: list[ReviewTask] = Field(default_factory=list)
 

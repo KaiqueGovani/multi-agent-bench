@@ -154,6 +154,44 @@ export interface ReviewTask {
   metadata: JsonObject;
 }
 
+export interface DashboardTotals {
+  conversations: number;
+  runs: number;
+  runsCompleted: number;
+  runsFailed: number;
+  runsHumanReview: number;
+  messages: number;
+  attachments: number;
+  events: number;
+  averageRunDurationMs?: number | null;
+}
+
+export interface DashboardDistributionItem {
+  key: string;
+  count: number;
+  averageRunDurationMs?: number | null;
+}
+
+export interface DashboardConversationItem {
+  conversationId: string;
+  status: ConversationStatus;
+  updatedAt: string;
+  latestRunId?: string | null;
+  lastMessage?: string | null;
+  runCount: number;
+  reviewPending: boolean;
+}
+
+export interface DashboardMetricsResponse {
+  generatedAt: string;
+  totals: DashboardTotals;
+  byArchitecture: DashboardDistributionItem[];
+  byModel: DashboardDistributionItem[];
+  byScenario: DashboardDistributionItem[];
+  byAttachmentType: DashboardDistributionItem[];
+  conversations: DashboardConversationItem[];
+}
+
 export interface ConversationSummary {
   conversationId: string;
   status: ConversationStatus;

@@ -8,10 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import type { ArchitectureMode } from "@/lib/types";
 
 interface MessageComposerProps {
+  architectureMode: ArchitectureMode;
   disabled: boolean;
   isSending: boolean;
+  onArchitectureModeChange: (mode: ArchitectureMode) => void;
   onSend: (text: string, files: File[]) => Promise<void>;
 }
 
@@ -23,8 +26,19 @@ interface SelectedAttachment {
 const ACCEPTED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
 const MAX_FILES = 4;
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+const ARCHITECTURE_OPTIONS: Array<{ label: string; value: ArchitectureMode }> = [
+  { label: "Orquestracao centralizada", value: "centralized_orchestration" },
+  { label: "Workflow estruturado", value: "structured_workflow" },
+  { label: "Swarm descentralizado", value: "decentralized_swarm" }
+];
 
-export function MessageComposer({ disabled, isSending, onSend }: MessageComposerProps) {
+export function MessageComposer({
+  architectureMode,
+  disabled,
+  isSending,
+  onArchitectureModeChange,
+  onSend
+}: MessageComposerProps) {
   const [text, setText] = useState("");
   const [attachments, setAttachments] = useState<SelectedAttachment[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -155,7 +169,35 @@ export function MessageComposer({ disabled, isSending, onSend }: MessageComposer
           </Alert>
         ) : null}
 
-        <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-stretch gap-2">
+        <div className="rounded-lg border bg-background p-3">
+          <div className="mb-3 flex flex-col gap-2 border-b pb-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0">
+              <label
+                className="text-[11px] font-medium uppercase text-muted-foreground"
+                htmlFor="composer-architecture-mode"
+              >
+                Arquitetura
+              </label>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Configuracao aplicada ao proximo envio
+              </p>
+            </div>
+            <select
+              className="h-9 min-w-0 rounded-md border bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-w-64"
+              disabled={isSending}
+              id="composer-architecture-mode"
+              onChange={(event) => onArchitectureModeChange(event.target.value as ArchitectureMode)}
+              value={architectureMode}
+            >
+              {ARCHITECTURE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-stretch gap-2">
           <Input
             accept={ACCEPTED_FILE_TYPES.join(",")}
             className="hidden"
@@ -201,6 +243,7 @@ export function MessageComposer({ disabled, isSending, onSend }: MessageComposer
               </>
             )}
           </Button>
+        </div>
         </div>
       </div>
     </form>
