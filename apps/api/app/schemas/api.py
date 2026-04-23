@@ -75,3 +75,17 @@ class SseProcessingEvent(ApiModel):
     created_at: datetime
     duration_ms: int | None = None
     payload: JsonObject = Field(default_factory=dict)
+
+
+class IngestProcessingEventRequest(ApiModel):
+    conversation_id: UUID
+    message_id: UUID | None = None
+    event_type: ProcessingEventType
+    actor_name: str | None = None
+    parent_event_id: UUID | None = None
+    correlation_id: UUID
+    payload: JsonObject = Field(default_factory=dict)
+    duration_ms: int | None = None
+    status: ProcessingStatus
+    external_event_id: str | None = None
+    source: str = "ai_service"

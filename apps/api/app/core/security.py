@@ -23,3 +23,23 @@ async def verify_api_key(
         detail="Invalid or missing API key",
         headers={"WWW-Authenticate": "ApiKey"},
     )
+
+
+async def verify_ai_service_secret(
+    x_ai_service_secret: str | None = Header(default=None, alias="X-AI-Service-Secret"),
+) -> None:
+    settings = get_settings()
+    if not settings.ai_service_secret:
+        return
+
+    if x_ai_service_secret and secrets.compare_digest(
+        x_ai_service_secret,
+        settings.ai_service_secret,
+    ):
+        return
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid or missing AI service secret",
+        headers={"WWW-Authenticate": "ApiKey"},
+    )

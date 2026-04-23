@@ -1,6 +1,7 @@
 from app.schemas.api import (
     CreateConversationRequest,
     CreateConversationResponse,
+    IngestProcessingEventRequest,
     MessageListResponse,
     SendMessageResponse,
     SseProcessingEvent,
@@ -36,6 +37,7 @@ __all__ = [
     "ConversationStatus",
     "CreateConversationRequest",
     "CreateConversationResponse",
+    "IngestProcessingEventRequest",
     "Message",
     "MessageDirection",
     "MessageListResponse",
@@ -51,4 +53,3 @@ __all__ = [
     "SendMessageResponse",
     "SseProcessingEvent",
 ]
-

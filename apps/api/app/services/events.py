@@ -94,3 +94,14 @@ class EventService:
             processing_event_to_schema(event_model)
             for event_model in self._db.scalars(statement).all()
         ]
+
+    def get_external_event(
+        self,
+        *,
+        conversation_id: UUID,
+        external_event_id: str,
+    ) -> ProcessingEvent | None:
+        for event in self.list_conversation_events(conversation_id):
+            if event.payload.get("externalEventId") == external_event_id:
+                return event
+        return None
