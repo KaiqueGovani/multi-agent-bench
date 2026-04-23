@@ -10,7 +10,7 @@ import {
   ClipboardCheck,
   ClipboardX,
   Globe2,
-  History,
+  Info,
   MessageSquare,
   Network,
   PanelLeftClose,
@@ -19,10 +19,12 @@ import {
   PanelRightOpen,
   Plus,
   Loader2,
+  Search,
   Workflow
 } from "lucide-react";
 
 import { EventTimeline } from "@/components/events/event-timeline";
+import { ConversationInspector } from "@/components/inspection/conversation-inspector";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,12 +42,15 @@ const architectureOptions: Array<{ label: string; value: ArchitectureMode }> = [
 export function ChatWorkspace() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(true);
   const [isEventsOpen, setIsEventsOpen] = useState(true);
+  const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [architectureMode, setArchitectureMode] = useState<ArchitectureMode>(
     "centralized_orchestration"
   );
   const {
+    attachments,
     attachmentsByMessage,
     connectionStatus,
+    conversation,
     conversationId,
     conversationSummaries,
     error,
@@ -86,10 +91,10 @@ export function ChatWorkspace() {
       />
 
       <section className="flex min-w-0 flex-col">
-        <header className="flex min-h-16 items-center border-b bg-card px-4 shadow-sm">
+        <header className="flex min-h-16 items-center gap-3 border-b bg-card px-3 py-2 shadow-sm sm:px-4">
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <Button
-              className="lg:hidden"
+              className="shrink-0 lg:hidden"
               onClick={() => setIsHistoryOpen((current) => !current)}
               size="icon"
               type="button"
@@ -101,87 +106,77 @@ export function ChatWorkspace() {
                 <PanelLeftOpen className="h-4 w-4" />
               )}
             </Button>
-            <div className="min-w-0">
-              <h1 className="truncate text-base font-semibold">
-                Atendimento farmaceutico POC
-              </h1>
+            <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 items-center gap-2">
+                <h1 className="truncate text-base font-semibold">
+                  Atendimento farmaceutico POC
+                </h1>
+                <HeaderContextTooltip architectureMode={architectureMode} />
+              </div>
               <p className="truncate text-xs text-muted-foreground">
                 {conversationId ? `Conversa ${conversationId}` : "Nenhuma conversa ativa"}
               </p>
             </div>
-            <div className="hidden items-center gap-2 md:flex">
-              <Badge className="gap-1" variant="outline">
-                <Globe2 className="h-3.5 w-3.5" />
-                web_chat
-              </Badge>
-              <Badge className="gap-1" variant="outline">
-                <Bot className="h-3.5 w-3.5" />
-                mock runtime
-              </Badge>
-              <Badge className="gap-1" variant="outline">
-                <ArchitectureIcon mode={architectureMode} />
-                {formatArchitectureMode(architectureMode)}
-              </Badge>
-              {events.length > 0 ? (
-                <Badge className="gap-1">
-                  <Activity className="h-3.5 w-3.5" />
-                  {events.length} eventos
-                </Badge>
-              ) : null}
-              {runs.length > 0 ? (
-                <Badge className="gap-1" variant="outline">
-                  <History className="h-3.5 w-3.5" />
-                  {runs.length} runs
-                </Badge>
-              ) : null}
-              {reviewTasks.length > 0 ? (
-                <Badge className="gap-1" variant="warning">
-                  <AlertTriangle className="h-3.5 w-3.5" />
-                  {reviewTasks.length} revisoes
-                </Badge>
-              ) : null}
-            </div>
           </div>
-          <select
-            className="mr-2 hidden h-9 max-w-52 rounded-md border bg-background px-3 text-sm text-foreground shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring md:block"
-            disabled={isSending}
-            onChange={(event) => setArchitectureMode(event.target.value as ArchitectureMode)}
-            value={architectureMode}
-          >
-            {architectureOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <Button
-            className="mr-2 lg:hidden"
-            onClick={() => setIsEventsOpen((current) => !current)}
-            size="icon"
-            type="button"
-            variant="outline"
-          >
-            {isEventsOpen ? (
-              <PanelRightClose className="h-4 w-4" />
-            ) : (
-              <PanelRightOpen className="h-4 w-4" />
-            )}
-          </Button>
-          <Button
-            disabled={isCreatingConversation}
-            onClick={() => void startConversation()}
-            size="sm"
-            type="button"
-          >
-            {isCreatingConversation ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Criando
-              </>
-            ) : (
-              "Nova conversa"
-            )}
-          </Button>
+          <div className="flex shrink-0 items-center gap-2">
+            <label className="sr-only" htmlFor="architecture-mode">
+              Arquitetura
+            </label>
+            <select
+              className="hidden h-9 max-w-56 rounded-md border bg-background px-3 text-sm text-foreground shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring xl:block"
+              disabled={isSending}
+              id="architecture-mode"
+              onChange={(event) => setArchitectureMode(event.target.value as ArchitectureMode)}
+              value={architectureMode}
+            >
+              {architectureOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <Button
+              className="lg:hidden"
+              onClick={() => setIsEventsOpen((current) => !current)}
+              size="icon"
+              type="button"
+              variant="outline"
+            >
+              {isEventsOpen ? (
+                <PanelRightClose className="h-4 w-4" />
+              ) : (
+                <PanelRightOpen className="h-4 w-4" />
+              )}
+            </Button>
+            <Button
+              disabled={!conversationId}
+              onClick={() => setIsInspectorOpen(true)}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              <Search className="h-4 w-4" />
+              <span className="hidden sm:inline">Inspecao</span>
+            </Button>
+            <Button
+              disabled={isCreatingConversation}
+              onClick={() => void startConversation()}
+              size="sm"
+              type="button"
+            >
+              {isCreatingConversation ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="hidden sm:inline">Criando</span>
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Nova conversa</span>
+                </>
+              )}
+            </Button>
+          </div>
         </header>
 
         {error ? (
@@ -189,6 +184,17 @@ export function ChatWorkspace() {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         ) : null}
+
+        <ConversationInspector
+          attachments={attachments}
+          conversation={conversation}
+          events={events}
+          isOpen={isInspectorOpen}
+          messages={messages}
+          onOpenChange={setIsInspectorOpen}
+          reviewTasks={reviewTasks}
+          runs={runs}
+        />
 
         <div className="min-h-0 flex-1 overflow-y-auto bg-background">
           <MessageList
@@ -381,25 +387,44 @@ function ReviewPanel({
   const openTasks = reviewTasks.filter(
     (task) => task.status === "open" || task.status === "in_review"
   );
+  const hasOpenTasks = openTasks.length > 0;
 
   if (reviewTasks.length === 0) {
     return null;
   }
 
   return (
-    <div className="bg-amber-50/80 p-3">
-      <div className="mb-3 flex items-start justify-between gap-3 rounded-md border border-amber-200 bg-amber-100/80 p-3">
+    <div className={hasOpenTasks ? "bg-amber-50/80 p-3" : "bg-muted/30 p-3"}>
+      <div
+        className={`mb-3 flex items-start justify-between gap-3 rounded-md border p-3 ${
+          hasOpenTasks
+            ? "border-amber-200 bg-amber-100/80"
+            : "border-border bg-background"
+        }`}
+      >
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-amber-700" />
-            <h3 className="text-sm font-semibold">Acao humana necessaria</h3>
+            {hasOpenTasks ? (
+              <AlertTriangle className="h-4 w-4 text-amber-700" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4 text-primary" />
+            )}
+            <h3 className="text-sm font-semibold">
+              {hasOpenTasks ? "Acao humana necessaria" : "Revisao humana concluida"}
+            </h3>
           </div>
-          <p className="mt-1 text-xs text-amber-900">
-            Revise a solicitacao e escolha uma decisao rapida. A observacao e opcional.
+          <p
+            className={`mt-1 text-xs ${
+              hasOpenTasks ? "text-amber-900" : "text-muted-foreground"
+            }`}
+          >
+            {hasOpenTasks
+              ? "Revise a solicitacao e escolha uma decisao rapida. A observacao e opcional."
+              : "Nao ha pendencias humanas abertas nesta conversa."}
           </p>
         </div>
-        <Badge className="shrink-0" variant={openTasks.length > 0 ? "warning" : "success"}>
-          {openTasks.length > 0 ? `${openTasks.length} pendente` : "sem pendencias"}
+        <Badge className="shrink-0" variant={hasOpenTasks ? "warning" : "success"}>
+          {hasOpenTasks ? `${openTasks.length} pendente` : "sem pendencias"}
         </Badge>
       </div>
       <div className="space-y-3">
@@ -431,8 +456,9 @@ function ReviewPanel({
                     placeholder="Observacao da revisao"
                     value={note}
                   />
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(9.5rem,1.15fr)]">
                     <Button
+                      className="whitespace-nowrap text-xs"
                       onClick={() => onUpdate(task.id, "resolved", note)}
                       size="sm"
                       type="button"
@@ -441,6 +467,7 @@ function ReviewPanel({
                       Aprovar
                     </Button>
                     <Button
+                      className="whitespace-nowrap text-xs"
                       onClick={() => onUpdate(task.id, "cancelled", note)}
                       size="sm"
                       type="button"
@@ -450,12 +477,13 @@ function ReviewPanel({
                       Rejeitar
                     </Button>
                     <Button
+                      className="whitespace-nowrap border-amber-300 bg-amber-100 px-2 text-xs text-amber-950 hover:bg-amber-200"
                       onClick={() => onUpdate(task.id, "in_review", note)}
                       size="sm"
                       type="button"
                       variant="outline"
                     >
-                      <Clock3 className="h-4 w-4" />
+                      <Clock3 className="h-3.5 w-3.5 shrink-0 text-amber-800" />
                       Manter em revisao
                     </Button>
                   </div>
@@ -468,6 +496,33 @@ function ReviewPanel({
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function HeaderContextTooltip({ architectureMode }: { architectureMode: ArchitectureMode }) {
+  return (
+    <div className="group relative hidden shrink-0 sm:block">
+      <button
+        aria-label="Metadados da conversa"
+        className="flex h-7 items-center gap-1 rounded-md border bg-background px-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        type="button"
+      >
+        <Info className="h-3.5 w-3.5" />
+        <Globe2 className="h-3.5 w-3.5" />
+        <Bot className="h-3.5 w-3.5" />
+        <ArchitectureIcon mode={architectureMode} />
+      </button>
+      <div className="pointer-events-none absolute left-0 top-9 z-40 hidden w-72 rounded-md border bg-card p-3 text-xs text-card-foreground shadow-lg group-hover:block group-focus-within:block">
+        <div className="grid gap-2">
+          <p className="font-medium">Contexto da conversa</p>
+          <div className="grid gap-1 text-muted-foreground">
+            <p>Plataforma: web chat</p>
+            <p>Runtime: mock runtime</p>
+            <p>Arquitetura: {formatArchitectureMode(architectureMode)}</p>
+          </div>
+        </div>
       </div>
     </div>
   );

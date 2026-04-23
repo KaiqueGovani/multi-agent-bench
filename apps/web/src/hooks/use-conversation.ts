@@ -16,6 +16,7 @@ import { openConversationEventStream } from "@/lib/sse/events";
 import type {
   ArchitectureMode,
   Attachment,
+  Conversation,
   ConversationSummary,
   Message,
   ProcessingEvent,
@@ -28,6 +29,7 @@ type ConnectionStatus = "idle" | "connecting" | "open" | "closed" | "error" | "r
 
 export function useConversation(architectureMode: ArchitectureMode) {
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversation, setConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [events, setEvents] = useState<ProcessingEvent[]>([]);
@@ -70,6 +72,7 @@ export function useConversation(architectureMode: ArchitectureMode) {
     setIsLoadingConversation(true);
     activeConversationIdRef.current = id;
     setConversationId(id);
+    setConversation(null);
     setMessages([]);
     setAttachments([]);
     setEvents([]);
@@ -82,6 +85,7 @@ export function useConversation(architectureMode: ArchitectureMode) {
       if (activeConversationIdRef.current !== id) {
         return;
       }
+      setConversation(detail.conversation);
       setMessages(detail.messages);
       setAttachments(detail.attachments);
       setEvents(detail.events);
@@ -115,6 +119,7 @@ export function useConversation(architectureMode: ArchitectureMode) {
       if (activeConversationIdRef.current !== id) {
         return null;
       }
+      setConversation(detail.conversation);
       setMessages(detail.messages);
       setAttachments(detail.attachments);
       setEvents((current) => mergeEventsForConversation(id, current, detail.events));
@@ -277,8 +282,10 @@ export function useConversation(architectureMode: ArchitectureMode) {
   }, [attachments]);
 
   return {
+    attachments,
     attachmentsByMessage,
     connectionStatus,
+    conversation,
     conversationId,
     conversationSummaries,
     error,
