@@ -1,6 +1,7 @@
 import { getAttachmentUrl } from "@/lib/api/client";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Attachment, Message } from "@/lib/types";
 import {
   AlertTriangle,
@@ -17,9 +18,24 @@ import {
 interface MessageListProps {
   messages: Message[];
   attachmentsByMessage: Record<string, Attachment[]>;
+  isLoading?: boolean;
 }
 
-export function MessageList({ messages, attachmentsByMessage }: MessageListProps) {
+export function MessageList({
+  messages,
+  attachmentsByMessage,
+  isLoading = false
+}: MessageListProps) {
+  if (isLoading) {
+    return (
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 md:p-6">
+        <MessageSkeleton align="left" />
+        <MessageSkeleton align="right" />
+        <MessageSkeleton align="left" />
+      </div>
+    );
+  }
+
   if (messages.length === 0) {
     return (
       <div className="flex h-full items-center justify-center px-6">
@@ -125,6 +141,22 @@ export function MessageList({ messages, attachmentsByMessage }: MessageListProps
           </article>
         );
       })}
+    </div>
+  );
+}
+
+function MessageSkeleton({ align }: { align: "left" | "right" }) {
+  const isRight = align === "right";
+
+  return (
+    <div className={`flex gap-3 ${isRight ? "justify-end" : "justify-start"}`}>
+      {!isRight ? <Skeleton className="h-9 w-9 shrink-0" /> : null}
+      <div className={`flex w-full max-w-[min(36rem,82vw)] flex-col gap-2 ${isRight ? "items-end" : "items-start"}`}>
+        <Skeleton className="h-3 w-32" />
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-3 w-20" />
+      </div>
+      {isRight ? <Skeleton className="h-9 w-9 shrink-0" /> : null}
     </div>
   );
 }

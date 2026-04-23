@@ -16,7 +16,9 @@ import type {
   Attachment,
   ConversationSummary,
   Message,
-  ProcessingEvent
+  ProcessingEvent,
+  ReviewTask,
+  Run
 } from "@/lib/types";
 
 type ConnectionStatus = "idle" | "connecting" | "open" | "closed" | "error" | "reconnecting";
@@ -26,11 +28,15 @@ export function useConversation(architectureMode: ArchitectureMode) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [events, setEvents] = useState<ProcessingEvent[]>([]);
+  const [runs, setRuns] = useState<Run[]>([]);
+  const [reviewTasks, setReviewTasks] = useState<ReviewTask[]>([]);
   const [conversationSummaries, setConversationSummaries] = useState<ConversationSummary[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("idle");
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
+  const [isLoadingConversation, setIsLoadingConversation] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const activeConversationIdRef = useRef<string | null>(null);
   const lastEventIdRef = useRef<string | null>(null);
 
   const refreshConversations = useCallback(async () => {
@@ -46,25 +52,77 @@ export function useConversation(architectureMode: ArchitectureMode) {
 
   const loadConversation = useCallback(async (id: string) => {
     setError(null);
-    const detail = await getConversation(id);
+    setIsLoadingConversation(true);
+    activeConversationIdRef.current = id;
     setConversationId(id);
-    setMessages(detail.messages);
-    setAttachments(detail.attachments);
-    setEvents(detail.events);
-    lastEventIdRef.current = getLastEventId(detail.events);
+    setMessages([]);
+    setAttachments([]);
+    setEvents([]);
+    setRuns([]);
+    setReviewTasks([]);
+    lastEventIdRef.current = null;
+
+    try {
+      const detail = await getConversation(id);
+      if (activeConversationIdRef.current !== id) {
+        return;
+      }
+      setMessages(detail.messages);
+      setAttachments(detail.attachments);
+      setEvents(detail.events);
+      setRuns(detail.runs);
+      setReviewTasks(detail.reviewTasks);
+      lastEventIdRef.current = getLastEventId(detail.events);
+    } catch (caught) {
+      if (activeConversationIdRef.current === id) {
+        setError(caught instanceof Error ? caught.message : "Failed to load conversation");
+      }
+    } finally {
+      if (activeConversationIdRef.current === id) {
+        setIsLoadingConversation(false);
+      }
+    }
   }, []);
 
   const refreshMessages = useCallback(async (id: string) => {
     const response = await getConversationMessages(id);
+    if (activeConversationIdRef.current !== id) {
+      return;
+    }
     setMessages(response.messages);
     setAttachments(response.attachments);
     void refreshConversations();
   }, [refreshConversations]);
 
+  const refreshConversationDetail = useCallback(async (id: string) => {
+    try {
+      const detail = await getConversation(id);
+      if (activeConversationIdRef.current !== id) {
+        return null;
+      }
+      setMessages(detail.messages);
+      setAttachments(detail.attachments);
+      setEvents((current) => mergeEventsForConversation(id, current, detail.events));
+      setRuns(detail.runs);
+      setReviewTasks(detail.reviewTasks);
+      lastEventIdRef.current = getLastEventId(detail.events) ?? lastEventIdRef.current;
+      void refreshConversations();
+      return detail;
+    } catch (caught) {
+      if (activeConversationIdRef.current === id) {
+        setError(caught instanceof Error ? caught.message : "Failed to refresh conversation");
+      }
+      return null;
+    }
+  }, [refreshConversations]);
+
   const refreshEvents = useCallback(async (id: string) => {
     try {
       const response = await getConversationEvents(id);
-      setEvents((current) => mergeEvents(current, response));
+      if (activeConversationIdRef.current !== id) {
+        return [];
+      }
+      setEvents((current) => mergeEventsForConversation(id, current, response));
       lastEventIdRef.current = getLastEventId(response) ?? lastEventIdRef.current;
       return response;
     } catch (caught) {
@@ -137,13 +195,19 @@ export function useConversation(architectureMode: ArchitectureMode) {
       source = openConversationEventStream(
         conversationId,
         (event) => {
+          if (activeConversationIdRef.current !== conversationId) {
+            return;
+          }
+          if (event.conversationId !== conversationId) {
+            return;
+          }
           lastEventIdRef.current = event.id;
           setEvents((current) => {
-            return mergeEvents(current, [event]);
+            return mergeEventsForConversation(conversationId, current, [event]);
           });
 
           if (event.eventType === "response.final" || event.eventType === "processing.completed") {
-            void refreshMessages(conversationId);
+            void refreshConversationDetail(conversationId);
           }
         },
         (status) => {
@@ -163,7 +227,7 @@ export function useConversation(architectureMode: ArchitectureMode) {
       setConnectionStatus("closed");
       source?.close();
     };
-  }, [conversationId, refreshEvents, refreshMessages]);
+  }, [conversationId, refreshConversationDetail, refreshEvents]);
 
   const attachmentsByMessage = useMemo(() => {
     return attachments.reduce<Record<string, Attachment[]>>((accumulator, attachment) => {
@@ -183,9 +247,12 @@ export function useConversation(architectureMode: ArchitectureMode) {
     error,
     events,
     isCreatingConversation,
+    isLoadingConversation,
     isSending,
     messages,
+    reviewTasks,
     refreshConversations,
+    runs,
     sendMessage,
     selectConversation,
     startConversation
@@ -213,4 +280,15 @@ function mergeEvents(
       new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime();
     return timeDifference === 0 ? left.id.localeCompare(right.id) : timeDifference;
   });
+}
+
+function mergeEventsForConversation(
+  conversationId: string,
+  currentEvents: ProcessingEvent[],
+  incomingEvents: ProcessingEvent[]
+): ProcessingEvent[] {
+  return mergeEvents(
+    currentEvents.filter((event) => event.conversationId === conversationId),
+    incomingEvents.filter((event) => event.conversationId === conversationId)
+  );
 }

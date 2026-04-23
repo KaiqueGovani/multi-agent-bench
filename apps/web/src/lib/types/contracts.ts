@@ -60,6 +60,8 @@ export type RunStatus =
   | "cancelled"
   | "human_review_required";
 
+export type ReviewTaskStatus = "open" | "in_review" | "resolved" | "cancelled";
+
 export type JsonValue =
   | string
   | number
@@ -141,6 +143,17 @@ export interface Run {
   updatedAt: string;
 }
 
+export interface ReviewTask {
+  id: string;
+  conversationId: string;
+  messageId: string;
+  reason: string;
+  status: ReviewTaskStatus;
+  createdAt: string;
+  resolvedAt?: string | null;
+  metadata: JsonObject;
+}
+
 export interface ConversationSummary {
   conversationId: string;
   status: ConversationStatus;
@@ -176,7 +189,7 @@ export interface ConversationDetailResponse {
   attachments: Attachment[];
   runs: Run[];
   events: ProcessingEvent[];
-  reviewTasks: unknown[];
+  reviewTasks: ReviewTask[];
 }
 
 export interface ConversationListResponse {

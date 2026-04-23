@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Clock3,
   Globe2,
+  History,
   MessageSquare,
   Network,
   PanelLeftClose,
@@ -48,8 +49,11 @@ export function ChatWorkspace() {
     error,
     events,
     isCreatingConversation,
+    isLoadingConversation,
     isSending,
     messages,
+    reviewTasks,
+    runs,
     sendMessage,
     selectConversation,
     startConversation
@@ -65,6 +69,7 @@ export function ChatWorkspace() {
         conversations={conversationSummaries}
         isOpen={isHistoryOpen}
         isCreatingConversation={isCreatingConversation}
+        isLoadingConversation={isLoadingConversation}
         onCreateConversation={() => void startConversation()}
         onOpenChange={setIsHistoryOpen}
         onSelectConversation={(summary) => {
@@ -116,6 +121,18 @@ export function ChatWorkspace() {
                 <Badge className="gap-1">
                   <Activity className="h-3.5 w-3.5" />
                   {events.length} eventos
+                </Badge>
+              ) : null}
+              {runs.length > 0 ? (
+                <Badge className="gap-1" variant="outline">
+                  <History className="h-3.5 w-3.5" />
+                  {runs.length} runs
+                </Badge>
+              ) : null}
+              {reviewTasks.length > 0 ? (
+                <Badge className="gap-1" variant="warning">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  {reviewTasks.length} revisoes
                 </Badge>
               ) : null}
             </div>
@@ -171,6 +188,7 @@ export function ChatWorkspace() {
         <div className="min-h-0 flex-1 overflow-y-auto bg-background">
           <MessageList
             attachmentsByMessage={attachmentsByMessage}
+            isLoading={isLoadingConversation}
             messages={messages}
           />
         </div>
@@ -198,6 +216,7 @@ function ConversationHistory({
   conversations,
   isOpen,
   isCreatingConversation,
+  isLoadingConversation,
   onCreateConversation,
   onOpenChange,
   onSelectConversation
@@ -206,6 +225,7 @@ function ConversationHistory({
   conversations: ConversationSummary[];
   isOpen: boolean;
   isCreatingConversation: boolean;
+  isLoadingConversation: boolean;
   onCreateConversation: () => void;
   onOpenChange: (open: boolean) => void;
   onSelectConversation: (summary: ConversationSummary) => void;
@@ -307,8 +327,17 @@ function ConversationHistory({
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
                         <span>{summary.messageCount} msg</span>
                         <span>{summary.eventCount} evt</span>
+                        {summary.latestRunId ? (
+                          <span>run {shortId(summary.latestRunId)}</span>
+                        ) : null}
                         <span>{formatUpdatedAt(summary.updatedAt)}</span>
                       </div>
+                      {isActive && isLoadingConversation ? (
+                        <div className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Carregando conversa
+                        </div>
+                      ) : null}
                     </button>
                   </li>
                 );
