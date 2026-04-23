@@ -1,4 +1,5 @@
 import type {
+  ArchitectureMode,
   ConversationDetailResponse,
   CreateConversationResponse,
   MessageListResponse,
@@ -42,13 +43,15 @@ export function getAttachmentUrl(attachmentId: string): string {
   return `${API_BASE_URL}/attachments/${attachmentId}`;
 }
 
-export function createConversation(): Promise<CreateConversationResponse> {
+export function createConversation(
+  architectureMode: ArchitectureMode
+): Promise<CreateConversationResponse> {
   return request<CreateConversationResponse>("/conversations", {
     method: "POST",
     body: JSON.stringify({
       channel: "web_chat",
       userSessionId: getLocalSessionId(),
-      metadata: getClientMetadata()
+      metadata: getClientMetadata(architectureMode)
     })
   });
 }
@@ -68,7 +71,8 @@ export function getConversationEvents(conversationId: string): Promise<Processin
 export function sendMessage(
   conversationId: string,
   text: string,
-  files: File[] = []
+  files: File[],
+  architectureMode: ArchitectureMode
 ): Promise<SendMessageResponse> {
   const body = new FormData();
   body.append("conversationId", conversationId);
@@ -78,7 +82,7 @@ export function sendMessage(
   body.append(
     "metadata_json",
     JSON.stringify({
-      ...getClientMetadata(),
+      ...getClientMetadata(architectureMode),
       fileCount: files.length,
       fileTypes: files.map((file) => file.type),
       fileSizes: files.map((file) => file.size)
@@ -94,7 +98,7 @@ export function sendMessage(
   });
 }
 
-function getClientMetadata() {
+function getClientMetadata(architectureMode: ArchitectureMode) {
   return {
     clientTimestamp: new Date().toISOString(),
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -103,7 +107,7 @@ function getClientMetadata() {
     deviceType: window.innerWidth < 768 ? "mobile" : "desktop",
     channel: "web_chat",
     runtimeMode: "mock",
-    architectureMode: "centralized_orchestration"
+    architectureMode
   };
 }
 

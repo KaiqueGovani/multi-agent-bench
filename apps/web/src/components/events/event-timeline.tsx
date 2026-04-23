@@ -6,13 +6,14 @@ import { PanelRightClose, PanelRightOpen } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { JsonValue, ProcessingEvent, ProcessingStatus } from "@/lib/types";
+import type { ArchitectureMode, JsonValue, ProcessingEvent, ProcessingStatus } from "@/lib/types";
 
 interface EventTimelineProps {
   events: ProcessingEvent[];
   connectionStatus: string;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  architectureMode: ArchitectureMode;
 }
 
 const statusVariants: Record<string, BadgeProps["variant"]> = {
@@ -52,6 +53,7 @@ const connectionLabels: Record<string, string> = {
 };
 
 export function EventTimeline({
+  architectureMode,
   events,
   connectionStatus,
   isOpen,
@@ -73,7 +75,7 @@ export function EventTimeline({
               <h2 className="text-sm font-semibold">Eventos</h2>
               <p className="text-xs text-muted-foreground">
                 {counters.total === 0
-                  ? "Timeline operacional"
+                  ? `Timeline operacional - ${formatArchitectureMode(architectureMode)}`
                   : `${counters.total} eventos - ${counters.running} em execucao`}
               </p>
             </div>
@@ -170,6 +172,15 @@ export function EventTimeline({
       ) : null}
     </aside>
   );
+}
+
+function formatArchitectureMode(mode: ArchitectureMode): string {
+  const labels: Record<ArchitectureMode, string> = {
+    centralized_orchestration: "orquestracao centralizada",
+    decentralized_swarm: "swarm descentralizado",
+    structured_workflow: "workflow estruturado"
+  };
+  return labels[mode];
 }
 
 function Metric({

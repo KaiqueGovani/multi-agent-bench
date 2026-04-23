@@ -10,11 +10,11 @@ import {
   sendMessage as sendMultipartMessage
 } from "@/lib/api/client";
 import { openConversationEventStream } from "@/lib/sse/events";
-import type { Attachment, Message, ProcessingEvent } from "@/lib/types";
+import type { ArchitectureMode, Attachment, Message, ProcessingEvent } from "@/lib/types";
 
 type ConnectionStatus = "idle" | "connecting" | "open" | "closed" | "error" | "reconnecting";
 
-export function useConversation() {
+export function useConversation(architectureMode: ArchitectureMode) {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -44,14 +44,14 @@ export function useConversation() {
 
   const startConversation = useCallback(async () => {
     setError(null);
-    const created = await createConversation();
+    const created = await createConversation(architectureMode);
     setConversationId(created.conversationId);
     const detail = await getConversation(created.conversationId);
     setMessages(detail.messages);
     setAttachments(detail.attachments);
     setEvents(detail.events);
     lastEventIdRef.current = getLastEventId(detail.events);
-  }, []);
+  }, [architectureMode]);
 
   const sendMessage = useCallback(
     async (text: string, files: File[]) => {
@@ -61,7 +61,7 @@ export function useConversation() {
       setIsSending(true);
       setError(null);
       try {
-        await sendMultipartMessage(conversationId, text.trim(), files);
+        await sendMultipartMessage(conversationId, text.trim(), files, architectureMode);
         await refreshMessages(conversationId);
         window.setTimeout(() => {
           void refreshMessages(conversationId);
@@ -72,7 +72,7 @@ export function useConversation() {
         setIsSending(false);
       }
     },
-    [conversationId, refreshMessages]
+    [architectureMode, conversationId, refreshMessages]
   );
 
   useEffect(() => {

@@ -8,11 +8,21 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useConversation } from "@/hooks/use-conversation";
+import type { ArchitectureMode } from "@/lib/types";
 import { MessageComposer } from "./message-composer";
 import { MessageList } from "./message-list";
 
+const architectureOptions: Array<{ label: string; value: ArchitectureMode }> = [
+  { label: "Orquestracao centralizada", value: "centralized_orchestration" },
+  { label: "Workflow estruturado", value: "structured_workflow" },
+  { label: "Swarm descentralizado", value: "decentralized_swarm" }
+];
+
 export function ChatWorkspace() {
   const [isEventsOpen, setIsEventsOpen] = useState(true);
+  const [architectureMode, setArchitectureMode] = useState<ArchitectureMode>(
+    "centralized_orchestration"
+  );
   const {
     attachmentsByMessage,
     connectionStatus,
@@ -23,7 +33,7 @@ export function ChatWorkspace() {
     messages,
     sendMessage,
     startConversation
-  } = useConversation();
+  } = useConversation(architectureMode);
 
   return (
     <main
@@ -45,11 +55,24 @@ export function ChatWorkspace() {
             <div className="hidden items-center gap-2 md:flex">
               <Badge variant="outline">web_chat</Badge>
               <Badge variant="outline">mock runtime</Badge>
+              <Badge variant="outline">{formatArchitectureMode(architectureMode)}</Badge>
               {events.length > 0 ? (
                 <Badge>{events.length} eventos</Badge>
               ) : null}
             </div>
           </div>
+          <select
+            className="mr-2 hidden h-9 max-w-52 rounded-md border bg-background px-3 text-sm text-foreground shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring md:block"
+            disabled={Boolean(conversationId)}
+            onChange={(event) => setArchitectureMode(event.target.value as ArchitectureMode)}
+            value={architectureMode}
+          >
+            {architectureOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
           <Button
             className="mr-2 lg:hidden"
             onClick={() => setIsEventsOpen((current) => !current)}
@@ -94,6 +117,7 @@ export function ChatWorkspace() {
       </section>
 
       <EventTimeline
+        architectureMode={architectureMode}
         connectionStatus={connectionStatus}
         events={events}
         isOpen={isEventsOpen}
@@ -101,4 +125,8 @@ export function ChatWorkspace() {
       />
     </main>
   );
+}
+
+function formatArchitectureMode(mode: ArchitectureMode): string {
+  return architectureOptions.find((option) => option.value === mode)?.label ?? mode;
 }

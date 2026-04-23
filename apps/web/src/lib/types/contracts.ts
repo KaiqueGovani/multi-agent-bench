@@ -1,5 +1,10 @@
 export type ChannelType = "web_chat" | "whatsapp";
 
+export type ArchitectureMode =
+  | "centralized_orchestration"
+  | "structured_workflow"
+  | "decentralized_swarm";
+
 export type ConversationStatus =
   | "active"
   | "waiting"
@@ -136,4 +141,3 @@ export interface MessageListResponse {
   messages: Message[];
   attachments: Attachment[];
 }
-
