@@ -83,14 +83,18 @@ def _build_run_experiment(metadata: OperationalMetadata) -> RunExperimentMetadat
     settings = get_settings()
     extra = metadata.model_extra or {}
     return RunExperimentMetadata(
-        architecture_family=extra.get("architectureFamily"),
+        architecture_family=extra.get("architectureFamily")
+        or settings.default_architecture_family,
         architecture_key=metadata.architecture_mode or settings.default_architecture_mode,
         architecture_version=extra.get("architectureVersion")
         or settings.default_architecture_version,
-        routing_strategy=extra.get("routingStrategy"),
-        memory_strategy=extra.get("memoryStrategy"),
-        tool_executor_mode=extra.get("toolExecutorMode"),
-        review_policy_version=extra.get("reviewPolicyVersion"),
+        routing_strategy=extra.get("routingStrategy")
+        or settings.default_routing_strategy,
+        memory_strategy=extra.get("memoryStrategy") or settings.default_memory_strategy,
+        tool_executor_mode=extra.get("toolExecutorMode")
+        or settings.default_tool_executor_mode,
+        review_policy_version=extra.get("reviewPolicyVersion")
+        or settings.default_review_policy_version,
         model_provider=extra.get("modelProvider") or settings.default_model_provider,
         model_name=extra.get("modelName") or settings.default_model_name,
         model_version=extra.get("modelVersion") or settings.default_model_version,

@@ -14,6 +14,7 @@
     "text": "Preciso que um supervisor faca revisao humana deste atendimento.",
     "metadata": {
       "locale": "pt-BR",
+      "scenarioId": "human-review-needed",
       "forceReview": true
     },
     "attachments": []

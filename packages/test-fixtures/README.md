@@ -9,6 +9,7 @@ Each scenario in `scenarios/` describes:
 - expected HTTP status
 - expected mock route, actor, events, and review state
 - image and PDF attachments used to validate multimodal input
+- `scenarioId` in message metadata, used to group future run comparisons
 
 Run all scenarios against a local API:
 

@@ -14,6 +14,7 @@
     "text": "Tem dipirona em estoque?",
     "metadata": {
       "locale": "pt-BR",
+      "scenarioId": "stock-availability",
       "messageInputDurationMs": 900
     },
     "attachments": []

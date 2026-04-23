@@ -25,6 +25,11 @@ The goal is to keep backend, frontend, event streaming, persistence, and future 
 - Every model/agent execution should create a `runId`; `correlationId` is for
   request correlation, while `runId` is the analytical unit for comparison.
 - Events must be persisted and associated with a conversation; message-specific events should also include `messageId`.
+- Experimental comparisons require stable values for `architectureFamily`,
+  `architectureKey`, `architectureVersion`, `routingStrategy`,
+  `memoryStrategy`, `toolExecutorMode`, `reviewPolicyVersion`,
+  `modelProvider`, `modelName`, `promptBundleVersion`, `toolsetVersion`,
+  `experimentId`, and `scenarioId`.
 
 ## Initial POC assumptions
 

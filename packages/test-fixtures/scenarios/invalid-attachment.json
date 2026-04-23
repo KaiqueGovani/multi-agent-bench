@@ -14,6 +14,7 @@
     "text": "Estou anexando um arquivo invalido de proposito.",
     "metadata": {
       "locale": "pt-BR",
+      "scenarioId": "invalid-attachment",
       "fileCount": 1,
       "fileTypes": ["text/plain"]
     },

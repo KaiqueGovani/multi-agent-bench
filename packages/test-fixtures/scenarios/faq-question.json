@@ -14,6 +14,7 @@
     "text": "Qual o horario de funcionamento da farmacia hoje?",
     "metadata": {
       "locale": "pt-BR",
+      "scenarioId": "faq-question",
       "messageInputDurationMs": 1200
     },
     "attachments": []

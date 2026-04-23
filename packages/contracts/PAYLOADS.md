@@ -77,6 +77,12 @@ Each model or agent execution for a message should be represented by a run.
 
 Run example: `examples/run.json`
 
+Architecture comparison examples:
+
+- `examples/run-centralized-orchestration.json`
+- `examples/run-structured-workflow.json`
+- `examples/run-decentralized-swarm.json`
+
 Create run request example: `examples/create-run-request.json`
 
 Complete run request example: `examples/complete-run-request.json`

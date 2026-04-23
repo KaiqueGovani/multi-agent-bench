@@ -24,7 +24,12 @@ class Settings:
     storage_addressing_style: str = "path"
     default_channel: str = "web_chat"
     default_architecture_mode: str = "centralized_orchestration"
+    default_architecture_family: str = "orchestration"
     default_architecture_version: str = "poc"
+    default_routing_strategy: str = "central_router"
+    default_memory_strategy: str = "session_only"
+    default_tool_executor_mode: str = "sequential"
+    default_review_policy_version: str = "mock-review-v1"
     default_model_provider: str = "mock"
     default_model_name: str = "mock-agent-runtime"
     default_model_version: str = "poc"
@@ -66,9 +71,29 @@ def get_settings() -> Settings:
             "DEFAULT_ARCHITECTURE_MODE",
             Settings.default_architecture_mode,
         ),
+        default_architecture_family=os.getenv(
+            "DEFAULT_ARCHITECTURE_FAMILY",
+            Settings.default_architecture_family,
+        ),
         default_architecture_version=os.getenv(
             "DEFAULT_ARCHITECTURE_VERSION",
             Settings.default_architecture_version,
+        ),
+        default_routing_strategy=os.getenv(
+            "DEFAULT_ROUTING_STRATEGY",
+            Settings.default_routing_strategy,
+        ),
+        default_memory_strategy=os.getenv(
+            "DEFAULT_MEMORY_STRATEGY",
+            Settings.default_memory_strategy,
+        ),
+        default_tool_executor_mode=os.getenv(
+            "DEFAULT_TOOL_EXECUTOR_MODE",
+            Settings.default_tool_executor_mode,
+        ),
+        default_review_policy_version=os.getenv(
+            "DEFAULT_REVIEW_POLICY_VERSION",
+            Settings.default_review_policy_version,
         ),
         default_model_provider=os.getenv("DEFAULT_MODEL_PROVIDER", Settings.default_model_provider),
         default_model_name=os.getenv("DEFAULT_MODEL_NAME", Settings.default_model_name),
