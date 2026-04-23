@@ -8,11 +8,13 @@ import type {
 } from "@/lib/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY ?? "";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
+      ...getApiKeyHeaders(),
       ...(init?.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
       ...init?.headers
     }
@@ -39,8 +41,14 @@ export function getApiBaseUrl(): string {
   return API_BASE_URL;
 }
 
+export function getApiKey(): string {
+  return API_KEY;
+}
+
 export function getAttachmentUrl(attachmentId: string): string {
-  return `${API_BASE_URL}/attachments/${attachmentId}`;
+  const url = new URL(`${API_BASE_URL}/attachments/${attachmentId}`);
+  appendApiKeyQuery(url);
+  return url.toString();
 }
 
 export function createConversation(
@@ -109,6 +117,16 @@ function getClientMetadata(architectureMode: ArchitectureMode) {
     runtimeMode: "mock",
     architectureMode
   };
+}
+
+function getApiKeyHeaders(): HeadersInit {
+  return API_KEY ? { "X-API-Key": API_KEY } : {};
+}
+
+export function appendApiKeyQuery(url: URL): void {
+  if (API_KEY) {
+    url.searchParams.set("apiKey", API_KEY);
+  }
 }
 
 function getLocalSessionId(): string {

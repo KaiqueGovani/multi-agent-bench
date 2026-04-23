@@ -14,6 +14,14 @@ Por padrao, o script usa `http://127.0.0.1:8000`. Para outro endereco:
 python scripts/run_e2e_validation.py --api-base http://127.0.0.1:8000
 ```
 
+Se a API estiver protegida por `API_KEY`, exporte a mesma chave antes de rodar
+os scripts:
+
+```powershell
+$env:POC_API_KEY="sua-chave-local"
+python scripts/run_e2e_validation.py
+```
+
 ## Cobertura automatizada
 
 - `GET /health`

@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from "@/lib/api/client";
+import { appendApiKeyQuery, getApiBaseUrl } from "@/lib/api/client";
 import type { ProcessingEvent } from "@/lib/types";
 
 export function openConversationEventStream(
@@ -12,6 +12,7 @@ export function openConversationEventStream(
   if (options.lastEventId) {
     url.searchParams.set("lastEventId", options.lastEventId);
   }
+  appendApiKeyQuery(url);
   const source = new EventSource(url.toString());
 
   source.onopen = () => onConnectionChange?.("open");

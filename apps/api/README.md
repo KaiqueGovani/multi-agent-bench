@@ -49,6 +49,22 @@ Health check:
 curl http://localhost:8000/health
 ```
 
+## API key
+
+By default, local development does not require an API key. To protect the API,
+set `API_KEY` in `apps/api/.env`:
+
+```bash
+API_KEY=replace-with-a-local-development-key
+```
+
+When `API_KEY` is set, protected endpoints require `X-API-Key`. The frontend can
+send this in development through `apps/web/.env.local`:
+
+```bash
+NEXT_PUBLIC_API_KEY=replace-with-a-local-development-key
+```
+
 Useful endpoints in this phase:
 
 - `POST /conversations`

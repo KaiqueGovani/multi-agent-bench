@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import os
 import time
 import uuid
 from dataclasses import dataclass
@@ -16,6 +17,7 @@ from urllib.request import Request, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES_ROOT = ROOT / "packages" / "test-fixtures"
 SCENARIOS_ROOT = FIXTURES_ROOT / "scenarios"
+API_KEY = os.getenv("POC_API_KEY") or os.getenv("API_KEY")
 
 
 @dataclass(frozen=True)
@@ -119,6 +121,7 @@ def send_message(
         headers={
             "Content-Type": content_type,
             "X-Request-ID": request_id,
+            **api_key_header(),
         },
     )
 
@@ -264,7 +267,7 @@ def json_request(
         path,
         method,
         json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json", **(headers or {})},
+        headers={"Content-Type": "application/json", **api_key_header(), **(headers or {})},
     )
 
 
@@ -275,11 +278,12 @@ def raw_request(
     body: bytes,
     headers: dict[str, str] | None = None,
 ) -> HttpResult:
+    request_headers = {**api_key_header(), **(headers or {})}
     request = Request(
         urljoin(api_base.rstrip("/") + "/", path.lstrip("/")),
         data=body if method != "GET" else None,
         method=method,
-        headers=headers or {},
+        headers=request_headers,
     )
     try:
         with urlopen(request, timeout=10) as response:
@@ -294,6 +298,10 @@ def raw_request(
             headers=dict(exc.headers.items()),
             body=exc.read(),
         )
+
+
+def api_key_header() -> dict[str, str]:
+    return {"X-API-Key": API_KEY} if API_KEY else {}
 
 
 if __name__ == "__main__":

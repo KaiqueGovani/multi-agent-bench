@@ -12,6 +12,7 @@ from urllib.parse import urljoin
 from urllib.request import Request, urlopen
 
 from run_fixture_scenarios import (
+    api_key_header,
     create_conversation,
     load_scenarios,
     raw_request,
@@ -133,6 +134,7 @@ def collect_sse_events(
         headers={
             "Accept": "text/event-stream",
             "X-Request-ID": request_id,
+            **api_key_header(),
         },
     )
     deadline = time.monotonic() + timeout
