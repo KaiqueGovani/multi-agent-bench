@@ -2,12 +2,13 @@ import json
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Header, HTTPException, UploadFile, status
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from app.adapters.inbound import WebChatAdapter
 from app.core.observability import get_request_id
+from app.core.tracing import extract_trace_id
 from app.db import get_db_session
 from app.schemas.api import SendMessageResponse
 from app.schemas.domain import OperationalMetadata, RunExperimentMetadata
@@ -26,6 +27,7 @@ async def send_message(
     metadata_json: Annotated[str, Form()] = "{}",
     client_message_id: Annotated[str | None, Form(alias="clientMessageId")] = None,
     files: Annotated[list[UploadFile] | None, File()] = None,
+    traceparent: Annotated[str | None, Header()] = None,
     request_id: UUID = Depends(get_request_id),
     db: Session = Depends(get_db_session),
 ) -> SendMessageResponse:
@@ -52,6 +54,7 @@ async def send_message(
                 conversation_id=response.conversation_id,
                 architecture_key=metadata.architecture_mode,
             ),
+            trace_id=extract_trace_id(traceparent),
             experiment=_build_run_experiment(metadata),
         )
         background_tasks.add_task(

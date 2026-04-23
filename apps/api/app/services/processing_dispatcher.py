@@ -7,6 +7,7 @@ from urllib.request import Request, urlopen
 from uuid import UUID
 
 from app.core.config import get_settings
+from app.core.tracing import build_baggage, build_traceparent
 from app.db.models import MessageModel, RunModel
 from app.db.session import SessionLocal
 from app.runtime.mock import MockProcessingRuntime
@@ -105,6 +106,11 @@ class ProcessingDispatcher:
             if run is None:
                 return
             run_model = db.get(RunModel, run_id)
+            traceparent = (
+                build_traceparent(run_model.trace_id)
+                if run_model and run_model.trace_id
+                else None
+            )
             payload = {
                 "conversationId": str(conversation_id),
                 "messageId": str(message_id),
@@ -121,13 +127,27 @@ class ProcessingDispatcher:
                     if run_model
                     else None
                 ),
+                "traceparent": traceparent,
             }
+            headers = {
+                "Content-Type": "application/json",
+            }
+            if run_model and traceparent:
+                headers["traceparent"] = traceparent
+                headers["baggage"] = build_baggage(
+                    conversation_id=conversation_id,
+                    message_id=message_id,
+                    run_id=run_id,
+                    architecture_key=run_model.experiment_json.get("architectureKey"),
+                    model_key=run_model.experiment_json.get("modelName"),
+                    experiment_id=run_model.experiment_json.get("experimentId"),
+                )
 
         request = Request(
             self._settings.ai_runtime_url.rstrip("/") + "/runs",
             data=json.dumps(payload).encode("utf-8"),
             method="POST",
-            headers={"Content-Type": "application/json"},
+            headers=headers,
         )
         try:
             with urlopen(request, timeout=self._settings.ai_runtime_timeout_seconds) as response:
