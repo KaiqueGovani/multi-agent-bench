@@ -1,11 +1,31 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { PanelRightClose, PanelRightOpen } from "lucide-react";
+import {
+  Activity,
+  AlertTriangle,
+  Bot,
+  BrainCircuit,
+  CheckCircle2,
+  Clock3,
+  FileCheck2,
+  Loader2,
+  MessageCircle,
+  MessageSquareReply,
+  Paperclip,
+  PanelRightClose,
+  PanelRightOpen,
+  Radio,
+  ShieldCheck,
+  UserCheck,
+  XCircle,
+  type LucideIcon
+} from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { ArchitectureMode, JsonValue, ProcessingEvent, ProcessingStatus } from "@/lib/types";
 
 interface EventTimelineProps {
@@ -61,6 +81,10 @@ export function EventTimeline({
 }: EventTimelineProps) {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const counters = useMemo(() => summarizeEvents(events), [events]);
+  const activeEvent = useMemo(
+    () => [...events].reverse().find((event) => isActiveStatus(event.status)),
+    [events]
+  );
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" });
@@ -71,8 +95,11 @@ export function EventTimeline({
       <div className="border-b px-3 py-3">
         <div className="flex items-center justify-between gap-3">
           {isOpen ? (
-            <div>
-              <h2 className="text-sm font-semibold">Eventos</h2>
+            <div className="min-w-0">
+              <h2 className="flex items-center gap-2 text-sm font-semibold">
+                <Activity className="h-4 w-4 text-primary" />
+                Eventos
+              </h2>
               <p className="text-xs text-muted-foreground">
                 {counters.total === 0
                   ? `Timeline operacional - ${formatArchitectureMode(architectureMode)}`
@@ -92,7 +119,8 @@ export function EventTimeline({
             )}
           </button>
           {isOpen ? (
-            <Badge variant={connectionVariants[connectionStatus] ?? "muted"}>
+            <Badge className="gap-1" variant={connectionVariants[connectionStatus] ?? "muted"}>
+              <ConnectionIcon status={connectionStatus} />
               {connectionLabels[connectionStatus] ?? connectionStatus}
             </Badge>
           ) : null}
@@ -107,10 +135,16 @@ export function EventTimeline({
         ) : null}
         {isOpen && counters.total > 0 ? (
           <div className="mt-3 grid grid-cols-3 gap-2">
-            <Metric label="total" value={counters.total} />
-            <Metric className="text-sky-700" label="ativos" value={counters.running} />
-            <Metric className="text-emerald-700" label="concl." value={counters.completed} />
+            <Metric icon={Activity} label="total" value={counters.total} />
+            <Metric className="text-sky-700" icon={Loader2} label="ativos" value={counters.running} />
+            <Metric className="text-emerald-700" icon={CheckCircle2} label="concl." value={counters.completed} />
           </div>
+        ) : null}
+        {isOpen && activeEvent ? (
+          <ThinkingIndicator
+            actorName={activeEvent.actorName}
+            eventType={activeEvent.eventType}
+          />
         ) : null}
       </div>
       {isOpen ? (
@@ -123,6 +157,7 @@ export function EventTimeline({
           <ol className="relative space-y-3 border-l pl-4">
             {events.map((event) => {
               const payloadSummary = summarizePayload(event);
+              const EventIcon = eventIcon(event.eventType);
 
               return (
                 <li className="relative" key={event.id}>
@@ -130,16 +165,20 @@ export function EventTimeline({
                   <Card className={`${itemAccentStyles[event.status] ?? "border-l-border"} border-l-4 shadow-none`}>
                     <CardHeader className="p-3 pb-1">
                       <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <CardTitle className="break-words">{event.eventType}</CardTitle>
+                        <div className="flex min-w-0 gap-2">
+                          <EventIcon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                          <div className="min-w-0">
+                            <CardTitle className="break-words">{event.eventType}</CardTitle>
                           {event.actorName ? (
                             <p className="text-xs text-muted-foreground">{event.actorName}</p>
                           ) : null}
+                          </div>
                         </div>
                         <Badge
-                          className="shrink-0"
+                          className="shrink-0 gap-1"
                           variant={statusVariants[event.status] ?? "muted"}
                         >
+                          <StatusIcon status={event.status} />
                           {event.status}
                         </Badge>
                       </div>
@@ -162,6 +201,11 @@ export function EventTimeline({
                         ) : null}
                     </CardContent>
                   </Card>
+                  {isActiveStatus(event.status) ? (
+                    <div className="ml-3 mt-2">
+                      <InlineThinking actorName={event.actorName} />
+                    </div>
+                  ) : null}
                 </li>
               );
             })}
@@ -185,21 +229,129 @@ function formatArchitectureMode(mode: ArchitectureMode): string {
 
 function Metric({
   className,
+  icon: Icon,
   label,
   value
 }: {
   className?: string;
+  icon: LucideIcon;
   label: string;
   value: number;
 }) {
   return (
     <Card className="shadow-none">
       <CardContent className="p-2 text-center">
-        <p className={`text-sm font-semibold ${className ?? ""}`}>{value}</p>
+        <div className="flex items-center justify-center gap-1">
+          <Icon className={`h-3.5 w-3.5 ${className ?? ""}`} />
+          <p className={`text-sm font-semibold ${className ?? ""}`}>{value}</p>
+        </div>
         <p className="text-[11px] text-muted-foreground">{label}</p>
       </CardContent>
     </Card>
   );
+}
+
+function ThinkingIndicator({
+  actorName,
+  eventType
+}: {
+  actorName: string | null | undefined;
+  eventType: string;
+}) {
+  return (
+    <div className="mt-3 rounded-md border bg-background p-3">
+      <div className="flex items-center gap-2 text-xs font-medium">
+        <Loader2 className="h-4 w-4 animate-spin text-sky-700" />
+        <span>{actorName ?? "runtime"} pensando</span>
+        <Badge variant="info">{eventType}</Badge>
+      </div>
+      <div className="mt-3 space-y-2">
+        <Skeleton className="h-2 w-11/12" />
+        <Skeleton className="h-2 w-8/12" />
+      </div>
+    </div>
+  );
+}
+
+function InlineThinking({ actorName }: { actorName: string | null | undefined }) {
+  return (
+    <div className="flex items-center gap-2 rounded-md border border-dashed bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+      <Loader2 className="h-3.5 w-3.5 animate-spin text-sky-700" />
+      <span>{actorName ?? "runtime"} ainda processando</span>
+      <span className="flex gap-1" aria-hidden="true">
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-sky-700 [animation-delay:-0.2s]" />
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-sky-700 [animation-delay:-0.1s]" />
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-sky-700" />
+      </span>
+    </div>
+  );
+}
+
+function StatusIcon({ status }: { status: ProcessingStatus }) {
+  const Icon =
+    status === "completed"
+      ? CheckCircle2
+      : status === "running"
+        ? Loader2
+        : status === "failed"
+          ? XCircle
+          : status === "human_review_required"
+            ? AlertTriangle
+            : Clock3;
+
+  return (
+    <Icon
+      className={`h-3.5 w-3.5 ${status === "running" ? "animate-spin" : ""}`}
+    />
+  );
+}
+
+function ConnectionIcon({ status }: { status: string }) {
+  if (status === "open") {
+    return <Radio className="h-3.5 w-3.5" />;
+  }
+  if (status === "error") {
+    return <XCircle className="h-3.5 w-3.5" />;
+  }
+  if (status === "connecting" || status === "reconnecting") {
+    return <Loader2 className="h-3.5 w-3.5 animate-spin" />;
+  }
+  return <Clock3 className="h-3.5 w-3.5" />;
+}
+
+function eventIcon(eventType: string): LucideIcon {
+  if (eventType.startsWith("message.")) {
+    return MessageCircle;
+  }
+  if (eventType.startsWith("attachment.upload")) {
+    return Paperclip;
+  }
+  if (eventType.startsWith("attachment.validation")) {
+    return ShieldCheck;
+  }
+  if (eventType.startsWith("processing.")) {
+    return BrainCircuit;
+  }
+  if (eventType === "actor.progress") {
+    return Activity;
+  }
+  if (eventType.startsWith("actor.")) {
+    return Bot;
+  }
+  if (eventType === "review.required") {
+    return UserCheck;
+  }
+  if (eventType.startsWith("response.")) {
+    return MessageSquareReply;
+  }
+  if (eventType === "conversation.created") {
+    return FileCheck2;
+  }
+  return Activity;
+}
+
+function isActiveStatus(status: ProcessingStatus): boolean {
+  return status === "running" || status === "waiting" || status === "pending";
 }
 
 function eventDotClass(status: ProcessingStatus): string {

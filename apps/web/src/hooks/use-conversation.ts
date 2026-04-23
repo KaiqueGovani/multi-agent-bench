@@ -28,6 +28,7 @@ export function useConversation(architectureMode: ArchitectureMode) {
   const [events, setEvents] = useState<ProcessingEvent[]>([]);
   const [conversationSummaries, setConversationSummaries] = useState<ConversationSummary[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("idle");
+  const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const lastEventIdRef = useRef<string | null>(null);
@@ -74,9 +75,16 @@ export function useConversation(architectureMode: ArchitectureMode) {
 
   const startConversation = useCallback(async () => {
     setError(null);
-    const created = await createConversation(architectureMode);
-    await loadConversation(created.conversationId);
-    await refreshConversations();
+    setIsCreatingConversation(true);
+    try {
+      const created = await createConversation(architectureMode);
+      await loadConversation(created.conversationId);
+      await refreshConversations();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Failed to create conversation");
+    } finally {
+      setIsCreatingConversation(false);
+    }
   }, [architectureMode, loadConversation, refreshConversations]);
 
   const selectConversation = useCallback(
@@ -174,6 +182,7 @@ export function useConversation(architectureMode: ArchitectureMode) {
     conversationSummaries,
     error,
     events,
+    isCreatingConversation,
     isSending,
     messages,
     refreshConversations,

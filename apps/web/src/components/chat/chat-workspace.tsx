@@ -2,12 +2,21 @@
 
 import { useState } from "react";
 import {
+  Activity,
+  AlertTriangle,
+  Bot,
+  CheckCircle2,
+  Clock3,
+  Globe2,
   MessageSquare,
+  Network,
   PanelLeftClose,
   PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
-  Plus
+  Plus,
+  Loader2,
+  Workflow
 } from "lucide-react";
 
 import { EventTimeline } from "@/components/events/event-timeline";
@@ -38,6 +47,7 @@ export function ChatWorkspace() {
     conversationSummaries,
     error,
     events,
+    isCreatingConversation,
     isSending,
     messages,
     sendMessage,
@@ -54,6 +64,7 @@ export function ChatWorkspace() {
         activeConversationId={conversationId}
         conversations={conversationSummaries}
         isOpen={isHistoryOpen}
+        isCreatingConversation={isCreatingConversation}
         onCreateConversation={() => void startConversation()}
         onOpenChange={setIsHistoryOpen}
         onSelectConversation={(summary) => {
@@ -89,11 +100,23 @@ export function ChatWorkspace() {
               </p>
             </div>
             <div className="hidden items-center gap-2 md:flex">
-              <Badge variant="outline">web_chat</Badge>
-              <Badge variant="outline">mock runtime</Badge>
-              <Badge variant="outline">{formatArchitectureMode(architectureMode)}</Badge>
+              <Badge className="gap-1" variant="outline">
+                <Globe2 className="h-3.5 w-3.5" />
+                web_chat
+              </Badge>
+              <Badge className="gap-1" variant="outline">
+                <Bot className="h-3.5 w-3.5" />
+                mock runtime
+              </Badge>
+              <Badge className="gap-1" variant="outline">
+                <ArchitectureIcon mode={architectureMode} />
+                {formatArchitectureMode(architectureMode)}
+              </Badge>
               {events.length > 0 ? (
-                <Badge>{events.length} eventos</Badge>
+                <Badge className="gap-1">
+                  <Activity className="h-3.5 w-3.5" />
+                  {events.length} eventos
+                </Badge>
               ) : null}
             </div>
           </div>
@@ -123,11 +146,19 @@ export function ChatWorkspace() {
             )}
           </Button>
           <Button
+            disabled={isCreatingConversation}
             onClick={() => void startConversation()}
             size="sm"
             type="button"
           >
-            Nova conversa
+            {isCreatingConversation ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Criando
+              </>
+            ) : (
+              "Nova conversa"
+            )}
           </Button>
         </header>
 
@@ -166,6 +197,7 @@ function ConversationHistory({
   activeConversationId,
   conversations,
   isOpen,
+  isCreatingConversation,
   onCreateConversation,
   onOpenChange,
   onSelectConversation
@@ -173,6 +205,7 @@ function ConversationHistory({
   activeConversationId: string | null;
   conversations: ConversationSummary[];
   isOpen: boolean;
+  isCreatingConversation: boolean;
   onCreateConversation: () => void;
   onOpenChange: (open: boolean) => void;
   onSelectConversation: (summary: ConversationSummary) => void;
@@ -190,8 +223,18 @@ function ConversationHistory({
         ) : null}
         <div className="flex items-center gap-2">
           {isOpen ? (
-            <Button onClick={onCreateConversation} size="icon" type="button" variant="outline">
-              <Plus className="h-4 w-4" />
+            <Button
+              disabled={isCreatingConversation}
+              onClick={onCreateConversation}
+              size="icon"
+              type="button"
+              variant="outline"
+            >
+              {isCreatingConversation ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
             </Button>
           ) : null}
           <button
@@ -247,7 +290,14 @@ function ConversationHistory({
                             {shortId(summary.conversationId)}
                           </span>
                         </div>
-                        <Badge variant={summary.reviewPending ? "warning" : statusVariant(summary.status)}>
+                        <Badge
+                          className="gap-1"
+                          variant={summary.reviewPending ? "warning" : statusVariant(summary.status)}
+                        >
+                          <ConversationStatusIcon
+                            reviewPending={summary.reviewPending}
+                            status={summary.status}
+                          />
                           {summary.reviewPending ? "revisao" : summary.status}
                         </Badge>
                       </div>
@@ -273,6 +323,38 @@ function ConversationHistory({
 
 function formatArchitectureMode(mode: ArchitectureMode): string {
   return architectureOptions.find((option) => option.value === mode)?.label ?? mode;
+}
+
+function ArchitectureIcon({ mode }: { mode: ArchitectureMode }) {
+  if (mode === "structured_workflow") {
+    return <Workflow className="h-3.5 w-3.5" />;
+  }
+  if (mode === "decentralized_swarm") {
+    return <Network className="h-3.5 w-3.5" />;
+  }
+  return <Bot className="h-3.5 w-3.5" />;
+}
+
+function ConversationStatusIcon({
+  reviewPending,
+  status
+}: {
+  reviewPending: boolean;
+  status: ConversationSummary["status"];
+}) {
+  if (reviewPending || status === "human_review_required") {
+    return <AlertTriangle className="h-3.5 w-3.5" />;
+  }
+  if (status === "completed") {
+    return <CheckCircle2 className="h-3.5 w-3.5" />;
+  }
+  if (status === "waiting") {
+    return <Clock3 className="h-3.5 w-3.5" />;
+  }
+  if (status === "error") {
+    return <AlertTriangle className="h-3.5 w-3.5" />;
+  }
+  return <Activity className="h-3.5 w-3.5" />;
 }
 
 function getLayoutColumns(historyOpen: boolean, eventsOpen: boolean): string {

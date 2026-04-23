@@ -2,7 +2,17 @@ import { getAttachmentUrl } from "@/lib/api/client";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import type { Attachment, Message } from "@/lib/types";
-import { FileText } from "lucide-react";
+import {
+  AlertTriangle,
+  Bot,
+  CheckCircle2,
+  Clock3,
+  FileText,
+  Image as ImageIcon,
+  Loader2,
+  MessageCircle,
+  User
+} from "lucide-react";
 
 interface MessageListProps {
   messages: Message[];
@@ -15,11 +25,14 @@ export function MessageList({ messages, attachmentsByMessage }: MessageListProps
       <div className="flex h-full items-center justify-center px-6">
         <Card className="max-w-md border-dashed text-center">
           <CardContent className="p-6">
-            <CardTitle>
-            Nenhuma mensagem ainda
+            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-muted">
+              <MessageCircle className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <CardTitle className="text-base">
+              Nenhuma mensagem ainda
             </CardTitle>
             <CardDescription className="mt-2">
-            Inicie uma conversa e envie texto, imagem ou PDF para acompanhar o processamento.
+              Inicie uma conversa e envie texto, imagem ou PDF para acompanhar o processamento.
             </CardDescription>
           </CardContent>
         </Card>
@@ -40,13 +53,19 @@ export function MessageList({ messages, attachmentsByMessage }: MessageListProps
               <div
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-secondary text-xs font-semibold text-secondary-foreground"
               >
-                S
+                <Bot className="h-4 w-4" />
               </div>
             ) : null}
             <div className={`max-w-[min(36rem,82vw)] ${isInbound ? "items-end" : "items-start"} flex flex-col`}>
             <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
-              <span>{isInbound ? "Usuario" : "Sistema"}</span>
-              <Badge variant="outline">{message.status}</Badge>
+              <span className="flex items-center gap-1">
+                {isInbound ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
+                {isInbound ? "Usuario" : "Sistema"}
+              </span>
+              <Badge className="gap-1" variant="outline">
+                <MessageStatusIcon status={message.status} />
+                {message.status}
+              </Badge>
             </div>
             <div
               className={`rounded-lg border px-4 py-3 text-sm leading-6 shadow-sm ${
@@ -67,11 +86,17 @@ export function MessageList({ messages, attachmentsByMessage }: MessageListProps
                       target="_blank"
                     >
                       {attachment.mimeType.startsWith("image/") ? (
-                        <img
-                          alt={attachment.originalFilename}
-                          className="h-28 w-full object-cover"
-                          src={getAttachmentUrl(attachment.id)}
-                        />
+                        <div className="relative">
+                          <img
+                            alt={attachment.originalFilename}
+                            className="h-28 w-full object-cover"
+                            src={getAttachmentUrl(attachment.id)}
+                          />
+                          <Badge className="absolute left-2 top-2 gap-1" variant="secondary">
+                            <ImageIcon className="h-3 w-3" />
+                            imagem
+                          </Badge>
+                        </div>
                       ) : (
                         <div className="flex h-28 items-center justify-center bg-muted">
                           <FileText className="h-8 w-8 text-muted-foreground" />
@@ -94,7 +119,7 @@ export function MessageList({ messages, attachmentsByMessage }: MessageListProps
             </div>
             {isInbound ? (
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary text-xs font-semibold text-primary-foreground">
-                U
+                <User className="h-4 w-4" />
               </div>
             ) : null}
           </article>
@@ -102,6 +127,19 @@ export function MessageList({ messages, attachmentsByMessage }: MessageListProps
       })}
     </div>
   );
+}
+
+function MessageStatusIcon({ status }: { status: Message["status"] }) {
+  if (status === "completed") {
+    return <CheckCircle2 className="h-3.5 w-3.5" />;
+  }
+  if (status === "processing" || status === "accepted" || status === "validating") {
+    return <Loader2 className="h-3.5 w-3.5 animate-spin" />;
+  }
+  if (status === "error" || status === "human_review_required") {
+    return <AlertTriangle className="h-3.5 w-3.5" />;
+  }
+  return <Clock3 className="h-3.5 w-3.5" />;
 }
 
 function formatBytes(bytes: number): string {
