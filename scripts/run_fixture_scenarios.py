@@ -238,6 +238,19 @@ def validate_detail(detail: dict[str, Any], expected: dict[str, Any]) -> None:
     if review_flag is not expected.get("reviewRequired", False):
         raise AssertionError("response.final reviewRequired flag does not match scenario")
 
+    attachment_dimensions = expected.get("attachmentDimensions")
+    if attachment_dimensions:
+        matching_attachments = [
+            attachment
+            for attachment in detail.get("attachments", [])
+            if attachment.get("width") == attachment_dimensions["width"]
+            and attachment.get("height") == attachment_dimensions["height"]
+        ]
+        if not matching_attachments:
+            raise AssertionError(
+                f"expected attachment dimensions {attachment_dimensions!r}"
+            )
+
 
 def json_request(
     api_base: str,

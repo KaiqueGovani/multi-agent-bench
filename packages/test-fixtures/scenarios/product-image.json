@@ -37,9 +37,14 @@
       "attachment.validation.started",
       "attachment.validation.completed",
       "processing.started",
+      "actor.progress",
       "response.final",
       "processing.completed"
     ],
+    "attachmentDimensions": {
+      "width": 1,
+      "height": 1
+    },
     "reviewRequired": false
   }
 }

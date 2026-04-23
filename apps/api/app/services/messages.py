@@ -21,6 +21,7 @@ from app.schemas.enums import (
 )
 from app.services.event_bus import event_bus
 from app.services.events import EventService
+from app.services.file_metadata import detect_image_dimensions
 
 
 SUPPORTED_IMAGE_MIME_TYPES = {
@@ -177,6 +178,7 @@ class MessageService:
 
         self._validate_attachment(incoming)
         checksum = f"sha256:{hashlib.sha256(incoming.content).hexdigest()}"
+        width, height = detect_image_dimensions(incoming.mime_type, incoming.content)
         attachment_id = uuid4()
         stored_file = self._storage.save(
             conversation_id=conversation_id,
@@ -194,6 +196,8 @@ class MessageService:
             mime_type=incoming.mime_type,
             size_bytes=len(incoming.content),
             checksum=checksum,
+            width=width,
+            height=height,
             status=AttachmentStatus.VALIDATED.value,
             metadata_json=incoming.metadata.model_dump(
                 by_alias=True,
@@ -245,6 +249,8 @@ class MessageService:
                 "mimeType": attachment.mime_type,
                 "sizeBytes": attachment.size_bytes,
                 "checksum": attachment.checksum,
+                "width": attachment.width,
+                "height": attachment.height,
             },
             commit=False,
             publish=False,

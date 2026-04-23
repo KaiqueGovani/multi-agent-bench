@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.db.models import AttachmentModel, ConversationModel, MessageModel, ReviewTaskModel
+from app.schemas.domain import ProcessingEvent
 from app.db.session import SessionLocal
 from app.schemas.enums import (
     ConversationStatus,
@@ -171,7 +172,7 @@ class MockProcessingRuntime:
         event_context: dict,
     ) -> None:
         started_at = datetime.now(UTC)
-        self._record(
+        invoked_event = self._record(
             event_service,
             conversation_id=conversation_id,
             message_id=message_id,
@@ -181,7 +182,27 @@ class MockProcessingRuntime:
             status=ProcessingStatus.RUNNING,
             payload=self._base_payload({"reason": reason}, event_context),
         )
-        time.sleep(self._step_delay_seconds)
+        time.sleep(self._step_delay_seconds / 2)
+        self._record(
+            event_service,
+            conversation_id=conversation_id,
+            message_id=message_id,
+            correlation_id=correlation_id,
+            event_type=ProcessingEventType.ACTOR_PROGRESS,
+            actor_name=actor_name,
+            parent_event_id=invoked_event.id,
+            status=ProcessingStatus.RUNNING,
+            payload=self._base_payload(
+                {
+                    "step": "mock_processing",
+                    "message": "Actor is processing the mocked task.",
+                    "progressPercent": 50,
+                    "actorName": actor_name,
+                },
+                event_context,
+            ),
+        )
+        time.sleep(self._step_delay_seconds / 2)
         duration_ms = int((datetime.now(UTC) - started_at).total_seconds() * 1000)
         self._record(
             event_service,
@@ -207,13 +228,15 @@ class MockProcessingRuntime:
         status: ProcessingStatus,
         payload: dict,
         actor_name: str | None = None,
+        parent_event_id: UUID | None = None,
         duration_ms: int | None = None,
-    ) -> None:
-        event_service.record_event(
+    ) -> ProcessingEvent:
+        return event_service.record_event(
             conversation_id=conversation_id,
             message_id=message_id,
             event_type=event_type,
             actor_name=actor_name,
+            parent_event_id=parent_event_id,
             correlation_id=correlation_id,
             status=status,
             payload=payload,
