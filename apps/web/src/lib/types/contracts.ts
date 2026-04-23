@@ -52,6 +52,14 @@ export type ProcessingStatus =
   | "waiting"
   | "human_review_required";
 
+export type RunStatus =
+  | "pending"
+  | "running"
+  | "completed"
+  | "failed"
+  | "cancelled"
+  | "human_review_required";
+
 export type JsonValue =
   | string
   | number
@@ -113,6 +121,39 @@ export interface ProcessingEvent {
   status: ProcessingStatus;
 }
 
+export interface Run {
+  id: string;
+  conversationId: string;
+  messageId: string;
+  correlationId: string;
+  externalRunId?: string | null;
+  aiSessionId?: string | null;
+  traceId?: string | null;
+  status: RunStatus;
+  startedAt?: string | null;
+  finishedAt?: string | null;
+  totalDurationMs?: number | null;
+  humanReviewRequired?: boolean | null;
+  finalOutcome?: string | null;
+  experiment: JsonObject;
+  summary: JsonObject;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConversationSummary {
+  conversationId: string;
+  status: ConversationStatus;
+  channel: ChannelType;
+  architectureMode?: string | null;
+  updatedAt: string;
+  lastMessage?: string | null;
+  messageCount: number;
+  eventCount: number;
+  latestRunId?: string | null;
+  reviewPending: boolean;
+}
+
 export interface CreateConversationResponse {
   conversationId: string;
   status: ConversationStatus;
@@ -133,8 +174,13 @@ export interface ConversationDetailResponse {
   conversation: Conversation;
   messages: Message[];
   attachments: Attachment[];
+  runs: Run[];
   events: ProcessingEvent[];
   reviewTasks: unknown[];
+}
+
+export interface ConversationListResponse {
+  conversations: ConversationSummary[];
 }
 
 export interface MessageListResponse {

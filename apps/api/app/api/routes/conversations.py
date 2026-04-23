@@ -7,6 +7,7 @@ from app.core.observability import get_request_id
 from app.db import get_db_session
 from app.schemas.api import (
     ConversationDetailResponse,
+    ConversationListResponse,
     CreateConversationRequest,
     CreateConversationResponse,
     MessageListResponse,
@@ -41,6 +42,14 @@ def create_conversation(
         channel=conversation.channel,
         created_at=conversation.created_at,
     )
+
+
+@router.get("", response_model=ConversationListResponse)
+def list_conversations(
+    db: Session = Depends(get_db_session),
+) -> ConversationListResponse:
+    conversations = ConversationService(db).list_conversation_summaries()
+    return ConversationListResponse(conversations=conversations)
 
 
 @router.get("/{conversation_id}", response_model=ConversationDetailResponse)

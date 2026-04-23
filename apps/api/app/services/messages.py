@@ -86,6 +86,7 @@ class MessageService:
             metadata_json=metadata_json,
         )
         self._db.add(message)
+        conversation.updated_at = now
         self._db.flush()
 
         event_service = EventService(self._db)

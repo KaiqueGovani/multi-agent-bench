@@ -1,5 +1,6 @@
 import type {
   ArchitectureMode,
+  ConversationListResponse,
   ConversationDetailResponse,
   CreateConversationResponse,
   MessageListResponse,
@@ -62,6 +63,10 @@ export function createConversation(
       metadata: getClientMetadata(architectureMode)
     })
   });
+}
+
+export function listConversations(): Promise<ConversationListResponse> {
+  return request<ConversationListResponse>("/conversations");
 }
 
 export function getConversation(conversationId: string): Promise<ConversationDetailResponse> {

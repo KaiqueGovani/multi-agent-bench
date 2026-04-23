@@ -17,6 +17,12 @@ Required response fields:
 - `channel`
 - `createdAt`
 
+## GET /conversations
+
+Returns recent conversation summaries for the history sidebar, including status,
+channel, architecture mode, latest update, message/event counters, latest run ID,
+and pending review indicator.
+
 ## POST /messages
 
 Receives text, one or more images, and client metadata.

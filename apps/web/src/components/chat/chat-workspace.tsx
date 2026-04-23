@@ -1,14 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { PanelRightClose, PanelRightOpen } from "lucide-react";
+import {
+  MessageSquare,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
+  Plus
+} from "lucide-react";
 
 import { EventTimeline } from "@/components/events/event-timeline";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useConversation } from "@/hooks/use-conversation";
-import type { ArchitectureMode } from "@/lib/types";
+import type { ArchitectureMode, ConversationSummary } from "@/lib/types";
 import { MessageComposer } from "./message-composer";
 import { MessageList } from "./message-list";
 
@@ -19,6 +26,7 @@ const architectureOptions: Array<{ label: string; value: ArchitectureMode }> = [
 ];
 
 export function ChatWorkspace() {
+  const [isHistoryOpen, setIsHistoryOpen] = useState(true);
   const [isEventsOpen, setIsEventsOpen] = useState(true);
   const [architectureMode, setArchitectureMode] = useState<ArchitectureMode>(
     "centralized_orchestration"
@@ -27,23 +35,51 @@ export function ChatWorkspace() {
     attachmentsByMessage,
     connectionStatus,
     conversationId,
+    conversationSummaries,
     error,
     events,
     isSending,
     messages,
     sendMessage,
+    selectConversation,
     startConversation
   } = useConversation(architectureMode);
+  const layoutColumns = getLayoutColumns(isHistoryOpen, isEventsOpen);
 
   return (
     <main
-      className={`grid min-h-screen grid-cols-1 overflow-hidden bg-background text-foreground lg:h-screen ${
-        isEventsOpen ? "lg:grid-cols-[minmax(0,1fr)_420px]" : "lg:grid-cols-[minmax(0,1fr)_56px]"
-      }`}
+      className={`grid min-h-screen grid-cols-1 overflow-hidden bg-background text-foreground lg:h-screen ${layoutColumns}`}
     >
+      <ConversationHistory
+        activeConversationId={conversationId}
+        conversations={conversationSummaries}
+        isOpen={isHistoryOpen}
+        onCreateConversation={() => void startConversation()}
+        onOpenChange={setIsHistoryOpen}
+        onSelectConversation={(summary) => {
+          if (isArchitectureMode(summary.architectureMode)) {
+            setArchitectureMode(summary.architectureMode);
+          }
+          void selectConversation(summary.conversationId);
+        }}
+      />
+
       <section className="flex min-w-0 flex-col">
         <header className="flex min-h-16 items-center border-b bg-card px-4 shadow-sm">
           <div className="flex min-w-0 flex-1 items-center gap-3">
+            <Button
+              className="lg:hidden"
+              onClick={() => setIsHistoryOpen((current) => !current)}
+              size="icon"
+              type="button"
+              variant="outline"
+            >
+              {isHistoryOpen ? (
+                <PanelLeftClose className="h-4 w-4" />
+              ) : (
+                <PanelLeftOpen className="h-4 w-4" />
+              )}
+            </Button>
             <div className="min-w-0">
               <h1 className="truncate text-base font-semibold">
                 Atendimento farmaceutico POC
@@ -63,7 +99,7 @@ export function ChatWorkspace() {
           </div>
           <select
             className="mr-2 hidden h-9 max-w-52 rounded-md border bg-background px-3 text-sm text-foreground shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring md:block"
-            disabled={Boolean(conversationId)}
+            disabled={isSending}
             onChange={(event) => setArchitectureMode(event.target.value as ArchitectureMode)}
             value={architectureMode}
           >
@@ -87,7 +123,6 @@ export function ChatWorkspace() {
             )}
           </Button>
           <Button
-            disabled={Boolean(conversationId)}
             onClick={() => void startConversation()}
             size="sm"
             type="button"
@@ -127,6 +162,158 @@ export function ChatWorkspace() {
   );
 }
 
+function ConversationHistory({
+  activeConversationId,
+  conversations,
+  isOpen,
+  onCreateConversation,
+  onOpenChange,
+  onSelectConversation
+}: {
+  activeConversationId: string | null;
+  conversations: ConversationSummary[];
+  isOpen: boolean;
+  onCreateConversation: () => void;
+  onOpenChange: (open: boolean) => void;
+  onSelectConversation: (summary: ConversationSummary) => void;
+}) {
+  return (
+    <aside className="flex min-h-[220px] flex-col border-b bg-card lg:min-h-0 lg:border-b-0 lg:border-r">
+      <div className="flex items-center justify-between gap-2 border-b px-3 py-3">
+        {isOpen ? (
+          <div className="min-w-0">
+            <h2 className="truncate text-sm font-semibold">Conversas</h2>
+            <p className="truncate text-xs text-muted-foreground">
+              {conversations.length} recentes
+            </p>
+          </div>
+        ) : null}
+        <div className="flex items-center gap-2">
+          {isOpen ? (
+            <Button onClick={onCreateConversation} size="icon" type="button" variant="outline">
+              <Plus className="h-4 w-4" />
+            </Button>
+          ) : null}
+          <button
+            className="hidden h-8 w-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:inline-flex"
+            onClick={() => onOpenChange(!isOpen)}
+            type="button"
+          >
+            {isOpen ? (
+              <PanelLeftClose className="h-4 w-4" />
+            ) : (
+              <PanelLeftOpen className="h-4 w-4" />
+            )}
+          </button>
+        </div>
+      </div>
+      {!isOpen ? (
+        <button
+          className="hidden flex-1 items-center justify-start gap-3 px-4 py-4 text-muted-foreground [writing-mode:vertical-rl] hover:bg-muted hover:text-foreground lg:flex"
+          onClick={() => onOpenChange(true)}
+          type="button"
+        >
+          <span className="text-xs font-medium">Conversas</span>
+          {conversations.length > 0 ? (
+            <Badge className="[writing-mode:horizontal-tb]">{conversations.length}</Badge>
+          ) : null}
+        </button>
+      ) : (
+        <div className="min-h-0 flex-1 overflow-y-auto p-2">
+          {conversations.length === 0 ? (
+            <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+              Nenhuma conversa registrada.
+            </div>
+          ) : (
+            <ol className="space-y-2">
+              {conversations.map((summary) => {
+                const isActive = summary.conversationId === activeConversationId;
+
+                return (
+                  <li key={summary.conversationId}>
+                    <button
+                      className={`w-full rounded-md border p-3 text-left transition-colors ${
+                        isActive
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:bg-muted"
+                      }`}
+                      onClick={() => onSelectConversation(summary)}
+                      type="button"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <span className="truncate text-sm font-medium">
+                            {shortId(summary.conversationId)}
+                          </span>
+                        </div>
+                        <Badge variant={summary.reviewPending ? "warning" : statusVariant(summary.status)}>
+                          {summary.reviewPending ? "revisao" : summary.status}
+                        </Badge>
+                      </div>
+                      <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
+                        {summary.lastMessage ?? "Sem mensagens"}
+                      </p>
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                        <span>{summary.messageCount} msg</span>
+                        <span>{summary.eventCount} evt</span>
+                        <span>{formatUpdatedAt(summary.updatedAt)}</span>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+        </div>
+      )}
+    </aside>
+  );
+}
+
 function formatArchitectureMode(mode: ArchitectureMode): string {
   return architectureOptions.find((option) => option.value === mode)?.label ?? mode;
+}
+
+function getLayoutColumns(historyOpen: boolean, eventsOpen: boolean): string {
+  if (historyOpen && eventsOpen) {
+    return "lg:grid-cols-[300px_minmax(0,1fr)_420px]";
+  }
+  if (historyOpen && !eventsOpen) {
+    return "lg:grid-cols-[300px_minmax(0,1fr)_56px]";
+  }
+  if (!historyOpen && eventsOpen) {
+    return "lg:grid-cols-[56px_minmax(0,1fr)_420px]";
+  }
+  return "lg:grid-cols-[56px_minmax(0,1fr)_56px]";
+}
+
+function isArchitectureMode(value: string | null | undefined): value is ArchitectureMode {
+  return architectureOptions.some((option) => option.value === value);
+}
+
+function statusVariant(status: ConversationSummary["status"]): BadgeProps["variant"] {
+  if (status === "completed") {
+    return "success";
+  }
+  if (status === "error") {
+    return "destructive";
+  }
+  if (status === "waiting" || status === "human_review_required") {
+    return "warning";
+  }
+  return "muted";
+}
+
+function shortId(id: string): string {
+  return id.slice(0, 8);
+}
+
+function formatUpdatedAt(value: string): string {
+  return new Date(value).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    month: "2-digit"
+  });
 }

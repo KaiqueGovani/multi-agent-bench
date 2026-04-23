@@ -41,6 +41,23 @@ export interface ConversationDetailResponse {
   reviewTasks: ReviewTask[];
 }
 
+export interface ConversationSummary {
+  conversationId: Uuid;
+  status: Conversation["status"];
+  channel: ChannelType;
+  architectureMode?: string;
+  updatedAt: IsoDateTime;
+  lastMessage?: string;
+  messageCount: number;
+  eventCount: number;
+  latestRunId?: Uuid;
+  reviewPending: boolean;
+}
+
+export interface ConversationListResponse {
+  conversations: ConversationSummary[];
+}
+
 export interface SendMessageMultipartFields {
   conversationId?: Uuid;
   text?: string;

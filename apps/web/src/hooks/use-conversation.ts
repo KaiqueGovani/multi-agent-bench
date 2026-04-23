@@ -7,10 +7,17 @@ import {
   getConversation,
   getConversationEvents,
   getConversationMessages,
+  listConversations,
   sendMessage as sendMultipartMessage
 } from "@/lib/api/client";
 import { openConversationEventStream } from "@/lib/sse/events";
-import type { ArchitectureMode, Attachment, Message, ProcessingEvent } from "@/lib/types";
+import type {
+  ArchitectureMode,
+  Attachment,
+  ConversationSummary,
+  Message,
+  ProcessingEvent
+} from "@/lib/types";
 
 type ConnectionStatus = "idle" | "connecting" | "open" | "closed" | "error" | "reconnecting";
 
@@ -19,16 +26,39 @@ export function useConversation(architectureMode: ArchitectureMode) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [events, setEvents] = useState<ProcessingEvent[]>([]);
+  const [conversationSummaries, setConversationSummaries] = useState<ConversationSummary[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("idle");
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const lastEventIdRef = useRef<string | null>(null);
 
+  const refreshConversations = useCallback(async () => {
+    try {
+      const response = await listConversations();
+      setConversationSummaries(response.conversations);
+      return response.conversations;
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Failed to refresh conversations");
+      return [];
+    }
+  }, []);
+
+  const loadConversation = useCallback(async (id: string) => {
+    setError(null);
+    const detail = await getConversation(id);
+    setConversationId(id);
+    setMessages(detail.messages);
+    setAttachments(detail.attachments);
+    setEvents(detail.events);
+    lastEventIdRef.current = getLastEventId(detail.events);
+  }, []);
+
   const refreshMessages = useCallback(async (id: string) => {
     const response = await getConversationMessages(id);
     setMessages(response.messages);
     setAttachments(response.attachments);
-  }, []);
+    void refreshConversations();
+  }, [refreshConversations]);
 
   const refreshEvents = useCallback(async (id: string) => {
     try {
@@ -45,13 +75,17 @@ export function useConversation(architectureMode: ArchitectureMode) {
   const startConversation = useCallback(async () => {
     setError(null);
     const created = await createConversation(architectureMode);
-    setConversationId(created.conversationId);
-    const detail = await getConversation(created.conversationId);
-    setMessages(detail.messages);
-    setAttachments(detail.attachments);
-    setEvents(detail.events);
-    lastEventIdRef.current = getLastEventId(detail.events);
-  }, [architectureMode]);
+    await loadConversation(created.conversationId);
+    await refreshConversations();
+  }, [architectureMode, loadConversation, refreshConversations]);
+
+  const selectConversation = useCallback(
+    async (id: string) => {
+      await loadConversation(id);
+      await refreshConversations();
+    },
+    [loadConversation, refreshConversations]
+  );
 
   const sendMessage = useCallback(
     async (text: string, files: File[]) => {
@@ -65,6 +99,7 @@ export function useConversation(architectureMode: ArchitectureMode) {
         await refreshMessages(conversationId);
         window.setTimeout(() => {
           void refreshMessages(conversationId);
+          void refreshConversations();
         }, 1600);
       } catch (caught) {
         setError(caught instanceof Error ? caught.message : "Failed to send message");
@@ -72,8 +107,12 @@ export function useConversation(architectureMode: ArchitectureMode) {
         setIsSending(false);
       }
     },
-    [architectureMode, conversationId, refreshMessages]
+    [architectureMode, conversationId, refreshConversations, refreshMessages]
   );
+
+  useEffect(() => {
+    void refreshConversations();
+  }, [refreshConversations]);
 
   useEffect(() => {
     if (!conversationId) {
@@ -132,11 +171,14 @@ export function useConversation(architectureMode: ArchitectureMode) {
     attachmentsByMessage,
     connectionStatus,
     conversationId,
+    conversationSummaries,
     error,
     events,
     isSending,
     messages,
+    refreshConversations,
     sendMessage,
+    selectConversation,
     startConversation
   };
 }

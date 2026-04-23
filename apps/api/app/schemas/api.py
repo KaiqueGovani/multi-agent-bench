@@ -54,6 +54,23 @@ class ConversationDetailResponse(ApiModel):
     review_tasks: list[ReviewTask] = Field(default_factory=list)
 
 
+class ConversationSummary(ApiModel):
+    conversation_id: UUID
+    status: ConversationStatus
+    channel: ChannelType
+    architecture_mode: str | None = None
+    updated_at: datetime
+    last_message: str | None = None
+    message_count: int
+    event_count: int
+    latest_run_id: UUID | None = None
+    review_pending: bool
+
+
+class ConversationListResponse(ApiModel):
+    conversations: list[ConversationSummary] = Field(default_factory=list)
+
+
 class MessageListResponse(ApiModel):
     conversation_id: UUID
     messages: list[Message] = Field(default_factory=list)
