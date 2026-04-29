@@ -1,0 +1,34 @@
+{
+  "channel": "web_chat",
+  "conversationId": "8d7df8b7-6d8f-49d6-86a8-1f33c2dbb983",
+  "clientMessageId": "client-msg-002",
+  "userSessionId": "local-session-001",
+  "text": "Pode me ajudar a identificar esse produto?",
+  "attachments": [
+    {
+      "clientAttachmentId": "client-att-001",
+      "originalFilename": "produto.png",
+      "mimeType": "image/png",
+      "sizeBytes": 382144,
+      "checksum": "sha256:9e8f2d1c44ad1c87967b87d8c01e4f5edc1bb7dfcf83c831bdad221d12516f80",
+      "width": 1024,
+      "height": 768,
+      "metadata": {
+        "uploadDurationMs": 850
+      }
+    }
+  ],
+  "createdAtClient": "2026-04-22T15:01:00Z",
+  "metadata": {
+    "timezone": "America/Sao_Paulo",
+    "locale": "pt-BR",
+    "channel": "web_chat",
+    "architectureMode": "centralized_orchestration",
+    "runtimeMode": "mock"
+  },
+  "modelContext": {
+    "language": "pt-BR",
+    "attachmentTypes": ["image/png"]
+  }
+}
+

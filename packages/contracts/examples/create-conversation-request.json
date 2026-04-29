@@ -1,0 +1,11 @@
+{
+  "channel": "web_chat",
+  "userSessionId": "local-session-001",
+  "metadata": {
+    "timezone": "America/Sao_Paulo",
+    "locale": "pt-BR",
+    "userAgent": "Mozilla/5.0",
+    "deviceType": "desktop"
+  }
+}
+

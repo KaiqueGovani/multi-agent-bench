@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Node
+node_modules/
+.next/
+.turbo/
+*.tsbuildinfo
+dist/
+build/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Local artifacts
+uploads/
+/storage/
+var/
+*.log

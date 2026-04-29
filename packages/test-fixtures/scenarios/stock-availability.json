@@ -1,0 +1,36 @@
+{
+  "id": "stock-availability",
+  "title": "Consulta de disponibilidade",
+  "description": "Texto que deve cair no ator de estoque mockado.",
+  "conversation": {
+    "channel": "web_chat",
+    "userSessionId": "fixture-stock-availability",
+    "metadata": {
+      "locale": "pt-BR",
+      "timezone": "America/Sao_Paulo"
+    }
+  },
+  "message": {
+    "text": "Tem dipirona em estoque?",
+    "metadata": {
+      "locale": "pt-BR",
+      "scenarioId": "stock-availability",
+      "messageInputDurationMs": 900
+    },
+    "attachments": []
+  },
+  "expected": {
+    "httpStatus": 202,
+    "route": "stock_lookup",
+    "actor": "stock_agent",
+    "eventTypes": [
+      "message.received",
+      "processing.started",
+      "actor.invoked",
+      "actor.completed",
+      "response.final",
+      "processing.completed"
+    ],
+    "reviewRequired": false
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "id": "product-image",
+  "title": "Imagem de produto",
+  "description": "Mensagem com imagem valida que deve cair no ator de intake de imagem.",
+  "conversation": {
+    "channel": "web_chat",
+    "userSessionId": "fixture-product-image",
+    "metadata": {
+      "locale": "pt-BR",
+      "timezone": "America/Sao_Paulo"
+    }
+  },
+  "message": {
+    "text": "Consegue identificar este produto pela imagem?",
+    "metadata": {
+      "locale": "pt-BR",
+      "scenarioId": "product-image",
+      "fileCount": 1,
+      "fileTypes": ["image/png"]
+    },
+    "attachments": [
+      {
+        "fieldName": "files",
+        "filename": "tiny-product.png",
+        "mimeType": "image/png",
+        "source": "base64",
+        "path": "../assets/tiny-product.png.base64"
+      }
+    ]
+  },
+  "expected": {
+    "httpStatus": 202,
+    "route": "image_intake",
+    "actor": "image_intake_agent",
+    "eventTypes": [
+      "attachment.upload.started",
+      "attachment.upload.completed",
+      "attachment.validation.started",
+      "attachment.validation.completed",
+      "processing.started",
+      "actor.progress",
+      "response.final",
+      "processing.completed"
+    ],
+    "attachmentDimensions": {
+      "width": 1,
+      "height": 1
+    },
+    "reviewRequired": false
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "conversationId": "8d7df8b7-6d8f-49d6-86a8-1f33c2dbb983",
+  "text": "Pode me ajudar a identificar esse produto?",
+  "metadataJson": {
+    "clientTimestamp": "2026-04-22T15:01:00Z",
+    "timezone": "America/Sao_Paulo",
+    "locale": "pt-BR",
+    "userAgent": "Mozilla/5.0",
+    "deviceType": "desktop",
+    "uploadDurationMs": 850,
+    "messageInputDurationMs": 7300,
+    "fileCount": 1,
+    "fileTypes": ["image/png"],
+    "fileSizes": [382144],
+    "channel": "web_chat",
+    "architectureMode": "centralized_orchestration",
+    "runtimeMode": "mock"
+  },
+  "clientMessageId": "client-msg-002"
+}
+

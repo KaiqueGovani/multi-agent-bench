@@ -1,0 +1,37 @@
+{
+  "id": "human-review-needed",
+  "title": "Caso que exige revisao humana",
+  "description": "Cenario controlado que forca evento review.required e ReviewTask.",
+  "conversation": {
+    "channel": "web_chat",
+    "userSessionId": "fixture-human-review-needed",
+    "metadata": {
+      "locale": "pt-BR",
+      "timezone": "America/Sao_Paulo"
+    }
+  },
+  "message": {
+    "text": "Preciso que um supervisor faca revisao humana deste atendimento.",
+    "metadata": {
+      "locale": "pt-BR",
+      "scenarioId": "human-review-needed",
+      "forceReview": true
+    },
+    "attachments": []
+  },
+  "expected": {
+    "httpStatus": 202,
+    "route": "faq",
+    "actor": "faq_agent",
+    "eventTypes": [
+      "message.received",
+      "processing.started",
+      "review.required",
+      "response.final",
+      "processing.completed"
+    ],
+    "reviewRequired": true,
+    "conversationStatus": "human_review_required",
+    "reviewTaskStatus": "open"
+  }
+}

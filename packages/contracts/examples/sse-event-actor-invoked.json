@@ -1,0 +1,16 @@
+{
+  "eventId": "4f8d6fde-7484-4fe5-aa9f-0e331635fb72",
+  "eventType": "actor.invoked",
+  "actorName": "router_agent",
+  "messageId": "d5c2fbb5-0a17-4c0f-a924-08a35de66203",
+  "conversationId": "8d7df8b7-6d8f-49d6-86a8-1f33c2dbb983",
+  "correlationId": "3dd164fb-a07f-4cf9-83e9-cfe1d77efb2e",
+  "status": "running",
+  "createdAt": "2026-04-22T15:01:02Z",
+  "payload": {
+    "reason": "classifying incoming request",
+    "architectureMode": "centralized_orchestration",
+    "runtimeMode": "mock"
+  }
+}
+

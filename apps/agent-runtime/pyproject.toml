@@ -1,0 +1,24 @@
+[project]
+name = "multi-agent-bench-agent-runtime"
+version = "0.1.0"
+description = "Strands-based agent runtime for multi-agent-bench"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115.0",
+  "pydantic>=2.7.0",
+  "python-dotenv>=1.0.0",
+  "strands-agents>=1.8.0",
+  "strands-agents-tools>=0.2.0",
+  "uvicorn[standard]>=0.30.0"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0"
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+include = ["app*"]

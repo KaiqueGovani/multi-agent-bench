@@ -1,0 +1,41 @@
+{
+  "id": "55555555-5555-5555-5555-555555555555",
+  "conversationId": "11111111-1111-1111-1111-111111111111",
+  "messageId": "22222222-2222-2222-2222-222222222222",
+  "correlationId": "33333333-3333-3333-3333-333333333333",
+  "aiSessionId": "11111111-1111-1111-1111-111111111111:central_router_v1:mock-agent-runtime:poc-local",
+  "status": "completed",
+  "startedAt": "2026-04-23T12:30:02Z",
+  "finishedAt": "2026-04-23T12:30:05Z",
+  "totalDurationMs": 3100,
+  "humanReviewRequired": false,
+  "finalOutcome": "answered",
+  "experiment": {
+    "architectureFamily": "orchestration",
+    "architectureKey": "centralized_orchestration",
+    "architectureVersion": "poc",
+    "routingStrategy": "central_router",
+    "memoryStrategy": "session_only",
+    "toolExecutorMode": "sequential",
+    "reviewPolicyVersion": "mock-review-v1",
+    "modelProvider": "mock",
+    "modelName": "mock-agent-runtime",
+    "modelVersion": "poc",
+    "promptBundleVersion": "mock-prompts-v1",
+    "toolsetVersion": "mock-tools-v1",
+    "experimentId": "poc-local",
+    "scenarioId": "faq-question"
+  },
+  "summary": {
+    "inputTokens": 600,
+    "outputTokens": 160,
+    "totalTokens": 760,
+    "toolCallCount": 1,
+    "toolErrorCount": 0,
+    "loopCount": 1,
+    "stopReason": "completed",
+    "finalOutcome": "answered"
+  },
+  "createdAt": "2026-04-23T12:30:02Z",
+  "updatedAt": "2026-04-23T12:30:05Z"
+}

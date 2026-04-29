@@ -1,0 +1,37 @@
+{
+  "runId": "00000000-0000-0000-0000-000000000111",
+  "conversationId": "00000000-0000-0000-0000-000000000001",
+  "messageId": "00000000-0000-0000-0000-000000000010",
+  "correlationId": "00000000-0000-0000-0000-000000000099",
+  "aiSessionId": "00000000-0000-0000-0000-000000000001:centralized_orchestration:us.anthropic.claude-haiku-4-5-20251001-v1:0:poc-local",
+  "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+  "baggage": "conversation_id=00000000-0000-0000-0000-000000000001,message_id=00000000-0000-0000-0000-000000000010,run_id=00000000-0000-0000-0000-000000000111",
+  "architectureMode": "centralized_orchestration",
+  "experiment": {
+    "architectureFamily": "orchestration",
+    "architectureKey": "centralized_orchestration",
+    "modelProvider": "bedrock",
+    "modelName": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "experimentId": "poc-local",
+    "scenarioId": "stock-availability"
+  },
+  "latestMessage": {
+    "id": "00000000-0000-0000-0000-000000000010",
+    "direction": "inbound",
+    "contentText": "Tem dipirona em estoque?",
+    "createdAtServer": "2026-04-29T00:00:00Z",
+    "status": "accepted",
+    "correlationId": "00000000-0000-0000-0000-000000000099",
+    "metadata": {
+      "architectureMode": "centralized_orchestration",
+      "runtimeMode": "real"
+    },
+    "attachments": []
+  },
+  "conversationHistory": [],
+  "callback": {
+    "baseUrl": "http://127.0.0.1:8000",
+    "apiKey": "poc-dev-key-2026",
+    "aiServiceSecret": "local-runtime-secret"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "runId": "00000000-0000-0000-0000-000000000111",
+  "conversationId": "00000000-0000-0000-0000-000000000001",
+  "messageId": "00000000-0000-0000-0000-000000000010",
+  "correlationId": "00000000-0000-0000-0000-000000000099",
+  "eventFamily": "node",
+  "eventName": "started",
+  "status": "running",
+  "actorName": "supervisor_agent",
+  "nodeId": "supervisor.classify",
+  "source": "ai_service",
+  "payload": {
+    "phase": "routing",
+    "route": "stock_agent"
+  }
+}

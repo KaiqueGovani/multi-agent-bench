@@ -1,0 +1,36 @@
+{
+  "id": "faq-question",
+  "title": "Duvida recorrente",
+  "description": "Texto simples que deve cair no ator FAQ mockado.",
+  "conversation": {
+    "channel": "web_chat",
+    "userSessionId": "fixture-faq-question",
+    "metadata": {
+      "locale": "pt-BR",
+      "timezone": "America/Sao_Paulo"
+    }
+  },
+  "message": {
+    "text": "Qual o horario de funcionamento da farmacia hoje?",
+    "metadata": {
+      "locale": "pt-BR",
+      "scenarioId": "faq-question",
+      "messageInputDurationMs": 1200
+    },
+    "attachments": []
+  },
+  "expected": {
+    "httpStatus": 202,
+    "route": "faq",
+    "actor": "faq_agent",
+    "eventTypes": [
+      "message.received",
+      "processing.started",
+      "actor.invoked",
+      "actor.completed",
+      "response.final",
+      "processing.completed"
+    ],
+    "reviewRequired": false
+  }
+}

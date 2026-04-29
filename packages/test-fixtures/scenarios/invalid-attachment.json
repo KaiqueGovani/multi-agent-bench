@@ -1,0 +1,35 @@
+{
+  "id": "invalid-attachment",
+  "title": "Erro de anexo",
+  "description": "Arquivo text/plain que deve ser rejeitado pela validacao de anexos.",
+  "conversation": {
+    "channel": "web_chat",
+    "userSessionId": "fixture-invalid-attachment",
+    "metadata": {
+      "locale": "pt-BR",
+      "timezone": "America/Sao_Paulo"
+    }
+  },
+  "message": {
+    "text": "Estou anexando um arquivo invalido de proposito.",
+    "metadata": {
+      "locale": "pt-BR",
+      "scenarioId": "invalid-attachment",
+      "fileCount": 1,
+      "fileTypes": ["text/plain"]
+    },
+    "attachments": [
+      {
+        "fieldName": "files",
+        "filename": "not-an-image.txt",
+        "mimeType": "text/plain",
+        "source": "file",
+        "path": "../assets/not-an-image.txt"
+      }
+    ]
+  },
+  "expected": {
+    "httpStatus": 400,
+    "errorContains": "Unsupported file type"
+  }
+}
