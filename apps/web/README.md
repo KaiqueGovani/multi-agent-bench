@@ -38,8 +38,7 @@ NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
 
 - Create a web chat conversation.
 - Send text messages to `POST /messages`.
+- Upload images and PDFs.
 - Subscribe to SSE events for the active conversation.
 - Render persisted messages and operational events.
-
-Image upload UI is intentionally left for the next frontend step.
-
+- Render run-centric execution views backed by rich runtime projections.

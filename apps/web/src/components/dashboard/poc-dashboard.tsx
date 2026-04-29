@@ -185,6 +185,11 @@ export function PocDashboard({
                   label="tempo medio"
                   value={formatDuration(metrics.totals.averageRunDurationMs)}
                 />
+                <MetricCard
+                  icon={Clock3}
+                  label="p95 latencia"
+                  value={formatDuration(asNumber(metrics.latencyPercentiles?.p95))}
+                />
               </div>
 
               <div className="grid gap-3 lg:grid-cols-2">
@@ -192,6 +197,7 @@ export function PocDashboard({
                 <DistributionCard title="Por modelo" values={metrics.byModel} />
                 <DistributionCard title="Por cenario" values={metrics.byScenario} />
                 <DistributionCard title="Por tipo de anexo" values={metrics.byAttachmentType} />
+                <DistributionCard title="Por ferramenta" values={metrics.byTool ?? []} />
               </div>
 
               <Card className="shadow-none">
@@ -442,6 +448,10 @@ function formatDuration(value: number | null | undefined): string {
     return `${value} ms`;
   }
   return `${(value / 1000).toFixed(1)} s`;
+}
+
+function asNumber(value: unknown): number | null {
+  return typeof value === "number" ? value : null;
 }
 
 function formatDate(value: string): string {

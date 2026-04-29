@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -26,6 +26,7 @@ import {
 import { PocDashboard } from "@/components/dashboard/poc-dashboard";
 import { EventTimeline } from "@/components/events/event-timeline";
 import { ConversationInspector } from "@/components/inspection/conversation-inspector";
+import { RunExecutionPanel } from "@/components/runtime/run-execution-panel";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ export function ChatWorkspace() {
   const [isEventsOpen, setIsEventsOpen] = useState(true);
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [architectureMode, setArchitectureMode] = useState<ArchitectureMode>(
     "centralized_orchestration"
   );
@@ -70,6 +72,14 @@ export function ChatWorkspace() {
     updateReviewTask
   } = useConversation(architectureMode);
   const layoutColumns = getLayoutColumns(isHistoryOpen, isEventsOpen);
+
+  useEffect(() => {
+    if (!runs.length) {
+      setSelectedRunId(null);
+      return;
+    }
+    setSelectedRunId((current) => current ?? runs[runs.length - 1].id);
+  }, [runs]);
 
   return (
     <main
@@ -201,6 +211,13 @@ export function ChatWorkspace() {
         />
 
         <div className="min-h-0 flex-1 overflow-y-auto bg-background">
+          {runs.length > 0 ? (
+            <RunExecutionPanel
+              onSelectRun={setSelectedRunId}
+              runs={runs}
+              selectedRunId={selectedRunId}
+            />
+          ) : null}
           <MessageList
             attachmentsByMessage={attachmentsByMessage}
             isLoading={isLoadingConversation}

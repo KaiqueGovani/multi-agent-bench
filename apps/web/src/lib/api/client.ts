@@ -6,6 +6,9 @@ import type {
   CreateConversationResponse,
   MessageListResponse,
   ProcessingEvent,
+  Run,
+  RunComparisonContextResponse,
+  RunExecutionResponse,
   ResolveReviewTaskRequest,
   ReviewTask,
   ReviewTaskListResponse,
@@ -97,6 +100,18 @@ export function getConversationMessages(conversationId: string): Promise<Message
 
 export function getConversationEvents(conversationId: string): Promise<ProcessingEvent[]> {
   return request<ProcessingEvent[]>(`/conversations/${conversationId}/events`);
+}
+
+export function getRun(runId: string): Promise<Run> {
+  return request<Run>(`/runs/${runId}`);
+}
+
+export function getRunExecution(runId: string): Promise<RunExecutionResponse> {
+  return request<RunExecutionResponse>(`/runs/${runId}/execution`);
+}
+
+export function getRunComparisonContext(runId: string): Promise<RunComparisonContextResponse> {
+  return request<RunComparisonContextResponse>(`/runs/${runId}/comparison-context`);
 }
 
 export function listOpenReviewTasks(): Promise<ReviewTaskListResponse> {

@@ -143,6 +143,55 @@ export interface Run {
   updatedAt: string;
 }
 
+export interface RunExecutionEvent {
+  id: string;
+  runId: string;
+  conversationId: string;
+  messageId: string;
+  correlationId: string;
+  eventFamily: string;
+  eventName: string;
+  sequenceNo: number;
+  createdAt: string;
+  status: ProcessingStatus;
+  actorName?: string | null;
+  nodeId?: string | null;
+  toolName?: string | null;
+  source?: string | null;
+  externalEventId?: string | null;
+  durationMs?: number | null;
+  payload: JsonObject;
+}
+
+export interface RunExecutionProjection {
+  runId: string;
+  conversationId: string;
+  messageId: string;
+  architectureMode: string;
+  runStatus: RunStatus;
+  activeNodeId?: string | null;
+  activeActorName?: string | null;
+  currentPhase?: string | null;
+  source?: string | null;
+  architectureView: JsonObject;
+  metrics: JsonObject;
+  state: JsonObject;
+  updatedAt: string;
+}
+
+export interface RunExecutionResponse {
+  run: Run;
+  projection?: RunExecutionProjection | null;
+  executionEvents: RunExecutionEvent[];
+}
+
+export interface RunComparisonContextResponse {
+  run: Run;
+  peerRuns: Run[];
+  architectureDistribution: DashboardDistributionItem[];
+  scenarioDistribution: DashboardDistributionItem[];
+}
+
 export interface ReviewTask {
   id: string;
   conversationId: string;
@@ -189,6 +238,8 @@ export interface DashboardMetricsResponse {
   byModel: DashboardDistributionItem[];
   byScenario: DashboardDistributionItem[];
   byAttachmentType: DashboardDistributionItem[];
+  byTool?: DashboardDistributionItem[];
+  latencyPercentiles?: JsonObject;
   conversations: DashboardConversationItem[];
 }
 
