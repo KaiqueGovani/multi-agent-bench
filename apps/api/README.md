@@ -105,6 +105,15 @@ The SSE endpoint streams new events for active subscribers. Persisted events rem
 
 After `POST /messages`, the API accepts the inbound message and starts a mocked background runtime. The runtime emits processing and actor events, then persists a simulated outbound response. It does not call LLMs or execute real pharmacy logic.
 
+When `RUNTIME_MODE=real` and `AI_RUNTIME_URL` is configured, the API dispatches
+an execution-ready payload to the separate agent runtime service. Rich run
+events are accepted through `POST /integrations/ai/run-events` and exposed via:
+
+- `GET /runs/{run_id}`
+- `GET /runs/{run_id}/execution`
+- `GET /runs/{run_id}/execution/stream`
+- `GET /runs/{run_id}/comparison-context`
+
 Send a text-only message:
 
 ```bash

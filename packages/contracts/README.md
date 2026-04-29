@@ -12,6 +12,8 @@ The goal is to keep backend, frontend, event streaming, persistence, and future 
 - `schemas/domain.schema.json`: language-neutral JSON Schema for core entities.
 - `PAYLOADS.md`: short reference for the first HTTP, multipart, SSE, and adapter payloads.
 - `examples/*.json`: representative payloads for the main POC flows.
+- `examples/runtime-dispatch-request.json`: execution-ready payload sent from `chat-api` to the agent runtime.
+- `examples/run-execution-event.json`: rich runtime event used to build run projections and public timeline derivatives.
 
 ## Contract rules
 

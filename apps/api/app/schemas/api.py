@@ -13,6 +13,10 @@ from app.schemas.domain import (
     ProcessingEvent,
     ReviewTask,
     Run,
+    RunExecutionDetail,
+    RunExecutionEvent,
+    RunExecutionProjection,
+    RuntimeDispatchRequest,
     RunSummary,
 )
 from app.schemas.enums import (
@@ -107,6 +111,8 @@ class DashboardMetricsResponse(ApiModel):
     by_model: list[DashboardDistributionItem] = Field(default_factory=list)
     by_scenario: list[DashboardDistributionItem] = Field(default_factory=list)
     by_attachment_type: list[DashboardDistributionItem] = Field(default_factory=list)
+    by_tool: list[DashboardDistributionItem] = Field(default_factory=list)
+    latency_percentiles: JsonObject = Field(default_factory=dict)
     conversations: list[DashboardConversationItem] = Field(default_factory=list)
 
 
@@ -146,6 +152,23 @@ class CompleteRunRequest(ApiModel):
     summary: RunSummary = Field(default_factory=RunSummary)
 
 
+class IngestRunExecutionEventRequest(ApiModel):
+    run_id: UUID
+    conversation_id: UUID
+    message_id: UUID
+    correlation_id: UUID
+    event_family: str
+    event_name: str
+    status: ProcessingStatus
+    actor_name: str | None = None
+    node_id: str | None = None
+    tool_name: str | None = None
+    source: str | None = None
+    duration_ms: int | None = None
+    external_event_id: str | None = None
+    payload: JsonObject = Field(default_factory=dict)
+
+
 class SseProcessingEvent(ApiModel):
     event_id: UUID
     event_type: ProcessingEventType
@@ -172,3 +195,27 @@ class IngestProcessingEventRequest(ApiModel):
     status: ProcessingStatus
     external_event_id: str | None = None
     source: str = "ai_service"
+
+
+class RunExecutionResponse(ApiModel):
+    run: Run
+    projection: RunExecutionProjection | None = None
+    execution_events: list[RunExecutionEvent] = Field(default_factory=list)
+
+
+class RunComparisonContextResponse(ApiModel):
+    run: Run
+    peer_runs: list[Run] = Field(default_factory=list)
+    architecture_distribution: list[DashboardDistributionItem] = Field(default_factory=list)
+    scenario_distribution: list[DashboardDistributionItem] = Field(default_factory=list)
+
+
+class RuntimeDispatchResponse(ApiModel):
+    accepted: bool = True
+    run_id: UUID
+    status: str = "accepted"
+
+
+class RuntimeDispatchEnvelope(ApiModel):
+    dispatched_at: datetime
+    request: RuntimeDispatchRequest

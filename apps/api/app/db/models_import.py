@@ -4,6 +4,8 @@ from app.db.models import (
     MessageModel,
     ProcessingEventModel,
     ReviewTaskModel,
+    RunExecutionEventModel,
+    RunExecutionProjectionModel,
     RunModel,
 )
 
@@ -13,5 +15,7 @@ __all__ = [
     "MessageModel",
     "ProcessingEventModel",
     "ReviewTaskModel",
+    "RunExecutionEventModel",
+    "RunExecutionProjectionModel",
     "RunModel",
 ]

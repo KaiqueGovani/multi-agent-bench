@@ -97,10 +97,24 @@ Create run request example: `examples/create-run-request.json`
 
 Complete run request example: `examples/complete-run-request.json`
 
+Runtime dispatch request example: `examples/runtime-dispatch-request.json`
+
+Runtime execution event example: `examples/run-execution-event.json`
+
 The `runId` is the analytical unit for future architecture/model comparison.
 Detailed spans and logs remain in the AI service/OpenTelemetry backend; the
 chat API stores the transactional state and summary needed to link product
 history to telemetry.
+
+## Runtime execution events
+
+The richer runtime pipeline persists execution-specific events separately from
+the public processing timeline.
+
+- `POST /integrations/ai/run-events`
+- `GET /runs/{run_id}/execution`
+- `GET /runs/{run_id}/execution/stream`
+- `GET /runs/{run_id}/comparison-context`
 
 ## Mock processing sequence
 

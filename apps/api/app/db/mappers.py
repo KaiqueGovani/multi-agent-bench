@@ -4,6 +4,8 @@ from app.db.models import (
     MessageModel,
     ProcessingEventModel,
     ReviewTaskModel,
+    RunExecutionEventModel,
+    RunExecutionProjectionModel,
     RunModel,
 )
 from app.schemas.domain import (
@@ -15,6 +17,9 @@ from app.schemas.domain import (
     ProcessingEvent,
     ReviewTask,
     Run,
+    RunExecutionDetail,
+    RunExecutionEvent,
+    RunExecutionProjection,
     RunExperimentMetadata,
     RunSummary,
 )
@@ -126,5 +131,47 @@ def run_to_schema(model: RunModel) -> Run:
         experiment=RunExperimentMetadata.model_validate(model.experiment_json or {}),
         summary=RunSummary.model_validate(model.summary_json or {}),
         created_at=model.created_at,
+        updated_at=model.updated_at,
+    )
+
+
+def run_execution_event_to_schema(model: RunExecutionEventModel) -> RunExecutionEvent:
+    return RunExecutionEvent(
+        id=model.id,
+        run_id=model.run_id,
+        conversation_id=model.conversation_id,
+        message_id=model.message_id,
+        correlation_id=model.correlation_id,
+        event_family=model.event_family,
+        event_name=model.event_name,
+        sequence_no=model.sequence_no,
+        created_at=model.created_at,
+        status=ProcessingStatus(model.status),
+        actor_name=model.actor_name,
+        node_id=model.node_id,
+        tool_name=model.tool_name,
+        source=model.source,
+        external_event_id=model.external_event_id,
+        duration_ms=model.duration_ms,
+        payload=model.payload_json or {},
+    )
+
+
+def run_execution_projection_to_schema(
+    model: RunExecutionProjectionModel,
+) -> RunExecutionProjection:
+    return RunExecutionProjection(
+        run_id=model.run_id,
+        conversation_id=model.conversation_id,
+        message_id=model.message_id,
+        architecture_mode=model.architecture_mode,
+        run_status=RunStatus(model.run_status),
+        active_node_id=model.active_node_id,
+        active_actor_name=model.active_actor_name,
+        current_phase=model.current_phase,
+        source=model.source,
+        architecture_view=model.architecture_view_json or {},
+        metrics=model.metrics_json or {},
+        state=model.state_json or {},
         updated_at=model.updated_at,
     )

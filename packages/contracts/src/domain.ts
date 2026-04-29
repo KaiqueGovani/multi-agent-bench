@@ -156,6 +156,105 @@ export interface Run {
   updatedAt: IsoDateTime;
 }
 
+export interface RuntimeAttachmentDescriptor {
+  attachmentId: Uuid;
+  messageId: Uuid;
+  originalFilename: string;
+  mimeType: string;
+  sizeBytes: number;
+  checksum: string;
+  width?: number;
+  height?: number;
+  pageCount?: number;
+  retrievalUrl: string;
+  metadata: OperationalMetadata;
+}
+
+export interface RuntimeMessageSnapshot {
+  id: Uuid;
+  direction: MessageDirection;
+  contentText?: string;
+  createdAtServer: IsoDateTime;
+  status: MessageStatus;
+  correlationId: Uuid;
+  metadata: OperationalMetadata;
+  attachments: RuntimeAttachmentDescriptor[];
+}
+
+export interface RuntimeCallbackConfig {
+  baseUrl: string;
+  apiKey?: string;
+  aiServiceSecret?: string;
+}
+
+export interface RuntimeDispatchRequest {
+  runId: Uuid;
+  conversationId: Uuid;
+  messageId: Uuid;
+  correlationId: Uuid;
+  aiSessionId?: string;
+  traceparent?: string;
+  baggage?: string;
+  architectureMode: ArchitectureMode;
+  experiment: RunExperimentMetadata;
+  latestMessage: RuntimeMessageSnapshot;
+  conversationHistory: RuntimeMessageSnapshot[];
+  callback: RuntimeCallbackConfig;
+}
+
+export type RunExecutionEventFamily =
+  | "run"
+  | "node"
+  | "handoff"
+  | "tool"
+  | "model"
+  | "memory"
+  | "interrupt"
+  | "review"
+  | "response";
+
+export interface RunExecutionEvent {
+  id: Uuid;
+  runId: Uuid;
+  conversationId: Uuid;
+  messageId: Uuid;
+  correlationId: Uuid;
+  eventFamily: RunExecutionEventFamily;
+  eventName: string;
+  sequenceNo: number;
+  createdAt: IsoDateTime;
+  status: ProcessingStatus;
+  actorName?: string;
+  nodeId?: string;
+  toolName?: string;
+  source?: string;
+  externalEventId?: string;
+  durationMs?: number;
+  payload: JsonObject;
+}
+
+export interface RunExecutionProjection {
+  runId: Uuid;
+  conversationId: Uuid;
+  messageId: Uuid;
+  architectureMode: ArchitectureMode;
+  runStatus: RunStatus;
+  activeNodeId?: string;
+  activeActorName?: string;
+  currentPhase?: string;
+  source?: string;
+  architectureView: JsonObject;
+  metrics: JsonObject;
+  state: JsonObject;
+  updatedAt: IsoDateTime;
+}
+
+export interface RunExecutionDetail {
+  run: Run;
+  projection?: RunExecutionProjection;
+  executionEvents: RunExecutionEvent[];
+}
+
 export interface ReviewTask {
   id: Uuid;
   conversationId: Uuid;

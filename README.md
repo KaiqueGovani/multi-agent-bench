@@ -21,6 +21,7 @@ The POC establishes the foundational interaction and observability layer:
 - ✅ **Real-time Event Streaming** — SSE-based processing timeline
 - ✅ **Conversation Persistence** — Messages, attachments, and events stored in PostgreSQL
 - ✅ **Mock Runtime** — Simulated agent processing for end-to-end flow validation
+- ✅ **External Agent Runtime Contract** — `chat-api` can now dispatch runs to a separate runtime service
 - ✅ **Channel-Agnostic Architecture** — Designed for future WhatsApp integration
 - ✅ **Observability Ready** — Correlation IDs, tracing, and structured event logging
 
@@ -88,6 +89,7 @@ npm run dev
 |---------|-----|
 | Web Chat | http://localhost:3000 |
 | API | http://localhost:8000 |
+| Agent Runtime | http://localhost:8010 |
 | API Docs | http://localhost:8000/docs |
 | Health Check | http://localhost:8000/health |
 
@@ -113,8 +115,8 @@ npm run dev
 │         Conversation Management / Message Processing                │
 ├─────────────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────┐  │
-│  │  Services   │  │   Runtime   │  │   Storage   │  │  Streaming │  │
-│  │             │  │   (Mock)    │  │   Adapter   │  │   (SSE)    │  │
+│  │  Services   │  │  Runtime    │  │   Storage   │  │  Streaming │  │
+│  │             │  │ Hand-off    │  │   Adapter   │  │   (SSE)    │  │
 │  └─────────────┘  └─────────────┘  └─────────────┘  └────────────┘  │
 └───────────────────────────────┬─────────────────────────────────────┘
                                 │
@@ -124,6 +126,12 @@ npm run dev
 │  PostgreSQL   │      │  MinIO / S3   │      │  Future:      │
 │  Persistence  │      │  Attachments  │      │  WhatsApp     │
 └───────────────┘      └───────────────┘      └───────────────┘
+                                │
+                                ▼
+                    ┌──────────────────────────┐
+                    │ Agent Runtime (Strands)  │
+                    │ Bedrock / OTEL / Callbacks│
+                    └──────────────────────────┘
 ```
 
 ### Key Design Decisions

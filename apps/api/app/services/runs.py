@@ -72,6 +72,24 @@ class RunService:
         )
         return [run_to_schema(model) for model in self._db.scalars(statement).all()]
 
+    def list_related_runs(self, run_id: UUID, *, limit: int = 12) -> list[Run]:
+        current = self._db.get(RunModel, run_id)
+        if current is None:
+            return []
+        scenario_id = (current.experiment_json or {}).get("scenarioId")
+        architecture_key = (current.experiment_json or {}).get("architectureKey")
+        statement = select(RunModel).where(RunModel.id != run_id)
+        if scenario_id:
+            statement = statement.where(
+                RunModel.experiment_json["scenarioId"].astext == str(scenario_id)
+            )
+        elif architecture_key:
+            statement = statement.where(
+                RunModel.experiment_json["architectureKey"].astext == str(architecture_key)
+            )
+        statement = statement.order_by(RunModel.created_at.desc(), RunModel.id.desc()).limit(limit)
+        return [run_to_schema(model) for model in self._db.scalars(statement).all()]
+
     def mark_running(self, run_id: UUID) -> Run | None:
         model = self._db.get(RunModel, run_id)
         if model is None:

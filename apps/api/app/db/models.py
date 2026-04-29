@@ -152,6 +152,89 @@ class RunModel(Base):
 
     conversation: Mapped[ConversationModel] = relationship(back_populates="runs")
     message: Mapped[MessageModel] = relationship(back_populates="runs")
+    execution_events: Mapped[list["RunExecutionEventModel"]] = relationship(back_populates="run")
+    execution_projection: Mapped["RunExecutionProjectionModel | None"] = relationship(
+        back_populates="run",
+        uselist=False,
+    )
+
+
+class RunExecutionEventModel(Base):
+    __tablename__ = "run_execution_events"
+
+    id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True, default=uuid4)
+    run_id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        ForeignKey("runs.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    conversation_id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        ForeignKey("conversations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    message_id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        ForeignKey("messages.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    correlation_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False, index=True)
+    event_family: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    event_name: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
+    sequence_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    actor_name: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    node_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    tool_name: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    source: Mapped[str | None] = mapped_column(String(60), nullable=True, index=True)
+    external_event_id: Mapped[str | None] = mapped_column(String(200), nullable=True, index=True)
+    payload_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    status: Mapped[str] = mapped_column(String(60), nullable=False, index=True)
+
+    run: Mapped[RunModel] = relationship(back_populates="execution_events")
+
+
+class RunExecutionProjectionModel(Base):
+    __tablename__ = "run_execution_projections"
+
+    run_id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        ForeignKey("runs.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    conversation_id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        ForeignKey("conversations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    message_id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        ForeignKey("messages.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    architecture_mode: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
+    run_status: Mapped[str] = mapped_column(String(60), nullable=False, index=True)
+    active_node_id: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    active_actor_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    current_phase: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    source: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    architecture_view_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    metrics_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    state_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    run: Mapped[RunModel] = relationship(back_populates="execution_projection")
 
 
 class ReviewTaskModel(Base):
@@ -184,3 +267,4 @@ Index("ix_processing_events_conversation_created", ProcessingEventModel.conversa
 Index("ix_messages_conversation_created", MessageModel.conversation_id, MessageModel.created_at_server)
 Index("ix_runs_conversation_created", RunModel.conversation_id, RunModel.created_at)
 Index("ix_runs_message_created", RunModel.message_id, RunModel.created_at)
+Index("ix_run_execution_events_run_sequence", RunExecutionEventModel.run_id, RunExecutionEventModel.sequence_no)

@@ -40,6 +40,8 @@ class Settings:
     mock_runtime_step_delay_seconds: float = 0.9
     ai_runtime_url: str | None = None
     ai_runtime_timeout_seconds: int = 10
+    app_base_url: str = "http://127.0.0.1:8000"
+    runtime_history_window_messages: int = 8
     log_level: str = "INFO"
     api_key: str | None = None
     internal_secret: str | None = None
@@ -118,6 +120,13 @@ def get_settings() -> Settings:
         ai_runtime_url=os.getenv("AI_RUNTIME_URL") or Settings.ai_runtime_url,
         ai_runtime_timeout_seconds=int(
             os.getenv("AI_RUNTIME_TIMEOUT_SECONDS", Settings.ai_runtime_timeout_seconds)
+        ),
+        app_base_url=os.getenv("APP_BASE_URL", Settings.app_base_url),
+        runtime_history_window_messages=int(
+            os.getenv(
+                "RUNTIME_HISTORY_WINDOW_MESSAGES",
+                Settings.runtime_history_window_messages,
+            )
         ),
         log_level=os.getenv("LOG_LEVEL", Settings.log_level),
         api_key=os.getenv("API_KEY") or Settings.api_key,

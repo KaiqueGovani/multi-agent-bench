@@ -11,6 +11,7 @@ from app.db.models import (
     MessageModel,
     ProcessingEventModel,
     ReviewTaskModel,
+    RunExecutionEventModel,
     RunModel,
 )
 from app.schemas.api import (
@@ -29,6 +30,7 @@ class DashboardService:
     def get_metrics(self) -> DashboardMetricsResponse:
         runs = list(self._db.scalars(select(RunModel)).all())
         attachments = list(self._db.scalars(select(AttachmentModel)).all())
+        execution_events = list(self._db.scalars(select(RunExecutionEventModel)).all())
         return DashboardMetricsResponse(
             generated_at=datetime.now(UTC),
             totals=self._totals(runs),
@@ -36,6 +38,8 @@ class DashboardService:
             by_model=self._run_distribution(runs, "modelName"),
             by_scenario=self._run_distribution(runs, "scenarioId"),
             by_attachment_type=self._attachment_distribution(attachments),
+            by_tool=self._tool_distribution(execution_events),
+            latency_percentiles=self._latency_percentiles(runs),
             conversations=self._conversation_items(),
         )
 
@@ -103,6 +107,40 @@ class DashboardService:
             DashboardDistributionItem(key=key, count=count)
             for key, count in sorted(counts.items(), key=lambda item: (-item[1], item[0]))
         ]
+
+    def _tool_distribution(
+        self,
+        execution_events: list[RunExecutionEventModel],
+    ) -> list[DashboardDistributionItem]:
+        counts: dict[str, int] = defaultdict(int)
+        for event in execution_events:
+            if event.event_family != "tool":
+                continue
+            key = event.tool_name or "unknown"
+            counts[key] += 1
+        return [
+            DashboardDistributionItem(key=key, count=count)
+            for key, count in sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+        ]
+
+    def _latency_percentiles(self, runs: list[RunModel]) -> dict[str, int]:
+        durations = sorted(
+            run.total_duration_ms
+            for run in runs
+            if isinstance(run.total_duration_ms, int)
+        )
+        if not durations:
+            return {}
+
+        def pick(percentile: float) -> int:
+            index = min(len(durations) - 1, max(0, round((len(durations) - 1) * percentile)))
+            return int(durations[index])
+
+        return {
+            "p50": pick(0.50),
+            "p90": pick(0.90),
+            "p95": pick(0.95),
+        }
 
     def _conversation_items(self, *, limit: int = 8) -> list[DashboardConversationItem]:
         conversations = self._db.scalars(

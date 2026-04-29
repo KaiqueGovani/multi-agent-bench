@@ -11,7 +11,11 @@ import type {
   ProcessingEvent,
   ReviewTask,
   Run,
+  RunExecutionDetail,
+  RunExecutionEvent,
+  RunExecutionProjection,
   RunExperimentMetadata,
+  RuntimeDispatchRequest,
   RunSummary,
   Uuid,
 } from "./domain";
@@ -154,10 +158,71 @@ export interface CompleteRunRequest {
   summary?: RunSummary;
 }
 
+export interface IngestRunExecutionEventRequest {
+  runId: Uuid;
+  conversationId: Uuid;
+  messageId: Uuid;
+  correlationId: Uuid;
+  eventFamily: RunExecutionEvent["eventFamily"];
+  eventName: string;
+  status: ProcessingStatus;
+  actorName?: string;
+  nodeId?: string;
+  toolName?: string;
+  source?: string;
+  durationMs?: number;
+  externalEventId?: string;
+  payload?: JsonObject;
+}
+
+export interface RunExecutionStreamEvent {
+  eventId: Uuid;
+  runId: Uuid;
+  eventFamily: RunExecutionEvent["eventFamily"];
+  eventName: string;
+  sequenceNo: number;
+  status: ProcessingStatus;
+  createdAt: IsoDateTime;
+  actorName?: string;
+  nodeId?: string;
+  toolName?: string;
+  source?: string;
+  durationMs?: number;
+  payload: JsonObject;
+}
+
+export interface RunComparisonContextResponse {
+  run: Run;
+  peerRuns: Run[];
+  architectureDistribution: DashboardDistributionItem[];
+  scenarioDistribution: DashboardDistributionItem[];
+}
+
 export interface MessageListResponse {
   conversationId: Uuid;
   messages: Message[];
   attachments: Attachment[];
+}
+
+export interface RuntimeDispatchResponse {
+  accepted: boolean;
+  runId: Uuid;
+  status: "accepted";
+}
+
+export interface RunExecutionResponse {
+  run: Run;
+  projection?: RunExecutionProjection;
+  executionEvents: RunExecutionEvent[];
+}
+
+export interface RunExecutionProjectionResponse {
+  projection?: RunExecutionProjection;
+}
+
+export interface RuntimeDispatchEnvelope {
+  dispatchedAt: IsoDateTime;
+  request: RuntimeDispatchRequest;
 }
 
 export interface NormalizedInboundEnvelope {

@@ -191,6 +191,94 @@ class Run(ApiModel):
     updated_at: datetime
 
 
+class RuntimeAttachmentDescriptor(ApiModel):
+    attachment_id: UUID
+    message_id: UUID
+    original_filename: str
+    mime_type: str
+    size_bytes: int
+    checksum: str
+    width: int | None = None
+    height: int | None = None
+    page_count: int | None = None
+    retrieval_url: str
+    metadata: OperationalMetadata = Field(default_factory=OperationalMetadata)
+
+
+class RuntimeMessageSnapshot(ApiModel):
+    id: UUID
+    direction: MessageDirection
+    content_text: str | None = None
+    created_at_server: datetime
+    status: MessageStatus
+    correlation_id: UUID
+    metadata: OperationalMetadata = Field(default_factory=OperationalMetadata)
+    attachments: list[RuntimeAttachmentDescriptor] = Field(default_factory=list)
+
+
+class RuntimeCallbackConfig(ApiModel):
+    base_url: str
+    api_key: str | None = None
+    ai_service_secret: str | None = None
+
+
+class RuntimeDispatchRequest(ApiModel):
+    run_id: UUID
+    conversation_id: UUID
+    message_id: UUID
+    correlation_id: UUID
+    ai_session_id: str | None = None
+    traceparent: str | None = None
+    baggage: str | None = None
+    architecture_mode: str
+    experiment: RunExperimentMetadata
+    latest_message: "RuntimeMessageSnapshot"
+    conversation_history: list["RuntimeMessageSnapshot"] = Field(default_factory=list)
+    callback: RuntimeCallbackConfig
+
+
+class RunExecutionEvent(ApiModel):
+    id: UUID
+    run_id: UUID
+    conversation_id: UUID
+    message_id: UUID
+    correlation_id: UUID
+    event_family: str
+    event_name: str
+    sequence_no: int
+    created_at: datetime
+    status: ProcessingStatus
+    actor_name: str | None = None
+    node_id: str | None = None
+    tool_name: str | None = None
+    source: str | None = None
+    external_event_id: str | None = None
+    duration_ms: int | None = None
+    payload: JsonObject = Field(default_factory=dict)
+
+
+class RunExecutionProjection(ApiModel):
+    run_id: UUID
+    conversation_id: UUID
+    message_id: UUID
+    architecture_mode: str
+    run_status: RunStatus
+    active_node_id: str | None = None
+    active_actor_name: str | None = None
+    current_phase: str | None = None
+    source: str | None = None
+    architecture_view: JsonObject = Field(default_factory=dict)
+    metrics: JsonObject = Field(default_factory=dict)
+    state: JsonObject = Field(default_factory=dict)
+    updated_at: datetime
+
+
+class RunExecutionDetail(ApiModel):
+    run: Run
+    projection: RunExecutionProjection | None = None
+    execution_events: list[RunExecutionEvent] = Field(default_factory=list)
+
+
 class ReviewTask(ApiModel):
     id: UUID
     conversation_id: UUID
@@ -235,3 +323,6 @@ class NormalizedOutboundMessage(ApiModel):
     status: MessageStatus
     metadata: OperationalMetadata = Field(default_factory=OperationalMetadata)
     model_context: ModelContext | None = None
+
+
+RuntimeDispatchRequest.model_rebuild()
