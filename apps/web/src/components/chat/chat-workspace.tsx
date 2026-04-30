@@ -42,8 +42,8 @@ const architectureOptions: Array<{ label: string; value: ArchitectureMode }> = [
 ];
 
 export function ChatWorkspace() {
-  const [isHistoryOpen, setIsHistoryOpen] = useState(true);
-  const [isEventsOpen, setIsEventsOpen] = useState(true);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isEventsOpen, setIsEventsOpen] = useState(false);
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
@@ -83,7 +83,7 @@ export function ChatWorkspace() {
 
   return (
     <main
-      className={`grid min-h-screen grid-cols-1 overflow-hidden bg-background text-foreground lg:h-screen ${layoutColumns}`}
+      className={`grid min-h-screen grid-cols-1 overflow-x-hidden bg-background text-foreground lg:h-screen lg:overflow-hidden ${layoutColumns}`}
     >
       <ConversationHistory
         activeConversationId={conversationId}
@@ -98,11 +98,14 @@ export function ChatWorkspace() {
           if (isArchitectureMode(summary.architectureMode)) {
             setArchitectureMode(summary.architectureMode);
           }
+          if (typeof window !== "undefined" && window.innerWidth < 1024) {
+            setIsHistoryOpen(false);
+          }
           void selectConversation(summary.conversationId);
         }}
       />
 
-      <section className="flex min-w-0 flex-col">
+      <section className="flex min-h-0 min-w-0 flex-col">
         <header className="flex min-h-16 items-center gap-3 border-b bg-card px-3 py-2 shadow-sm sm:px-4">
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <Button
@@ -123,6 +126,9 @@ export function ChatWorkspace() {
                 <h1 className="truncate text-base font-semibold">
                   Atendimento farmaceutico POC
                 </h1>
+                {conversationId ? (
+                  <Badge variant="outline">{formatArchitectureLabel(architectureMode)}</Badge>
+                ) : null}
                 <HeaderContextTooltip architectureMode={architectureMode} />
               </div>
               <p className="truncate text-xs text-muted-foreground">
@@ -210,7 +216,7 @@ export function ChatWorkspace() {
           onSelectConversation={(id) => void selectConversation(id)}
         />
 
-        <div className="min-h-0 flex-1 overflow-y-auto bg-background">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
           {runs.length > 0 ? (
             <RunExecutionPanel
               onSelectRun={setSelectedRunId}
@@ -218,16 +224,19 @@ export function ChatWorkspace() {
               selectedRunId={selectedRunId}
             />
           ) : null}
-          <MessageList
-            attachmentsByMessage={attachmentsByMessage}
-            isLoading={isLoadingConversation}
-            messages={messages}
-          />
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <MessageList
+              attachmentsByMessage={attachmentsByMessage}
+              isLoading={isLoadingConversation}
+              messages={messages}
+            />
+          </div>
         </div>
 
         <MessageComposer
           architectureMode={architectureMode}
           disabled={!conversationId}
+          isArchitectureLocked={Boolean(conversationId)}
           isSending={isSending}
           onArchitectureModeChange={setArchitectureMode}
           onSend={sendMessage}
@@ -270,7 +279,11 @@ function ConversationHistory({
   onSelectConversation: (summary: ConversationSummary) => void;
 }) {
   return (
-    <aside className="flex min-h-[220px] flex-col border-b bg-card lg:min-h-0 lg:border-b-0 lg:border-r">
+    <aside
+      className={`border-b bg-card lg:flex lg:min-h-0 lg:flex-col lg:border-b-0 lg:border-r ${
+        isOpen ? "flex min-h-[220px] flex-col" : "hidden lg:flex"
+      }`}
+    >
       <div className="flex items-center justify-between gap-2 border-b px-3 py-3">
         {isOpen ? (
           <div className="min-w-0">
@@ -362,7 +375,7 @@ function ConversationHistory({
                         </Badge>
                       </div>
                       <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
-                        {summary.lastMessage ?? "Sem mensagens"}
+                        {formatConversationPreview(summary.lastMessage)}
                       </p>
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
                         <span>{summary.messageCount} msg</span>
@@ -594,4 +607,49 @@ function formatUpdatedAt(value: string): string {
     minute: "2-digit",
     month: "2-digit"
   });
+}
+
+function formatArchitectureLabel(mode: ArchitectureMode): string {
+  if (mode === "structured_workflow") {
+    return "workflow";
+  }
+  if (mode === "decentralized_swarm") {
+    return "swarm";
+  }
+  return "centralized";
+}
+
+function formatConversationPreview(value: string | null | undefined): string {
+  if (!value) {
+    return "Sem mensagens";
+  }
+  const normalized = value.trim();
+  if (!normalized.startsWith("{")) {
+    return normalized;
+  }
+
+  try {
+    const parsed = JSON.parse(normalized) as {
+      content?: Array<{ text?: string }>;
+      role?: string;
+    };
+    const text = parsed.content
+      ?.map((entry) => entry.text?.trim())
+      .find((entry): entry is string => Boolean(entry));
+    return text ?? parsed.role ?? normalized;
+  } catch {
+    const singleQuotedMatch = normalized.match(/'text':\s*'([^']+)/);
+    const doubleQuotedMatch = normalized.match(/"text":\s*"([^"]+)/);
+    return (
+      singleQuotedMatch?.[1]
+        ?.replaceAll("\\n", " ")
+        .replaceAll("\\\\", "\\")
+        .trim()
+      ?? doubleQuotedMatch?.[1]
+        ?.replaceAll("\\n", " ")
+        .replaceAll("\\\\", "\\")
+        .trim()
+      ?? normalized
+    );
+  }
 }

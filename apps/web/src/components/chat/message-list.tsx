@@ -90,7 +90,10 @@ export function MessageList({
                   : "bg-card text-card-foreground"
               }`}
             >
-              <p className="whitespace-pre-wrap">{message.contentText || "(sem texto)"}</p>
+              <p className="whitespace-pre-wrap">
+                {formatMessageContent(message.contentText)}
+              </p>
+
               {attachmentsByMessage[message.id]?.length ? (
                 <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {attachmentsByMessage[message.id].map((attachment) => (
@@ -183,4 +186,39 @@ function formatBytes(bytes: number): string {
     return `${kilobytes.toFixed(1)} KB`;
   }
   return `${(kilobytes / 1024).toFixed(1)} MB`;
+}
+
+function formatMessageContent(value: string | null | undefined): string {
+  if (!value) {
+    return "(sem texto)";
+  }
+  const normalized = value.trim();
+  if (!normalized.startsWith("{")) {
+    return normalized;
+  }
+
+  try {
+    const parsed = JSON.parse(normalized) as {
+      content?: Array<{ text?: string }>;
+      role?: string;
+    };
+    const text = parsed.content
+      ?.map((entry) => entry.text?.trim())
+      .find((entry): entry is string => Boolean(entry));
+    return text ?? parsed.role ?? normalized;
+  } catch {
+    const singleQuotedMatch = normalized.match(/'text':\s*'([^']+)/);
+    const doubleQuotedMatch = normalized.match(/"text":\s*"([^"]+)/);
+    return (
+      singleQuotedMatch?.[1]
+        ?.replaceAll("\\n", "\n")
+        .replaceAll("\\\\", "\\")
+        .trim()
+      ?? doubleQuotedMatch?.[1]
+        ?.replaceAll("\\n", "\n")
+        .replaceAll("\\\\", "\\")
+        .trim()
+      ?? normalized
+    );
+  }
 }

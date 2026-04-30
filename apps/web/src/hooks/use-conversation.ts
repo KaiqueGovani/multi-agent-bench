@@ -56,6 +56,11 @@ export function useConversation(architectureMode: ArchitectureMode) {
     }
   }, []);
 
+  const activeArchitectureMode = useMemo<ArchitectureMode>(() => {
+    const rawValue = conversation?.metadata.architectureMode;
+    return isArchitectureMode(rawValue) ? rawValue : architectureMode;
+  }, [architectureMode, conversation?.metadata.architectureMode]);
+
   const refreshOpenReviewTasks = useCallback(async () => {
     try {
       const response = await listOpenReviewTasks();
@@ -203,7 +208,7 @@ export function useConversation(architectureMode: ArchitectureMode) {
       setIsSending(true);
       setError(null);
       try {
-        await sendMultipartMessage(conversationId, text.trim(), files, architectureMode);
+        await sendMultipartMessage(conversationId, text.trim(), files, activeArchitectureMode);
         await refreshMessages(conversationId);
         window.setTimeout(() => {
           void refreshMessages(conversationId);
@@ -215,7 +220,7 @@ export function useConversation(architectureMode: ArchitectureMode) {
         setIsSending(false);
       }
     },
-    [architectureMode, conversationId, refreshConversations, refreshMessages]
+    [activeArchitectureMode, conversationId, refreshConversations, refreshMessages]
   );
 
   useEffect(() => {
@@ -304,6 +309,14 @@ export function useConversation(architectureMode: ArchitectureMode) {
     startConversation,
     updateReviewTask
   };
+}
+
+function isArchitectureMode(value: unknown): value is ArchitectureMode {
+  return (
+    value === "centralized_orchestration"
+    || value === "structured_workflow"
+    || value === "decentralized_swarm"
+  );
 }
 
 function getLastEventId(events: ProcessingEvent[]): string | null {

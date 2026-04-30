@@ -14,6 +14,7 @@ interface MessageComposerProps {
   architectureMode: ArchitectureMode;
   disabled: boolean;
   isSending: boolean;
+  isArchitectureLocked?: boolean;
   onArchitectureModeChange: (mode: ArchitectureMode) => void;
   onSend: (text: string, files: File[]) => Promise<void>;
 }
@@ -36,6 +37,7 @@ export function MessageComposer({
   architectureMode,
   disabled,
   isSending,
+  isArchitectureLocked = false,
   onArchitectureModeChange,
   onSend
 }: MessageComposerProps) {
@@ -179,12 +181,14 @@ export function MessageComposer({
                 Arquitetura
               </label>
               <p className="mt-1 text-xs text-muted-foreground">
-                Configuracao aplicada ao proximo envio
+                {isArchitectureLocked
+                  ? "Arquitetura travada para esta conversa"
+                  : "Configuracao aplicada a nova conversa"}
               </p>
             </div>
             <select
               className="h-9 min-w-0 rounded-md border bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-w-64"
-              disabled={isSending}
+              disabled={isSending || isArchitectureLocked}
               id="composer-architecture-mode"
               onChange={(event) => onArchitectureModeChange(event.target.value as ArchitectureMode)}
               value={architectureMode}

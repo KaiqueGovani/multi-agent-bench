@@ -117,13 +117,13 @@ export function EventTimeline({
   const [filters, setFilters] = useState<TimelineFilters>(initialFilters);
   const filterOptions = useMemo(() => buildFilterOptions(events), [events]);
   const filteredEvents = useMemo(
-    () => events.filter((event) => matchesFilters(event, filters)),
+    () => events.filter((event) => matchesFilters(event, filters, events)),
     [events, filters]
   );
   const counters = useMemo(() => summarizeEvents(filteredEvents), [filteredEvents]);
   const totalCounters = useMemo(() => summarizeEvents(events), [events]);
   const activeEvent = useMemo(
-    () => [...filteredEvents].reverse().find((event) => isActiveStatus(event.status)),
+    () => [...filteredEvents].reverse().find((event) => isEventCurrentlyActive(event, filteredEvents)),
     [filteredEvents]
   );
   const hasActiveFilters = Object.values(filters).some((value) => value !== "all");
@@ -155,7 +155,11 @@ export function EventTimeline({
   }
 
   return (
-    <aside className="flex min-h-[320px] flex-col border-t bg-card lg:min-h-0 lg:border-l lg:border-t-0">
+    <aside
+      className={`overflow-hidden border-t bg-card lg:flex lg:min-h-0 lg:max-h-none lg:flex-col lg:border-l lg:border-t-0 ${
+        isOpen ? "flex min-h-[240px] max-h-[42vh] flex-col" : "hidden lg:flex"
+      }`}
+    >
       <div className="border-b px-3 py-3">
         <div className="flex items-center justify-between gap-3">
           {isOpen ? (
@@ -245,11 +249,12 @@ export function EventTimeline({
               const eventSource = getEventSource(event);
               const eventRunId = getEventRunId(event);
               const isPayloadExpanded = expandedEventIds.has(event.id);
+              const visualStatus = getVisualStatus(event, filteredEvents);
 
               return (
                 <li className="relative" key={event.id}>
-                  <span className={eventDotClass(event.status)} />
-                  <Card className={`${eventCardAccent(event)} border-l-4 shadow-none`}>
+                  <span className={eventDotClass(visualStatus)} />
+                  <Card className={`${eventCardAccent(event, visualStatus)} border-l-4 shadow-none`}>
                     <CardHeader className="p-3 pb-1">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex min-w-0 gap-2">
@@ -263,10 +268,10 @@ export function EventTimeline({
                         </div>
                         <Badge
                           className="shrink-0 gap-1"
-                          variant={statusVariants[event.status] ?? "muted"}
+                          variant={statusVariants[visualStatus] ?? "muted"}
                         >
-                          <StatusIcon status={event.status} />
-                          {event.status}
+                          <StatusIcon status={visualStatus} />
+                          {visualStatus}
                         </Badge>
                       </div>
                     </CardHeader>
@@ -315,7 +320,7 @@ export function EventTimeline({
                         ) : null}
                     </CardContent>
                   </Card>
-                  {isActiveStatus(event.status) ? (
+                  {isActiveStatus(visualStatus) ? (
                     <div className="ml-3 mt-2">
                       <InlineThinking actorName={event.actorName} />
                     </div>
@@ -499,7 +504,7 @@ function buildFilterOptions(events: ProcessingEvent[]) {
     messageIds: uniqueOptions(events.map((event) => event.messageId ?? null), shortId),
     runIds: uniqueOptions(events.map((event) => getEventRunId(event)), shortId),
     sources: uniqueOptions(events.map((event) => getEventSource(event))),
-    statuses: uniqueOptions(events.map((event) => event.status))
+    statuses: uniqueOptions(events.map((event) => getVisualStatus(event, events)))
   };
 }
 
@@ -512,7 +517,11 @@ function uniqueOptions(
     .map((value) => ({ label: labelFormatter(value), value }));
 }
 
-function matchesFilters(event: ProcessingEvent, filters: TimelineFilters): boolean {
+function matchesFilters(
+  event: ProcessingEvent,
+  filters: TimelineFilters,
+  allEvents: ProcessingEvent[],
+): boolean {
   if (filters.runId !== "all" && getEventRunId(event) !== filters.runId) {
     return false;
   }
@@ -522,7 +531,7 @@ function matchesFilters(event: ProcessingEvent, filters: TimelineFilters): boole
   if (filters.actorName !== "all" && event.actorName !== filters.actorName) {
     return false;
   }
-  if (filters.status !== "all" && event.status !== filters.status) {
+  if (filters.status !== "all" && getVisualStatus(event, allEvents) !== filters.status) {
     return false;
   }
   if (filters.messageId !== "all" && event.messageId !== filters.messageId) {
@@ -546,12 +555,15 @@ function readPayloadString(value: JsonValue | undefined): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
-function eventCardAccent(event: ProcessingEvent): string {
+function eventCardAccent(
+  event: ProcessingEvent,
+  visualStatus: ProcessingStatus,
+): string {
   const source = getEventSource(event);
   if (source !== "chat_api" && source !== "mock_runtime") {
     return "border-l-violet-700";
   }
-  return itemAccentStyles[event.status] ?? "border-l-border";
+  return itemAccentStyles[visualStatus] ?? "border-l-border";
 }
 
 function formatArchitectureMode(mode: ArchitectureMode): string {
@@ -690,6 +702,65 @@ function isActiveStatus(status: ProcessingStatus): boolean {
   return status === "running" || status === "waiting" || status === "pending";
 }
 
+function isTerminalStatus(status: ProcessingStatus): boolean {
+  return (
+    status === "completed"
+    || status === "failed"
+    || status === "human_review_required"
+  );
+}
+
+function isEventCurrentlyActive(
+  event: ProcessingEvent,
+  allEvents: ProcessingEvent[],
+): boolean {
+  if (!isActiveStatus(event.status)) {
+    return false;
+  }
+
+  for (const candidate of allEvents) {
+    if (candidate.id === event.id) {
+      continue;
+    }
+    if (!isAfter(candidate, event)) {
+      continue;
+    }
+    if (!belongsToSameRun(candidate, event)) {
+      continue;
+    }
+    if (isRunTerminalEvent(candidate)) {
+      return false;
+    }
+  }
+
+  const operationKey = getOperationKey(event);
+  for (const candidate of allEvents) {
+    if (candidate.id === event.id) {
+      continue;
+    }
+    if (getOperationKey(candidate) !== operationKey) {
+      continue;
+    }
+    if (!isAfter(candidate, event)) {
+      continue;
+    }
+    if (isTerminalStatus(candidate.status) || isActiveStatus(candidate.status)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function getVisualStatus(
+  event: ProcessingEvent,
+  allEvents: ProcessingEvent[],
+): ProcessingStatus {
+  if (isActiveStatus(event.status) && !isEventCurrentlyActive(event, allEvents)) {
+    return "completed";
+  }
+  return event.status;
+}
+
 function eventDotClass(status: ProcessingStatus): string {
   const color =
     status === "completed"
@@ -708,11 +779,12 @@ function eventDotClass(status: ProcessingStatus): string {
 function summarizeEvents(events: ProcessingEvent[]) {
   return events.reduce(
     (accumulator, event) => {
+      const visualStatus = getVisualStatus(event, events);
       accumulator.total += 1;
-      if (event.status === "running") {
+      if (visualStatus === "running" || visualStatus === "waiting" || visualStatus === "pending") {
         accumulator.running += 1;
       }
-      if (event.status === "completed") {
+      if (visualStatus === "completed") {
         accumulator.completed += 1;
       }
       return accumulator;
@@ -771,4 +843,55 @@ function truncate(value: string, maxLength: number): string {
     return value;
   }
   return `${value.slice(0, maxLength - 3)}...`;
+}
+
+function getOperationKey(event: ProcessingEvent): string {
+  const nodeId = readPayloadString(event.payload.nodeId);
+  if (nodeId) {
+    return `${event.correlationId}:node:${nodeId}`;
+  }
+
+  const runId = getEventRunId(event);
+  if (event.actorName) {
+    return `${runId ?? event.correlationId}:actor:${event.actorName}`;
+  }
+
+  if (event.eventType.startsWith("processing.")) {
+    return `${runId ?? event.correlationId}:processing`;
+  }
+  if (event.eventType.startsWith("response.")) {
+    return `${runId ?? event.correlationId}:response`;
+  }
+  if (event.eventType.startsWith("review.")) {
+    return `${runId ?? event.correlationId}:review`;
+  }
+  if (event.eventType.startsWith("handoff.")) {
+    return `${runId ?? event.correlationId}:handoff:${readPayloadString(event.payload.targetActor) ?? "unknown"}`;
+  }
+  return `${runId ?? event.correlationId}:${event.eventType}`;
+}
+
+function isAfter(left: ProcessingEvent, right: ProcessingEvent): boolean {
+  const timeDifference =
+    new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime();
+  return timeDifference === 0 ? left.id > right.id : timeDifference > 0;
+}
+
+function belongsToSameRun(left: ProcessingEvent, right: ProcessingEvent): boolean {
+  const leftRunId = getEventRunId(left);
+  const rightRunId = getEventRunId(right);
+  if (leftRunId && rightRunId) {
+    return leftRunId === rightRunId;
+  }
+  return left.correlationId === right.correlationId;
+}
+
+function isRunTerminalEvent(event: ProcessingEvent): boolean {
+  return (
+    event.eventType === "processing.completed"
+    || event.eventType === "response.final"
+    || event.eventType === "review.required"
+    || event.status === "failed"
+    || event.status === "human_review_required"
+  );
 }
