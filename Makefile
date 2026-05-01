@@ -32,7 +32,7 @@ export DB_PORT DB_NAME DB_USER DB_PASSWORD MINIO_PORT MINIO_CONSOLE_PORT
 # ═══════════════════════════════════════════════════════════════════════
 .PHONY: up dev setup install sync-env infra db-migrate \
         api runtime web stop infra-down infra-reset infra-logs infra-ps \
-        test test-api test-runtime clean
+        test test-api test-runtime clean test-quality test-quality-report
 
 # ── One command to rule them all ──────────────────────────────────────
 up: infra install sync-env db-migrate dev
@@ -128,3 +128,10 @@ test-runtime:
 clean: infra-down
 	docker compose -f $(COMPOSE_FILE) down -v
 	rm -rf apps/web/node_modules apps/web/.next .venv
+
+# ── E2E Quality Tests ────────────────────────────────────────────────
+test-quality:
+	cd tests/e2e-quality && uv run pytest -v
+
+test-quality-report:
+	cd tests/e2e-quality && uv run pytest -v --html=../../var/reports/quality/report.html

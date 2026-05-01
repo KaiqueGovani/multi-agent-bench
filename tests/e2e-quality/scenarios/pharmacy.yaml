@@ -1,0 +1,47 @@
+# Cenários executados contra a API real em modo mock ou live LLM.
+# - Mock (ENABLE_LIVE_LLM=false): resposta fixa "[modo mock]" por arquitetura.
+# - Live (ENABLE_LIVE_LLM=true):  supervisor LLM via Bedrock com tools.
+#
+# As asserções abaixo funcionam em ambos os modos porque checam estrutura
+# (route, eventos, reasoning) e propriedades conservadoras da resposta.
+
+suite: pharmacy
+description: Cenários básicos contra o runtime real
+
+defaults:
+  architectures:
+    - centralized_orchestration
+  timeout_seconds: 60
+
+cases:
+  - id: dipirona_dor_de_cabeca
+    input:
+      text: "Posso tomar dipirona pra dor de cabeça?"
+    expected:
+      route: faq
+      final_actor: supervisor_agent
+      actor_reasoning_present: true
+      # O sistema deve reconhecer intenção clínica e marcar para revisão
+      # humana OU retornar um texto sugerindo consultar profissional. Em
+      # modo mock reviewRequired é sempre False; em modo live a heurística
+      # textual pode detectar "farmacêutico"/"médico" e marcar True.
+      # Deixamos sem asserção de review_required para compatibilidade.
+      event_types:
+        - processing.started
+        - actor.reasoning
+        - response.final
+        - processing.completed
+      # A resposta deve mencionar algum dos apoios clínicos (farmacêutico,
+      # médico, profissional) OU a etiqueta de modo mock quando offline.
+      response_contains_any:
+        - farmacêutico
+        - farmaceutico
+        - médico
+        - medico
+        - profissional
+        - "[modo mock]"
+      # Não pode conter dict repr cru (o bug antigo) nem o header antigo.
+      response_contains_none:
+        - "{'"
+        - "{ '"
+        - "Supervisor central concluiu"
