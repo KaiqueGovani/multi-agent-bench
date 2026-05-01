@@ -26,3 +26,18 @@ uploads/
 /storage/
 var/
 *.log
+
+# Test artifacts
+test-results/
+playwright-report/
+.pytest_cache/
+playwright-responses/
+
+# AI-assistant / agent workspaces (local only)
+.kiro/
+.yolo-sisyphus/
+.playwright-mcp/
+
+# Loose screenshots at repo root
+/screenshot-*.png
+/[0-9][0-9]-*.png
