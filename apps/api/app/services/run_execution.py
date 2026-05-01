@@ -423,6 +423,8 @@ class RunExecutionService:
             ("response", "final"): ProcessingEventType.RESPONSE_FINAL,
             ("run", "completed"): ProcessingEventType.PROCESSING_COMPLETED,
             ("run", "failed"): ProcessingEventType.ACTOR_FAILED,
+            ("actor", "reasoning"): ProcessingEventType.ACTOR_REASONING,
+            ("actor", "message"): ProcessingEventType.ACTOR_MESSAGE,
         }
         public_type = mapping.get((event.event_family, event.event_name))
         if public_type is None:

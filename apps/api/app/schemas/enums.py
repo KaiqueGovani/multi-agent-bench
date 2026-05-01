@@ -55,6 +55,8 @@ class ProcessingEventType(StrEnum):
     ACTOR_PROGRESS = "actor.progress"
     ACTOR_COMPLETED = "actor.completed"
     ACTOR_FAILED = "actor.failed"
+    ACTOR_REASONING = "actor.reasoning"
+    ACTOR_MESSAGE = "actor.message"
     HANDOFF_REQUESTED = "handoff.requested"
     REVIEW_REQUIRED = "review.required"
     RESPONSE_PARTIAL = "response.partial"

@@ -47,6 +47,7 @@ def infer_product_name(text: str | None) -> str:
 
 @tool()
 def faq_lookup(question: str) -> dict[str, Any]:
+    """Busca na base de FAQ da farmácia pelo tema mais relevante à pergunta do usuário. Use quando a pergunta for genérica ou clínica."""
     normalized = question.lower()
     for key, answer in FAQ_KB.items():
         if key in normalized:
@@ -59,6 +60,7 @@ def faq_lookup(question: str) -> dict[str, Any]:
 
 @tool()
 def stock_lookup(question: str) -> dict[str, Any]:
+    """Consulta disponibilidade simulada de um produto no estoque. Use quando o usuário perguntar sobre disponível, preço ou estoque de um produto específico."""
     product = infer_product_name(question)
     item = STOCK_CATALOG.get(product)
     if item is None:
@@ -78,6 +80,7 @@ def stock_lookup(question: str) -> dict[str, Any]:
 
 @tool()
 def attachment_intake(attachments: list[dict[str, Any]]) -> dict[str, Any]:
+    """Analisa anexos (imagens, PDFs) enviados pelo usuário. Use quando houver anexos na mensagem."""
     summaries = []
     for attachment in attachments:
         mime = attachment.get("mimeType") or ""
@@ -106,7 +109,6 @@ def attachment_intake(attachments: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-@tool()
 def request_human_review(reason: str) -> dict[str, Any]:
     return {
         "reviewRequired": True,
@@ -115,27 +117,10 @@ def request_human_review(reason: str) -> dict[str, Any]:
     }
 
 
-def should_request_review(text: str | None) -> bool:
+def catalog_contains(text: str) -> str | None:
+    """Return the matching product name from STOCK_CATALOG, or None."""
     normalized = (text or "").lower()
-    return any(
-        term in normalized
-        for term in [
-            "revisao humana",
-            "revisão humana",
-            "supervisor",
-            "farmaceutico",
-            "farmacêutico",
-            "dosagem",
-            "efeito colateral",
-        ]
-    )
-
-
-def infer_route(text: str | None, attachments: list[dict[str, Any]]) -> str:
-    if attachments:
-        return "image_intake"
-    normalized = (text or "").lower()
-    stock_terms = ["tem ", "estoque", "disponivel", "disponível", *STOCK_CATALOG.keys()]
-    if any(term in normalized for term in stock_terms):
-        return "stock_lookup"
-    return "faq"
+    for candidate in STOCK_CATALOG:
+        if candidate in normalized:
+            return candidate
+    return None

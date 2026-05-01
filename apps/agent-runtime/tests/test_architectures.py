@@ -2,6 +2,9 @@
 
 Each architecture is tested through RuntimeExecutionService().execute_run()
 with monkeypatched callbacks (same pattern as test_runtime_service.py).
+
+In mock mode (ENABLE_LIVE_LLM=false), every architecture returns a fixed
+response with route="faq", reviewRequired=False, and "[modo mock]" label.
 """
 
 from uuid import uuid4
@@ -85,77 +88,8 @@ def _patch_callbacks(monkeypatch):
     return emitted
 
 
-# ---------------------------------------------------------------------------
-# Parametrized scenarios per architecture
-# ---------------------------------------------------------------------------
-
-ARCHITECTURES = ["centralized_orchestration", "structured_workflow", "decentralized_swarm"]
-
-FAQ_SCENARIOS = [
-    ("Qual o horario da farmacia?", "answered"),
-    ("Como funciona a entrega?", "answered"),
-    ("Qual a politica de devolucao?", "answered"),
-]
-
-STOCK_SCENARIOS = [
-    ("Tem dipirona disponivel?", "answered"),
-    ("Tem amoxicilina em estoque?", "answered"),
-    ("Tem paracetamol?", "answered"),
-]
-
-REVIEW_SCENARIOS = [
-    ("Preciso de revisao humana", "human_review_required"),
-    ("Qual a dosagem correta?", "human_review_required"),
-]
-
-
-@pytest.mark.parametrize("arch", ARCHITECTURES)
-@pytest.mark.parametrize("question,expected_outcome", FAQ_SCENARIOS)
-def test_faq_scenario(monkeypatch, arch, question, expected_outcome) -> None:
-    emitted = _patch_callbacks(monkeypatch)
-    result = RuntimeExecutionService().execute_run(_build_request(arch, question))
-    assert result.final_outcome == expected_outcome
-    assert result.tool_call_count > 0
-    assert any(e[0] == "response" and e[1] == "final" for e in emitted)
-
-
-@pytest.mark.parametrize("arch", ARCHITECTURES)
-@pytest.mark.parametrize("question,expected_outcome", STOCK_SCENARIOS)
-def test_stock_scenario(monkeypatch, arch, question, expected_outcome) -> None:
-    emitted = _patch_callbacks(monkeypatch)
-    result = RuntimeExecutionService().execute_run(_build_request(arch, question))
-    assert result.final_outcome == expected_outcome
-    assert result.tool_call_count > 0
-    assert any(e[0] == "response" and e[1] == "final" for e in emitted)
-
-
-@pytest.mark.parametrize("arch", ARCHITECTURES)
-@pytest.mark.parametrize("question,expected_outcome", REVIEW_SCENARIOS)
-def test_review_scenario(monkeypatch, arch, question, expected_outcome) -> None:
-    emitted = _patch_callbacks(monkeypatch)
-    result = RuntimeExecutionService().execute_run(_build_request(arch, question))
-    assert result.final_outcome == expected_outcome
-    assert result.tool_call_count > 0
-    assert any(e[0] == "review" and e[1] == "required" for e in emitted)
-
-
-@pytest.mark.parametrize("arch", ARCHITECTURES)
-def test_attachment_scenario(monkeypatch, arch) -> None:
-    emitted = _patch_callbacks(monkeypatch)
-    attachment = _make_attachment()
-    result = RuntimeExecutionService().execute_run(
-        _build_request(arch, "Analise esta foto", attachments=[attachment])
-    )
-    assert result.final_outcome == "answered"
-    assert result.tool_call_count > 0
-    assert any(e[0] == "response" and e[1] == "final" for e in emitted)
-
-
-# ---------------------------------------------------------------------------
-# Workflow-specific: multimodal stage only activates with attachments
-# ---------------------------------------------------------------------------
-
-def test_workflow_multimodal_stage_skipped_without_attachments(monkeypatch) -> None:
+def _patch_callbacks_full(monkeypatch):
+    """Capture full event objects for payload inspection."""
     full_events: list = []
 
     def capture_emit(self, event):
@@ -166,7 +100,112 @@ def test_workflow_multimodal_stage_skipped_without_attachments(monkeypatch) -> N
 
     monkeypatch.setattr("app.services.callbacks.ChatApiCallbacks.emit_run_event", capture_emit)
     monkeypatch.setattr("app.services.callbacks.ChatApiCallbacks.complete_run", capture_complete)
+    return full_events
 
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+ARCHITECTURES = ["centralized_orchestration", "structured_workflow", "decentralized_swarm"]
+
+SAMPLE_MESSAGES = [
+    "Qual o horario da farmacia?",
+    "Tem dipirona disponivel?",
+    "Qual a dosagem de dipirona?",
+]
+
+
+# ---------------------------------------------------------------------------
+# Smoke tests — one per architecture: fixed mock response
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("arch", ARCHITECTURES)
+@pytest.mark.parametrize("question", SAMPLE_MESSAGES)
+def test_mock_returns_fixed_response(monkeypatch, arch, question) -> None:
+    """Any message in mock mode → route=faq, reviewRequired=False, [modo mock] label."""
+    full_events = _patch_callbacks_full(monkeypatch)
+    result = RuntimeExecutionService().execute_run(_build_request(arch, question))
+
+    assert result.final_outcome == "answered"
+    assert result.human_review_required is False
+    assert result.tool_call_count > 0
+
+    final_events = [e for e in full_events if e.event_family == "response" and e.event_name == "final"]
+    assert len(final_events) == 1
+    payload = final_events[0].payload
+    assert payload["route"] == "faq"
+    assert payload["reviewRequired"] is False
+    assert "[modo mock]" in payload["contentText"]
+    assert "{'" not in payload["contentText"]
+
+
+# ---------------------------------------------------------------------------
+# Attachment scenario — still routes to faq in mock mode
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("arch", ARCHITECTURES)
+def test_attachment_still_routes_faq_in_mock(monkeypatch, arch) -> None:
+    full_events = _patch_callbacks_full(monkeypatch)
+    attachment = _make_attachment()
+    result = RuntimeExecutionService().execute_run(
+        _build_request(arch, "Analise esta foto", attachments=[attachment])
+    )
+    assert result.final_outcome == "answered"
+    assert result.tool_call_count > 0
+    final_events = [e for e in full_events if e.event_family == "response" and e.event_name == "final"]
+    assert final_events[0].payload["route"] == "faq"
+
+
+# ---------------------------------------------------------------------------
+# response.final payload must include enriched keys
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("arch", ARCHITECTURES)
+def test_response_final_payload_has_enriched_keys(monkeypatch, arch) -> None:
+    full_events = _patch_callbacks_full(monkeypatch)
+    RuntimeExecutionService().execute_run(_build_request(arch, "Qual o horario da farmacia?"))
+    final_events = [e for e in full_events if e.event_family == "response" and e.event_name == "final"]
+    assert len(final_events) == 1
+    payload = final_events[0].payload
+    assert "route" in payload
+    assert "finalActor" in payload
+    assert "architectureMode" in payload
+    assert "reviewRequired" in payload
+    assert "contentText" in payload
+
+
+# ---------------------------------------------------------------------------
+# actor.reasoning event must be emitted
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("arch", ARCHITECTURES)
+def test_actor_reasoning_event_emitted(monkeypatch, arch) -> None:
+    emitted = _patch_callbacks(monkeypatch)
+    RuntimeExecutionService().execute_run(_build_request(arch, "Qual o horario?"))
+    assert any(e[0] == "actor" and e[1] == "reasoning" for e in emitted)
+
+
+# ---------------------------------------------------------------------------
+# contentText must contain [modo mock] and no dict repr
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("arch", ARCHITECTURES)
+def test_content_text_is_mock_prose(monkeypatch, arch) -> None:
+    full_events = _patch_callbacks_full(monkeypatch)
+    RuntimeExecutionService().execute_run(_build_request(arch, "Qual o horario da farmacia?"))
+    final_events = [e for e in full_events if e.event_family == "response" and e.event_name == "final"]
+    content = final_events[0].payload["contentText"]
+    assert "[modo mock]" in content
+    assert "{'" not in content
+
+
+# ---------------------------------------------------------------------------
+# Workflow-specific: no multimodal stage without attachments
+# ---------------------------------------------------------------------------
+
+def test_workflow_no_multimodal_stage_without_attachments(monkeypatch) -> None:
+    full_events = _patch_callbacks_full(monkeypatch)
     RuntimeExecutionService().execute_run(
         _build_request("structured_workflow", "Qual o horario?")
     )
@@ -174,38 +213,28 @@ def test_workflow_multimodal_stage_skipped_without_attachments(monkeypatch) -> N
     assert len(multimodal_events) == 0
 
 
-def test_workflow_multimodal_stage_activates_with_attachments(monkeypatch) -> None:
-    full_events: list = []
-
-    def capture_emit(self, event):
-        full_events.append(event)
-
-    def capture_complete(self, **kwargs):
-        pass
-
-    monkeypatch.setattr("app.services.callbacks.ChatApiCallbacks.emit_run_event", capture_emit)
-    monkeypatch.setattr("app.services.callbacks.ChatApiCallbacks.complete_run", capture_complete)
-
-    attachment = _make_attachment()
-    RuntimeExecutionService().execute_run(
-        _build_request("structured_workflow", "Analise esta foto", attachments=[attachment])
-    )
-    multimodal_events = [e for e in full_events if e.node_id and "multimodal" in e.node_id]
-    assert len(multimodal_events) > 0
-
-
 # ---------------------------------------------------------------------------
 # Swarm-specific: loop_count > 0
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("question", ["Tem dipirona?", "Qual o horario?", "Analise a foto"])
-def test_swarm_has_positive_loop_count(monkeypatch, question) -> None:
+def test_swarm_has_positive_loop_count(monkeypatch) -> None:
     _patch_callbacks(monkeypatch)
-    attachments = [_make_attachment()] if "foto" in question else None
     result = RuntimeExecutionService().execute_run(
-        _build_request("decentralized_swarm", question, attachments=attachments)
+        _build_request("decentralized_swarm", "Qual o horario?")
     )
     assert result.loop_count > 0
+
+
+# ---------------------------------------------------------------------------
+# Swarm-specific: actor.message event emitted
+# ---------------------------------------------------------------------------
+
+def test_swarm_emits_actor_message(monkeypatch) -> None:
+    emitted = _patch_callbacks(monkeypatch)
+    RuntimeExecutionService().execute_run(
+        _build_request("decentralized_swarm", "Qual o horario?")
+    )
+    assert any(e[0] == "actor" and e[1] == "message" for e in emitted)
 
 
 # ---------------------------------------------------------------------------

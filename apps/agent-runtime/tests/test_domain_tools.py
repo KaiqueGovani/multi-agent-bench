@@ -2,10 +2,9 @@ import pytest
 
 from app.tools.domain_tools import (
     attachment_intake,
+    catalog_contains,
     faq_lookup,
-    infer_route,
     request_human_review,
-    should_request_review,
     stock_lookup,
 )
 
@@ -37,12 +36,29 @@ def test_attachment_intake_summarizes_metadata() -> None:
     assert result["attachmentCount"] == 1
 
 
-def test_review_detection_and_route_inference() -> None:
-    assert should_request_review("preciso de revisao humana") is True
-    assert infer_route("Tem dipirona em estoque?", []) == "stock_lookup"
-    assert infer_route("Analise a foto", [{"mimeType": "image/png"}]) == "image_intake"
+def test_request_human_review() -> None:
     review = request_human_review("policy")
     assert review["reviewRequired"] is True
+
+
+# ---------------------------------------------------------------------------
+# catalog_contains
+# ---------------------------------------------------------------------------
+
+def test_catalog_contains_finds_product() -> None:
+    assert catalog_contains("Tem dipirona em estoque?") == "dipirona"
+
+
+def test_catalog_contains_returns_none_for_unknown() -> None:
+    assert catalog_contains("Tem xyzabc123?") is None
+
+
+@pytest.mark.parametrize(
+    "product",
+    ["paracetamol", "omeprazol", "loratadina", "azitromicina", "rivotril", "insulina"],
+)
+def test_catalog_contains_new_products(product: str) -> None:
+    assert catalog_contains(f"Tem {product} disponivel?") == product
 
 
 # ---------------------------------------------------------------------------
@@ -126,15 +142,3 @@ def test_attachment_intake_unknown_type_analysis() -> None:
     analysis = result["summaries"][0]["analysis"]
     assert analysis["type"] == "unknown"
     assert "nao suportado" in analysis["note"]
-
-
-# ---------------------------------------------------------------------------
-# infer_route with new product names
-# ---------------------------------------------------------------------------
-
-@pytest.mark.parametrize(
-    "product",
-    ["paracetamol", "omeprazol", "loratadina", "azitromicina", "rivotril", "insulina"],
-)
-def test_infer_route_new_products_trigger_stock_lookup(product: str) -> None:
-    assert infer_route(f"Tem {product}?", []) == "stock_lookup"

@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import time
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol
 from uuid import uuid4
 
 from app.core.config import Settings, get_settings
@@ -32,6 +32,17 @@ try:  # pragma: no cover - optional dependency integration
 except Exception:  # pragma: no cover
     Agent = None
     BedrockModel = None
+
+
+def _coerce_tool_result(result: Any) -> dict:
+    """Best-effort conversion of a tool result to a JSON-serializable dict."""
+    if isinstance(result, dict):
+        return result
+    for attr in ("content", "result", "output"):
+        value = getattr(result, attr, None)
+        if isinstance(value, dict):
+            return value
+    return {"value": str(result)[:1000]}
 
 
 # ---------------------------------------------------------------------------
@@ -129,6 +140,64 @@ class ExecutionContext:
         if self.first_partial_response_ms is None:
             self.first_partial_response_ms = self.elapsed_ms()
 
+    def emit_reasoning(
+        self,
+        actor_name: str,
+        node_id: str,
+        thought: str,
+        decision: str,
+        candidates: list[str] | None = None,
+    ) -> None:
+        """Emit an actor.reasoning event."""
+        payload: dict = {"thought": thought, "decision": decision}
+        if candidates is not None:
+            payload["candidates"] = candidates
+        self.emit(
+            "actor",
+            "reasoning",
+            "completed",
+            actor_name=actor_name,
+            node_id=node_id,
+            payload=payload,
+        )
+
+    def emit_message(self, actor_name: str, node_id: str, text: str) -> None:
+        """Emit an actor.message event."""
+        self.emit(
+            "actor",
+            "message",
+            "completed",
+            actor_name=actor_name,
+            node_id=node_id,
+            payload={"text": text},
+        )
+
+    def emit_final(
+        self,
+        final_text: str,
+        *,
+        route: str,
+        final_actor: str,
+        architecture_mode: str,
+        review_required: bool,
+    ) -> None:
+        """Emit response.partial + response.final with enriched payload."""
+        self.emit_partial(final_text)
+        self.emit(
+            "response",
+            "final",
+            "completed",
+            actor_name=final_actor,
+            node_id=f"{final_actor}.respond",
+            payload={
+                "contentText": final_text,
+                "route": route,
+                "finalActor": final_actor,
+                "architectureMode": architecture_mode,
+                "reviewRequired": review_required,
+            },
+        )
+
     # -- Specialist execution -------------------------------------------------
 
     def run_specialist(self, actor_name: str, *, phase: str) -> dict:
@@ -166,30 +235,24 @@ class ExecutionContext:
         specialist_result: dict,
         review_required: bool,
     ) -> str:
-        header = {
-            "centralized_orchestration": "Supervisor central concluiu a coordenação.",
-            "structured_workflow": "Workflow estruturado concluiu as etapas planejadas.",
-            "decentralized_swarm": "Swarm concluiu a colaboração entre agentes.",
-        }[architecture]
-        prompt = (
-            f"Arquitetura: {architecture}\n"
-            f"Rota: {route}\n"
-            f"Review required: {review_required}\n"
-            f"Evidencia estruturada: {specialist_result}\n"
-            "Gere uma resposta curta em portugues do Brasil para a POC, sem alegar decisao clinica real."
-        )
         live_text = self.invoke_live_agent(
             system_prompt=(
-                "Voce compoe respostas de um runtime experimental multiagente para farmacia. "
-                "Nao invente integracoes reais, nao forneca aconselhamento clinico e cite quando houver revisao humana."
+                "Você é um agente de atendimento de farmácia. Responda em português do Brasil, "
+                "em prosa corrida, sem fornecer dosagens específicas. Quando apropriado, sugira "
+                "consultar um farmacêutico."
             ),
-            prompt=prompt,
+            prompt=(
+                f"Informação coletada pelo especialista: {specialist_result}. "
+                "Componha a resposta final ao usuário."
+            ),
         )
         if live_text:
             return live_text
-        if review_required:
-            return f"{header} O caso foi sinalizado para revisao humana. Evidencia principal: {specialist_result}."
-        return f"{header} Rota aplicada: {route}. Evidencia principal: {specialist_result}. Resposta gerada com politicas controladas da POC."
+        return (
+            f"[modo mock] Resposta fixa da arquitetura {architecture}. "
+            "Ative ENABLE_LIVE_LLM=true com AWS_BEARER_TOKEN_BEDROCK configurado "
+            "para respostas reais via LLM."
+        )
 
     # -- Result builder -------------------------------------------------------
 
@@ -242,15 +305,100 @@ class ExecutionContext:
                 model_id=self.settings.bedrock_model_id,
                 region_name=self.settings.aws_region,
             )
+            agent = Agent(model=model, system_prompt=system_prompt)
+            result = agent(prompt)
+            return str(result).strip()
+        except Exception:
+            self.tool_error_count += 1
+            return None
+
+    def invoke_live_supervisor(
+        self,
+        *,
+        system_prompt: str,
+        user_message: str,
+        tools: list,
+        supervisor_actor: str = "supervisor_agent",
+    ) -> tuple[str, list[dict]] | None:
+        """Run a Strands Agent with full instrumentation.
+
+        Returns (final_text, tool_calls) or None if live LLM is disabled or fails.
+        """
+        if not self.settings.enable_live_llm:
+            return None
+        if Agent is None or BedrockModel is None:
+            return None
+        try:
+            from strands.hooks import BeforeToolCallEvent, AfterToolCallEvent
+        except ImportError:  # pragma: no cover
+            return None
+
+        tool_calls: list[dict] = []
+
+        def on_before_tool(event):
+            name = event.tool_use.get("name")
+            args = event.tool_use.get("input", {})
+            self.tool_call_count += 1
+            self.emit(
+                "tool", "started", "running",
+                actor_name=supervisor_actor, tool_name=name,
+                node_id=f"{supervisor_actor}.tool.{name}",
+                payload={"input": args},
+            )
+            tool_calls.append({"name": name, "input": args, "result": None})
+
+        def on_after_tool(event):
+            name = event.tool_use.get("name")
+            result_payload = _coerce_tool_result(event.result)
+            self.emit(
+                "tool", "completed", "completed",
+                actor_name=supervisor_actor, tool_name=name,
+                node_id=f"{supervisor_actor}.tool.{name}",
+                payload={"result": result_payload},
+            )
+            for tc in reversed(tool_calls):
+                if tc["name"] == name and tc["result"] is None:
+                    tc["result"] = result_payload
+                    break
+
+        class _ToolHookProvider:
+            """HookProvider that registers tool-boundary callbacks with explicit event types.
+
+            We use an explicit HookProvider (rather than `hooks=[fn, fn]`) because our module
+            uses `from __future__ import annotations`, which turns type hints into strings and
+            breaks Strands' automatic event type inference from function signatures.
+            """
+
+            def register_hooks(self, registry, **_kwargs):
+                registry.add_callback(BeforeToolCallEvent, on_before_tool)
+                registry.add_callback(AfterToolCallEvent, on_after_tool)
+
+        def callback_handler(**kwargs: Any) -> None:
+            if "data" in kwargs and kwargs["data"]:
+                text_chunk = str(kwargs["data"])
+                if text_chunk.strip():
+                    self.emit_message(supervisor_actor, f"{supervisor_actor}.stream", text_chunk)
+
+        try:
+            model = BedrockModel(
+                model_id=self.settings.bedrock_model_id,
+                region_name=self.settings.aws_region,
+            )
             agent = Agent(
                 model=model,
                 system_prompt=system_prompt,
+                tools=tools,
+                hooks=[_ToolHookProvider()],
+                callback_handler=callback_handler,
             )
-            result = agent(prompt)
-            text = getattr(result, "message", None) or getattr(result, "output", None) or str(result)
-            return str(text).strip()
-        except Exception:
+            result = agent(user_message)
+            return str(result).strip(), tool_calls
+        except Exception as exc:  # pragma: no cover - network path
             self.tool_error_count += 1
+            self.emit(
+                "run", "error", "failed",
+                payload={"phase": "live_supervisor", "error": str(exc)[:500]},
+            )
             return None
 
     # -- Static factory helpers used by RuntimeExecutor -----------------------
