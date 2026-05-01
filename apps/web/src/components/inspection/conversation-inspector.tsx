@@ -119,7 +119,7 @@ export function ConversationInspector({
               id="conversation-inspector-title"
             >
               <Search className="h-4 w-4 text-primary" />
-              Inspecao tecnica
+              Inspeção técnica
             </h2>
             <p className="truncate text-xs text-muted-foreground">
               IDs, metadados e payloads da conversa ativa
@@ -194,7 +194,7 @@ export function ConversationInspector({
             <Metric icon={FileText} label="anexos" value={totals.attachments} />
             <Metric icon={Activity} label="eventos" value={totals.events} />
             <Metric icon={Route} label="runs" value={totals.runs} />
-            <Metric icon={ShieldAlert} label="revisoes" value={totals.reviewTasks} />
+            <Metric icon={ShieldAlert} label="revisões" value={totals.reviewTasks} />
           </div>
 
         <Card className="shadow-none">
@@ -233,7 +233,7 @@ export function ConversationInspector({
                 title: task.reason
               }))}
               onCopy={copyValue}
-              title="Revisoes"
+              title="Revisões"
             />
           </CardContent>
         </Card>

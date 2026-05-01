@@ -51,7 +51,7 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
       setConversationSummaries(response.conversations);
       return response.conversations;
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Failed to refresh conversations");
+      setError(caught instanceof Error ? caught.message : "Falha ao atualizar conversas");
       return [];
     }
   }, []);
@@ -67,7 +67,7 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
       setOpenReviewTasks(response.reviewTasks);
       return response.reviewTasks;
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Failed to refresh reviews");
+      setError(caught instanceof Error ? caught.message : "Falha ao atualizar revisões");
       return [];
     }
   }, []);
@@ -99,7 +99,7 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
       lastEventIdRef.current = getLastEventId(detail.events);
     } catch (caught) {
       if (activeConversationIdRef.current === id) {
-        setError(caught instanceof Error ? caught.message : "Failed to load conversation");
+        setError(caught instanceof Error ? caught.message : "Falha ao carregar conversa");
       }
     } finally {
       if (activeConversationIdRef.current === id) {
@@ -126,7 +126,7 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
       return detail;
     } catch (caught) {
       if (activeConversationIdRef.current === id) {
-        setError(caught instanceof Error ? caught.message : "Failed to refresh conversation");
+        setError(caught instanceof Error ? caught.message : "Falha ao atualizar conversa");
       }
       return null;
     }
@@ -142,7 +142,7 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
       lastEventIdRef.current = getLastEventId(response) ?? lastEventIdRef.current;
       return response;
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Failed to refresh events");
+      setError(caught instanceof Error ? caught.message : "Falha ao atualizar eventos");
       return [];
     }
   }, []);
@@ -215,7 +215,7 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
           void refreshConversations();
         }, 1600);
       } catch (caught) {
-        setError(caught instanceof Error ? caught.message : "Failed to send message");
+        setError(caught instanceof Error ? caught.message : "Falha ao enviar mensagem");
       } finally {
         setIsCreatingConversation(false);
         setIsSending(false);

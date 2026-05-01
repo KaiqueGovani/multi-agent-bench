@@ -37,6 +37,8 @@ interface RunExecutionPanelProps {
   selectedRunId: string | null;
   onSelectRun: (runId: string) => void;
   variant?: PanelVariant;
+  /** When true, hides the internal tab bar and renders only the overview content. */
+  hideTabs?: boolean;
 }
 
 export function RunExecutionPanel({
@@ -44,6 +46,7 @@ export function RunExecutionPanel({
   selectedRunId,
   onSelectRun,
   variant = "user",
+  hideTabs = false,
 }: RunExecutionPanelProps) {
   const {
     activeEvent,
@@ -57,6 +60,9 @@ export function RunExecutionPanel({
   const [isReplayPlaying, setIsReplayPlaying] = useState(false);
   const [replayIndex, setReplayIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<"overview" | "activity" | "technical">("overview");
+
+  // When hideTabs is enabled, always show the overview content
+  const effectiveTab = hideTabs ? "overview" : activeTab;
 
   useEffect(() => {
     setReplayIndex(Math.max(executionEvents.length - 1, 0));
@@ -156,6 +162,7 @@ export function RunExecutionPanel({
         </motion.div>
 
         {/* Tab bar */}
+        {!hideTabs ? (
         <div className="flex items-center gap-1 rounded-lg border bg-muted/40 p-1">
           {tabs.map((tab) => (
             <button
@@ -172,10 +179,11 @@ export function RunExecutionPanel({
             </button>
           ))}
         </div>
+        ) : null}
 
         {/* Tab content panels */}
         <AnimatePresence mode="wait">
-          {activeTab === "overview" ? (
+          {effectiveTab === "overview" ? (
             <motion.div
               animate={{ opacity: 1, y: 0 }}
               className="max-h-[calc(100vh-16rem)] overflow-y-auto overscroll-contain"
@@ -191,13 +199,13 @@ export function RunExecutionPanel({
                       <div className="flex flex-wrap items-center gap-2">
                         <Route className="h-4 w-4 text-primary" />
                         <h3 className="text-sm font-semibold">
-                          {variant === "technical" ? "Mapa visual da execução" : "Resumo da run"}
+                          {variant === "technical" ? "Mapa visual da execução" : "Resumo da execução"}
                         </h3>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {variant === "technical"
                           ? "O monitor técnico concentra replay, distribuição, nós e transições recentes em uma superfície operacional dedicada."
-                          : "Resumo visual do runtime para acompanhar agentes, handoffs e tool calls sem poluir o fluxo da conversa."}
+                          : "Resumo visual do runtime para acompanhar agentes, transferências e chamadas de ferramenta sem poluir o fluxo da conversa."}
                       </p>
                     </div>
 
@@ -209,7 +217,7 @@ export function RunExecutionPanel({
                       >
                         {runs.map((candidate) => (
                           <option key={candidate.id} value={candidate.id}>
-                            run {shortId(candidate.id)} - {candidate.status}
+                            execução {shortId(candidate.id)} - {candidate.status}
                           </option>
                         ))}
                       </select>
@@ -251,13 +259,13 @@ export function RunExecutionPanel({
                       <CardTitle>Indicadores</CardTitle>
                     </CardHeader>
                     <CardContent className="grid gap-2 p-4 pt-0">
-                      <InfoRow icon={Wrench} label="tool calls" value={String(toolCallCount)} />
-                      <InfoRow icon={Network} label="handoffs" value={String(handoffCount)} />
+                      <InfoRow icon={Wrench} label="chamadas de ferramenta" value={String(toolCallCount)} />
+                      <InfoRow icon={Network} label="transferências" value={String(handoffCount)} />
                       <InfoRow icon={Activity} label="eventos" value={String(eventCount)} />
                       <InfoRow
                         icon={ShieldAlert}
-                        label="review"
-                        value={run?.humanReviewRequired ? "required" : "clear"}
+                        label="revisão"
+                        value={run?.humanReviewRequired ? "necessária" : "livre"}
                       />
                     </CardContent>
                   </Card>
@@ -266,7 +274,7 @@ export function RunExecutionPanel({
             </motion.div>
           ) : null}
 
-          {activeTab === "activity" ? (
+          {effectiveTab === "activity" ? (
             <motion.div
               animate={{ opacity: 1, y: 0 }}
               className="max-h-[calc(100vh-16rem)] overflow-y-auto overscroll-contain"
@@ -311,7 +319,7 @@ export function RunExecutionPanel({
             </motion.div>
           ) : null}
 
-          {activeTab === "technical" && variant === "technical" ? (
+          {effectiveTab === "technical" && variant === "technical" ? (
             <motion.div
               animate={{ opacity: 1, y: 0 }}
               className="max-h-[calc(100vh-16rem)] overflow-y-auto overscroll-contain"
@@ -360,7 +368,7 @@ export function RunExecutionPanel({
                         </p>
                       )}
                     </div>
-                    <InfoRow icon={GitBranch} label="trace" value={run?.traceId ?? "n/a"} />
+                    <InfoRow icon={GitBranch} label="rastreio" value={run?.traceId ?? "n/a"} />
                   </CardContent>
                 </Card>
 
@@ -409,13 +417,13 @@ export function RunExecutionPanel({
                         <div className="rounded-md border bg-background p-3" key={entry.key}>
                           <p className="font-medium">{entry.key}</p>
                           <p className="mt-1 text-muted-foreground">
-                            {entry.count} runs · média {formatDuration(entry.averageRunDurationMs)}
+                            {entry.count} execuções · média {formatDuration(entry.averageRunDurationMs)}
                           </p>
                         </div>
                       ))}
                     </div>
                     <div className="rounded-md border bg-background p-3">
-                      <p className="font-medium">Peer runs</p>
+                      <p className="font-medium">Execuções relacionadas</p>
                       <p className="mt-1 text-muted-foreground">
                         {(comparisonContext?.peerRuns ?? []).length} execuções relacionadas ao mesmo cenário ou arquitetura.
                       </p>
@@ -451,6 +459,7 @@ function RuntimeVisual({
       <WorkflowFlow
         activeActorName={activeActorName}
         stages={stages}
+        executionEvents={executionEvents}
       />
     );
   }
@@ -524,16 +533,16 @@ function InfoRow({
 
 function EventBadge({ event }: { event: RunExecutionEvent }) {
   if (event.eventFamily === "tool") {
-    return <Badge variant="info">tool</Badge>;
+    return <Badge variant="info">ferramenta</Badge>;
   }
   if (event.eventFamily === "handoff") {
-    return <Badge variant="warning">handoff</Badge>;
+    return <Badge variant="warning">transferência</Badge>;
   }
   if (event.eventFamily === "review") {
-    return <Badge variant="destructive">review</Badge>;
+    return <Badge variant="destructive">revisão</Badge>;
   }
   if (event.eventFamily === "response") {
-    return <Badge variant="success">response</Badge>;
+    return <Badge variant="success">resposta</Badge>;
   }
   return <Badge variant="muted">{event.eventFamily}</Badge>;
 }
@@ -561,12 +570,12 @@ function statusBadgeVariant(status: string): BadgeProps["variant"] {
 
 function formatArchitecture(mode: ArchitectureMode): string {
   if (mode === "structured_workflow") {
-    return "workflow";
+    return "Workflow Estruturado";
   }
   if (mode === "decentralized_swarm") {
-    return "swarm";
+    return "Swarm Descentralizado";
   }
-  return "centralized";
+  return "Orquestração Centralizada";
 }
 
 function formatDuration(value: number | null | undefined): string {

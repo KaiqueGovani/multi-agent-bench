@@ -80,7 +80,7 @@ export function MessageList({
             <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 {isInbound ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
-                {isInbound ? "Usuario" : "Sistema"}
+                {isInbound ? "Usuário" : "Sistema"}
               </span>
               <Badge className="gap-1" variant="outline">
                 <MessageStatusIcon status={message.status} />

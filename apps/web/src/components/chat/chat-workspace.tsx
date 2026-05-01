@@ -37,8 +37,16 @@ import { cn } from "@/lib/utils";
 import { MessageComposer } from "./message-composer";
 import { MessageList } from "./message-list";
 
+type WorkspaceTab = "conversa" | "visao-geral" | "atividade";
+
+const workspaceTabs: Array<{ key: WorkspaceTab; label: string }> = [
+  { key: "conversa", label: "Conversa" },
+  { key: "visao-geral", label: "Visão Geral" },
+  { key: "atividade", label: "Atividade" },
+];
+
 const architectureOptions: Array<{ label: string; value: ArchitectureMode }> = [
-  { label: "Orquestracao centralizada", value: "centralized_orchestration" },
+  { label: "Orquestração centralizada", value: "centralized_orchestration" },
   { label: "Workflow estruturado", value: "structured_workflow" },
   { label: "Swarm descentralizado", value: "decentralized_swarm" }
 ];
@@ -55,6 +63,7 @@ export function ChatWorkspace() {
     "centralized_orchestration"
   );
   const [executionMode, setExecutionMode] = useState<ExecutionMode>("mock");
+  const [activeTab, setActiveTab] = useState<WorkspaceTab>("conversa");
   const {
     attachments,
     attachmentsByMessage,
@@ -75,7 +84,9 @@ export function ChatWorkspace() {
     selectConversation,
     startConversation
   } = useConversation(architectureMode, executionMode);
-  const layoutColumns = getLayoutColumns(isHistoryOpen, isEventsOpen);
+  const layoutColumns = activeTab === "conversa"
+    ? getLayoutColumns(isHistoryOpen, isEventsOpen)
+    : "lg:grid-cols-1";
   const requestedConversationId = searchParams.get("conversationId");
   const hasActiveConversation = Boolean(conversationId);
 
@@ -114,29 +125,31 @@ export function ChatWorkspace() {
     <main
       className={`grid min-h-screen grid-cols-1 overflow-x-hidden bg-background text-foreground lg:h-screen lg:overflow-hidden ${layoutColumns}`}
     >
-      <ConversationHistory
-        activeConversationId={conversationId}
-        conversations={conversationSummaries}
-        isOpen={isHistoryOpen}
-        isCreatingConversation={isCreatingConversation}
-        isLoadingConversation={isLoadingConversation}
-        openReviewCount={openReviewTasks.length}
-        onCreateConversation={handleStartDraftConversation}
-        onOpenChange={setIsHistoryOpen}
-        onSelectConversation={(summary) => {
-          router.replace(`/?conversationId=${summary.conversationId}`, { scroll: false });
-          setIsDraftConversation(false);
-          if (isArchitectureMode(summary.architectureMode)) {
-            setArchitectureMode(summary.architectureMode);
-          }
-          if (typeof window !== "undefined" && window.innerWidth < 1024) {
-            setIsHistoryOpen(false);
-          }
-          void selectConversation(summary.conversationId);
-        }}
-      />
+      {activeTab === "conversa" ? (
+        <ConversationHistory
+          activeConversationId={conversationId}
+          conversations={conversationSummaries}
+          isOpen={isHistoryOpen}
+          isCreatingConversation={isCreatingConversation}
+          isLoadingConversation={isLoadingConversation}
+          openReviewCount={openReviewTasks.length}
+          onCreateConversation={handleStartDraftConversation}
+          onOpenChange={setIsHistoryOpen}
+          onSelectConversation={(summary) => {
+            router.replace(`/?conversationId=${summary.conversationId}`, { scroll: false });
+            setIsDraftConversation(false);
+            if (isArchitectureMode(summary.architectureMode)) {
+              setArchitectureMode(summary.architectureMode);
+            }
+            if (typeof window !== "undefined" && window.innerWidth < 1024) {
+              setIsHistoryOpen(false);
+            }
+            void selectConversation(summary.conversationId);
+          }}
+        />
+      ) : null}
 
-      <section className="flex min-h-0 min-w-0 flex-col">
+      <section className="flex min-w-0 flex-col overflow-hidden">
         <header className="flex min-h-16 items-center gap-3 border-b bg-card px-3 py-2 shadow-sm sm:px-4">
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <Button
@@ -156,7 +169,7 @@ export function ChatWorkspace() {
             <div className="min-w-0 flex-1">
               <div className="flex min-w-0 items-center gap-2">
                 <h1 className="truncate text-base font-semibold">
-                  Atendimento farmaceutico POC
+                  Atendimento farmacêutico POC
                 </h1>
               {conversationId ? (
                 <Badge variant="outline">{formatArchitectureLabel(architectureMode)}</Badge>
@@ -169,6 +182,7 @@ export function ChatWorkspace() {
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            {activeTab !== "atividade" ? (
             <Button
               className="lg:hidden"
               data-testid="events-toggle"
@@ -183,6 +197,7 @@ export function ChatWorkspace() {
                 <PanelRightOpen className="h-4 w-4" />
               )}
             </Button>
+            ) : null}
             <Button
               disabled={!hasActiveConversation}
               onClick={() => setIsInspectorOpen(true)}
@@ -191,7 +206,7 @@ export function ChatWorkspace() {
               variant="outline"
             >
               <Search className="h-4 w-4" />
-              <span className="hidden sm:inline">Inspecao</span>
+              <span className="hidden sm:inline">Inspeção</span>
             </Button>
             <ExecutionModeToggle
               executionMode={executionMode}
@@ -226,6 +241,24 @@ export function ChatWorkspace() {
           </div>
         </header>
 
+        {/* Workspace tab bar */}
+        <nav className="flex items-center gap-1 border-b bg-card/80 px-3 py-1.5">
+          {workspaceTabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                activeTab === tab.key
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+
         {error ? (
           <Alert className="rounded-none border-x-0 border-t-0 px-5 py-2" variant="destructive">
             <AlertDescription>{error}</AlertDescription>
@@ -243,44 +276,77 @@ export function ChatWorkspace() {
           runs={runs}
         />
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
-          {runs.length > 0 ? (
-            <RunExecutionPanel
-              onSelectRun={setSelectedRunId}
-              runs={runs}
-              selectedRunId={selectedRunId}
-              variant="user"
-            />
+        {/* Tab content — flex-1 + overflow-hidden ensures the parent fills remaining space */}
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {activeTab === "conversa" ? (
+            <>
+              <div className="flex flex-1 flex-col overflow-hidden bg-background">
+                <div className="flex-1 overflow-y-auto">
+                  <MessageList
+                    attachmentsByMessage={attachmentsByMessage}
+                    isLoading={isLoadingConversation}
+                    messages={messages}
+                  />
+                </div>
+              </div>
+              <MessageComposer
+                architectureMode={architectureMode}
+                disabled={false}
+                isArchitectureLocked={hasActiveConversation}
+                isSending={isSending}
+                onArchitectureModeChange={setArchitectureMode}
+                onSend={sendMessage}
+              />
+            </>
           ) : null}
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <MessageList
-              attachmentsByMessage={attachmentsByMessage}
-              isLoading={isLoadingConversation}
-              messages={messages}
-            />
-          </div>
-        </div>
 
-        <MessageComposer
-          architectureMode={architectureMode}
-          disabled={false}
-          isArchitectureLocked={hasActiveConversation}
-          isSending={isSending}
-          onArchitectureModeChange={setArchitectureMode}
-          onSend={sendMessage}
-        />
+          {activeTab === "visao-geral" ? (
+            <div className="flex-1 overflow-y-auto bg-background p-4">
+              {runs.length > 0 ? (
+                <RunExecutionPanel
+                  hideTabs
+                  onSelectRun={setSelectedRunId}
+                  runs={runs}
+                  selectedRunId={selectedRunId}
+                  variant="technical"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                  Nenhuma run ativa para exibir.
+                </div>
+              )}
+            </div>
+          ) : null}
+
+          {activeTab === "atividade" ? (
+            <div className="flex-1 overflow-y-auto bg-background">
+              <EventTimeline
+                architectureMode={architectureMode}
+                connectionStatus={connectionStatus}
+                events={events}
+                isOpen={true}
+                onOpenChange={() => {}}
+                reviewPanel={
+                  <ReviewPanel reviewTasks={reviewTasks} />
+                }
+              />
+            </div>
+          ) : null}
+        </div>
       </section>
 
-      <EventTimeline
-        architectureMode={architectureMode}
-        connectionStatus={connectionStatus}
-        events={events}
-        isOpen={isEventsOpen}
-        onOpenChange={setIsEventsOpen}
-        reviewPanel={
-          <ReviewPanel reviewTasks={reviewTasks} />
-        }
-      />
+      {activeTab === "conversa" ? (
+        <EventTimeline
+          architectureMode={architectureMode}
+          connectionStatus={connectionStatus}
+          events={events}
+          isOpen={isEventsOpen}
+          onOpenChange={setIsEventsOpen}
+          reviewPanel={
+            <ReviewPanel reviewTasks={reviewTasks} />
+          }
+        />
+      ) : null}
     </main>
   );
 }
@@ -318,7 +384,7 @@ function ConversationHistory({
             <h2 className="truncate text-sm font-semibold">Conversas</h2>
             <p className="truncate text-xs text-muted-foreground">
               {conversations.length} recentes
-              {openReviewCount > 0 ? ` - ${openReviewCount} revisoes abertas` : ""}
+              {openReviewCount > 0 ? ` - ${openReviewCount} revisões abertas` : ""}
             </p>
           </div>
         ) : null}
@@ -400,7 +466,7 @@ function ConversationHistory({
                             reviewPending={summary.reviewPending}
                             status={summary.status}
                           />
-                          {summary.reviewPending ? "revisao" : summary.status}
+                          {summary.reviewPending ? "revisão" : summary.status}
                         </Badge>
                       </div>
                       <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
@@ -468,7 +534,7 @@ function ReviewPanel({
               <CheckCircle2 className="h-4 w-4 text-primary" />
             )}
             <h3 className="text-sm font-semibold">
-              {hasOpenTasks ? "Acao humana necessaria" : "Revisao humana concluida"}
+              {hasOpenTasks ? "Ação humana necessária" : "Revisão humana concluída"}
             </h3>
           </div>
           <p
@@ -477,13 +543,13 @@ function ReviewPanel({
             }`}
           >
             {hasOpenTasks
-              ? "Revise a solicitacao e escolha uma decisao rapida. A observacao e opcional."
-              : "Nao ha pendencias humanas abertas nesta conversa."}
+              ? "Revise a solicitação e escolha uma decisão rápida. A observação é opcional."
+              : "Não há pendências humanas abertas nesta conversa."}
           </p>
         </button>
         <div className="flex shrink-0 items-center gap-2">
           <Badge variant={hasOpenTasks ? "warning" : "success"}>
-            {hasOpenTasks ? `${openTasks.length} pendente` : "sem pendencias"}
+            {hasOpenTasks ? `${openTasks.length} pendente` : "sem pendências"}
           </Badge>
           <Button
             className="h-7 w-7"
@@ -516,7 +582,7 @@ function ReviewPanel({
               </div>
               {isOpen ? (
                 <p className="mt-2 text-[11px] text-amber-800">
-                  Um profissional esta avaliando a resposta.
+                  Um profissional está avaliando a resposta.
                 </p>
               ) : task.resolvedAt ? (
                 <p className="mt-2 text-[11px] text-muted-foreground">
@@ -542,7 +608,7 @@ function ExecutionModeToggle({
   const isMock = executionMode === "mock";
   return (
     <button
-      aria-label={`Modo de execucao: ${isMock ? "Simulado" : "Real"}`}
+      aria-label={`Modo de execução: ${isMock ? "Simulado" : "Real"}`}
       className="flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-sm transition-colors hover:bg-muted"
       onClick={() => onExecutionModeChange(isMock ? "real" : "mock")}
       type="button"
@@ -665,12 +731,12 @@ function formatUpdatedAt(value: string): string {
 
 function formatArchitectureLabel(mode: ArchitectureMode): string {
   if (mode === "structured_workflow") {
-    return "workflow";
+    return "Workflow Estruturado";
   }
   if (mode === "decentralized_swarm") {
-    return "swarm";
+    return "Swarm Descentralizado";
   }
-  return "centralized";
+  return "Orquestração Centralizada";
 }
 
 function formatConversationPreview(value: string | null | undefined): string {

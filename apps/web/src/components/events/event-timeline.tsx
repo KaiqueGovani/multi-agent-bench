@@ -171,7 +171,7 @@ export function EventTimeline({
               <p className="text-xs text-muted-foreground">
                 {totalCounters.total === 0
                   ? `Timeline operacional - ${formatArchitectureMode(architectureMode)}`
-                  : `${counters.total} de ${totalCounters.total} eventos - ${counters.running} em execucao`}
+                  : `${counters.total} de ${totalCounters.total} eventos - ${counters.running} em execução`}
               </p>
             </div>
           ) : null}
@@ -568,9 +568,9 @@ function eventCardAccent(
 
 function formatArchitectureMode(mode: ArchitectureMode): string {
   const labels: Record<ArchitectureMode, string> = {
-    centralized_orchestration: "orquestracao centralizada",
-    decentralized_swarm: "swarm descentralizado",
-    structured_workflow: "workflow estruturado"
+    centralized_orchestration: "Orquestração centralizada",
+    decentralized_swarm: "Swarm descentralizado",
+    structured_workflow: "Workflow estruturado"
   };
   return labels[mode];
 }

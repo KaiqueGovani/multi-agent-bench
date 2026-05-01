@@ -206,12 +206,12 @@ export function DashboardWorkspace() {
           <>
             <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
               <MetricCard icon={MessageSquare} label="conversas" value={metrics.totals.conversations} />
-              <MetricCard icon={Network} label="runs" value={metrics.totals.runs} />
-              <MetricCard icon={CheckCircle2} label="runs concluidos" value={metrics.totals.runsCompleted} />
-              <MetricCard icon={ShieldAlert} label="revisoes abertas" value={reviewTasks.length} />
+              <MetricCard icon={Network} label="execuções" value={metrics.totals.runs} />
+              <MetricCard icon={CheckCircle2} label="execuções concluídas" value={metrics.totals.runsCompleted} />
+              <MetricCard icon={ShieldAlert} label="revisões abertas" value={reviewTasks.length} />
               <MetricCard
                 icon={Timer}
-                label="latencia media"
+                label="latência média"
                 value={formatDuration(metrics.totals.averageRunDurationMs)}
               />
             </section>
@@ -277,7 +277,7 @@ export function DashboardWorkspace() {
                               conversa {shortId(selectedConversation.conversation.id)}
                             </Badge>
                             <Badge variant="outline">
-                              {selectedConversation.runs.length} runs
+                              {selectedConversation.runs.length} execuções
                             </Badge>
                             <Badge variant="outline">
                               {selectedConversation.reviewTasks.length} revisões
@@ -406,7 +406,7 @@ function ConversationRow({
         </div>
       </button>
       <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-        <span>{conversation.runCount} runs</span>
+        <span>{conversation.runCount} execuções</span>
         {conversation.latestRunId ? <span>run {shortId(conversation.latestRunId)}</span> : null}
         <span>{formatDate(conversation.updatedAt)}</span>
       </div>

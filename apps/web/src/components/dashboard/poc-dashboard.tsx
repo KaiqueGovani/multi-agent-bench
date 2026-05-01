@@ -68,7 +68,7 @@ export function PocDashboard({
       })
       .catch((caught) => {
         if (!isCancelled) {
-          setError(caught instanceof Error ? caught.message : "Failed to load dashboard");
+          setError(caught instanceof Error ? caught.message : "Falha ao carregar o painel");
         }
       })
       .finally(() => {
@@ -121,7 +121,7 @@ export function PocDashboard({
               Dashboard da POC
             </h2>
             <p className="truncate text-xs text-muted-foreground">
-              Indicadores operacionais e comparacao inicial de configuracoes
+              Indicadores operacionais e comparação inicial de configurações
               {generatedAt ? ` - ${generatedAt}` : ""}
             </p>
           </div>
@@ -147,7 +147,7 @@ export function PocDashboard({
               onClick={() => setActiveTab("overview")}
               type="button"
             >
-              Visao geral
+              Visão geral
             </button>
             <button
               className={`rounded px-3 py-2 text-sm ${
@@ -158,13 +158,13 @@ export function PocDashboard({
               onClick={() => setActiveTab("reviews")}
               type="button"
             >
-              Revisoes
+              Revisões
               {reviewTasks.length > 0 ? ` (${reviewTasks.length})` : ""}
             </button>
           </div>
           {isLoading ? (
             <div className="rounded-md border bg-card p-4 text-sm text-muted-foreground">
-              Carregando metricas...
+              Carregando métricas...
             </div>
           ) : error ? (
             <div className="rounded-md border border-destructive bg-destructive/10 p-4 text-sm text-destructive">
@@ -174,20 +174,20 @@ export function PocDashboard({
             <div className="grid gap-4">
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <MetricCard icon={MessageSquare} label="conversas" value={metrics.totals.conversations} />
-                <MetricCard icon={Route} label="runs" value={metrics.totals.runs} />
-                <MetricCard icon={CheckCircle2} label="runs concluidos" value={metrics.totals.runsCompleted} />
-                <MetricCard icon={XCircle} label="runs com erro" value={metrics.totals.runsFailed} />
-                <MetricCard icon={ShieldAlert} label="runs com revisao" value={metrics.totals.runsHumanReview} />
+                <MetricCard icon={Route} label="execuções" value={metrics.totals.runs} />
+                <MetricCard icon={CheckCircle2} label="execuções concluídas" value={metrics.totals.runsCompleted} />
+                <MetricCard icon={XCircle} label="execuções com erro" value={metrics.totals.runsFailed} />
+                <MetricCard icon={ShieldAlert} label="execuções com revisão" value={metrics.totals.runsHumanReview} />
                 <MetricCard icon={FileText} label="mensagens" value={metrics.totals.messages} />
                 <MetricCard icon={Database} label="anexos" value={metrics.totals.attachments} />
                 <MetricCard
                   icon={Timer}
-                  label="tempo medio"
+                  label="tempo médio"
                   value={formatDuration(metrics.totals.averageRunDurationMs)}
                 />
                 <MetricCard
                   icon={Clock3}
-                  label="p95 latencia"
+                  label="p95 latência"
                   value={formatDuration(asNumber(metrics.latencyPercentiles?.p95))}
                 />
               </div>
@@ -195,7 +195,7 @@ export function PocDashboard({
               <div className="grid gap-3 lg:grid-cols-2">
                 <DistributionCard title="Por arquitetura" values={metrics.byArchitecture} />
                 <DistributionCard title="Por modelo" values={metrics.byModel} />
-                <DistributionCard title="Por cenario" values={metrics.byScenario} />
+                <DistributionCard title="Por cenário" values={metrics.byScenario} />
                 <DistributionCard title="Por tipo de anexo" values={metrics.byAttachmentType} />
                 <DistributionCard title="Por ferramenta" values={metrics.byTool ?? []} />
               </div>
@@ -321,11 +321,11 @@ function ConversationRow({
           </p>
         </div>
         <Badge variant={conversation.reviewPending ? "warning" : "outline"}>
-          {conversation.reviewPending ? "revisao" : conversation.status}
+          {conversation.reviewPending ? "revisão" : conversation.status}
         </Badge>
       </div>
       <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-muted-foreground">
-        <span>{conversation.runCount} runs</span>
+        <span>{conversation.runCount} execuções</span>
         {conversation.latestRunId ? <span>run {shortId(conversation.latestRunId)}</span> : null}
         <span>{formatDate(conversation.updatedAt)}</span>
       </div>
@@ -354,7 +354,7 @@ function ReviewActionsPanel({
     return (
       <Card className="shadow-none">
         <CardContent className="p-4 text-sm text-muted-foreground">
-          Nenhuma revisao humana pendente.
+          Nenhuma revisão humana pendente.
         </CardContent>
       </Card>
     );
@@ -385,7 +385,7 @@ function ReviewActionsPanel({
                     [task.id]: event.target.value
                   }))
                 }
-                placeholder="Observacao da revisao (opcional)"
+                placeholder="Observação da revisão (opcional)"
                 value={note}
               />
               <div className="flex flex-wrap gap-2">
@@ -416,7 +416,7 @@ function ReviewActionsPanel({
                   variant="outline"
                 >
                   <Clock3 className="h-4 w-4" />
-                  Manter em revisao
+                  Manter em revisão
                 </Button>
                 <Button
                   className="text-xs"

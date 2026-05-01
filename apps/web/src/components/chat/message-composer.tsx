@@ -28,7 +28,7 @@ const ACCEPTED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp", "applicati
 const MAX_FILES = 4;
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const ARCHITECTURE_OPTIONS: Array<{ label: string; value: ArchitectureMode }> = [
-  { label: "Orquestracao centralizada", value: "centralized_orchestration" },
+  { label: "Orquestração centralizada", value: "centralized_orchestration" },
   { label: "Workflow estruturado", value: "structured_workflow" },
   { label: "Swarm descentralizado", value: "decentralized_swarm" }
 ];
@@ -104,7 +104,7 @@ export function MessageComposer({
         continue;
       }
       if (file.size > MAX_FILE_SIZE_BYTES) {
-        setFileError("Cada arquivo deve ter ate 5 MB.");
+        setFileError("Cada arquivo deve ter até 5 MB.");
         continue;
       }
       nextAttachments.push({
@@ -183,7 +183,7 @@ export function MessageComposer({
               <p className="mt-1 text-xs text-muted-foreground">
                 {isArchitectureLocked
                   ? "Arquitetura travada para esta conversa"
-                  : "Configuracao aplicada a nova conversa"}
+                  : "Configuração aplicada à nova conversa"}
               </p>
             </div>
             <select

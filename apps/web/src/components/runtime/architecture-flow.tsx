@@ -170,6 +170,21 @@ function FlowWrapper({
 // Helpers
 // ---------------------------------------------------------------------------
 
+const AGENT_NAME_MAP: Record<string, string> = {
+  supervisor_agent: "Agente Supervisor",
+  faq_agent: "Agente FAQ",
+  stock_agent: "Agente Estoque",
+  image_intake_agent: "Agente Imagem",
+  router_agent: "Agente Roteador",
+  swarm_coordinator: "Coordenador",
+  swarm_synthesizer: "Sintetizador",
+  response_streamer: "Streamer de Resposta",
+};
+
+function formatAgentName(name: string): string {
+  return AGENT_NAME_MAP[name] ?? name;
+}
+
 function statusBadgeVariant(status: string): BadgeProps["variant"] {
   if (status === "completed") return "success";
   if (status === "running") return "warning";
@@ -240,15 +255,46 @@ function makeEdge(source: string, target: string, state: EdgeState): Edge {
   };
 }
 
-function connectionState(
-  fromActive: boolean,
-  fromStatus: string,
-  toActive: boolean,
-  toStatus: string,
-  recent: boolean,
+/**
+ * Derive edge state from runtime events for a specific source→target connection.
+ * - "active": an event with status "running" exists where the actor matches source or target
+ * - "recent": a recent event with status "completed" exists on this connection
+ * - "idle": no relevant activity on this connection
+ */
+function edgeStateFromEvents(
+  events: RunExecutionEvent[],
+  source: string,
+  target: string,
 ): EdgeState {
-  if (fromActive || toActive) return "active";
-  if (recent || fromStatus === "completed" || toStatus === "completed") return "recent";
+  // Check the last N events for activity on this connection
+  const recent = events.slice(-10);
+  for (let i = recent.length - 1; i >= 0; i--) {
+    const e = recent[i];
+    const actor = e.actorName;
+    if (!actor) continue;
+
+    // Handoff events: payload.from→payload.to or payload.targetActor
+    if (e.eventFamily === "handoff") {
+      const p = e.payload as Record<string, unknown>;
+      const from = p.from as string | undefined;
+      const to = (p.to ?? p.targetActor) as string | undefined;
+      if ((from === source && to === target) || (actor === source && to === target)) {
+        return e.status === "running" ? "active" : "recent";
+      }
+    }
+
+    // Node/tool events: actor matches the target node of the edge (source is sending to target)
+    if (e.eventFamily === "node" || e.eventFamily === "tool") {
+      if (actor === target) {
+        return e.status === "running" ? "active" : e.status === "completed" ? "recent" : "idle";
+      }
+    }
+
+    // Response events: actor is response_streamer → edges into response_streamer activate
+    if (e.eventFamily === "response" && actor === target) {
+      return e.status === "running" ? "active" : e.status === "completed" ? "recent" : "idle";
+    }
+  }
   return "idle";
 }
 
@@ -267,16 +313,13 @@ export function CentralizedFlow({
 }) {
   const { nodes, edges } = useMemo(() => {
     const findActor = (name: string) => actors.find((a) => getActorName(a) === name);
-    const recentActors = new Set(
-      executionEvents.slice(-6).map((e) => e.actorName).filter(Boolean) as string[],
-    );
 
     const sup = findActor("supervisor_agent");
     const supStatus = getStatus(sup);
     const supActive = "supervisor_agent" === activeActorName;
 
     const specialists = [
-      { name: "faq_agent", desc: "faq e contexto geral", y: 0 },
+      { name: "faq_agent", desc: "FAQ e contexto geral", y: 0 },
       { name: "stock_agent", desc: "estoque e disponibilidade", y: 130 },
       { name: "image_intake_agent", desc: "imagem ou documento", y: 260 },
     ];
@@ -285,20 +328,20 @@ export function CentralizedFlow({
     const respStatus = respActive ? "running" : "completed";
 
     const nodes: Node<AgentNodeData>[] = [
-      makeNode("supervisor_agent", "supervisor_agent", "orquestra e roteia", supStatus, supActive, 0, 130, "info", getNodeId(sup)),
+      makeNode("supervisor_agent", "Agente Supervisor", "orquestra e roteia", supStatus, supActive, 0, 130, "info", getNodeId(sup)),
       ...specialists.map((s) => {
         const actor = findActor(s.name);
-        return makeNode(s.name, s.name, s.desc, getStatus(actor), s.name === activeActorName, 280, s.y, undefined, getNodeId(actor));
+        return makeNode(s.name, formatAgentName(s.name), s.desc, getStatus(actor), s.name === activeActorName, 280, s.y, undefined, getNodeId(actor));
       }),
-      makeNode("response_streamer", "response_streamer", "sintetiza a resposta", respStatus, respActive, 560, 130),
+      makeNode("response_streamer", "Streamer de Resposta", "sintetiza a resposta", respStatus, respActive, 560, 130),
     ];
 
     const edges: Edge[] = [
       ...specialists.map((s) =>
-        makeEdge("supervisor_agent", s.name, connectionState(supActive, supStatus, s.name === activeActorName, getStatus(findActor(s.name)), recentActors.has(s.name))),
+        makeEdge("supervisor_agent", s.name, edgeStateFromEvents(executionEvents, "supervisor_agent", s.name)),
       ),
       ...specialists.map((s) =>
-        makeEdge(s.name, "response_streamer", connectionState(s.name === activeActorName, getStatus(findActor(s.name)), respActive, respStatus, recentActors.has(s.name))),
+        makeEdge(s.name, "response_streamer", edgeStateFromEvents(executionEvents, s.name, "response_streamer")),
       ),
     ];
 
@@ -315,17 +358,19 @@ export function CentralizedFlow({
 export function WorkflowFlow({
   activeActorName,
   stages,
+  executionEvents,
 }: {
   activeActorName: string;
   stages: unknown[];
+  executionEvents: RunExecutionEvent[];
 }) {
   const { nodes, edges } = useMemo(() => {
     const sequence = [
-      { stage: "classify", actor: "router_agent", desc: "classifica a intenção" },
-      { stage: "gather_evidence", actor: "workflow_evidence_agent", desc: "coleta evidências" },
-      { stage: "multimodal_analysis", actor: "workflow_multimodal_agent", desc: "enriquece multimodal" },
-      { stage: "review_gate", actor: "workflow_review_agent", desc: "valida revisão" },
-      { stage: "synthesize", actor: "workflow_synthesis_agent", desc: "sintetiza saída" },
+      { stage: "classify", actor: "router_agent", desc: "Classificar intenção" },
+      { stage: "gather_evidence", actor: "workflow_evidence_agent", desc: "Coletar Evidências" },
+      { stage: "multimodal_analysis", actor: "workflow_multimodal_agent", desc: "Análise Multimodal" },
+      { stage: "review_gate", actor: "workflow_review_agent", desc: "Portão de Revisão" },
+      { stage: "synthesize", actor: "workflow_synthesis_agent", desc: "Sintetizar saída" },
     ];
 
     const nodes: Node<AgentNodeData>[] = sequence.map((step, i) => {
@@ -339,13 +384,11 @@ export function WorkflowFlow({
 
     const edges: Edge[] = nodes.slice(0, -1).map((n, i) => {
       const next = nodes[i + 1];
-      return makeEdge(n.id, next.id, connectionState(
-        n.data.active, n.data.status, next.data.active, next.data.status, n.data.status === "completed",
-      ));
+      return makeEdge(n.id, next.id, edgeStateFromEvents(executionEvents, n.data.actorName, next.data.actorName));
     });
 
     return { nodes, edges };
-  }, [activeActorName, stages]);
+  }, [activeActorName, stages, executionEvents]);
 
   return <FlowWrapper nodes={nodes} edges={edges} testId="runtime-visual-workflow" height={300} />;
 }
@@ -372,13 +415,6 @@ export function SwarmFlow({
     const coordStatus = getStatus(coordActor);
     const coordActive = coordName === activeActorName;
 
-    const recentPairs = new Set(
-      handoffs.slice(-6).map(getHandoffPairKey).filter(Boolean) as string[],
-    );
-    const recentActors = new Set(
-      executionEvents.slice(-6).map((e) => e.actorName).filter(Boolean) as string[],
-    );
-
     const specialistDefs = [
       { name: "faq_agent", desc: "especialista", y: 0 },
       { name: "stock_agent", desc: "especialista", y: 130 },
@@ -390,23 +426,20 @@ export function SwarmFlow({
     const synthActive = "swarm_synthesizer" === activeActorName;
 
     const nodes: Node<AgentNodeData>[] = [
-      makeNode(coordName, coordName, "coordena os handoffs", coordStatus, coordActive, 0, 130, "info", getNodeId(coordActor)),
+      makeNode(coordName, formatAgentName(coordName), "coordena as transferências", coordStatus, coordActive, 0, 130, "info", getNodeId(coordActor)),
       ...specialistDefs.map((s) => {
         const actor = findActor(s.name);
-        return makeNode(s.name, s.name, s.desc, getStatus(actor), s.name === activeActorName, 260, s.y, undefined, getNodeId(actor));
+        return makeNode(s.name, formatAgentName(s.name), s.desc, getStatus(actor), s.name === activeActorName, 260, s.y, undefined, getNodeId(actor));
       }),
-      makeNode("swarm_synthesizer", "swarm_synthesizer", "síntese final", synthStatus, synthActive, 520, 130, undefined, getNodeId(synthActor)),
+      makeNode("swarm_synthesizer", "Sintetizador", "síntese final", synthStatus, synthActive, 520, 130, undefined, getNodeId(synthActor)),
     ];
-
-    const isRecent = (a: string, b: string) =>
-      recentPairs.has(`${a}->${b}`) || recentPairs.has(`${b}->${a}`) || recentActors.has(b);
 
     const edges: Edge[] = [
       ...specialistDefs.map((s) =>
-        makeEdge(coordName, s.name, connectionState(coordActive, coordStatus, s.name === activeActorName, getStatus(findActor(s.name)), isRecent(coordName, s.name))),
+        makeEdge(coordName, s.name, edgeStateFromEvents(executionEvents, coordName, s.name)),
       ),
       ...specialistDefs.map((s) =>
-        makeEdge(s.name, "swarm_synthesizer", connectionState(s.name === activeActorName, getStatus(findActor(s.name)), synthActive, synthStatus, isRecent(s.name, "swarm_synthesizer"))),
+        makeEdge(s.name, "swarm_synthesizer", edgeStateFromEvents(executionEvents, s.name, "swarm_synthesizer")),
       ),
     ];
 

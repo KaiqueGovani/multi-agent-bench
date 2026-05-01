@@ -85,7 +85,7 @@ export function useRunExecution(runId: string | null) {
         );
       } catch (caught) {
         if (!cancelled) {
-          setError(caught instanceof Error ? caught.message : "Failed to load run execution");
+          setError(caught instanceof Error ? caught.message : "Falha ao carregar execução");
         }
       }
     }
