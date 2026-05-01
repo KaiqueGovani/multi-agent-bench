@@ -188,6 +188,7 @@ export function MessageComposer({
             </div>
             <select
               className="h-9 min-w-0 rounded-md border bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-w-64"
+              data-testid="architecture-select"
               disabled={isSending || isArchitectureLocked}
               id="composer-architecture-mode"
               onChange={(event) => onArchitectureModeChange(event.target.value as ArchitectureMode)}
@@ -224,6 +225,7 @@ export function MessageComposer({
           </Button>
           <Textarea
             className="min-h-20 resize-none text-sm"
+            data-testid="message-composer-input"
             disabled={disabled || isSending}
             placeholder={disabled ? "Crie uma conversa para enviar mensagens" : "Digite sua mensagem"}
             rows={3}

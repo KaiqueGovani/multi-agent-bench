@@ -1,6 +1,10 @@
+import { Suspense } from "react";
 import { ChatWorkspace } from "@/components/chat/chat-workspace";
 
 export default function Home() {
-  return <ChatWorkspace />;
+  return (
+    <Suspense>
+      <ChatWorkspace />
+    </Suspense>
+  );
 }
-

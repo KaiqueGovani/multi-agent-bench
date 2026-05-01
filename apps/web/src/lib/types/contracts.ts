@@ -5,6 +5,8 @@ export type ArchitectureMode =
   | "structured_workflow"
   | "decentralized_swarm";
 
+export type ExecutionMode = "mock" | "real";
+
 export type ConversationStatus =
   | "active"
   | "waiting"

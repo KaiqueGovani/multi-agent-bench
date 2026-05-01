@@ -4,6 +4,7 @@ import type {
   DashboardMetricsResponse,
   ConversationDetailResponse,
   CreateConversationResponse,
+  ExecutionMode,
   MessageListResponse,
   ProcessingEvent,
   Run,
@@ -132,7 +133,8 @@ export function sendMessage(
   conversationId: string,
   text: string,
   files: File[],
-  architectureMode: ArchitectureMode
+  architectureMode: ArchitectureMode,
+  executionMode: ExecutionMode = "mock"
 ): Promise<SendMessageResponse> {
   const body = new FormData();
   body.append("conversationId", conversationId);
@@ -142,7 +144,7 @@ export function sendMessage(
   body.append(
     "metadata_json",
     JSON.stringify({
-      ...getClientMetadata(architectureMode),
+      ...getClientMetadata(architectureMode, executionMode),
       fileCount: files.length,
       fileTypes: files.map((file) => file.type),
       fileSizes: files.map((file) => file.size)
@@ -158,7 +160,7 @@ export function sendMessage(
   });
 }
 
-function getClientMetadata(architectureMode: ArchitectureMode) {
+function getClientMetadata(architectureMode: ArchitectureMode, executionMode: ExecutionMode = "mock") {
   return {
     clientTimestamp: new Date().toISOString(),
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -166,7 +168,7 @@ function getClientMetadata(architectureMode: ArchitectureMode) {
     userAgent: navigator.userAgent,
     deviceType: window.innerWidth < 768 ? "mobile" : "desktop",
     channel: "web_chat",
-    runtimeMode: "mock",
+    runtimeMode: executionMode,
     architectureMode
   };
 }

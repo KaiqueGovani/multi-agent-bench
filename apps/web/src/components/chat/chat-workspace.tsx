@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Activity,
   AlertTriangle,
@@ -23,15 +25,15 @@ import {
   Workflow
 } from "lucide-react";
 
-import { PocDashboard } from "@/components/dashboard/poc-dashboard";
 import { EventTimeline } from "@/components/events/event-timeline";
 import { ConversationInspector } from "@/components/inspection/conversation-inspector";
 import { RunExecutionPanel } from "@/components/runtime/run-execution-panel";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useConversation } from "@/hooks/use-conversation";
-import type { ArchitectureMode, ConversationSummary, ReviewTask } from "@/lib/types";
+import type { ArchitectureMode, ConversationSummary, ExecutionMode, ReviewTask } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { MessageComposer } from "./message-composer";
 import { MessageList } from "./message-list";
 
@@ -42,14 +44,17 @@ const architectureOptions: Array<{ label: string; value: ArchitectureMode }> = [
 ];
 
 export function ChatWorkspace() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isEventsOpen, setIsEventsOpen] = useState(false);
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
-  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+  const [isDraftConversation, setIsDraftConversation] = useState(false);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [architectureMode, setArchitectureMode] = useState<ArchitectureMode>(
     "centralized_orchestration"
   );
+  const [executionMode, setExecutionMode] = useState<ExecutionMode>("mock");
   const {
     attachments,
     attachmentsByMessage,
@@ -68,10 +73,19 @@ export function ChatWorkspace() {
     runs,
     sendMessage,
     selectConversation,
-    startConversation,
-    updateReviewTask
-  } = useConversation(architectureMode);
+    startConversation
+  } = useConversation(architectureMode, executionMode);
   const layoutColumns = getLayoutColumns(isHistoryOpen, isEventsOpen);
+  const requestedConversationId = searchParams.get("conversationId");
+  const hasActiveConversation = Boolean(conversationId);
+
+  function handleStartDraftConversation() {
+    setIsDraftConversation(true);
+    router.replace("/", { scroll: false });
+    setIsInspectorOpen(false);
+    setSelectedRunId(null);
+    void startConversation();
+  }
 
   useEffect(() => {
     if (!runs.length) {
@@ -80,6 +94,21 @@ export function ChatWorkspace() {
     }
     setSelectedRunId((current) => current ?? runs[runs.length - 1].id);
   }, [runs]);
+
+  useEffect(() => {
+    if (isDraftConversation || !requestedConversationId || requestedConversationId === conversationId) {
+      return;
+    }
+    void selectConversation(requestedConversationId);
+  }, [conversationId, isDraftConversation, requestedConversationId, selectConversation]);
+
+  useEffect(() => {
+    if (!conversationId || requestedConversationId === conversationId) {
+      return;
+    }
+    setIsDraftConversation(false);
+    router.replace(`/?conversationId=${conversationId}`, { scroll: false });
+  }, [conversationId, requestedConversationId, router]);
 
   return (
     <main
@@ -92,9 +121,11 @@ export function ChatWorkspace() {
         isCreatingConversation={isCreatingConversation}
         isLoadingConversation={isLoadingConversation}
         openReviewCount={openReviewTasks.length}
-        onCreateConversation={() => void startConversation()}
+        onCreateConversation={handleStartDraftConversation}
         onOpenChange={setIsHistoryOpen}
         onSelectConversation={(summary) => {
+          router.replace(`/?conversationId=${summary.conversationId}`, { scroll: false });
+          setIsDraftConversation(false);
           if (isArchitectureMode(summary.architectureMode)) {
             setArchitectureMode(summary.architectureMode);
           }
@@ -110,6 +141,7 @@ export function ChatWorkspace() {
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <Button
               className="shrink-0 lg:hidden"
+              data-testid="history-toggle"
               onClick={() => setIsHistoryOpen((current) => !current)}
               size="icon"
               type="button"
@@ -126,9 +158,9 @@ export function ChatWorkspace() {
                 <h1 className="truncate text-base font-semibold">
                   Atendimento farmaceutico POC
                 </h1>
-                {conversationId ? (
-                  <Badge variant="outline">{formatArchitectureLabel(architectureMode)}</Badge>
-                ) : null}
+              {conversationId ? (
+                <Badge variant="outline">{formatArchitectureLabel(architectureMode)}</Badge>
+              ) : null}
                 <HeaderContextTooltip architectureMode={architectureMode} />
               </div>
               <p className="truncate text-xs text-muted-foreground">
@@ -139,6 +171,7 @@ export function ChatWorkspace() {
           <div className="flex shrink-0 items-center gap-2">
             <Button
               className="lg:hidden"
+              data-testid="events-toggle"
               onClick={() => setIsEventsOpen((current) => !current)}
               size="icon"
               type="button"
@@ -151,7 +184,7 @@ export function ChatWorkspace() {
               )}
             </Button>
             <Button
-              disabled={!conversationId}
+              disabled={!hasActiveConversation}
               onClick={() => setIsInspectorOpen(true)}
               size="sm"
               type="button"
@@ -160,18 +193,21 @@ export function ChatWorkspace() {
               <Search className="h-4 w-4" />
               <span className="hidden sm:inline">Inspecao</span>
             </Button>
-            <Button
-              onClick={() => setIsDashboardOpen(true)}
-              size="sm"
-              type="button"
-              variant="outline"
+            <ExecutionModeToggle
+              executionMode={executionMode}
+              onExecutionModeChange={setExecutionMode}
+            />
+            <Link
+              className={cn(buttonVariants({ size: "sm", variant: "outline" }))}
+              data-testid="dashboard-link"
+              href={conversationId ? `/dashboard?conversationId=${conversationId}` : "/dashboard"}
             >
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Dashboard</span>
-            </Button>
+            </Link>
             <Button
               disabled={isCreatingConversation}
-              onClick={() => void startConversation()}
+              onClick={handleStartDraftConversation}
               size="sm"
               type="button"
             >
@@ -206,15 +242,6 @@ export function ChatWorkspace() {
           reviewTasks={reviewTasks}
           runs={runs}
         />
-        <PocDashboard
-          isOpen={isDashboardOpen}
-          onOpenChange={setIsDashboardOpen}
-          onResolveReviewTask={(reviewTaskId, status, note) =>
-            void updateReviewTask(reviewTaskId, status, note)
-          }
-          reviewTasks={openReviewTasks}
-          onSelectConversation={(id) => void selectConversation(id)}
-        />
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
           {runs.length > 0 ? (
@@ -222,6 +249,7 @@ export function ChatWorkspace() {
               onSelectRun={setSelectedRunId}
               runs={runs}
               selectedRunId={selectedRunId}
+              variant="user"
             />
           ) : null}
           <div className="min-h-0 flex-1 overflow-y-auto">
@@ -235,8 +263,8 @@ export function ChatWorkspace() {
 
         <MessageComposer
           architectureMode={architectureMode}
-          disabled={!conversationId}
-          isArchitectureLocked={Boolean(conversationId)}
+          disabled={false}
+          isArchitectureLocked={hasActiveConversation}
           isSending={isSending}
           onArchitectureModeChange={setArchitectureMode}
           onSend={sendMessage}
@@ -353,6 +381,7 @@ function ConversationHistory({
                           ? "border-primary bg-primary/10"
                           : "border-border hover:bg-muted"
                       }`}
+                      data-testid={`conversation-row-${summary.conversationId}`}
                       onClick={() => onSelectConversation(summary)}
                       type="button"
                     >
@@ -500,6 +529,31 @@ function ReviewPanel({
       </div>
       ) : null}
     </div>
+  );
+}
+
+function ExecutionModeToggle({
+  executionMode,
+  onExecutionModeChange
+}: {
+  executionMode: ExecutionMode;
+  onExecutionModeChange: (mode: ExecutionMode) => void;
+}) {
+  const isMock = executionMode === "mock";
+  return (
+    <button
+      aria-label={`Modo de execucao: ${isMock ? "Simulado" : "Real"}`}
+      className="flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-sm transition-colors hover:bg-muted"
+      onClick={() => onExecutionModeChange(isMock ? "real" : "mock")}
+      type="button"
+    >
+      <span
+        className={`inline-block h-2 w-2 rounded-full ${
+          isMock ? "bg-amber-400" : "bg-emerald-500"
+        }`}
+      />
+      <span className="hidden sm:inline">{isMock ? "Simulado" : "Real"}</span>
+    </button>
   );
 }
 

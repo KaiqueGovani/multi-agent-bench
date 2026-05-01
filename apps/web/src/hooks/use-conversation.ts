@@ -6,7 +6,6 @@ import {
   createConversation,
   getConversation,
   getConversationEvents,
-  getConversationMessages,
   listConversations,
   listOpenReviewTasks,
   resolveReviewTask as resolveReviewTaskRequest,
@@ -18,6 +17,7 @@ import type {
   Attachment,
   Conversation,
   ConversationSummary,
+  ExecutionMode,
   Message,
   ProcessingEvent,
   ReviewTask,
@@ -27,7 +27,7 @@ import type {
 
 type ConnectionStatus = "idle" | "connecting" | "open" | "closed" | "error" | "reconnecting";
 
-export function useConversation(architectureMode: ArchitectureMode) {
+export function useConversation(architectureMode: ArchitectureMode, executionMode: ExecutionMode = "mock") {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -108,16 +108,6 @@ export function useConversation(architectureMode: ArchitectureMode) {
     }
   }, []);
 
-  const refreshMessages = useCallback(async (id: string) => {
-    const response = await getConversationMessages(id);
-    if (activeConversationIdRef.current !== id) {
-      return;
-    }
-    setMessages(response.messages);
-    setAttachments(response.attachments);
-    void refreshConversations();
-  }, [refreshConversations]);
-
   const refreshConversationDetail = useCallback(async (id: string) => {
     try {
       const detail = await getConversation(id);
@@ -159,17 +149,17 @@ export function useConversation(architectureMode: ArchitectureMode) {
 
   const startConversation = useCallback(async () => {
     setError(null);
-    setIsCreatingConversation(true);
-    try {
-      const created = await createConversation(architectureMode);
-      await loadConversation(created.conversationId);
-      await refreshConversations();
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Failed to create conversation");
-    } finally {
-      setIsCreatingConversation(false);
-    }
-  }, [architectureMode, loadConversation, refreshConversations]);
+    activeConversationIdRef.current = null;
+    lastEventIdRef.current = null;
+    setConversationId(null);
+    setConversation(null);
+    setMessages([]);
+    setAttachments([]);
+    setEvents([]);
+    setRuns([]);
+    setReviewTasks([]);
+    setConnectionStatus("idle");
+  }, []);
 
   const selectConversation = useCallback(
     async (id: string) => {
@@ -202,25 +192,43 @@ export function useConversation(architectureMode: ArchitectureMode) {
 
   const sendMessage = useCallback(
     async (text: string, files: File[]) => {
-      if (!conversationId || (!text.trim() && files.length === 0)) {
+      if (!text.trim() && files.length === 0) {
         return;
       }
       setIsSending(true);
       setError(null);
       try {
-        await sendMultipartMessage(conversationId, text.trim(), files, activeArchitectureMode);
-        await refreshMessages(conversationId);
+        let targetConversationId = conversationId;
+        if (!targetConversationId) {
+          setIsCreatingConversation(true);
+          const created = await createConversation(architectureMode);
+          targetConversationId = created.conversationId;
+          activeConversationIdRef.current = targetConversationId;
+          setConversationId(targetConversationId);
+          setIsCreatingConversation(false);
+        }
+
+        await sendMultipartMessage(targetConversationId, text.trim(), files, activeArchitectureMode, executionMode);
+        await refreshConversationDetail(targetConversationId);
         window.setTimeout(() => {
-          void refreshMessages(conversationId);
+          void refreshConversationDetail(targetConversationId);
           void refreshConversations();
         }, 1600);
       } catch (caught) {
         setError(caught instanceof Error ? caught.message : "Failed to send message");
       } finally {
+        setIsCreatingConversation(false);
         setIsSending(false);
       }
     },
-    [activeArchitectureMode, conversationId, refreshConversations, refreshMessages]
+    [
+      activeArchitectureMode,
+      architectureMode,
+      conversationId,
+      executionMode,
+      refreshConversationDetail,
+      refreshConversations
+    ]
   );
 
   useEffect(() => {
@@ -230,6 +238,7 @@ export function useConversation(architectureMode: ArchitectureMode) {
 
   useEffect(() => {
     if (!conversationId) {
+      setConnectionStatus("idle");
       return;
     }
 

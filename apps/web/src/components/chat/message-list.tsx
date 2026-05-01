@@ -28,7 +28,10 @@ export function MessageList({
 }: MessageListProps) {
   if (isLoading) {
     return (
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 md:p-6">
+      <div
+        className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 md:p-6"
+        data-testid="message-list-loading"
+      >
         <MessageSkeleton align="left" />
         <MessageSkeleton align="right" />
         <MessageSkeleton align="left" />
@@ -38,7 +41,7 @@ export function MessageList({
 
   if (messages.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center px-6">
+      <div className="flex h-full items-center justify-center px-6" data-testid="message-list-empty">
         <Card className="max-w-md border-dashed text-center">
           <CardContent className="p-6">
             <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-muted">
@@ -57,11 +60,12 @@ export function MessageList({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 md:p-6">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 md:p-6" data-testid="message-list">
       {messages.map((message) => {
         const isInbound = message.direction === "inbound";
         return (
           <article
+            data-testid={`message-${message.id}`}
             key={message.id}
             className={`flex gap-3 ${isInbound ? "justify-end" : "justify-start"}`}
           >
