@@ -16,12 +16,24 @@ FAQ_KB = {
     "horario": "A farmacia funciona diariamente das 08:00 as 22:00 no contexto simulado da POC.",
     "entrega": "A POC considera entrega local em ate 90 minutos, sem roteirizacao real.",
     "receita": "Casos que dependem de validacao clinica ou medicamentosa devem seguir para revisao humana.",
+    "devolucao": "Aceitamos devolucoes em ate 7 dias com nota fiscal e embalagem lacrada. Medicamentos controlados nao podem ser devolvidos. (POC simulada)",
+    "pagamento": "Aceitamos cartao de credito, debito, Pix e dinheiro. Parcelamento em ate 3x sem juros para compras acima de R$100. (POC simulada)",
+    "desconto": "Nosso programa de fidelidade oferece 10%% de desconto a partir da quinta compra. Descontos adicionais para idosos e conveniados. (POC simulada)",
+    "manipulacao": "Oferecemos servicos de manipulacao com prazo medio de 3 dias uteis. Necessario receita medica para formulas personalizadas. (POC simulada)",
+    "vacina": "Disponibilizamos vacinas contra gripe e COVID-19 mediante agendamento. Consulte disponibilidade com nosso farmaceutico. (POC simulada)",
+    "generico": "Sempre oferecemos a opcao de medicamento generico quando disponivel. Genericos possuem o mesmo principio ativo e eficacia comprovada pela Anvisa. (POC simulada)",
 }
 
 STOCK_CATALOG = {
     "dipirona": {"available": True, "quantity": 17, "unit": "frascos"},
     "ibuprofeno": {"available": True, "quantity": 9, "unit": "caixas"},
     "amoxicilina": {"available": False, "quantity": 0, "unit": "caixas"},
+    "paracetamol": {"available": True, "quantity": 23, "unit": "caixas"},
+    "omeprazol": {"available": True, "quantity": 5, "unit": "caixas"},
+    "loratadina": {"available": True, "quantity": 12, "unit": "caixas"},
+    "azitromicina": {"available": False, "quantity": 0, "unit": "caixas"},
+    "rivotril": {"available": False, "quantity": 0, "unit": "caixas"},
+    "insulina": {"available": True, "quantity": 2, "unit": "frascos"},
 }
 
 
@@ -68,6 +80,13 @@ def stock_lookup(question: str) -> dict[str, Any]:
 def attachment_intake(attachments: list[dict[str, Any]]) -> dict[str, Any]:
     summaries = []
     for attachment in attachments:
+        mime = attachment.get("mimeType") or ""
+        if mime.startswith("image/"):
+            analysis = {"type": "image", "detected_content": "medication_package", "confidence": 0.85, "note": "Analise visual simulada"}
+        elif mime == "application/pdf":
+            analysis = {"type": "document", "detected_content": "prescription", "confidence": 0.90, "note": "Analise documental simulada"}
+        else:
+            analysis = {"type": "unknown", "note": "Tipo nao suportado para analise automatica"}
         summaries.append(
             {
                 "attachmentId": attachment.get("attachmentId"),
@@ -77,6 +96,7 @@ def attachment_intake(attachments: list[dict[str, Any]]) -> dict[str, Any]:
                 "width": attachment.get("width"),
                 "height": attachment.get("height"),
                 "pageCount": attachment.get("pageCount"),
+                "analysis": analysis,
             }
         )
     return {
@@ -115,6 +135,7 @@ def infer_route(text: str | None, attachments: list[dict[str, Any]]) -> str:
     if attachments:
         return "image_intake"
     normalized = (text or "").lower()
-    if any(term in normalized for term in ["tem ", "estoque", "disponivel", "disponível"]):
+    stock_terms = ["tem ", "estoque", "disponivel", "disponível", *STOCK_CATALOG.keys()]
+    if any(term in normalized for term in stock_terms):
         return "stock_lookup"
     return "faq"
