@@ -39,7 +39,16 @@ class ProcessingDispatcher:
         correlation_id: UUID,
         run_id: UUID,
     ) -> None:
-        if self._settings.runtime_mode == "real" and self._settings.ai_runtime_url:
+        # Determine effective runtime mode: per-message metadata overrides global setting
+        effective_mode = self._settings.runtime_mode
+        with SessionLocal() as db:
+            message = db.get(MessageModel, message_id)
+            if message and isinstance(message.metadata_json, dict):
+                msg_mode = message.metadata_json.get("runtimeMode") or message.metadata_json.get("runtime_mode")
+                if msg_mode in ("mock", "real"):
+                    effective_mode = msg_mode
+
+        if effective_mode == "real" and self._settings.ai_runtime_url:
             self._dispatch_external(
                 conversation_id=conversation_id,
                 message_id=message_id,
