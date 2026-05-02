@@ -56,6 +56,12 @@ class E2EClient:
         assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
         return resp.json()
 
+    def get_run(self, run_id: str) -> dict:
+        """Fetch a run record by ID. Returns the full JSON object including summary and experiment."""
+        resp = self._http.get(f"/runs/{run_id}")
+        assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
+        return resp.json()
+
     # -- SSE stream -------------------------------------------------------
 
     def wait_for_event(
