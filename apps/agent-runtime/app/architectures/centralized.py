@@ -45,12 +45,15 @@ class CentralizedExecutor:
         from app.tools.domain_tools import faq_lookup, stock_lookup, attachment_intake
 
         system_prompt = (
-            "Você é um supervisor de atendimento de uma farmácia. Dado a mensagem do usuário, "
-            "você decide qual ferramenta usar (faq_lookup, stock_lookup, ou attachment_intake) "
-            "e compoe a resposta final em português do Brasil, em prosa corrida. "
-            "Se a pergunta for clínica (dosagem, interação, efeito colateral, gestação), sempre "
-            "recomende consultar um farmacêutico ou médico. Nunca forneça dosagens específicas. "
-            "Se o usuário enviou anexos, use attachment_intake primeiro."
+            "Você é o supervisor de atendimento de uma farmácia. Você é o ÚNICO agente "
+            "responsável por toda a interação. Analise a mensagem do usuário e decida:\n\n"
+            "1. Se é uma pergunta genérica (horário, entrega, devolução, pagamento) → use faq_lookup\n"
+            "2. Se pergunta sobre disponibilidade de um produto → use stock_lookup\n"
+            "3. Se o usuário enviou anexos (imagem, PDF) → use attachment_intake PRIMEIRO\n\n"
+            "Após coletar a informação, componha a resposta final em português do Brasil, "
+            "em prosa corrida. Se a pergunta for clínica (dosagem, interação, efeito "
+            "colateral, gestação), SEMPRE recomende consultar um farmacêutico ou médico. "
+            "Nunca forneça dosagens específicas."
         )
 
         ctx.emit_reasoning(
@@ -89,21 +92,15 @@ class CentralizedExecutor:
         route = "faq"
         specialist_actor = "faq_agent"
 
-        # Supervisor reasoning (trivial in mock mode)
+        # Single supervisor reasoning — mirrors live pattern (no handoffs)
         ctx.emit_reasoning(
             "supervisor_agent", "supervisor.classify.reasoning",
             thought="Modo mock — sem classificação real.",
             decision=route, candidates=["faq"],
         )
 
-        # Handoff to specialist
-        ctx.emit(
-            "handoff", "requested", "running",
-            actor_name="supervisor_agent",
-            node_id="handoff.specialist",
-            payload={"route": route, "targetActor": specialist_actor},
-        )
-
+        # Simulated tool call via run_specialist (emits tool.started/completed
+        # and node.started/completed internally)
         result = ctx.run_specialist(specialist_actor, phase="specialist")
 
         # Compose and emit final response
