@@ -32,7 +32,8 @@ export DB_PORT DB_NAME DB_USER DB_PASSWORD MINIO_PORT MINIO_CONSOLE_PORT
 # ═══════════════════════════════════════════════════════════════════════
 .PHONY: up dev setup install sync-env infra db-migrate \
         api runtime web stop infra-down infra-reset infra-logs infra-ps \
-        test test-api test-runtime clean test-quality test-quality-report
+        test test-api test-runtime clean test-quality test-quality-report \
+        benchmark benchmark-live
 
 # ── One command to rule them all ──────────────────────────────────────
 up: infra install sync-env db-migrate dev
@@ -135,3 +136,10 @@ test-quality:
 
 test-quality-report:
 	cd tests/e2e-quality && uv run pytest -v --html=../../var/reports/quality/report.html
+
+# ── Benchmark (architecture comparison) ───────────────────────────────────────────────────
+benchmark:
+	python scripts/run_architecture_benchmark.py --architectures cent,work,swarm --iterations 1
+
+benchmark-live:
+	python scripts/run_architecture_benchmark.py --architectures cent,work,swarm --iterations 3 --live
