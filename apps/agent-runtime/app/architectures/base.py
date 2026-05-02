@@ -57,6 +57,7 @@ class ExecutionResult:
     tool_call_count: int
     tool_error_count: int
     loop_count: int
+    handoff_count: int
     trace_id: str
     time_to_first_public_event_ms: int | None = None
     time_to_first_partial_response_ms: int | None = None
@@ -91,6 +92,7 @@ class ExecutionContext:
         self.tool_call_count: int = 0
         self.tool_error_count: int = 0
         self.loop_count: int = 0
+        self.handoff_count: int = 0
         self.first_public_event_ms: int | None = None
         self.first_partial_response_ms: int | None = None
 
@@ -266,6 +268,7 @@ class ExecutionContext:
             tool_call_count=self.tool_call_count,
             tool_error_count=self.tool_error_count,
             loop_count=self.loop_count,
+            handoff_count=self.handoff_count,
             trace_id=self.trace_id,
             time_to_first_public_event_ms=self.first_public_event_ms,
             time_to_first_partial_response_ms=self.first_partial_response_ms,
@@ -312,6 +315,65 @@ class ExecutionContext:
             self.tool_error_count += 1
             return None
 
+    def _build_tool_hook_provider(
+        self,
+        actor_name: str,
+        tool_calls_sink: list[dict] | None = None,
+    ) -> Any:
+        """Build a _ToolHookProvider that emits tool.started / tool.completed events.
+
+        If *tool_calls_sink* is provided, each tool invocation is also appended to it
+        (matching the behaviour previously inlined in ``invoke_live_supervisor``).
+        """
+        try:
+            from strands.hooks import BeforeToolCallEvent, AfterToolCallEvent
+        except ImportError:  # pragma: no cover
+            return None
+
+        ctx = self  # capture for closures
+
+        def on_before_tool(event):
+            name = event.tool_use.get("name")
+            args = event.tool_use.get("input", {})
+            ctx.tool_call_count += 1
+            ctx.emit(
+                "tool", "started", "running",
+                actor_name=actor_name, tool_name=name,
+                node_id=f"{actor_name}.tool.{name}",
+                payload={"input": args},
+            )
+            if tool_calls_sink is not None:
+                tool_calls_sink.append({"name": name, "input": args, "result": None})
+
+        def on_after_tool(event):
+            name = event.tool_use.get("name")
+            result_payload = _coerce_tool_result(event.result)
+            ctx.emit(
+                "tool", "completed", "completed",
+                actor_name=actor_name, tool_name=name,
+                node_id=f"{actor_name}.tool.{name}",
+                payload={"result": result_payload},
+            )
+            if tool_calls_sink is not None:
+                for tc in reversed(tool_calls_sink):
+                    if tc["name"] == name and tc["result"] is None:
+                        tc["result"] = result_payload
+                        break
+
+        class _ToolHookProvider:
+            """HookProvider that registers tool-boundary callbacks with explicit event types.
+
+            We use an explicit HookProvider (rather than `hooks=[fn, fn]`) because our module
+            uses `from __future__ import annotations`, which turns type hints into strings and
+            breaks Strands' automatic event type inference from function signatures.
+            """
+
+            def register_hooks(self, registry, **_kwargs):
+                registry.add_callback(BeforeToolCallEvent, on_before_tool)
+                registry.add_callback(AfterToolCallEvent, on_after_tool)
+
+        return _ToolHookProvider()
+
     def invoke_live_supervisor(
         self,
         *,
@@ -328,50 +390,11 @@ class ExecutionContext:
             return None
         if Agent is None or BedrockModel is None:
             return None
-        try:
-            from strands.hooks import BeforeToolCallEvent, AfterToolCallEvent
-        except ImportError:  # pragma: no cover
-            return None
 
         tool_calls: list[dict] = []
-
-        def on_before_tool(event):
-            name = event.tool_use.get("name")
-            args = event.tool_use.get("input", {})
-            self.tool_call_count += 1
-            self.emit(
-                "tool", "started", "running",
-                actor_name=supervisor_actor, tool_name=name,
-                node_id=f"{supervisor_actor}.tool.{name}",
-                payload={"input": args},
-            )
-            tool_calls.append({"name": name, "input": args, "result": None})
-
-        def on_after_tool(event):
-            name = event.tool_use.get("name")
-            result_payload = _coerce_tool_result(event.result)
-            self.emit(
-                "tool", "completed", "completed",
-                actor_name=supervisor_actor, tool_name=name,
-                node_id=f"{supervisor_actor}.tool.{name}",
-                payload={"result": result_payload},
-            )
-            for tc in reversed(tool_calls):
-                if tc["name"] == name and tc["result"] is None:
-                    tc["result"] = result_payload
-                    break
-
-        class _ToolHookProvider:
-            """HookProvider that registers tool-boundary callbacks with explicit event types.
-
-            We use an explicit HookProvider (rather than `hooks=[fn, fn]`) because our module
-            uses `from __future__ import annotations`, which turns type hints into strings and
-            breaks Strands' automatic event type inference from function signatures.
-            """
-
-            def register_hooks(self, registry, **_kwargs):
-                registry.add_callback(BeforeToolCallEvent, on_before_tool)
-                registry.add_callback(AfterToolCallEvent, on_after_tool)
+        hook_provider = self._build_tool_hook_provider(supervisor_actor, tool_calls_sink=tool_calls)
+        if hook_provider is None:  # pragma: no cover
+            return None
 
         def callback_handler(**kwargs: Any) -> None:
             if "data" in kwargs and kwargs["data"]:
@@ -388,7 +411,7 @@ class ExecutionContext:
                 model=model,
                 system_prompt=system_prompt,
                 tools=tools,
-                hooks=[_ToolHookProvider()],
+                hooks=[hook_provider],
                 callback_handler=callback_handler,
             )
             result = agent(user_message)
@@ -399,6 +422,51 @@ class ExecutionContext:
                 "run", "error", "failed",
                 payload={"phase": "live_supervisor", "error": str(exc)[:500]},
             )
+            return None
+
+    def create_agent(
+        self,
+        *,
+        system_prompt: str,
+        tools: list | None = None,
+        actor_name: str,
+    ) -> Any | None:
+        """Create a Strands Agent with BedrockModel and tool-boundary hook instrumentation.
+
+        Returns None if live LLM is disabled or Strands is unavailable. The returned Agent,
+        when invoked, emits `tool.started` / `tool.completed` events (via the same BeforeToolCallEvent
+        / AfterToolCallEvent hook logic already used by `invoke_live_supervisor`), increments
+        `self.tool_call_count`, and streams text chunks via `emit_message(actor_name, ...)`.
+        """
+        if not self.settings.enable_live_llm:
+            return None
+        if Agent is None or BedrockModel is None:
+            return None
+
+        hook_provider = self._build_tool_hook_provider(actor_name)
+        if hook_provider is None:  # pragma: no cover
+            return None
+
+        def callback_handler(**kwargs: Any) -> None:
+            if "data" in kwargs and kwargs["data"]:
+                text_chunk = str(kwargs["data"])
+                if text_chunk.strip():
+                    self.emit_message(actor_name, f"{actor_name}.stream", text_chunk)
+
+        try:
+            model = BedrockModel(
+                model_id=self.settings.bedrock_model_id,
+                region_name=self.settings.aws_region,
+            )
+            return Agent(
+                model=model,
+                system_prompt=system_prompt,
+                tools=tools or [],
+                hooks=[hook_provider],
+                callback_handler=callback_handler,
+            )
+        except Exception:  # pragma: no cover - network path
+            self.tool_error_count += 1
             return None
 
     # -- Static factory helpers used by RuntimeExecutor -----------------------

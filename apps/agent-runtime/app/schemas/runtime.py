@@ -130,6 +130,7 @@ class RunSummary(ApiModel):
     tool_call_count: int | None = None
     tool_error_count: int | None = None
     loop_count: int | None = None
+    handoff_count: int | None = None
     stop_reason: str | None = None
     estimated_cost: float | None = None
     final_outcome: str | None = None

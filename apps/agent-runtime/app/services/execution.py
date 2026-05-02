@@ -55,6 +55,7 @@ class RuntimeExecutor:
                 tool_call_count=0,
                 tool_error_count=0,
                 loop_count=0,
+                handoff_count=0,
                 trace_id=self.trace_id,
             )
         return executor.execute(ctx)
@@ -86,6 +87,7 @@ class RuntimeExecutionService:
                 tool_call_count=result.tool_call_count,
                 tool_error_count=result.tool_error_count,
                 loop_count=result.loop_count,
+                handoff_count=result.handoff_count,
                 stop_reason="completed",
                 final_outcome=result.final_outcome,
             ),
