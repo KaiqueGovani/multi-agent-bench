@@ -1,0 +1,83 @@
+# Cenários com upload de arquivos — imagem de produto, documento PDF
+# e anexo inválido (caso de erro).
+#
+# Route assertion now checks actor.completed events as fallback.
+# final_actor omitted for attachment cases (mock behavior may differ).
+
+suite: attachments
+description: >
+  Cenários com upload de arquivos — imagem de produto, documento PDF
+  e anexo inválido (caso de erro).
+
+defaults:
+  architectures:
+    - centralized_orchestration
+    - structured_workflow
+    - decentralized_swarm
+  timeout_seconds: 60
+
+cases:
+  # ── Migrado de product-image.json ─────────────────────────────────
+  - id: imagem_produto
+    input:
+      text: "Consegue identificar este produto pela imagem?"
+      attachments:
+        - path: packages/test-fixtures/assets/tiny-product.png.base64
+          mime_type: image/png
+    expected:
+      route: image_intake
+      review_required: false
+      response_contains_any:
+        - simulada
+        - POC
+        - imagem
+        - produto
+      response_contains_none:
+        - "{'
+"
+        - "{ '"
+        - "Supervisor central concluiu"
+      event_types:
+        - processing.started
+        - response.final
+        - processing.completed
+      tool_calls_include:
+        - attachment_intake
+
+  # ── Migrado de document-pdf.json ──────────────────────────────────
+  - id: documento_pdf
+    input:
+      text: "Segue um documento para analise simulada."
+      attachments:
+        - path: packages/test-fixtures/assets/tiny-document.pdf.base64
+          mime_type: application/pdf
+    expected:
+      route: image_intake
+      review_required: false
+      response_contains_any:
+        - simulada
+        - POC
+        - documento
+        - analise
+      response_contains_none:
+        - "{'
+"
+        - "{ '"
+        - "Supervisor central concluiu"
+      event_types:
+        - processing.started
+        - response.final
+        - processing.completed
+      tool_calls_include:
+        - attachment_intake
+
+  # ── Migrado de invalid-attachment.json ────────────────────────────
+  - id: anexo_invalido
+    input:
+      text: "Estou anexando um arquivo invalido de proposito."
+      attachments:
+        - path: packages/test-fixtures/assets/not-an-image.txt
+          mime_type: text/plain
+    expected:
+      http_status: 400
+      error_contains: "Unsupported file type"

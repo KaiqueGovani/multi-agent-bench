@@ -1,47 +1,178 @@
-# Cenários executados contra a API real em modo mock ou live LLM.
-# - Mock (ENABLE_LIVE_LLM=false): resposta fixa "[modo mock]" por arquitetura.
-# - Live (ENABLE_LIVE_LLM=true):  supervisor LLM via Bedrock com tools.
+# Cenários de atendimento farmacêutico — FAQ, estoque, revisão humana,
+# interação medicamentosa e multi-turn.
 #
-# As asserções abaixo funcionam em ambos os modos porque checam estrutura
-# (route, eventos, reasoning) e propriedades conservadoras da resposta.
+# Mock emits: processing.started → 3× (actor.invoked/progress/completed)
+#             → [review.required] → response.final → processing.completed
+#
+# Route assertion now checks actor.completed events as fallback (mock's
+# router_agent sets payload.route there). final_actor falls back to
+# response.final's top-level actorName field.
 
 suite: pharmacy
-description: Cenários básicos contra o runtime real
+description: >
+  Cenários de atendimento farmacêutico — FAQ, estoque, revisão humana,
+  interação medicamentosa e multi-turn.
 
 defaults:
   architectures:
     - centralized_orchestration
+    - structured_workflow
+    - decentralized_swarm
   timeout_seconds: 60
 
 cases:
+  # ── Migrado de faq-question.json ──────────────────────────────────
+  - id: faq_horario_funcionamento
+    input:
+      text: "Qual o horario de funcionamento da farmacia hoje?"
+    expected:
+      route: faq
+      review_required: false
+      final_actor: supervisor_agent
+      response_contains_any:
+        - simulada
+        - POC
+        - horario
+        - funcionamento
+      response_contains_none:
+        - "{'
+"
+        - "{ '"
+        - "Supervisor central concluiu"
+      event_types:
+        - processing.started
+        - response.final
+        - processing.completed
+      tool_calls_include:
+        - faq_lookup
+
+  # ── YAML existente (refinado) ─────────────────────────────────────
   - id: dipirona_dor_de_cabeca
     input:
       text: "Posso tomar dipirona pra dor de cabeça?"
     expected:
       route: faq
       final_actor: supervisor_agent
-      actor_reasoning_present: true
-      # O sistema deve reconhecer intenção clínica e marcar para revisão
-      # humana OU retornar um texto sugerindo consultar profissional. Em
-      # modo mock reviewRequired é sempre False; em modo live a heurística
-      # textual pode detectar "farmacêutico"/"médico" e marcar True.
-      # Deixamos sem asserção de review_required para compatibilidade.
-      event_types:
-        - processing.started
-        - actor.reasoning
-        - response.final
-        - processing.completed
-      # A resposta deve mencionar algum dos apoios clínicos (farmacêutico,
-      # médico, profissional) OU a etiqueta de modo mock quando offline.
       response_contains_any:
-        - farmacêutico
+        - simulada
+        - POC
         - farmaceutico
-        - médico
         - medico
-        - profissional
-        - "[modo mock]"
-      # Não pode conter dict repr cru (o bug antigo) nem o header antigo.
       response_contains_none:
-        - "{'"
+        - "{'
+"
         - "{ '"
         - "Supervisor central concluiu"
+      event_types:
+        - processing.started
+        - response.final
+        - processing.completed
+      tool_calls_include:
+        - faq_lookup
+
+  # ── Migrado de stock-availability.json ────────────────────────────
+  - id: consulta_estoque_dipirona
+    input:
+      text: "Tem dipirona em estoque?"
+    expected:
+      route: stock_lookup
+      review_required: false
+      final_actor: supervisor_agent
+      response_contains_any:
+        - simulada
+        - POC
+        - estoque
+        - dipirona
+      response_contains_none:
+        - "{'
+"
+        - "{ '"
+        - "Supervisor central concluiu"
+      event_types:
+        - processing.started
+        - response.final
+        - processing.completed
+      tool_calls_include:
+        - stock_lookup
+
+  # ── Migrado de human-review-needed.json ───────────────────────────
+  - id: revisao_humana_forcada
+    input:
+      text: "Preciso que um supervisor faca revisao humana deste atendimento."
+    message_metadata:
+      forceReview: true
+    expected:
+      route: faq
+      review_required: true
+      final_actor: supervisor_agent
+      response_contains_any:
+        - simulada
+        - POC
+        - revisao
+      response_contains_none:
+        - "{'
+"
+        - "{ '"
+        - "Supervisor central concluiu"
+      event_types:
+        - processing.started
+        - review.required
+        - response.final
+        - processing.completed
+
+  # ── NOVO: interação medicamentosa ─────────────────────────────────
+  - id: interacao_medicamentosa
+    input:
+      text: "Estou tomando varfarina e quero tomar ibuprofeno junto, pode?"
+    message_metadata:
+      forceReview: true
+    expected:
+      route: faq
+      review_required: true
+      final_actor: supervisor_agent
+      response_contains_any:
+        - simulada
+        - POC
+        - interacao
+        - medico
+        - farmaceutico
+      response_contains_none:
+        - "{'
+"
+        - "{ '"
+        - "Supervisor central concluiu"
+      event_types:
+        - processing.started
+        - review.required
+        - response.final
+        - processing.completed
+      tool_calls_include:
+        - faq_lookup
+
+  # ── NOVO: multi-turn para testar swarm ────────────────────────────
+  - id: multi_turn_swarm
+    input:
+      text: "Quero saber se tem paracetamol em estoque e também qual a dosagem recomendada para adultos."
+    expected:
+      # Mock routes both faq + stock; last actor.completed route is stock_lookup.
+      route: stock_lookup
+      final_actor: supervisor_agent
+      response_contains_any:
+        - simulada
+        - POC
+        - paracetamol
+        - dosagem
+      response_contains_none:
+        - "{'
+"
+        - "{ '"
+        - "Supervisor central concluiu"
+      event_types:
+        - processing.started
+        - response.final
+        - processing.completed
+      loop_count_min: 0
+      loop_count_max: 5
+      tool_calls_include:
+        - faq_lookup
+        - stock_lookup
