@@ -8,6 +8,8 @@ Protocol every concrete architecture must satisfy.
 from __future__ import annotations
 
 import hashlib
+import logging
+import threading
 import time
 from dataclasses import dataclass
 from typing import Any, Protocol
@@ -34,6 +36,9 @@ except Exception:  # pragma: no cover
     BedrockModel = None
 
 
+logger = logging.getLogger(__name__)
+
+
 def _coerce_tool_result(result: Any) -> dict:
     """Best-effort conversion of a tool result to a JSON-serializable dict."""
     if isinstance(result, dict):
@@ -43,6 +48,56 @@ def _coerce_tool_result(result: Any) -> dict:
         if isinstance(value, dict):
             return value
     return {"value": str(result)[:1000]}
+
+
+# ---------------------------------------------------------------------------
+# _StreamBuffer — coalesces LLM streaming chunks into response.partial events
+# ---------------------------------------------------------------------------
+
+class _StreamBuffer:
+    """Buffers LLM text chunks and flushes as coalesced ``response.partial`` events.
+
+    Thread-safe: uses a ``threading.Lock`` because Strands ``callback_handler``
+    may be invoked from the model's worker thread, not the main asyncio thread.
+    The lock serialises access to ``_buf`` and ``_accumulated`` so concurrent
+    appends and flushes never see torn state.
+    """
+
+    FLUSH_CHARS = 200
+    FLUSH_MS = 250
+
+    def __init__(self, ctx: "ExecutionContext", actor_name: str) -> None:
+        self._ctx = ctx
+        self._actor = actor_name
+        self._buf: list[str] = []
+        self._accumulated = ""  # full text so far (cumulative)
+        self._lock = threading.Lock()
+        self._last_flush_ms: float = 0.0
+
+    def append(self, chunk: str) -> None:
+        """Add a chunk; flush if char or time threshold exceeded."""
+        with self._lock:
+            self._buf.append(chunk)
+            self._accumulated += chunk
+            unflushed = "".join(self._buf)
+            now_ms = time.monotonic() * 1000
+            if len(unflushed) >= self.FLUSH_CHARS or (now_ms - self._last_flush_ms) >= self.FLUSH_MS:
+                self._flush_locked(now_ms)
+
+    def flush_final(self) -> None:
+        """Flush any remaining buffered content.  Called in a ``finally`` block."""
+        with self._lock:
+            if self._buf:
+                self._flush_locked(time.monotonic() * 1000)
+
+    def _flush_locked(self, now_ms: float) -> None:
+        """Emit a ``response.partial`` with the cumulative text.  Must hold ``_lock``."""
+        try:
+            self._ctx.emit_partial(self._accumulated)
+        except Exception as exc:
+            logger.warning("stream buffer flush failed: %s", exc)
+        self._buf = []
+        self._last_flush_ms = now_ms
 
 
 # ---------------------------------------------------------------------------
@@ -198,6 +253,11 @@ class ExecutionContext:
                 "architectureMode": architecture_mode,
                 "reviewRequired": review_required,
             },
+        )
+        self.emit(
+            "node", "completed", "completed",
+            actor_name="response_streamer",
+            node_id="response_streamer.completed",
         )
 
     # -- Specialist execution -------------------------------------------------
@@ -396,11 +456,13 @@ class ExecutionContext:
         if hook_provider is None:  # pragma: no cover
             return None
 
+        buffer = _StreamBuffer(self, supervisor_actor)
+
         def callback_handler(**kwargs: Any) -> None:
             if "data" in kwargs and kwargs["data"]:
                 text_chunk = str(kwargs["data"])
                 if text_chunk.strip():
-                    self.emit_message(supervisor_actor, f"{supervisor_actor}.stream", text_chunk)
+                    buffer.append(text_chunk)
 
         try:
             model = BedrockModel(
@@ -423,6 +485,11 @@ class ExecutionContext:
                 payload={"phase": "live_supervisor", "error": str(exc)[:500]},
             )
             return None
+        finally:
+            try:
+                buffer.flush_final()
+            except Exception as exc:  # pragma: no cover - defensive
+                logger.warning("final stream flush failed in invoke_live_supervisor: %s", exc)
 
     def create_agent(
         self,
@@ -447,26 +514,38 @@ class ExecutionContext:
         if hook_provider is None:  # pragma: no cover
             return None
 
+        buffer = _StreamBuffer(self, actor_name)
+
         def callback_handler(**kwargs: Any) -> None:
             if "data" in kwargs and kwargs["data"]:
                 text_chunk = str(kwargs["data"])
                 if text_chunk.strip():
-                    self.emit_message(actor_name, f"{actor_name}.stream", text_chunk)
+                    buffer.append(text_chunk)
 
         try:
             model = BedrockModel(
                 model_id=self.settings.bedrock_model_id,
                 region_name=self.settings.aws_region,
             )
-            return Agent(
+            agent = Agent(
                 model=model,
                 system_prompt=system_prompt,
                 tools=tools or [],
                 hooks=[hook_provider],
                 callback_handler=callback_handler,
             )
+            # NOTE: flush_final is NOT called here because the Agent is returned
+            # to the caller — the caller is responsible for invoking the agent and
+            # flushing the buffer afterwards.  We attach the buffer to the agent so
+            # callers can call buffer.flush_final() in their own finally block.
+            agent._stream_buffer = buffer  # type: ignore[attr-defined]
+            return agent
         except Exception:  # pragma: no cover - network path
             self.tool_error_count += 1
+            try:
+                buffer.flush_final()
+            except Exception as exc:  # pragma: no cover - defensive
+                logger.warning("final stream flush failed in create_agent: %s", exc)
             return None
 
     # -- Static factory helpers used by RuntimeExecutor -----------------------

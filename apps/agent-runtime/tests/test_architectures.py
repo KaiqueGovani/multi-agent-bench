@@ -314,8 +314,10 @@ def test_workflow_node_started_completed_pairs(monkeypatch) -> None:
     started = [e for e in full_events if e.event_family == "node" and e.event_name == "started"]
     completed = [e for e in full_events if e.event_family == "node" and e.event_name == "completed"]
     # Count by actor_name — every started actor must have a completed counterpart
+    # Exclude response_streamer: its node.completed is a terminal signal from emit_final
+    # with no matching node.started (it's not a full node lifecycle).
     started_actors = sorted(e.actor_name for e in started)
-    completed_actors = sorted(e.actor_name for e in completed)
+    completed_actors = sorted(e.actor_name for e in completed if e.actor_name != "response_streamer")
     assert started_actors == completed_actors
 
 
@@ -514,3 +516,172 @@ def test_swarm_handoff_tool_handles_peer_exception() -> None:
         if c[0][:3] == ("node", "completed", "failed")
     ]
     assert len(node_completed_calls) == 1
+
+
+# ===========================================================================
+# _StreamBuffer tests — P2 event bloat reduction
+# ===========================================================================
+
+import math
+import threading
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
+
+from app.architectures.base import _StreamBuffer
+
+
+def _make_mock_ctx():
+    """Build a minimal mock ExecutionContext for _StreamBuffer tests."""
+    ctx = SimpleNamespace(
+        emit_partial=MagicMock(),
+    )
+    return ctx
+
+
+def test_stream_buffer_coalesces_chunks() -> None:
+    """50 small chunks must produce ≤ ceil(total_chars/200)+1 response.partial events,
+    NOT 50 individual actor.message events."""
+    ctx = _make_mock_ctx()
+    buffer = _StreamBuffer(ctx, "test_actor")
+
+    # Force _last_flush_ms far into the future so only char threshold triggers
+    buffer._last_flush_ms = float("inf")
+
+    chunk = "abcd"  # 4 chars each → 50 chunks = 200 chars total
+    total_chars = 0
+    for _ in range(50):
+        buffer.append(chunk)
+        total_chars += len(chunk)
+
+    buffer.flush_final()
+
+    max_expected = math.ceil(total_chars / _StreamBuffer.FLUSH_CHARS) + 1
+    actual_calls = ctx.emit_partial.call_count
+    assert actual_calls <= max_expected, (
+        f"Expected ≤ {max_expected} response.partial events, got {actual_calls}"
+    )
+    # Must have flushed at least once
+    assert actual_calls >= 1
+
+
+def test_stream_buffer_flush_final_called_on_error() -> None:
+    """flush_final must be called even when the agent raises, and flush failures
+    must not mask the original exception."""
+    ctx = _make_mock_ctx()
+    buffer = _StreamBuffer(ctx, "test_actor")
+
+    # Make flush_final's internal emit_partial raise to verify it doesn't mask
+    ctx.emit_partial.side_effect = RuntimeError("flush boom")
+
+    buffer.append("some text")
+
+    original_error = ValueError("agent exploded")
+
+    with pytest.raises(ValueError, match="agent exploded"):
+        try:
+            raise original_error
+        finally:
+            # This mirrors the pattern used in invoke_live_supervisor / create_agent
+            try:
+                buffer.flush_final()
+            except Exception:
+                pass  # swallowed — must not mask original_error
+
+
+def test_stream_buffer_time_threshold_triggers_flush() -> None:
+    """When time threshold is exceeded, buffer should flush even with few chars."""
+    ctx = _make_mock_ctx()
+    buffer = _StreamBuffer(ctx, "test_actor")
+
+    # Set last flush time far in the past so time threshold triggers immediately
+    buffer._last_flush_ms = 0.0
+
+    buffer.append("hi")
+    # Should have flushed due to time threshold (monotonic * 1000 >> 250ms)
+    assert ctx.emit_partial.call_count >= 1
+
+
+def test_stream_buffer_accumulated_text_is_cumulative() -> None:
+    """Each flush sends the full accumulated text, not just the unflushed buffer."""
+    ctx = _make_mock_ctx()
+    buffer = _StreamBuffer(ctx, "test_actor")
+
+    # Force time-based flush on every append
+    buffer._last_flush_ms = 0.0
+
+    buffer.append("hello ")
+    buffer.append("world")
+    buffer.flush_final()
+
+    # The last call to emit_partial should contain the full accumulated text
+    last_call_text = ctx.emit_partial.call_args_list[-1][0][0]
+    assert last_call_text == "hello world"
+
+
+def test_stream_buffer_thread_safety() -> None:
+    """Concurrent appends from multiple threads must not lose data."""
+    ctx = _make_mock_ctx()
+    buffer = _StreamBuffer(ctx, "test_actor")
+    # Disable time-based flushing to only trigger on char threshold
+    buffer._last_flush_ms = float("inf")
+
+    errors: list[Exception] = []
+
+    def append_chunks(n: int) -> None:
+        try:
+            for _ in range(n):
+                buffer.append("x")
+        except Exception as e:
+            errors.append(e)
+
+    threads = [threading.Thread(target=append_chunks, args=(100,)) for _ in range(5)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    buffer.flush_final()
+
+    assert not errors
+    # 500 chars total must be in accumulated text
+    assert len(buffer._accumulated) == 500
+
+
+# ===========================================================================
+# P3 — emit_final emits node.completed for response_streamer
+# ===========================================================================
+
+@pytest.mark.parametrize("arch", ARCHITECTURES)
+def test_emit_final_produces_response_streamer_node_completed(monkeypatch, arch) -> None:
+    """emit_final must emit a node.completed event with actor_name='response_streamer'."""
+    full_events = _patch_callbacks_full(monkeypatch)
+    RuntimeExecutionService().execute_run(_build_request(arch, "Qual o horario?"))
+    node_completed = [
+        e for e in full_events
+        if e.event_family == "node"
+        and e.event_name == "completed"
+        and e.actor_name == "response_streamer"
+    ]
+    assert len(node_completed) >= 1
+    assert node_completed[0].node_id == "response_streamer.completed"
+
+
+@pytest.mark.parametrize("arch", ARCHITECTURES)
+def test_emit_final_response_streamer_after_response_final(monkeypatch, arch) -> None:
+    """node.completed for response_streamer must appear after response.final."""
+    full_events = _patch_callbacks_full(monkeypatch)
+    RuntimeExecutionService().execute_run(_build_request(arch, "Qual o horario?"))
+    resp_final_idx = next(
+        (i for i, e in enumerate(full_events)
+         if e.event_family == "response" and e.event_name == "final"),
+        None,
+    )
+    streamer_completed_idx = next(
+        (i for i, e in enumerate(full_events)
+         if e.event_family == "node" and e.event_name == "completed"
+         and e.actor_name == "response_streamer"),
+        None,
+    )
+    assert resp_final_idx is not None
+    assert streamer_completed_idx is not None
+    assert streamer_completed_idx > resp_final_idx

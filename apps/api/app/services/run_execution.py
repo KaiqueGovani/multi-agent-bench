@@ -230,12 +230,23 @@ class RunExecutionService:
         )
 
         projection.run_status = run.status
-        projection.active_node_id = (
-            event.node_id if event.status == ProcessingStatus.RUNNING.value else projection.active_node_id
+        is_running = event.status == ProcessingStatus.RUNNING.value
+        is_terminal_run = (
+            event.event_family == "run"
+            and event.event_name in ("completed", "failed")
         )
-        projection.active_actor_name = (
-            event.actor_name if event.status == ProcessingStatus.RUNNING.value else projection.active_actor_name
+        is_actor_completing = (
+            event.status == ProcessingStatus.COMPLETED.value
+            and event.actor_name is not None
+            and event.actor_name == projection.active_actor_name
         )
+        if is_running and event.actor_name:
+            projection.active_actor_name = event.actor_name
+            projection.active_node_id = event.node_id
+        elif is_terminal_run or is_actor_completing:
+            projection.active_actor_name = None
+            projection.active_node_id = None
+        # else: leave as-is
         projection.current_phase = stage_name
         projection.source = event.source
         projection.architecture_view_json = architecture_view
@@ -411,6 +422,12 @@ class RunExecutionService:
         return review_task
 
     def _derive_public_event(self, event: RunExecutionEvent) -> None:
+        # NOTE: ("actor", "message") is intentionally excluded from this mapping.
+        # LLM streaming text chunks are now coalesced server-side into
+        # ("response", "partial") events by _StreamBuffer in the agent-runtime,
+        # so emitting individual actor.message events to the public SSE stream
+        # would cause event bloat (30-80 events per query).  The raw
+        # actor.message events remain in run_execution_events for debug/replay.
         mapping = {
             ("run", "started"): ProcessingEventType.PROCESSING_STARTED,
             ("node", "started"): ProcessingEventType.ACTOR_INVOKED,
@@ -424,7 +441,6 @@ class RunExecutionService:
             ("run", "completed"): ProcessingEventType.PROCESSING_COMPLETED,
             ("run", "failed"): ProcessingEventType.ACTOR_FAILED,
             ("actor", "reasoning"): ProcessingEventType.ACTOR_REASONING,
-            ("actor", "message"): ProcessingEventType.ACTOR_MESSAGE,
         }
         public_type = mapping.get((event.event_family, event.event_name))
         if public_type is None:
