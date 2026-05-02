@@ -6,6 +6,7 @@ import json
 import os
 import time
 import uuid
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -31,6 +32,12 @@ class HttpResult:
 
 
 def main() -> int:
+    warnings.warn(
+        "run_fixture_scenarios.py está depreciado. Use 'make test-quality' para testes E2E "
+        "ou 'make benchmark' para o benchmark comparativo entre arquiteturas.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     parser = argparse.ArgumentParser(description="Run POC fixture scenarios")
     parser.add_argument("--api-base", default="http://127.0.0.1:8000")
     parser.add_argument("--scenario", action="append", help="Scenario id to run")
