@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useCallback, useRef, useState } from "react";
 import {
   ArrowLeft,
   BarChart3,
@@ -12,6 +12,7 @@ import {
   Clock3,
   Database,
   FileText,
+  Loader2,
   MessageSquare,
   Network,
   ShieldAlert,
@@ -36,6 +37,7 @@ import type {
   DashboardConversationItem,
   DashboardDistributionItem,
   DashboardMetricsResponse,
+  Message,
   ReviewTask,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -436,6 +438,31 @@ function ReviewQueue({
   reviewTasks: ReviewTask[];
 }) {
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const excerptCacheRef = useRef(new Map<string, Message[]>());
+  const [excerpts, setExcerpts] = useState<Record<string, Message[] | "loading" | "error">>({});
+
+  const loadExcerpt = useCallback((conversationId: string) => {
+    if (excerptCacheRef.current.has(conversationId)) {
+      setExcerpts((prev) => ({ ...prev, [conversationId]: excerptCacheRef.current.get(conversationId)! }));
+      return;
+    }
+    setExcerpts((prev) => prev[conversationId] ? prev : { ...prev, [conversationId]: "loading" });
+    getConversation(conversationId)
+      .then((detail) => {
+        const lastTwo = detail.messages.slice(-2);
+        excerptCacheRef.current.set(conversationId, lastTwo);
+        setExcerpts((prev) => ({ ...prev, [conversationId]: lastTwo }));
+      })
+      .catch(() => {
+        setExcerpts((prev) => ({ ...prev, [conversationId]: "error" }));
+      });
+  }, []);
+
+  useEffect(() => {
+    for (const task of reviewTasks) {
+      loadExcerpt(task.conversationId);
+    }
+  }, [reviewTasks, loadExcerpt]);
 
   return (
     <Card className="shadow-none">
@@ -448,6 +475,7 @@ function ReviewQueue({
         ) : (
           reviewTasks.map((task) => {
             const note = notes[task.id] ?? "";
+            const excerpt = excerpts[task.conversationId];
             return (
               <div className="rounded-xl border bg-background p-3" key={task.id}>
                 <div className="flex items-start justify-between gap-3">
@@ -459,8 +487,23 @@ function ReviewQueue({
                   </div>
                   <Badge variant="warning">{task.status}</Badge>
                 </div>
+                <div className="mt-2 space-y-0.5">
+                  {excerpt === "loading" ? (
+                    <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    </p>
+                  ) : excerpt === "error" ? (
+                    <p className="truncate text-xs text-muted-foreground">Sem contexto disponível</p>
+                  ) : Array.isArray(excerpt) ? (
+                    excerpt.map((m) => (
+                      <p className="truncate text-xs text-muted-foreground" key={m.id}>
+                        {m.direction}: {m.contentText?.slice(0, 120)}
+                      </p>
+                    ))
+                  ) : null}
+                </div>
                 <textarea
-                  className="mt-3 min-h-20 rounded-md border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="mt-3 min-h-20 w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   onChange={(event) =>
                     setNotes((current) => ({ ...current, [task.id]: event.target.value }))
                   }

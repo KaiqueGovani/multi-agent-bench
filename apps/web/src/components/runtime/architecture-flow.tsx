@@ -324,8 +324,9 @@ export function CentralizedFlow({
       { name: "image_intake_agent", desc: "imagem ou documento", y: 260 },
     ];
 
+    const respActor = findActor("response_streamer");
+    const respStatus = getStatus(respActor);
     const respActive = "response_streamer" === activeActorName;
-    const respStatus = respActive ? "running" : "completed";
 
     const nodes: Node<AgentNodeData>[] = [
       makeNode("supervisor_agent", "Agente Supervisor", "orquestra e roteia", supStatus, supActive, 0, 130, "info", getNodeId(sup)),
@@ -333,7 +334,7 @@ export function CentralizedFlow({
         const actor = findActor(s.name);
         return makeNode(s.name, formatAgentName(s.name), s.desc, getStatus(actor), s.name === activeActorName, 280, s.y, undefined, getNodeId(actor));
       }),
-      makeNode("response_streamer", "Streamer de Resposta", "sintetiza a resposta", respStatus, respActive, 560, 130),
+      makeNode("response_streamer", "Streamer de Resposta", "sintetiza a resposta", respStatus, respActive, 560, 130, undefined, getNodeId(respActor)),
     ];
 
     const edges: Edge[] = [

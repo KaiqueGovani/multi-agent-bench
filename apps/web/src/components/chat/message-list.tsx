@@ -63,11 +63,13 @@ export function MessageList({
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 md:p-6" data-testid="message-list">
       {messages.map((message) => {
         const isInbound = message.direction === "inbound";
+        const isStreaming = message.id.startsWith("streaming-");
         return (
           <article
             data-testid={`message-${message.id}`}
             key={message.id}
             className={`flex gap-3 ${isInbound ? "justify-end" : "justify-start"}`}
+            {...(isStreaming ? { "aria-live": "polite" } : {})}
           >
             {!isInbound ? (
               <div
@@ -96,6 +98,9 @@ export function MessageList({
             >
               <p className="whitespace-pre-wrap">
                 {formatMessageContent(message.contentText)}
+                {isStreaming ? (
+                  <Loader2 className="animate-spin h-3 w-3 inline-block ml-2" aria-label="Streaming" />
+                ) : null}
               </p>
 
               {attachmentsByMessage[message.id]?.length ? (

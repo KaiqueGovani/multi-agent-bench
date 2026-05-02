@@ -27,12 +27,14 @@ import {
 
 import { EventTimeline } from "@/components/events/event-timeline";
 import { ConversationInspector } from "@/components/inspection/conversation-inspector";
+import { CentralizedFlow, SwarmFlow, WorkflowFlow } from "@/components/runtime/architecture-flow";
 import { RunExecutionPanel } from "@/components/runtime/run-execution-panel";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { useConversation } from "@/hooks/use-conversation";
-import type { ArchitectureMode, ConversationSummary, ExecutionMode, ReviewTask } from "@/lib/types";
+import type { ArchitectureMode, ConversationSummary, ExecutionMode, ReviewTask, ReviewTaskStatus, RunExecutionEvent } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { MessageComposer } from "./message-composer";
 import { MessageList } from "./message-list";
@@ -64,6 +66,10 @@ export function ChatWorkspace() {
   );
   const [executionMode, setExecutionMode] = useState<ExecutionMode>("mock");
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("conversa");
+  const [isFlowOpen, setIsFlowOpen] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("chat-flow-open") === "true";
+  });
   const {
     attachments,
     attachmentsByMessage,
@@ -79,10 +85,12 @@ export function ChatWorkspace() {
     messages,
     openReviewTasks,
     reviewTasks,
+    runExecution,
     runs,
     sendMessage,
     selectConversation,
-    startConversation
+    startConversation,
+    updateReviewTask
   } = useConversation(architectureMode, executionMode);
   const layoutColumns = activeTab === "conversa"
     ? getLayoutColumns(isHistoryOpen, isEventsOpen)
@@ -97,6 +105,10 @@ export function ChatWorkspace() {
     setSelectedRunId(null);
     void startConversation();
   }
+
+  useEffect(() => {
+    localStorage.setItem("chat-flow-open", String(isFlowOpen));
+  }, [isFlowOpen]);
 
   useEffect(() => {
     if (!runs.length) {
@@ -199,6 +211,17 @@ export function ChatWorkspace() {
             </Button>
             ) : null}
             <Button
+              aria-label={isFlowOpen ? "Esconder fluxo" : "Mostrar fluxo"}
+              aria-pressed={isFlowOpen}
+              data-testid="flow-toggle"
+              onClick={() => setIsFlowOpen((v) => !v)}
+              size="icon"
+              type="button"
+              variant={isFlowOpen ? "secondary" : "outline"}
+            >
+              <Workflow className="h-4 w-4" />
+            </Button>
+            <Button
               disabled={!hasActiveConversation}
               onClick={() => setIsInspectorOpen(true)}
               size="sm"
@@ -212,6 +235,20 @@ export function ChatWorkspace() {
               executionMode={executionMode}
               onExecutionModeChange={setExecutionMode}
             />
+            {openReviewTasks.length > 0 ? (
+              <Link
+                aria-label={`Ver ${openReviewTasks.length} revisões abertas`}
+                className={cn(buttonVariants({ size: "sm", variant: "outline" }), "gap-1.5")}
+                data-testid="review-badge-link"
+                href="/dashboard"
+              >
+                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                <span className="hidden sm:inline">Revisões</span>
+                <Badge aria-live="polite" variant="warning">
+                  {openReviewTasks.length}
+                </Badge>
+              </Link>
+            ) : null}
             <Link
               className={cn(buttonVariants({ size: "sm", variant: "outline" }))}
               data-testid="dashboard-link"
@@ -281,6 +318,29 @@ export function ChatWorkspace() {
           {activeTab === "conversa" ? (
             <>
               <div className="flex flex-1 flex-col overflow-hidden bg-background">
+                {isFlowOpen ? (
+                  runExecution?.projection ? (
+                    <div
+                      aria-label="Fluxo da arquitetura"
+                      className="shrink-0 border-b bg-muted/30 p-2"
+                      data-testid="chat-flow-panel"
+                      style={{ minHeight: 260, maxHeight: 360, overflow: "auto" }}
+                    >
+                      <ChatRuntimeVisual
+                        architectureMode={architectureMode}
+                        projection={runExecution.projection}
+                        executionEvents={runExecution.executionEvents ?? []}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className="shrink-0 border-b bg-muted/30 p-6 text-center text-sm text-muted-foreground"
+                      data-testid="chat-flow-panel"
+                    >
+                      Envie uma mensagem para visualizar o fluxo.
+                    </div>
+                  )
+                ) : null}
                 <div className="flex-1 overflow-y-auto">
                   <MessageList
                     attachmentsByMessage={attachmentsByMessage}
@@ -327,7 +387,7 @@ export function ChatWorkspace() {
                 isOpen={true}
                 onOpenChange={() => {}}
                 reviewPanel={
-                  <ReviewPanel reviewTasks={reviewTasks} />
+                  <ReviewPanel onResolve={updateReviewTask} reviewTasks={reviewTasks} />
                 }
               />
             </div>
@@ -343,7 +403,7 @@ export function ChatWorkspace() {
           isOpen={isEventsOpen}
           onOpenChange={setIsEventsOpen}
           reviewPanel={
-            <ReviewPanel reviewTasks={reviewTasks} />
+            <ReviewPanel onResolve={updateReviewTask} reviewTasks={reviewTasks} />
           }
         />
       ) : null}
@@ -499,8 +559,10 @@ function ConversationHistory({
 }
 
 function ReviewPanel({
+  onResolve,
   reviewTasks
 }: {
+  onResolve?: (id: string, status: Extract<ReviewTaskStatus, "resolved" | "cancelled" | "in_review">, note?: string) => Promise<void>;
   reviewTasks: ReviewTask[];
 }) {
   const openTasks = reviewTasks.filter(
@@ -508,9 +570,34 @@ function ReviewPanel({
   );
   const hasOpenTasks = openTasks.length > 0;
   const [isExpanded, setIsExpanded] = useState(hasOpenTasks);
+  const [pending, setPending] = useState<string | null>(null);
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   if (reviewTasks.length === 0) {
     return null;
+  }
+
+  async function handleResolve(taskId: string, status: Extract<ReviewTaskStatus, "resolved" | "cancelled" | "in_review">) {
+    if (!onResolve) return;
+    setPending(taskId);
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[taskId];
+      return next;
+    });
+    try {
+      await onResolve(taskId, status, notes[taskId]);
+    } catch (caught) {
+      const message =
+        caught instanceof Error &&
+        (caught.message.includes("409") || caught.message.includes("404"))
+          ? "Esta revisão já foi resolvida por outro usuário."
+          : "Erro ao resolver revisão. Tente novamente.";
+      setErrors((prev) => ({ ...prev, [taskId]: message }));
+    } finally {
+      setPending(null);
+    }
   }
 
   return (
@@ -568,19 +655,74 @@ function ReviewPanel({
       <div className="mt-3 space-y-3">
         {reviewTasks.map((task) => {
           const isOpen = task.status === "open" || task.status === "in_review";
+          const isPending = pending === task.id;
+          const taskError = errors[task.id];
 
           return (
             <div className="rounded-md border bg-background p-3" key={task.id}>
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-xs font-medium">{task.reason}</p>
+                  <p className="text-xs font-medium" id={`${task.id}-reason`}>{task.reason}</p>
                   <p className="mt-1 text-[11px] text-muted-foreground">
                     Mensagem {shortId(task.messageId)} - {formatUpdatedAt(task.createdAt)}
                   </p>
                 </div>
                 <Badge variant={isOpen ? "warning" : "success"}>{task.status}</Badge>
               </div>
-              {isOpen ? (
+              {isOpen && onResolve ? (
+                <div className="mt-2 space-y-2">
+                  <Textarea
+                    aria-describedby={`${task.id}-reason`}
+                    aria-label="Nota da revisão"
+                    className="min-h-16 text-xs"
+                    onChange={(e) =>
+                      setNotes((prev) => ({ ...prev, [task.id]: e.target.value }))
+                    }
+                    placeholder="Observação opcional"
+                    value={notes[task.id] ?? ""}
+                  />
+                  {taskError ? (
+                    <p className="text-xs text-destructive">{taskError}</p>
+                  ) : null}
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      aria-label="Aprovar"
+                      className="text-xs"
+                      data-testid={`review-approve-${task.id}`}
+                      disabled={isPending}
+                      onClick={() => void handleResolve(task.id, "resolved")}
+                      size="sm"
+                      type="button"
+                    >
+                      Aprovar
+                    </Button>
+                    <Button
+                      aria-label="Rejeitar"
+                      className="text-xs"
+                      data-testid={`review-reject-${task.id}`}
+                      disabled={isPending}
+                      onClick={() => void handleResolve(task.id, "cancelled")}
+                      size="sm"
+                      type="button"
+                      variant="destructive"
+                    >
+                      Rejeitar
+                    </Button>
+                    <Button
+                      aria-label="Manter em revisão"
+                      className="text-xs"
+                      data-testid={`review-keep-${task.id}`}
+                      disabled={isPending}
+                      onClick={() => void handleResolve(task.id, "in_review")}
+                      size="sm"
+                      type="button"
+                      variant="outline"
+                    >
+                      Manter em revisão
+                    </Button>
+                  </div>
+                </div>
+              ) : isOpen ? (
                 <p className="mt-2 text-[11px] text-amber-800">
                   Um profissional está avaliando a resposta.
                 </p>
@@ -652,6 +794,38 @@ function HeaderContextTooltip({ architectureMode }: { architectureMode: Architec
 
 function formatArchitectureMode(mode: ArchitectureMode): string {
   return architectureOptions.find((option) => option.value === mode)?.label ?? mode;
+}
+
+function ChatRuntimeVisual({
+  architectureMode,
+  projection,
+  executionEvents,
+}: {
+  architectureMode: ArchitectureMode;
+  projection: { architectureView: Record<string, unknown>; activeActorName?: string | null };
+  executionEvents: RunExecutionEvent[];
+}) {
+  const activeActorName = projection.activeActorName ?? "runtime";
+  const actors = (() => {
+    const raw = projection.architectureView?.actors;
+    return raw && typeof raw === "object" ? Object.values(raw) : [];
+  })();
+  const stages = (() => {
+    const raw = projection.architectureView?.stages;
+    return Array.isArray(raw) ? raw : [];
+  })();
+  const handoffs = (() => {
+    const raw = projection.architectureView?.handoffs;
+    return Array.isArray(raw) ? raw : [];
+  })();
+
+  if (architectureMode === "structured_workflow") {
+    return <WorkflowFlow activeActorName={activeActorName} stages={stages} executionEvents={executionEvents} />;
+  }
+  if (architectureMode === "decentralized_swarm") {
+    return <SwarmFlow activeActorName={activeActorName} actors={actors} executionEvents={executionEvents} handoffs={handoffs} />;
+  }
+  return <CentralizedFlow activeActorName={activeActorName} actors={actors} executionEvents={executionEvents} />;
 }
 
 function ArchitectureIcon({ mode }: { mode: ArchitectureMode }) {

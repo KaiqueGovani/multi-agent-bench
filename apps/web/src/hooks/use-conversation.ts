@@ -6,6 +6,7 @@ import {
   createConversation,
   getConversation,
   getConversationEvents,
+  getRunExecution,
   listConversations,
   listOpenReviewTasks,
   resolveReviewTask as resolveReviewTaskRequest,
@@ -22,7 +23,8 @@ import type {
   ProcessingEvent,
   ReviewTask,
   ReviewTaskStatus,
-  Run
+  Run,
+  RunExecutionResponse
 } from "@/lib/types";
 
 type ConnectionStatus = "idle" | "connecting" | "open" | "closed" | "error" | "reconnecting";
@@ -45,6 +47,17 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
   const activeConversationIdRef = useRef<string | null>(null);
   const lastEventIdRef = useRef<string | null>(null);
 
+  /** Tracks when the last refreshConversationDetail was triggered, for debouncing. */
+  const lastRefreshTsRef = useRef(0);
+
+  /** Tracks streaming message runIds with creation timestamps for timeout cleanup. */
+  const streamingTimestampsRef = useRef(new Map<string, number>());
+
+  /** Live run execution state for the visual flow panel. */
+  const [runExecution, setRunExecution] = useState<RunExecutionResponse | null>(null);
+  const runExecLastFetchRef = useRef(0);
+  const runExecPendingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const refreshConversations = useCallback(async () => {
     try {
       const response = await listConversations();
@@ -54,6 +67,21 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
       setError(caught instanceof Error ? caught.message : "Falha ao atualizar conversas");
       return [];
     }
+  }, []);
+
+  /** Throttled fetch for run execution projection (at most once per 1500ms, with trailing). */
+  const fetchRunExecution = useCallback((runId: string) => {
+    const THROTTLE_MS = 1500;
+    const now = Date.now();
+    if (now - runExecLastFetchRef.current < THROTTLE_MS) {
+      if (runExecPendingRef.current) clearTimeout(runExecPendingRef.current);
+      runExecPendingRef.current = setTimeout(() => fetchRunExecution(runId), THROTTLE_MS);
+      return;
+    }
+    runExecLastFetchRef.current = now;
+    getRunExecution(runId)
+      .then((res) => setRunExecution(res))
+      .catch((err) => console.debug("[flow] projection fetch failed", err));
   }, []);
 
   const activeArchitectureMode = useMemo<ArchitectureMode>(() => {
@@ -83,6 +111,7 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
     setEvents([]);
     setRuns([]);
     setReviewTasks([]);
+    setRunExecution(null);
     lastEventIdRef.current = null;
 
     try {
@@ -115,7 +144,15 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
         return null;
       }
       setConversation(detail.conversation);
-      setMessages(detail.messages);
+      // Replace messages but strip any remaining optimistic/streaming messages
+      setMessages((current) => {
+        const realMessages = detail.messages;
+        // Keep streaming messages that don't yet have a server counterpart
+        const activeStreaming = current.filter(
+          (m) => m.id.startsWith("streaming-")
+        );
+        return [...realMessages, ...activeStreaming];
+      });
       setAttachments(detail.attachments);
       setEvents((current) => mergeEventsForConversation(id, current, detail.events));
       setRuns(detail.runs);
@@ -131,6 +168,20 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
       return null;
     }
   }, [refreshConversations]);
+
+  /** Debounced refresh: skips if another refresh happened within 500ms. */
+  const debouncedRefreshDetail = useCallback(
+    (id: string) => {
+      const now = Date.now();
+      if (now - lastRefreshTsRef.current < 500) {
+        console.debug("[streaming] debounced refresh skipped, recent refresh at", lastRefreshTsRef.current);
+        return;
+      }
+      lastRefreshTsRef.current = now;
+      void refreshConversationDetail(id);
+    },
+    [refreshConversationDetail]
+  );
 
   const refreshEvents = useCallback(async (id: string) => {
     try {
@@ -158,6 +209,7 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
     setEvents([]);
     setRuns([]);
     setReviewTasks([]);
+    setRunExecution(null);
     setConnectionStatus("idle");
   }, []);
 
@@ -173,11 +225,11 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
     async (
       reviewTaskId: string,
       status: Extract<ReviewTaskStatus, "resolved" | "cancelled" | "in_review">,
-      note: string
+      note?: string
     ) => {
       setError(null);
       await resolveReviewTaskRequest(reviewTaskId, {
-        note: note.trim() || undefined,
+        note: note?.trim() || undefined,
         resolvedBy: "local_human_reviewer",
         status
       });
@@ -197,6 +249,21 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
       }
       setIsSending(true);
       setError(null);
+
+      // Build optimistic user message
+      const optimisticId = "optimistic-" + crypto.randomUUID();
+      const optimisticMsg: Message = {
+        id: optimisticId,
+        conversationId: conversationId ?? "",
+        direction: "inbound",
+        contentText: text.trim() || null,
+        createdAtClient: new Date().toISOString(),
+        createdAtServer: new Date().toISOString(),
+        status: "processing",
+        correlationId: "",
+        metadata: {}
+      };
+
       try {
         let targetConversationId = conversationId;
         if (!targetConversationId) {
@@ -206,7 +273,12 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
           activeConversationIdRef.current = targetConversationId;
           setConversationId(targetConversationId);
           setIsCreatingConversation(false);
+          // Update optimistic msg conversationId
+          optimisticMsg.conversationId = targetConversationId;
         }
+
+        // Insert optimistic message BEFORE the POST
+        setMessages((prev) => [...prev, optimisticMsg]);
 
         await sendMultipartMessage(targetConversationId, text.trim(), files, activeArchitectureMode, executionMode);
         await refreshConversationDetail(targetConversationId);
@@ -215,6 +287,8 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
           void refreshConversations();
         }, 1600);
       } catch (caught) {
+        // Remove optimistic message on error
+        setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
         setError(caught instanceof Error ? caught.message : "Falha ao enviar mensagem");
       } finally {
         setIsCreatingConversation(false);
@@ -235,6 +309,34 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
     void refreshConversations();
     void refreshOpenReviewTasks();
   }, [refreshConversations, refreshOpenReviewTasks]);
+
+  // Streaming message timeout cleanup: every 10s, drop streaming messages older than 60s
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      const now = Date.now();
+      const staleRunIds: string[] = [];
+      for (const [runId, ts] of streamingTimestampsRef.current.entries()) {
+        if (now - ts > 60_000) {
+          staleRunIds.push(runId);
+        }
+      }
+      if (staleRunIds.length > 0) {
+        console.debug("[streaming] cleaning up stale streaming messages:", staleRunIds);
+        for (const runId of staleRunIds) {
+          streamingTimestampsRef.current.delete(runId);
+        }
+        setMessages((prev) => prev.filter((m) => {
+          if (!m.id.startsWith("streaming-")) return true;
+          const msgRunId = m.id.slice("streaming-".length);
+          return !staleRunIds.includes(msgRunId);
+        }));
+        if (activeConversationIdRef.current) {
+          void refreshConversationDetail(activeConversationIdRef.current);
+        }
+      }
+    }, 10_000);
+    return () => window.clearInterval(interval);
+  }, [refreshConversationDetail]);
 
   useEffect(() => {
     if (!conversationId) {
@@ -263,14 +365,70 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
             return mergeEventsForConversation(conversationId, current, [event]);
           });
 
-          if (event.eventType === "response.final" || event.eventType === "processing.completed") {
-            void refreshConversationDetail(conversationId);
+          // --- Streaming assistant message handling ---
+          const payloadRunId = typeof event.payload?.runId === "string" ? event.payload.runId : null;
+
+          // --- Live projection fetch (throttled) ---
+          if (payloadRunId) {
+            fetchRunExecution(payloadRunId);
+          }
+
+          if (
+            event.eventType === "response.partial"
+            && typeof event.payload?.contentText === "string"
+            && payloadRunId
+          ) {
+            const streamingId = "streaming-" + payloadRunId;
+            const contentText = event.payload.contentText as string;
+            streamingTimestampsRef.current.set(payloadRunId, Date.now());
+            setMessages((prev) => {
+              const existing = prev.findIndex((m) => m.id === streamingId);
+              if (existing >= 0) {
+                // Replace contentText in-place
+                const updated = [...prev];
+                updated[existing] = { ...updated[existing], contentText };
+                return updated;
+              }
+              // Append new streaming message
+              const streamingMsg: Message = {
+                id: streamingId,
+                conversationId,
+                direction: "outbound",
+                contentText,
+                createdAtClient: null,
+                createdAtServer: event.createdAt,
+                status: "processing",
+                correlationId: event.correlationId,
+                metadata: {}
+              };
+              return [...prev, streamingMsg];
+            });
+          }
+
+          if (
+            (event.eventType === "response.final" || event.eventType === "processing.completed")
+            && payloadRunId
+          ) {
+            const streamingId = "streaming-" + payloadRunId;
+            streamingTimestampsRef.current.delete(payloadRunId);
+            setMessages((prev) => prev.filter((m) => m.id !== streamingId));
+            debouncedRefreshDetail(conversationId);
+          } else if (event.eventType === "response.final" || event.eventType === "processing.completed") {
+            // Fallback: no runId in payload — still refresh (backward compat with mock mode)
+            debouncedRefreshDetail(conversationId);
           }
         },
         (status) => {
           setConnectionStatus(status);
           if (status === "open") {
             void refreshEvents(conversationId);
+          }
+          // On SSE error/reconnect: purge ghost streaming messages
+          if (status === "error" || status === "reconnecting") {
+            console.debug("[streaming] SSE disconnect, purging streaming messages");
+            streamingTimestampsRef.current.clear();
+            setMessages((prev) => prev.filter((m) => !m.id.startsWith("streaming-")));
+            void refreshConversationDetail(conversationId);
           }
         },
         {
@@ -283,8 +441,23 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
       isCancelled = true;
       setConnectionStatus("closed");
       source?.close();
+      // Clear any pending trailing projection fetch to avoid post-unmount state updates.
+      if (runExecPendingRef.current) {
+        clearTimeout(runExecPendingRef.current);
+        runExecPendingRef.current = null;
+      }
     };
-  }, [conversationId, refreshConversationDetail, refreshEvents]);
+  }, [conversationId, debouncedRefreshDetail, fetchRunExecution, refreshConversationDetail, refreshEvents]);
+
+  // Fetch run execution projection when runs change (initial load / new run)
+  useEffect(() => {
+    if (runs.length === 0) {
+      setRunExecution(null);
+      return;
+    }
+    const latestRun = runs[runs.length - 1];
+    fetchRunExecution(latestRun.id);
+  }, [runs, fetchRunExecution]);
 
   const attachmentsByMessage = useMemo(() => {
     return attachments.reduce<Record<string, Attachment[]>>((accumulator, attachment) => {
@@ -312,6 +485,7 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
     openReviewTasks,
     reviewTasks,
     refreshConversations,
+    runExecution,
     runs,
     sendMessage,
     selectConversation,
