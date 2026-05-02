@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import time
 from dataclasses import asdict, dataclass
+from pathlib import Path
 from typing import Any
 
+from _loader import REPO_ROOT, resolve_case_attachments
 from api_client import E2EClient
 
 
@@ -106,10 +108,31 @@ class BenchmarkClient:
         metadata = {"architectureMode": architecture}
 
         try:
+            # Resolve attachments (same logic as test_e2e.py)
+            attachments = resolve_case_attachments(case)
+
+            expected_status = case.get("expected", {}).get("http_status", 202)
+
             conversation_id = self._client.create_conversation(metadata=metadata)
 
             t0 = time.monotonic()
-            msg_resp = self._client.send_message(conversation_id, text, metadata=metadata)
+            msg_resp = self._client.send_message(
+                conversation_id, text, metadata=metadata,
+                attachments=attachments, expected_status=expected_status,
+            )
+
+            # Error-path early return (e.g. anexo_invalido expects 400)
+            if expected_status >= 400:
+                latency_ms = (time.monotonic() - t0) * 1000.0
+                return RunMetrics(
+                    run_id="",
+                    architecture_mode=architecture,
+                    scenario_id=scenario_id,
+                    iteration=iteration,
+                    latency_ms=latency_ms,
+                    content_text=(msg_resp.get("error") or "")[:120],
+                    success=True,
+                )
 
             final_event = self._client.wait_for_event(
                 conversation_id, "response.final", timeout=timeout,
@@ -133,8 +156,8 @@ class BenchmarkClient:
                 summary = run_record.get("summary") or {}
                 experiment = run_record.get("experiment") or {}
 
-            input_tokens = summary.get("inputTokens", 0)
-            output_tokens = summary.get("outputTokens", 0)
+            input_tokens = summary.get("inputTokens") or 0
+            output_tokens = summary.get("outputTokens") or 0
             total_tokens = summary.get("totalTokens") or (input_tokens + output_tokens)
 
             return RunMetrics(
@@ -148,10 +171,10 @@ class BenchmarkClient:
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
                 total_tokens=total_tokens,
-                tool_call_count=summary.get("toolCallCount", 0),
-                tool_error_count=summary.get("toolErrorCount", 0),
-                loop_count=summary.get("loopCount", 0),
-                handoff_count=summary.get("handoffCount", 0),
+                tool_call_count=summary.get("toolCallCount") or 0,
+                tool_error_count=summary.get("toolErrorCount") or 0,
+                loop_count=summary.get("loopCount") or 0,
+                handoff_count=summary.get("handoffCount") or 0,
                 review_required=bool(fp.get("reviewRequired", False)),
                 content_text=(fp.get("contentText") or "")[:120],
                 model_provider=experiment.get("modelProvider"),

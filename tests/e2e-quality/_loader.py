@@ -7,6 +7,30 @@ from typing import Iterable
 
 import yaml
 
+# Repo root — stable relative to this file: _loader.py -> e2e-quality -> tests -> repo
+REPO_ROOT: Path = Path(__file__).resolve().parent.parent.parent
+
+
+def resolve_case_attachments(case: dict) -> list[tuple[Path, str]] | None:
+    """Resolve `case.input.attachments` to (absolute_path, mime_type) tuples.
+
+    Paths from the YAML are resolved relative to REPO_ROOT when not absolute.
+    Returns None when the case has no attachments (vs an empty list), so the
+    caller can skip the multipart upload entirely. Raises AssertionError with
+    a helpful message when an attachment file is missing on disk.
+    """
+    raw = case.get("input", {}).get("attachments") or []
+    if not raw:
+        return None
+    resolved: list[tuple[Path, str]] = []
+    for att in raw:
+        att_path = Path(att["path"])
+        if not att_path.is_absolute():
+            att_path = REPO_ROOT / att_path
+        assert att_path.exists(), f"Attachment not found: {att_path}"
+        resolved.append((att_path, att["mime_type"]))
+    return resolved
+
 
 def load_yaml_scenarios(
     scenarios_dir: Path,
@@ -43,7 +67,11 @@ def load_yaml_scenarios(
         for case in cases:
             assert case.get("id"), f"{path.name}: case missing 'id'"
             assert case.get("input", {}).get("text"), f"{path.name}: case {case.get('id')}: missing 'input.text'"
-            assert case.get("expected", {}).get("route"), f"{path.name}: case {case.get('id')}: missing 'expected.route'"
+            expected_block = case.get("expected", {})
+            assert expected_block.get("route") or expected_block.get("http_status"), (
+                f"{path.name}: case '{case.get('id')}' missing expected.route "
+                f"(required unless expected.http_status is set)"
+            )
 
             if id_filter is not None and case["id"] not in id_filter:
                 continue
