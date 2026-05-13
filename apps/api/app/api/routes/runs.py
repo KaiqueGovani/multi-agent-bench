@@ -150,28 +150,32 @@ def complete_run(
             detail="Run not found",
         )
 
-    event_type, event_status = _event_for_run_status(updated_run.status)
-    EventService(db).record_event(
-        conversation_id=updated_run.conversation_id,
-        message_id=updated_run.message_id,
-        event_type=event_type,
-        actor_name="ai_runtime",
-        correlation_id=updated_run.correlation_id,
-        status=event_status,
-        duration_ms=updated_run.total_duration_ms,
-        payload={
-            "source": "ai_service",
-            "runId": str(updated_run.id),
-            "externalRunId": updated_run.external_run_id,
-            "traceId": updated_run.trace_id,
-            "finalOutcome": updated_run.final_outcome,
-            "summary": updated_run.summary.model_dump(
-                by_alias=True,
-                mode="json",
-                exclude_none=True,
-            ),
-        },
-    )
+    RunExecutionService(db).sync_run_completion(run_id)
+    db.commit()
+
+    if not bool((existing_run.experiment.model_extra or {}).get("comparisonOnly")):
+        event_type, event_status = _event_for_run_status(updated_run.status)
+        EventService(db).record_event(
+            conversation_id=updated_run.conversation_id,
+            message_id=updated_run.message_id,
+            event_type=event_type,
+            actor_name="ai_runtime",
+            correlation_id=updated_run.correlation_id,
+            status=event_status,
+            duration_ms=updated_run.total_duration_ms,
+            payload={
+                "source": "ai_service",
+                "runId": str(updated_run.id),
+                "externalRunId": updated_run.external_run_id,
+                "traceId": updated_run.trace_id,
+                "finalOutcome": updated_run.final_outcome,
+                "summary": updated_run.summary.model_dump(
+                    by_alias=True,
+                    mode="json",
+                    exclude_none=True,
+                ),
+            },
+        )
 
     return updated_run
 

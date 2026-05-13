@@ -28,6 +28,7 @@ const ACCEPTED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp", "applicati
 const MAX_FILES = 4;
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const ARCHITECTURE_OPTIONS: Array<{ label: string; value: ArchitectureMode }> = [
+  { label: "Todas as arquiteturas", value: "all_architectures" },
   { label: "Orquestração centralizada", value: "centralized_orchestration" },
   { label: "Workflow estruturado", value: "structured_workflow" },
   { label: "Swarm descentralizado", value: "decentralized_swarm" }

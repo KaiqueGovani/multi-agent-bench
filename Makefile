@@ -108,6 +108,10 @@ api:
 runtime:
 	cd apps/agent-runtime && uv run uvicorn app.main:app --reload --port $(RUNTIME_PORT)
 
+# Runtime with multiple workers for parallel LLM execution (no hot-reload)
+runtime-llm:
+	cd apps/agent-runtime && uv run uvicorn app.main:app --workers 4 --port $(RUNTIME_PORT)
+
 web:
 	cd apps/web && npm run dev -- --port $(WEB_PORT)
 

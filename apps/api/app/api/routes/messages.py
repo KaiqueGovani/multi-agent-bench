@@ -12,6 +12,7 @@ from app.core.tracing import extract_trace_id
 from app.db import get_db_session
 from app.schemas.api import SendMessageResponse
 from app.schemas.domain import OperationalMetadata, RunExperimentMetadata
+from app.schemas.enums import ArchitectureMode
 from app.services import MessageService, MessageValidationError
 from app.services.processing_dispatcher import ProcessingDispatcher
 from app.services.runs import RunService
@@ -46,25 +47,39 @@ async def send_message(
         response = MessageService(db).create_message(
             inbound=inbound_message,
         )
-        run = RunService(db).create_run(
-            conversation_id=response.conversation_id,
-            message_id=response.message_id,
-            correlation_id=response.correlation_id,
-            ai_session_id=_build_ai_session_id(
+        architecture_keys = _expand_architecture_keys(metadata.architecture_mode)
+        created_runs = []
+        dispatches: list[dict[str, UUID]] = []
+        for index, architecture_key in enumerate(architecture_keys):
+            run = RunService(db).create_run(
                 conversation_id=response.conversation_id,
-                architecture_key=metadata.architecture_mode,
-            ),
-            trace_id=extract_trace_id(traceparent),
-            experiment=_build_run_experiment(metadata),
-        )
+                message_id=response.message_id,
+                correlation_id=response.correlation_id,
+                ai_session_id=_build_ai_session_id(
+                    conversation_id=response.conversation_id,
+                    architecture_key=architecture_key,
+                ),
+                trace_id=extract_trace_id(traceparent),
+                experiment=_build_run_experiment(
+                    metadata,
+                    architecture_key=architecture_key,
+                    comparison_only=len(architecture_keys) > 1 and index > 0,
+                ),
+            )
+            dispatches.append(
+                {
+                    "conversation_id": response.conversation_id,
+                    "message_id": response.message_id,
+                    "correlation_id": response.correlation_id,
+                    "run_id": run.id,
+                }
+            )
+            created_runs.append(run)
         background_tasks.add_task(
-            ProcessingDispatcher().dispatch,
-            conversation_id=response.conversation_id,
-            message_id=response.message_id,
-            correlation_id=response.correlation_id,
-            run_id=run.id,
+            ProcessingDispatcher().dispatch_many,
+            dispatches=dispatches,
         )
-        return response.model_copy(update={"run_id": run.id})
+        return response.model_copy(update={"run_id": created_runs[0].id if created_runs else None})
     except MessageValidationError as exc:
         if str(exc) == "Conversation not found":
             raise HTTPException(
@@ -77,33 +92,42 @@ async def send_message(
         ) from exc
 
 
-def _build_run_experiment(metadata: OperationalMetadata) -> RunExperimentMetadata:
+def _build_run_experiment(
+    metadata: OperationalMetadata,
+    *,
+    architecture_key: str,
+    comparison_only: bool,
+) -> RunExperimentMetadata:
     from app.core.config import get_settings
 
     settings = get_settings()
     extra = metadata.model_extra or {}
-    return RunExperimentMetadata(
-        architecture_family=extra.get("architectureFamily")
-        or settings.default_architecture_family,
-        architecture_key=metadata.architecture_mode or settings.default_architecture_mode,
-        architecture_version=extra.get("architectureVersion")
-        or settings.default_architecture_version,
-        routing_strategy=extra.get("routingStrategy")
-        or settings.default_routing_strategy,
-        memory_strategy=extra.get("memoryStrategy") or settings.default_memory_strategy,
-        tool_executor_mode=extra.get("toolExecutorMode")
-        or settings.default_tool_executor_mode,
-        review_policy_version=extra.get("reviewPolicyVersion")
-        or settings.default_review_policy_version,
-        model_provider=extra.get("modelProvider") or settings.default_model_provider,
-        model_name=extra.get("modelName") or settings.default_model_name,
-        model_version=extra.get("modelVersion") or settings.default_model_version,
-        prompt_bundle_version=extra.get("promptBundleVersion")
-        or settings.default_prompt_bundle_version,
-        toolset_version=extra.get("toolsetVersion") or settings.default_toolset_version,
-        experiment_id=extra.get("experimentId") or settings.default_experiment_id,
-        scenario_id=extra.get("scenarioId"),
-        runtime_commit_sha=extra.get("runtimeCommitSha"),
+    return RunExperimentMetadata.model_validate(
+        {
+            "architectureFamily": extra.get("architectureFamily")
+            or settings.default_architecture_family,
+            "architectureKey": architecture_key,
+            "architectureVersion": extra.get("architectureVersion")
+            or settings.default_architecture_version,
+            "routingStrategy": extra.get("routingStrategy")
+            or settings.default_routing_strategy,
+            "memoryStrategy": extra.get("memoryStrategy") or settings.default_memory_strategy,
+            "toolExecutorMode": extra.get("toolExecutorMode")
+            or settings.default_tool_executor_mode,
+            "reviewPolicyVersion": extra.get("reviewPolicyVersion")
+            or settings.default_review_policy_version,
+            "modelProvider": extra.get("modelProvider") or settings.default_model_provider,
+            "modelName": extra.get("modelName") or settings.default_model_name,
+            "modelVersion": extra.get("modelVersion") or settings.default_model_version,
+            "promptBundleVersion": extra.get("promptBundleVersion")
+            or settings.default_prompt_bundle_version,
+            "toolsetVersion": extra.get("toolsetVersion") or settings.default_toolset_version,
+            "experimentId": extra.get("experimentId") or settings.default_experiment_id,
+            "scenarioId": extra.get("scenarioId"),
+            "runtimeCommitSha": extra.get("runtimeCommitSha"),
+            "comparisonOnly": comparison_only,
+            "requestedArchitectureMode": metadata.architecture_mode or architecture_key,
+        }
     )
 
 
@@ -123,6 +147,16 @@ def _build_ai_session_id(
             settings.default_experiment_id,
         ]
     )
+
+
+def _expand_architecture_keys(requested_mode: str | None) -> list[str]:
+    if requested_mode == ArchitectureMode.ALL_ARCHITECTURES.value:
+        return [
+            ArchitectureMode.CENTRALIZED_ORCHESTRATION.value,
+            ArchitectureMode.STRUCTURED_WORKFLOW.value,
+            ArchitectureMode.DECENTRALIZED_SWARM.value,
+        ]
+    return [requested_mode or ArchitectureMode.CENTRALIZED_ORCHESTRATION.value]
 
 
 def _parse_metadata(metadata_json: str, client_message_id: str | None) -> OperationalMetadata:

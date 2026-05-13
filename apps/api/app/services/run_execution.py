@@ -52,6 +52,35 @@ class RunExecutionService:
             return None
         return run_execution_projection_to_schema(model)
 
+    def sync_run_completion(self, run_id: UUID) -> None:
+        run = self._db.get(RunModel, run_id)
+        projection = self._db.get(RunExecutionProjectionModel, run_id)
+        if run is None or projection is None:
+            return
+
+        metrics = dict(projection.metrics_json or {})
+        state = dict(projection.state_json or {})
+        metrics["totalDurationMs"] = run.total_duration_ms
+        state["humanReviewRequired"] = run.human_review_required
+        state["finalOutcome"] = run.final_outcome
+
+        projection.run_status = run.status
+        if run.status in {
+            "completed",
+            "failed",
+            "cancelled",
+            "human_review_required",
+        }:
+            projection.active_actor_name = None
+            projection.active_node_id = None
+            projection.current_phase = (
+                "review_gate" if run.status == "human_review_required" else run.status
+            )
+        projection.metrics_json = metrics
+        projection.state_json = state
+        projection.updated_at = datetime.now(UTC)
+        self._db.flush()
+
     def get_by_external_event_id(
         self,
         *,
@@ -119,13 +148,22 @@ class RunExecutionService:
         self._db.add(model)
         self._db.flush()
         self._upsert_projection(model)
-        self._sync_domain_state(model)
+        comparison_only = self._is_comparison_only(model.run_id)
+        if not comparison_only:
+            self._sync_domain_state(model)
         self._db.commit()
         self._db.refresh(model)
         event = run_execution_event_to_schema(model)
         run_execution_bus.publish(event)
-        self._derive_public_event(event)
+        if not comparison_only:
+            self._derive_public_event(event)
         return event
+
+    def _is_comparison_only(self, run_id: UUID) -> bool:
+        run = self._db.get(RunModel, run_id)
+        if run is None:
+            return False
+        return bool((run.experiment_json or {}).get("comparisonOnly"))
 
     def _next_sequence(self, run_id: UUID) -> int:
         current = self._db.scalar(

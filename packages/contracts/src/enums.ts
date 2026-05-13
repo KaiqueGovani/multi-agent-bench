@@ -92,6 +92,7 @@ export const REVIEW_TASK_STATUSES = [
 export type ReviewTaskStatus = (typeof REVIEW_TASK_STATUSES)[number];
 
 export const ARCHITECTURE_MODES = [
+  "all_architectures",
   "centralized_orchestration",
   "structured_workflow",
   "decentralized_swarm",

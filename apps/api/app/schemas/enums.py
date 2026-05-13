@@ -81,6 +81,7 @@ class ReviewTaskStatus(StrEnum):
 
 
 class ArchitectureMode(StrEnum):
+    ALL_ARCHITECTURES = "all_architectures"
     CENTRALIZED_ORCHESTRATION = "centralized_orchestration"
     STRUCTURED_WORKFLOW = "structured_workflow"
     DECENTRALIZED_SWARM = "decentralized_swarm"

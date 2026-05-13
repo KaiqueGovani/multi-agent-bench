@@ -28,6 +28,8 @@ import {
 import { EventTimeline } from "@/components/events/event-timeline";
 import { ConversationInspector } from "@/components/inspection/conversation-inspector";
 import { CentralizedFlow, SwarmFlow, WorkflowFlow } from "@/components/runtime/architecture-flow";
+import { ArchitectureComparisonOverview } from "@/components/runtime/architecture-comparison-overview";
+import { formatArchitectureLabel as formatArchitectureLabelText } from "@/components/runtime/presentation";
 import { RunExecutionPanel } from "@/components/runtime/run-execution-panel";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
@@ -48,6 +50,7 @@ const workspaceTabs: Array<{ key: WorkspaceTab; label: string }> = [
 ];
 
 const architectureOptions: Array<{ label: string; value: ArchitectureMode }> = [
+  { label: "Todas as arquiteturas", value: "all_architectures" },
   { label: "Orquestração centralizada", value: "centralized_orchestration" },
   { label: "Workflow estruturado", value: "structured_workflow" },
   { label: "Swarm descentralizado", value: "decentralized_swarm" }
@@ -62,7 +65,7 @@ export function ChatWorkspace() {
   const [isDraftConversation, setIsDraftConversation] = useState(false);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [architectureMode, setArchitectureMode] = useState<ArchitectureMode>(
-    "centralized_orchestration"
+    "all_architectures"
   );
   const [executionMode, setExecutionMode] = useState<ExecutionMode>("mock");
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("conversa");
@@ -129,9 +132,12 @@ export function ChatWorkspace() {
     if (!conversationId || requestedConversationId === conversationId) {
       return;
     }
+    if (!isDraftConversation && requestedConversationId) {
+      return;
+    }
     setIsDraftConversation(false);
     router.replace(`/?conversationId=${conversationId}`, { scroll: false });
-  }, [conversationId, requestedConversationId, router]);
+  }, [conversationId, isDraftConversation, requestedConversationId, router]);
 
   return (
     <main
@@ -148,6 +154,9 @@ export function ChatWorkspace() {
           onCreateConversation={handleStartDraftConversation}
           onOpenChange={setIsHistoryOpen}
           onSelectConversation={(summary) => {
+            if (summary.conversationId === conversationId) {
+              return;
+            }
             router.replace(`/?conversationId=${summary.conversationId}`, { scroll: false });
             setIsDraftConversation(false);
             if (isArchitectureMode(summary.architectureMode)) {
@@ -156,7 +165,6 @@ export function ChatWorkspace() {
             if (typeof window !== "undefined" && window.innerWidth < 1024) {
               setIsHistoryOpen(false);
             }
-            void selectConversation(summary.conversationId);
           }}
         />
       ) : null}
@@ -186,7 +194,10 @@ export function ChatWorkspace() {
               {conversationId ? (
                 <Badge variant="outline">{formatArchitectureLabel(architectureMode)}</Badge>
               ) : null}
-                <HeaderContextTooltip architectureMode={architectureMode} />
+                <HeaderContextTooltip
+                  architectureMode={architectureMode}
+                  executionMode={executionMode}
+                />
               </div>
               <p className="truncate text-xs text-muted-foreground">
                 {conversationId ? `Conversa ${conversationId}` : "Nenhuma conversa ativa"}
@@ -327,8 +338,13 @@ export function ChatWorkspace() {
                       style={{ minHeight: 260, maxHeight: 360, overflow: "auto" }}
                     >
                       <ChatRuntimeVisual
-                        architectureMode={architectureMode}
+                        architectureMode={
+                          isArchitectureMode(runExecution.projection.architectureMode)
+                            ? runExecution.projection.architectureMode
+                            : architectureMode
+                        }
                         projection={runExecution.projection}
+                        runStatus={runExecution.projection.runStatus}
                         executionEvents={runExecution.executionEvents ?? []}
                       />
                     </div>
@@ -363,13 +379,19 @@ export function ChatWorkspace() {
           {activeTab === "visao-geral" ? (
             <div className="flex-1 overflow-y-auto bg-background p-4">
               {runs.length > 0 ? (
-                <RunExecutionPanel
-                  hideTabs
-                  onSelectRun={setSelectedRunId}
-                  runs={runs}
-                  selectedRunId={selectedRunId}
-                  variant="technical"
-                />
+                <div className="grid gap-4">
+                  {hasArchitectureComparison(runs, architectureMode) ? (
+                    <ArchitectureComparisonOverview runs={runs} />
+                  ) : (
+                    <RunExecutionPanel
+                      hideTabs
+                      onSelectRun={setSelectedRunId}
+                      runs={runs}
+                      selectedRunId={selectedRunId}
+                      variant="technical"
+                    />
+                  )}
+                </div>
               ) : (
                 <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
                   Nenhuma run ativa para exibir.
@@ -765,7 +787,13 @@ function ExecutionModeToggle({
   );
 }
 
-function HeaderContextTooltip({ architectureMode }: { architectureMode: ArchitectureMode }) {
+function HeaderContextTooltip({
+  architectureMode,
+  executionMode
+}: {
+  architectureMode: ArchitectureMode;
+  executionMode: ExecutionMode;
+}) {
   return (
     <div className="group relative hidden shrink-0 sm:block">
       <button
@@ -783,7 +811,7 @@ function HeaderContextTooltip({ architectureMode }: { architectureMode: Architec
           <p className="font-medium">Contexto da conversa</p>
           <div className="grid gap-1 text-muted-foreground">
             <p>Plataforma: web chat</p>
-            <p>Runtime: mock runtime</p>
+            <p>Runtime: {executionMode === "real" ? "agent runtime" : "mock runtime"}</p>
             <p>Arquitetura: {formatArchitectureMode(architectureMode)}</p>
           </div>
         </div>
@@ -793,16 +821,21 @@ function HeaderContextTooltip({ architectureMode }: { architectureMode: Architec
 }
 
 function formatArchitectureMode(mode: ArchitectureMode): string {
-  return architectureOptions.find((option) => option.value === mode)?.label ?? mode;
+  return formatArchitectureLabelText(mode);
 }
 
 function ChatRuntimeVisual({
   architectureMode,
   projection,
+  runStatus,
   executionEvents,
 }: {
   architectureMode: ArchitectureMode;
-  projection: { architectureView: Record<string, unknown>; activeActorName?: string | null };
+  projection: {
+    architectureView: Record<string, unknown>;
+    activeActorName?: string | null;
+  };
+  runStatus?: string | null;
   executionEvents: RunExecutionEvent[];
 }) {
   const activeActorName = projection.activeActorName ?? "runtime";
@@ -820,15 +853,18 @@ function ChatRuntimeVisual({
   })();
 
   if (architectureMode === "structured_workflow") {
-    return <WorkflowFlow activeActorName={activeActorName} stages={stages} executionEvents={executionEvents} />;
+    return <WorkflowFlow activeActorName={activeActorName} executionEvents={executionEvents} runStatus={runStatus} stages={stages} />;
   }
   if (architectureMode === "decentralized_swarm") {
-    return <SwarmFlow activeActorName={activeActorName} actors={actors} executionEvents={executionEvents} handoffs={handoffs} />;
+    return <SwarmFlow activeActorName={activeActorName} actors={actors} executionEvents={executionEvents} handoffs={handoffs} runStatus={runStatus} />;
   }
-  return <CentralizedFlow activeActorName={activeActorName} actors={actors} executionEvents={executionEvents} />;
+  return <CentralizedFlow activeActorName={activeActorName} actors={actors} executionEvents={executionEvents} runStatus={runStatus} />;
 }
 
 function ArchitectureIcon({ mode }: { mode: ArchitectureMode }) {
+  if (mode === "all_architectures") {
+    return <Workflow className="h-3.5 w-3.5" />;
+  }
   if (mode === "structured_workflow") {
     return <Workflow className="h-3.5 w-3.5" />;
   }
@@ -904,13 +940,25 @@ function formatUpdatedAt(value: string): string {
 }
 
 function formatArchitectureLabel(mode: ArchitectureMode): string {
-  if (mode === "structured_workflow") {
-    return "Workflow Estruturado";
+  return formatArchitectureLabelText(mode);
+}
+
+function hasArchitectureComparison(
+  runs: Array<{ experiment?: Record<string, unknown> }>,
+  architectureMode: ArchitectureMode,
+): boolean {
+  if (architectureMode === "all_architectures") {
+    return true;
   }
-  if (mode === "decentralized_swarm") {
-    return "Swarm Descentralizado";
-  }
-  return "Orquestração Centralizada";
+  const keys = new Set(
+    runs
+      .map((run) => {
+        const value = run.experiment?.architectureKey;
+        return typeof value === "string" ? value : null;
+      })
+      .filter((value): value is string => Boolean(value)),
+  );
+  return keys.size > 1;
 }
 
 function formatConversationPreview(value: string | null | undefined): string {

@@ -1,0 +1,458 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import {
+  Activity,
+  Clock3,
+  GitCompareArrows,
+  ShieldAlert,
+  Timer,
+  Wrench,
+} from "lucide-react";
+
+import { CentralizedFlow, SwarmFlow, WorkflowFlow } from "@/components/runtime/architecture-flow";
+import {
+  formatActorLabel,
+  formatArchitectureLabel,
+  formatPhaseLabel,
+  formatStatusLabel,
+} from "@/components/runtime/presentation";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRunExecution } from "@/hooks/use-run-execution";
+import type { ArchitectureMode, JsonObject, Run, RunExecutionEvent } from "@/lib/types";
+
+interface ArchitectureComparisonOverviewProps {
+  runs: Run[];
+}
+
+export function ArchitectureComparisonOverview({ runs }: ArchitectureComparisonOverviewProps) {
+  const latestByArchitecture = useMemo(() => buildLatestByArchitecture(runs), [runs]);
+  const [now, setNow] = useState(() => Date.now());
+
+  const centralized = useRunExecution(latestByArchitecture.centralized_orchestration?.id ?? null);
+  const workflow = useRunExecution(latestByArchitecture.structured_workflow?.id ?? null);
+  const swarm = useRunExecution(latestByArchitecture.decentralized_swarm?.id ?? null);
+
+  const comparisons = [
+    {
+      architectureMode: "centralized_orchestration" as const,
+      execution: centralized,
+      run: centralized.run ?? latestByArchitecture.centralized_orchestration,
+    },
+    {
+      architectureMode: "structured_workflow" as const,
+      execution: workflow,
+      run: workflow.run ?? latestByArchitecture.structured_workflow,
+    },
+    {
+      architectureMode: "decentralized_swarm" as const,
+      execution: swarm,
+      run: swarm.run ?? latestByArchitecture.decentralized_swarm,
+    },
+  ];
+
+  const availableComparisons = comparisons.filter((item) => item.run);
+
+  // Check if any run is still active (use hook data for freshest status)
+  const hasActiveRun = useMemo(() => {
+    return (
+      isLiveRun(centralized.run) ||
+      isLiveRun(workflow.run) ||
+      isLiveRun(swarm.run)
+    );
+  }, [centralized.run?.status, workflow.run?.status, swarm.run?.status]);
+
+  useEffect(() => {
+    if (!hasActiveRun) {
+      return;
+    }
+    const timer = window.setInterval(() => setNow(Date.now()), 250);
+    return () => window.clearInterval(timer);
+  }, [hasActiveRun]);
+
+  if (availableComparisons.length === 0) {
+    return (
+      <Card className="shadow-none">
+        <CardContent className="p-6 text-sm text-muted-foreground">
+          Nenhuma execucao comparavel disponivel ainda.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="overflow-hidden shadow-none">
+      <CardHeader className="border-b bg-card/60 p-4 pb-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <GitCompareArrows className="h-4 w-4 text-primary" />
+          <CardTitle>Comparacao das arquiteturas</CardTitle>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Acompanhe execucao, uso de ferramentas e resposta final lado a lado.
+        </p>
+      </CardHeader>
+      <CardContent className="p-4">
+        <div className="grid gap-4 xl:grid-cols-3">
+          {comparisons.map((item) => (
+            <ArchitectureRunColumn
+              activeActorName={
+                item.execution.projection?.activeActorName
+                ?? item.execution.activeEvent?.actorName
+                ?? "runtime"
+              }
+              architectureMode={item.architectureMode}
+              currentPhase={item.execution.projection?.currentPhase ?? null}
+              executionEvents={item.execution.executionEvents}
+              key={item.architectureMode}
+              now={now}
+              projection={item.execution.projection ?? null}
+              run={item.run}
+            />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ArchitectureRunColumn({
+  activeActorName,
+  architectureMode,
+  currentPhase,
+  executionEvents,
+  now,
+  projection,
+  run,
+}: {
+  activeActorName: string;
+  architectureMode: Exclude<ArchitectureMode, "all_architectures">;
+  currentPhase: string | null;
+  executionEvents: RunExecutionEvent[];
+  now: number;
+  projection: {
+    architectureView: JsonObject;
+    metrics: JsonObject;
+    state?: JsonObject;
+    activeActorName?: string | null;
+  } | null;
+  run: Run | null;
+}) {
+  const actors = useMemo(() => {
+    const raw = projection?.architectureView?.actors;
+    return raw && typeof raw === "object" ? Object.values(raw) : [];
+  }, [projection?.architectureView]);
+
+  const stages = useMemo(() => {
+    const raw = projection?.architectureView?.stages;
+    return Array.isArray(raw) ? raw : [];
+  }, [projection?.architectureView]);
+
+  const handoffs = useMemo(() => {
+    const raw = projection?.architectureView?.handoffs;
+    return Array.isArray(raw) ? raw : [];
+  }, [projection?.architectureView]);
+
+  const scenarioLabel = formatScenarioLabel(readExperimentString(run, "scenarioId"));
+  const toolNames = listToolNames(executionEvents);
+  const responsePreview = readResponsePreview(executionEvents);
+  const metrics = projection?.metrics;
+
+  return (
+    <div className="grid gap-4 rounded-2xl border bg-background p-4 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-3">
+        <div className="min-w-0 space-y-1">
+          <p className="text-sm font-semibold tracking-tight">
+            {formatArchitectureLabel(architectureMode)}
+          </p>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span>{run ? `run ${shortId(run.id)}` : "Sem run disponivel"}</span>
+            <span className="text-border">•</span>
+            <span>{scenarioLabel}</span>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {run ? (
+            <Badge variant={statusVariant(run.status)}>{formatStatusLabel(run.status)}</Badge>
+          ) : (
+            <Badge variant="outline">sem dados</Badge>
+          )}
+          <Badge variant="outline">{formatRunDuration(run, now)}</Badge>
+        </div>
+      </div>
+
+      <dl className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+        <Metric icon={Activity} label="Status" value={formatStatusLabel(run?.status)} />
+        <Metric icon={Clock3} label="Fase atual" value={formatPhaseLabel(currentPhase)} />
+        <Metric icon={ShieldAlert} label="Revisao humana" value={run?.humanReviewRequired ? "Necessaria" : "Nao"} />
+        <Metric icon={Timer} label="Tempo de execucao" value={formatRunDuration(run, now)} />
+        <Metric icon={Activity} label="Agente atual" value={formatActorLabel(activeActorName)} />
+        <Metric icon={Wrench} label="Ferramentas usadas" value={toolNames.length ? String(toolNames.length) : "0"} />
+      </dl>
+
+      <div className="grid gap-3 rounded-xl border bg-card/30 p-3">
+        <SectionTitle title="Contexto" />
+        <MetadataRow label="Cenario" value={scenarioLabel} />
+        <MetadataRow
+          label="Ferramentas usadas"
+          value={toolNames.length ? toolNames.join(", ") : "Nenhuma"}
+        />
+        <MetadataRow
+          label="Eventos"
+          value={String(readMetricNumber(metrics, "eventCount", executionEvents.length))}
+        />
+      </div>
+
+      <div className="grid gap-3">
+        <SectionTitle title="Fluxo" />
+        {projection ? (
+          <RuntimeFlow
+            activeActorName={activeActorName}
+            architectureMode={architectureMode}
+            actors={actors}
+            executionEvents={executionEvents}
+            handoffs={handoffs}
+            runStatus={run?.status ?? readString(projection?.state, "lastStatus")}
+            stages={stages}
+          />
+        ) : (
+          <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+            Sem telemetria rica disponivel para esta execucao.
+          </div>
+        )}
+      </div>
+
+      <div className="grid gap-3 rounded-xl border bg-card/30 p-3">
+        <SectionTitle title="Resposta" />
+        {responsePreview ? (
+          <p className="line-clamp-6 text-sm leading-6 text-foreground">
+            {responsePreview}
+          </p>
+        ) : (
+          <p className="rounded-lg border border-dashed px-3 py-4 text-sm text-muted-foreground">
+            A resposta final desta arquitetura ainda nao foi recebida.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RuntimeFlow({
+  activeActorName,
+  architectureMode,
+  actors,
+  executionEvents,
+  handoffs,
+  runStatus,
+  stages,
+}: {
+  activeActorName: string;
+  architectureMode: Exclude<ArchitectureMode, "all_architectures">;
+  actors: unknown[];
+  executionEvents: RunExecutionEvent[];
+  handoffs: unknown[];
+  runStatus: string | null;
+  stages: unknown[];
+}) {
+  if (architectureMode === "structured_workflow") {
+    return (
+      <WorkflowFlow
+        activeActorName={activeActorName}
+        executionEvents={executionEvents}
+        runStatus={runStatus}
+        stages={stages}
+      />
+    );
+  }
+
+  if (architectureMode === "decentralized_swarm") {
+    return (
+      <SwarmFlow
+        activeActorName={activeActorName}
+        actors={actors}
+        executionEvents={executionEvents}
+        handoffs={handoffs}
+        runStatus={runStatus}
+      />
+    );
+  }
+
+  return (
+    <CentralizedFlow
+      activeActorName={activeActorName}
+      actors={actors}
+      executionEvents={executionEvents}
+      runStatus={runStatus}
+    />
+  );
+}
+
+function Metric({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Activity;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-xl border bg-card/50 px-3 py-3">
+      <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+        <Icon className="h-3.5 w-3.5 shrink-0" />
+        <dt className="truncate">{label}</dt>
+      </div>
+      <dd className="mt-1 truncate text-sm font-medium text-foreground">{value}</dd>
+    </div>
+  );
+}
+
+function MetadataRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid gap-1">
+      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-sm text-foreground">{value}</p>
+    </div>
+  );
+}
+
+function SectionTitle({ title }: { title: string }) {
+  return <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{title}</p>;
+}
+
+function buildLatestByArchitecture(runs: Run[]) {
+  const map = new Map<string, Run>();
+  const ordered = [...runs].sort((left, right) => {
+    const timeDiff = new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime();
+    return timeDiff === 0 ? left.id.localeCompare(right.id) : timeDiff;
+  });
+
+  for (const run of ordered) {
+    const architectureKey = readExperimentString(run, "architectureKey");
+    if (!architectureKey || architectureKey === "all_architectures") {
+      continue;
+    }
+    map.set(architectureKey, run);
+  }
+
+  return {
+    centralized_orchestration: map.get("centralized_orchestration") ?? null,
+    structured_workflow: map.get("structured_workflow") ?? null,
+    decentralized_swarm: map.get("decentralized_swarm") ?? null,
+  };
+}
+
+function listToolNames(executionEvents: RunExecutionEvent[]): string[] {
+  const names = new Set<string>();
+  for (const event of executionEvents) {
+    const explicitTool = typeof event.toolName === "string" ? event.toolName : null;
+    const payloadTool = typeof event.payload?.toolName === "string" ? event.payload.toolName : null;
+    const value = explicitTool ?? payloadTool;
+    if (value) {
+      names.add(humanizeToken(value));
+    }
+  }
+  return Array.from(names.values());
+}
+
+function readResponsePreview(executionEvents: RunExecutionEvent[]): string | null {
+  const event = [...executionEvents]
+    .reverse()
+    .find((item) => item.eventFamily === "response" && item.eventName === "final");
+  const contentText = event?.payload?.contentText;
+  return typeof contentText === "string" && contentText.trim().length > 0
+    ? contentText.trim()
+    : null;
+}
+
+function readExperimentString(run: Run | null, key: string): string | null {
+  const value = run?.experiment?.[key];
+  return typeof value === "string" ? value : null;
+}
+
+function readMetricNumber(
+  metrics: JsonObject | undefined,
+  key: string,
+  fallback = 0,
+): number {
+  const value = metrics?.[key];
+  return typeof value === "number" ? value : fallback;
+}
+
+function readString(object: JsonObject | undefined, key: string): string | null {
+  const value = object?.[key];
+  return typeof value === "string" ? value : null;
+}
+
+function statusVariant(status: string | null | undefined) {
+  if (status === "completed") {
+    return "success" as const;
+  }
+  if (status === "running") {
+    return "warning" as const;
+  }
+  if (status === "failed" || status === "human_review_required") {
+    return "destructive" as const;
+  }
+  if (status === "pending") {
+    return "muted" as const;
+  }
+  return "outline" as const;
+}
+
+function formatScenarioLabel(value: string | null): string {
+  if (!value) {
+    return "Nao informado";
+  }
+  return humanizeToken(value);
+}
+
+function humanizeToken(value: string): string {
+  return value
+    .replaceAll("-", " ")
+    .replaceAll("_", " ")
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatDuration(value: number | null | undefined): string {
+  if (!value) {
+    return "n/a";
+  }
+  if (value < 1000) {
+    return `${value} ms`;
+  }
+  return `${(value / 1000).toFixed(1)} s`;
+}
+
+function shortId(value: string): string {
+  return value.slice(0, 8);
+}
+
+function isLiveRun(run: Run | null): boolean {
+  if (!run) {
+    return false;
+  }
+  return !["completed", "failed", "cancelled", "human_review_required"].includes(run.status);
+}
+
+function formatRunDuration(run: Run | null, now: number): string {
+  if (!run) {
+    return "n/a";
+  }
+  // Use totalDurationMs when run is completed
+  if (typeof run.totalDurationMs === "number" && run.totalDurationMs > 0) {
+    return formatDuration(run.totalDurationMs);
+  }
+  // For completed runs without duration, show "completed"
+  if (["completed", "failed", "cancelled", "human_review_required"].includes(run.status)) {
+    return "concluído";
+  }
+  const anchor = run.startedAt ?? run.createdAt ?? null;
+  if (!anchor) {
+    return "n/a";
+  }
+  const elapsed = now - new Date(anchor).getTime();
+  return formatDuration(Math.max(elapsed, 0));
+}

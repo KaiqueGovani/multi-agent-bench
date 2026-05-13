@@ -34,19 +34,27 @@ class MockProcessingRuntime:
         conversation_id: UUID,
         message_id: UUID,
         correlation_id: UUID,
-    ) -> None:
+        architecture_mode: str | None = None,
+        comparison_only: bool = False,
+    ) -> bool:
         with SessionLocal() as db:
             message = db.get(MessageModel, message_id)
             if message is None:
-                return
+                return False
+
+            event_service = EventService(db)
+            started_at = datetime.now(UTC)
+            resolved_architecture_mode = architecture_mode or self._settings.default_architecture_mode
+            event_context = self._event_context(message, resolved_architecture_mode)
+            review_required = self._requires_review(message)
+
+            if comparison_only:
+                time.sleep(self._step_delay_seconds * 3)
+                return review_required
 
             message.status = MessageStatus.PROCESSING.value
             db.commit()
 
-            event_service = EventService(db)
-            started_at = datetime.now(UTC)
-            event_context = self._event_context(message)
-            review_required = self._requires_review(message)
             self._record(
                 event_service,
                 conversation_id=conversation_id,
@@ -109,6 +117,7 @@ class MockProcessingRuntime:
                 inbound_message=message,
                 correlation_id=correlation_id,
                 review_required=review_required,
+                architecture_mode=resolved_architecture_mode,
             )
 
             self._record(
@@ -161,6 +170,7 @@ class MockProcessingRuntime:
                     event_context,
                 ),
             )
+            return review_required
 
     def _invoke_actor(
         self,
@@ -254,6 +264,7 @@ class MockProcessingRuntime:
         inbound_message: MessageModel,
         correlation_id: UUID,
         review_required: bool,
+        architecture_mode: str,
     ) -> MessageModel:
         outbound = MessageModel(
             id=uuid4(),
@@ -272,7 +283,7 @@ class MockProcessingRuntime:
             correlation_id=correlation_id,
             metadata_json={
                 "channel": self._settings.default_channel,
-                "architectureMode": self._settings.default_architecture_mode,
+                "architectureMode": architecture_mode,
                 "runtimeMode": self._settings.runtime_mode,
                 "reviewRequired": review_required,
             },
@@ -387,13 +398,10 @@ class MockProcessingRuntime:
             is not None
         )
 
-    def _event_context(self, message: MessageModel) -> dict:
+    def _event_context(self, message: MessageModel, architecture_mode: str) -> dict:
         metadata = message.metadata_json or {}
         return {
-            "architectureMode": metadata.get(
-                "architectureMode",
-                self._settings.default_architecture_mode,
-            ),
+            "architectureMode": architecture_mode,
             "requestId": metadata.get("requestId"),
             "runtimeMode": metadata.get("runtimeMode", self._settings.runtime_mode),
         }

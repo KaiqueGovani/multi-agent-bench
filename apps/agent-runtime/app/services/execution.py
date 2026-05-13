@@ -30,6 +30,12 @@ class RuntimeExecutor:
 
     def execute(self) -> ExecutionResult:
         architecture = self.request.architecture_mode
+        if architecture == "all_architectures":
+            logger.info(
+                "Received all_architectures at runtime boundary; falling back to %s because fan-out is handled by chat-api.",
+                self.settings.default_architecture_mode,
+            )
+            architecture = self.settings.default_architecture_mode
         ctx = ExecutionContext(
             request=self.request,
             callbacks=self.callbacks,
@@ -69,13 +75,21 @@ class RuntimeExecutionService:
         self._settings = settings or get_settings()
 
     def execute_run(self, request: RuntimeDispatchRequest) -> ExecutionResult:
+        run_id_short = str(request.run_id)[:8]
+        architecture = request.architecture_mode
+        logger.info("[RUN:%s] Starting execution for %s", run_id_short, architecture)
+        
         executor = RuntimeExecutor(request)
         result = executor.execute()
+        
+        elapsed_ms = executor.elapsed_ms()
+        logger.info("[RUN:%s] Completed %s in %dms", run_id_short, architecture, elapsed_ms)
+        
         executor.callbacks.complete_run(
             run_id=str(request.run_id),
             status="human_review_required" if result.human_review_required else "completed",
             trace_id=result.trace_id,
-            total_duration_ms=executor.elapsed_ms(),
+            total_duration_ms=elapsed_ms,
             human_review_required=result.human_review_required,
             final_outcome=result.final_outcome,
             summary=RunSummary(

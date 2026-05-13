@@ -21,12 +21,13 @@ import type { RunExecutionEvent } from "@/lib/types";
 // Shared types
 // ---------------------------------------------------------------------------
 
-type EdgeState = "idle" | "recent" | "active";
+type EdgeState = "idle" | "recent" | "active" | "settled";
 
 interface AgentNodeData {
   actorName: string;
   description: string;
   status: string;
+  statusLabel?: string;
   active: boolean;
   tone?: BadgeProps["variant"];
   nodeId?: string | null;
@@ -38,7 +39,7 @@ interface AgentNodeData {
 // ---------------------------------------------------------------------------
 
 const AgentNode = memo(function AgentNode({ data }: NodeProps<Node<AgentNodeData>>) {
-  const { actorName, description, status, active, tone, nodeId } = data;
+  const { actorName, description, status, statusLabel, active, tone, nodeId } = data;
 
   return (
     <div
@@ -47,7 +48,7 @@ const AgentNode = memo(function AgentNode({ data }: NodeProps<Node<AgentNodeData
           ? "border-primary/60 bg-primary/10 ring-2 ring-primary/20"
           : status === "completed"
             ? "border-emerald-200 bg-emerald-50/80"
-            : tone === "muted"
+            : status === "skipped" || status === "not_invoked" || status === "not_applicable" || tone === "muted"
               ? "border-dashed border-border/70 bg-muted/20"
               : "border-border bg-background"
       }`}
@@ -65,14 +66,22 @@ const AgentNode = memo(function AgentNode({ data }: NodeProps<Node<AgentNodeData
                   ? "bg-amber-500"
                   : status === "failed"
                     ? "bg-destructive"
-                    : "bg-muted-foreground/50"
+                    : status === "skipped"
+                      ? "bg-slate-500"
+                      : status === "not_applicable"
+                        ? "bg-slate-400"
+                        : status === "not_invoked"
+                          ? "bg-slate-300"
+                      : "bg-muted-foreground/50"
           }`}
         />
         <p className="text-sm font-semibold truncate">{actorName}</p>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">{description}</p>
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <Badge variant={tone ?? statusBadgeVariant(status)}>{status}</Badge>
+        <Badge variant={tone ?? statusBadgeVariant(status)}>
+          {statusLabel ?? formatNodeStatusLabel(status)}
+        </Badge>
         {nodeId ? (
           <span className="truncate text-[11px] text-muted-foreground">{nodeId}</span>
         ) : null}
@@ -98,9 +107,14 @@ function AnimatedEdge(props: EdgeProps) {
     targetPosition,
   });
 
-  const color = state === "active" ? "#007f5f" : state === "recent" ? "#1f9d61" : "#c5d0de";
-  const strokeWidth = state === "active" ? 2.5 : state === "recent" ? 1.8 : 1;
-  const animated = state !== "idle";
+  const color =
+    state === "active"
+      ? "#007f5f"
+      : state === "recent" || state === "settled"
+        ? "#1f9d61"
+        : "#c5d0de";
+  const strokeWidth = state === "active" ? 2.5 : state === "recent" || state === "settled" ? 1.8 : 1;
+  const animated = state === "active" || state === "recent";
 
   return (
     <>
@@ -189,6 +203,8 @@ function statusBadgeVariant(status: string): BadgeProps["variant"] {
   if (status === "completed") return "success";
   if (status === "running") return "warning";
   if (status === "failed" || status === "human_review_required") return "destructive";
+  if (status === "skipped") return "outline";
+  if (status === "not_invoked" || status === "not_applicable") return "outline";
   if (status === "pending") return "muted";
   return "outline";
 }
@@ -199,10 +215,10 @@ function getActorName(value: unknown): string | null {
   return typeof raw === "string" ? raw : null;
 }
 
-function getStatus(value: unknown): string {
-  if (!value || typeof value !== "object") return "pending";
+function getStatus(value: unknown, terminal = false): string {
+  if (!value || typeof value !== "object") return terminal ? "skipped" : "pending";
   const raw = (value as Record<string, unknown>).status ?? (value as Record<string, unknown>).lastStatus;
-  return typeof raw === "string" ? raw : "pending";
+  return typeof raw === "string" ? raw : terminal ? "skipped" : "pending";
 }
 
 function getNodeId(value: unknown): string | null {
@@ -236,12 +252,13 @@ function makeNode(
   y: number,
   tone?: BadgeProps["variant"],
   nodeId?: string | null,
+  statusLabel?: string,
 ): Node<AgentNodeData> {
   return {
     id,
     type: "agent",
     position: { x, y },
-    data: { actorName, description, status, active, tone, nodeId },
+    data: { actorName, description, status, statusLabel, active, tone, nodeId },
   };
 }
 
@@ -265,6 +282,7 @@ function edgeStateFromEvents(
   events: RunExecutionEvent[],
   source: string,
   target: string,
+  terminal = false,
 ): EdgeState {
   // Check the last N events for activity on this connection
   const recent = events.slice(-10);
@@ -279,20 +297,25 @@ function edgeStateFromEvents(
       const from = p.from as string | undefined;
       const to = (p.to ?? p.targetActor) as string | undefined;
       if ((from === source && to === target) || (actor === source && to === target)) {
-        return e.status === "running" ? "active" : "recent";
+        if (e.status === "running") return "active";
+        return terminal ? "settled" : "recent";
       }
     }
 
     // Node/tool events: actor matches the target node of the edge (source is sending to target)
     if (e.eventFamily === "node" || e.eventFamily === "tool") {
       if (actor === target) {
-        return e.status === "running" ? "active" : e.status === "completed" ? "recent" : "idle";
+        if (e.status === "running") return "active";
+        if (e.status === "completed") return terminal ? "settled" : "recent";
+        return "idle";
       }
     }
 
     // Response events: actor is response_streamer → edges into response_streamer activate
     if (e.eventFamily === "response" && actor === target) {
-      return e.status === "running" ? "active" : e.status === "completed" ? "recent" : "idle";
+      if (e.status === "running") return "active";
+      if (e.status === "completed") return terminal ? "settled" : "recent";
+      return "idle";
     }
   }
   return "idle";
@@ -306,16 +329,19 @@ export function CentralizedFlow({
   activeActorName,
   actors,
   executionEvents,
+  runStatus,
 }: {
   activeActorName: string;
   actors: unknown[];
   executionEvents: RunExecutionEvent[];
+  runStatus?: string | null;
 }) {
   const { nodes, edges } = useMemo(() => {
     const findActor = (name: string) => actors.find((a) => getActorName(a) === name);
+    const terminal = isTerminalRunStatus(runStatus);
 
     const sup = findActor("supervisor_agent");
-    const supStatus = getStatus(sup);
+    const supStatus = getStatus(sup, terminal);
     const supActive = "supervisor_agent" === activeActorName;
 
     const specialists = [
@@ -325,29 +351,40 @@ export function CentralizedFlow({
     ];
 
     const respActor = findActor("response_streamer");
-    const respStatus = getStatus(respActor);
+    const respStatus = getStatus(respActor, terminal);
     const respActive = "response_streamer" === activeActorName;
 
     const nodes: Node<AgentNodeData>[] = [
       makeNode("supervisor_agent", "Agente Supervisor", "orquestra e roteia", supStatus, supActive, 0, 130, "info", getNodeId(sup)),
       ...specialists.map((s) => {
         const actor = findActor(s.name);
-        return makeNode(s.name, formatAgentName(s.name), s.desc, getStatus(actor), s.name === activeActorName, 280, s.y, undefined, getNodeId(actor));
+        const status = actor ? getStatus(actor, terminal) : terminal ? "not_invoked" : "pending";
+        return makeNode(
+          s.name,
+          formatAgentName(s.name),
+          s.desc,
+          status,
+          s.name === activeActorName,
+          280,
+          s.y,
+          actor ? undefined : "muted",
+          getNodeId(actor),
+        );
       }),
       makeNode("response_streamer", "Streamer de Resposta", "sintetiza a resposta", respStatus, respActive, 560, 130, undefined, getNodeId(respActor)),
     ];
 
     const edges: Edge[] = [
       ...specialists.map((s) =>
-        makeEdge("supervisor_agent", s.name, edgeStateFromEvents(executionEvents, "supervisor_agent", s.name)),
+        makeEdge("supervisor_agent", s.name, edgeStateFromEvents(executionEvents, "supervisor_agent", s.name, terminal)),
       ),
       ...specialists.map((s) =>
-        makeEdge(s.name, "response_streamer", edgeStateFromEvents(executionEvents, s.name, "response_streamer")),
+        makeEdge(s.name, "response_streamer", edgeStateFromEvents(executionEvents, s.name, "response_streamer", terminal)),
       ),
     ];
 
     return { nodes, edges };
-  }, [activeActorName, actors, executionEvents]);
+  }, [activeActorName, actors, executionEvents, runStatus]);
 
   return <FlowWrapper nodes={nodes} edges={edges} testId="runtime-visual-centralized" height={360} />;
 }
@@ -360,12 +397,15 @@ export function WorkflowFlow({
   activeActorName,
   stages,
   executionEvents,
+  runStatus,
 }: {
   activeActorName: string;
   stages: unknown[];
   executionEvents: RunExecutionEvent[];
+  runStatus?: string | null;
 }) {
   const { nodes, edges } = useMemo(() => {
+    const terminal = isTerminalRunStatus(runStatus);
     const sequence = [
       { stage: "classify", actor: "router_agent", desc: "Classificar intenção" },
       { stage: "gather_evidence", actor: "workflow_evidence_agent", desc: "Coletar Evidências" },
@@ -377,7 +417,13 @@ export function WorkflowFlow({
     const nodes: Node<AgentNodeData>[] = sequence.map((step, i) => {
       const matching = stages.filter((s) => getStage(s) === step.stage).at(-1);
       const actorName = getActorName(matching) ?? step.actor;
-      const status = getStatus(matching);
+      const status = matching
+        ? getStatus(matching, terminal)
+        : terminal && step.stage === "multimodal_analysis"
+          ? "not_applicable"
+          : terminal
+            ? "not_invoked"
+            : "pending";
       const active = actorName === activeActorName;
       const tone: BadgeProps["variant"] | undefined = matching ? undefined : "muted";
       return makeNode(step.actor, actorName, step.desc, status, active, i * 200, 0, tone, getNodeId(matching));
@@ -385,11 +431,11 @@ export function WorkflowFlow({
 
     const edges: Edge[] = nodes.slice(0, -1).map((n, i) => {
       const next = nodes[i + 1];
-      return makeEdge(n.id, next.id, edgeStateFromEvents(executionEvents, n.data.actorName, next.data.actorName));
+      return makeEdge(n.id, next.id, edgeStateFromEvents(executionEvents, n.data.actorName, next.data.actorName, terminal));
     });
 
     return { nodes, edges };
-  }, [activeActorName, stages, executionEvents]);
+  }, [activeActorName, executionEvents, runStatus, stages]);
 
   return <FlowWrapper nodes={nodes} edges={edges} testId="runtime-visual-workflow" height={300} />;
 }
@@ -403,17 +449,20 @@ export function SwarmFlow({
   actors,
   executionEvents,
   handoffs,
+  runStatus,
 }: {
   activeActorName: string;
   actors: unknown[];
   executionEvents: RunExecutionEvent[];
   handoffs: unknown[];
+  runStatus?: string | null;
 }) {
   const { nodes, edges } = useMemo(() => {
     const findActor = (name: string) => actors.find((a) => getActorName(a) === name);
+    const terminal = isTerminalRunStatus(runStatus);
     const coordActor = actors.find((a) => getActorName(a)?.includes("coordinator"));
     const coordName = getActorName(coordActor) ?? "swarm_coordinator";
-    const coordStatus = getStatus(coordActor);
+    const coordStatus = getStatus(coordActor, terminal);
     const coordActive = coordName === activeActorName;
 
     const specialistDefs = [
@@ -423,29 +472,58 @@ export function SwarmFlow({
     ];
 
     const synthActor = findActor("swarm_synthesizer");
-    const synthStatus = getStatus(synthActor);
+    const synthStatus = getStatus(synthActor, terminal);
     const synthActive = "swarm_synthesizer" === activeActorName;
 
     const nodes: Node<AgentNodeData>[] = [
       makeNode(coordName, formatAgentName(coordName), "coordena as transferências", coordStatus, coordActive, 0, 130, "info", getNodeId(coordActor)),
       ...specialistDefs.map((s) => {
         const actor = findActor(s.name);
-        return makeNode(s.name, formatAgentName(s.name), s.desc, getStatus(actor), s.name === activeActorName, 260, s.y, undefined, getNodeId(actor));
+        const status = actor ? getStatus(actor, terminal) : terminal ? "not_invoked" : "pending";
+        return makeNode(
+          s.name,
+          formatAgentName(s.name),
+          s.desc,
+          status,
+          s.name === activeActorName,
+          260,
+          s.y,
+          actor ? undefined : "muted",
+          getNodeId(actor),
+        );
       }),
       makeNode("swarm_synthesizer", "Sintetizador", "síntese final", synthStatus, synthActive, 520, 130, undefined, getNodeId(synthActor)),
     ];
 
     const edges: Edge[] = [
       ...specialistDefs.map((s) =>
-        makeEdge(coordName, s.name, edgeStateFromEvents(executionEvents, coordName, s.name)),
+        makeEdge(coordName, s.name, edgeStateFromEvents(executionEvents, coordName, s.name, terminal)),
       ),
       ...specialistDefs.map((s) =>
-        makeEdge(s.name, "swarm_synthesizer", edgeStateFromEvents(executionEvents, s.name, "swarm_synthesizer")),
+        makeEdge(s.name, "swarm_synthesizer", edgeStateFromEvents(executionEvents, s.name, "swarm_synthesizer", terminal)),
       ),
     ];
 
     return { nodes, edges };
-  }, [activeActorName, actors, executionEvents, handoffs]);
+  }, [activeActorName, actors, executionEvents, handoffs, runStatus]);
 
   return <FlowWrapper nodes={nodes} edges={edges} testId="runtime-visual-swarm" height={360} />;
+}
+
+function isTerminalRunStatus(status: string | null | undefined): boolean {
+  return Boolean(
+    status && ["completed", "failed", "cancelled", "human_review_required"].includes(status),
+  );
+}
+
+function formatNodeStatusLabel(status: string): string {
+  if (status === "completed") return "concluido";
+  if (status === "running") return "em andamento";
+  if (status === "failed") return "falhou";
+  if (status === "pending") return "pendente";
+  if (status === "skipped") return "ignorado";
+  if (status === "not_invoked") return "nao acionado";
+  if (status === "not_applicable") return "nao aplicavel";
+  if (status === "human_review_required") return "revisao humana";
+  return status;
 }

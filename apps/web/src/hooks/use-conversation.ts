@@ -169,11 +169,12 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
     }
   }, [refreshConversations]);
 
-  /** Debounced refresh: skips if another refresh happened within 500ms. */
+  /** Debounced refresh: skips if another refresh happened within 500ms.
+   *  Set `force` to true to bypass debounce (for critical events like run completion). */
   const debouncedRefreshDetail = useCallback(
-    (id: string) => {
+    (id: string, force = false) => {
       const now = Date.now();
-      if (now - lastRefreshTsRef.current < 500) {
+      if (!force && now - lastRefreshTsRef.current < 500) {
         console.debug("[streaming] debounced refresh skipped, recent refresh at", lastRefreshTsRef.current);
         return;
       }
@@ -282,10 +283,26 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
 
         await sendMultipartMessage(targetConversationId, text.trim(), files, activeArchitectureMode, executionMode);
         await refreshConversationDetail(targetConversationId);
-        window.setTimeout(() => {
-          void refreshConversationDetail(targetConversationId);
-          void refreshConversations();
-        }, 1600);
+        
+        // For all_architectures mode, add more frequent refreshes to catch parallel runs
+        const isMultiArchitecture = activeArchitectureMode === "all_architectures";
+        if (isMultiArchitecture) {
+          // Refresh at 500ms, 1s, 2s, 3s to catch all parallel runs completing
+          for (const delay of [500, 1000, 2000, 3000]) {
+            window.setTimeout(() => {
+              void refreshConversationDetail(targetConversationId);
+            }, delay);
+          }
+          // Final refresh for conversations list
+          window.setTimeout(() => {
+            void refreshConversations();
+          }, 3500);
+        } else {
+          window.setTimeout(() => {
+            void refreshConversationDetail(targetConversationId);
+            void refreshConversations();
+          }, 1600);
+        }
       } catch (caught) {
         // Remove optimistic message on error
         setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
@@ -412,10 +429,11 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
             const streamingId = "streaming-" + payloadRunId;
             streamingTimestampsRef.current.delete(payloadRunId);
             setMessages((prev) => prev.filter((m) => m.id !== streamingId));
-            debouncedRefreshDetail(conversationId);
+            // Force refresh on completion to ensure all parallel runs are updated
+            debouncedRefreshDetail(conversationId, true);
           } else if (event.eventType === "response.final" || event.eventType === "processing.completed") {
             // Fallback: no runId in payload — still refresh (backward compat with mock mode)
-            debouncedRefreshDetail(conversationId);
+            debouncedRefreshDetail(conversationId, true);
           }
         },
         (status) => {
@@ -496,7 +514,8 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
 
 function isArchitectureMode(value: unknown): value is ArchitectureMode {
   return (
-    value === "centralized_orchestration"
+    value === "all_architectures"
+    || value === "centralized_orchestration"
     || value === "structured_workflow"
     || value === "decentralized_swarm"
   );

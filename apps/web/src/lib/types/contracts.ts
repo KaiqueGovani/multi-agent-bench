@@ -1,6 +1,7 @@
 export type ChannelType = "web_chat" | "whatsapp";
 
-export type ArchitectureMode =
+export type ArchitectureMode =  
+  | "all_architectures"
   | "centralized_orchestration"
   | "structured_workflow"
   | "decentralized_swarm";

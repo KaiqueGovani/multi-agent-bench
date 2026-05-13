@@ -22,6 +22,7 @@ import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CentralizedFlow, SwarmFlow, WorkflowFlow } from "@/components/runtime/architecture-flow";
+import { formatActorLabel, formatArchitectureLabel, formatPhaseLabel, formatStatusLabel } from "@/components/runtime/presentation";
 import { useRunExecution } from "@/hooks/use-run-execution";
 import type {
   ArchitectureMode,
@@ -148,7 +149,7 @@ export function RunExecutionPanel({
             <div className="flex flex-wrap items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
               <h2 className="text-sm font-semibold">{panelTitle}</h2>
-              <Badge variant="outline">{formatArchitecture(architectureMode)}</Badge>
+              <Badge variant="outline">{formatArchitectureLabel(architectureMode)}</Badge>
               <Badge variant={connectionStatus === "open" ? "success" : "warning"}>
                 {connectionStatus}
               </Badge>
@@ -217,7 +218,7 @@ export function RunExecutionPanel({
                       >
                         {runs.map((candidate) => (
                           <option key={candidate.id} value={candidate.id}>
-                            execução {shortId(candidate.id)} - {candidate.status}
+                            execução {shortId(candidate.id)} - {formatStatusLabel(candidate.status)}
                           </option>
                         ))}
                       </select>
@@ -232,9 +233,9 @@ export function RunExecutionPanel({
                   ) : null}
 
                   <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                    <SummaryMetric icon={Route} label="Status" value={run?.status ?? "n/a"} />
-                    <SummaryMetric icon={Bot} label="Agente atual" value={activeActorName} />
-                    <SummaryMetric icon={Clock3} label="Fase" value={currentPhase} />
+                    <SummaryMetric icon={Route} label="Status" value={formatStatusLabel(run?.status)} />
+                    <SummaryMetric icon={Bot} label="Agente atual" value={formatActorLabel(activeActorName)} />
+                    <SummaryMetric icon={Clock3} label="Fase" value={formatPhaseLabel(currentPhase)} />
                     <SummaryMetric icon={Timer} label="Latência" value={formatDuration(run?.totalDurationMs)} />
                   </div>
 
@@ -249,6 +250,7 @@ export function RunExecutionPanel({
                         actors={actors}
                         executionEvents={executionEvents}
                         handoffs={handoffs}
+                        runStatus={run?.status ?? projection?.runStatus ?? null}
                         stages={stages}
                       />
                     </CardContent>
@@ -306,7 +308,7 @@ export function RunExecutionPanel({
                         >
                           <EventBadge event={event} />
                           <span className="min-w-0 truncate font-medium">
-                            {event.actorName ?? "runtime"}
+                            {formatActorLabel(event.actorName ?? "runtime")}
                           </span>
                           <span className="ml-auto text-muted-foreground">
                             {event.eventFamily}.{event.eventName}
@@ -356,7 +358,7 @@ export function RunExecutionPanel({
                             {replayEvent.eventFamily}.{replayEvent.eventName}
                           </p>
                           <p className="mt-1 text-xs text-muted-foreground">
-                            {replayEvent.actorName ?? "runtime"} · {replayEvent.status}
+                            {formatActorLabel(replayEvent.actorName ?? "runtime")} · {formatStatusLabel(replayEvent.status)}
                           </p>
                           <p className="mt-3 text-xs text-muted-foreground">
                             seq {replayEvent.sequenceNo} · {replayEvent.nodeId ?? "no-node"}
@@ -392,11 +394,11 @@ export function RunExecutionPanel({
                                 {event.eventFamily}.{event.eventName}
                               </span>
                               <Badge variant={statusBadgeVariant(event.status)}>
-                                {event.status}
+                                {formatStatusLabel(event.status)}
                               </Badge>
                             </div>
                             <p className="mt-1 text-muted-foreground">
-                              {event.actorName ?? "runtime"} · seq {event.sequenceNo}
+                              {formatActorLabel(event.actorName ?? "runtime")} · seq {event.sequenceNo}
                             </p>
                             {event.toolName ? (
                               <p className="mt-1 text-muted-foreground">tool {event.toolName}</p>
@@ -415,7 +417,7 @@ export function RunExecutionPanel({
                     <div className="grid gap-2">
                       {(comparisonContext?.architectureDistribution ?? []).map((entry) => (
                         <div className="rounded-md border bg-background p-3" key={entry.key}>
-                          <p className="font-medium">{entry.key}</p>
+                          <p className="font-medium">{formatArchitectureLabel(entry.key)}</p>
                           <p className="mt-1 text-muted-foreground">
                             {entry.count} execuções · média {formatDuration(entry.averageRunDurationMs)}
                           </p>
@@ -445,6 +447,7 @@ function RuntimeVisual({
   actors,
   executionEvents,
   handoffs,
+  runStatus,
   stages,
 }: {
   activeActorName: string;
@@ -452,6 +455,7 @@ function RuntimeVisual({
   actors: unknown[];
   executionEvents: RunExecutionEvent[];
   handoffs: unknown[];
+  runStatus: string | null;
   stages: unknown[];
 }) {
   if (architectureMode === "structured_workflow") {
@@ -460,6 +464,7 @@ function RuntimeVisual({
         activeActorName={activeActorName}
         stages={stages}
         executionEvents={executionEvents}
+        runStatus={runStatus}
       />
     );
   }
@@ -471,6 +476,7 @@ function RuntimeVisual({
         actors={actors}
         executionEvents={executionEvents}
         handoffs={handoffs}
+        runStatus={runStatus}
       />
     );
   }
@@ -480,6 +486,7 @@ function RuntimeVisual({
       activeActorName={activeActorName}
       actors={actors}
       executionEvents={executionEvents}
+      runStatus={runStatus}
     />
   );
 }
@@ -566,16 +573,6 @@ function statusBadgeVariant(status: string): BadgeProps["variant"] {
     return "muted";
   }
   return "outline";
-}
-
-function formatArchitecture(mode: ArchitectureMode): string {
-  if (mode === "structured_workflow") {
-    return "Workflow Estruturado";
-  }
-  if (mode === "decentralized_swarm") {
-    return "Swarm Descentralizado";
-  }
-  return "Orquestração Centralizada";
 }
 
 function formatDuration(value: number | null | undefined): string {

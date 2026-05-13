@@ -568,6 +568,7 @@ function eventCardAccent(
 
 function formatArchitectureMode(mode: ArchitectureMode): string {
   const labels: Record<ArchitectureMode, string> = {
+    all_architectures: "Comparacao das arquiteturas",
     centralized_orchestration: "Orquestração centralizada",
     decentralized_swarm: "Swarm descentralizado",
     structured_workflow: "Workflow estruturado"

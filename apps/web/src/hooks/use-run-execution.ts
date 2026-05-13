@@ -74,6 +74,7 @@ export function useRunExecution(runId: string | null) {
             lastSequenceRef.current = event.sequenceNo;
             if (
               event.eventFamily === "response"
+              || event.eventFamily === "run"
               || event.eventFamily === "review"
               || event.sequenceNo % 2 === 0
             ) {

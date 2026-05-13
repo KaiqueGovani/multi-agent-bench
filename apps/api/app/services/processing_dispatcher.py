@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import logging
+from concurrent.futures import ThreadPoolExecutor
 import json
 import time
 from urllib.parse import urlencode
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from uuid import UUID
+
+logger = logging.getLogger(__name__)
 
 from sqlalchemy.orm import Session
 
@@ -64,6 +68,42 @@ class ProcessingDispatcher:
             run_id=run_id,
         )
 
+    def dispatch_many(
+        self,
+        *,
+        dispatches: list[dict[str, UUID]],
+    ) -> None:
+        if len(dispatches) <= 1:
+            for item in dispatches:
+                self.dispatch(
+                    conversation_id=item["conversation_id"],
+                    message_id=item["message_id"],
+                    correlation_id=item["correlation_id"],
+                    run_id=item["run_id"],
+                )
+            return
+
+        run_ids = [str(d["run_id"])[:8] for d in dispatches]
+        logger.info("[PARALLEL] Starting %d dispatches in parallel: %s", len(dispatches), run_ids)
+        start_time = time.perf_counter()
+
+        with ThreadPoolExecutor(max_workers=len(dispatches)) as executor:
+            futures = [
+                executor.submit(
+                    self.dispatch,
+                    conversation_id=item["conversation_id"],
+                    message_id=item["message_id"],
+                    correlation_id=item["correlation_id"],
+                    run_id=item["run_id"],
+                )
+                for item in dispatches
+            ]
+            for future in futures:
+                future.result()
+
+        elapsed_ms = int((time.perf_counter() - start_time) * 1000)
+        logger.info("[PARALLEL] All %d dispatches completed in %dms", len(dispatches), elapsed_ms)
+
     def _dispatch_mock(
         self,
         *,
@@ -74,19 +114,33 @@ class ProcessingDispatcher:
     ) -> None:
         started_at = time.perf_counter()
         with SessionLocal() as db:
-            RunService(db).mark_running(run_id)
+            run = RunService(db).mark_running(run_id)
+            run_model = db.get(RunModel, run_id)
+            architecture_mode = (
+                (run_model.experiment_json or {}).get("architectureKey")
+                if run_model is not None
+                else self._settings.default_architecture_mode
+            ) or self._settings.default_architecture_mode
+            comparison_only = bool(
+                (run_model.experiment_json or {}).get("comparisonOnly")
+                if run_model is not None
+                else False
+            )
 
-        MockProcessingRuntime().process_message(
+        review_required = MockProcessingRuntime().process_message(
             conversation_id=conversation_id,
             message_id=message_id,
             correlation_id=correlation_id,
+            architecture_mode=architecture_mode,
+            comparison_only=comparison_only,
         )
 
         duration_ms = int((time.perf_counter() - started_at) * 1000)
         with SessionLocal() as db:
             message = db.get(MessageModel, message_id)
-            human_review_required = (
-                message is not None
+            human_review_required = review_required or (
+                not comparison_only
+                and message is not None
                 and message.status == MessageStatus.HUMAN_REVIEW_REQUIRED.value
             )
             RunService(db).complete_run(
