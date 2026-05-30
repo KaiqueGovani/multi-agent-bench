@@ -10,9 +10,10 @@ import {
   BaseEdge,
   getBezierPath,
   type EdgeProps,
+  MarkerType,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import type { RunExecutionEvent } from "@/lib/types";
@@ -31,68 +32,236 @@ interface AgentNodeData {
   active: boolean;
   tone?: BadgeProps["variant"];
   nodeId?: string | null;
+  events?: RunExecutionEvent[];
   [key: string]: unknown;
 }
 
 // ---------------------------------------------------------------------------
-// Custom node
+// Agent event detail popover
+// ---------------------------------------------------------------------------
+
+function AgentEventTimeline({ events }: { events: RunExecutionEvent[] }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  if (events.length === 0) {
+    return (
+      <p className="px-2 py-1.5 text-[11px] text-muted-foreground">
+        Nenhum evento registrado.
+      </p>
+    );
+  }
+
+  return (
+    <div className="max-h-64 overflow-y-auto">
+      {events.map((event) => {
+        const isExpanded = expandedId === event.id;
+        const hasDetail = event.eventFamily === "tool" || event.eventFamily === "response";
+        const payload = event.payload as Record<string, unknown> | undefined;
+
+        return (
+          <div key={event.id} className="border-b border-border/50 last:border-0">
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-[11px] transition-colors hover:bg-muted/50"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (hasDetail) setExpandedId(isExpanded ? null : event.id);
+              }}
+            >
+              <EventDot family={event.eventFamily} status={event.status} />
+              <span className="min-w-0 flex-1 truncate font-medium">
+                {event.eventFamily}.{event.eventName}
+              </span>
+              {event.toolName ? (
+                <Badge variant="outline" className="text-[9px] px-1 py-0">
+                  {formatToolLabel(event.toolName)}
+                </Badge>
+              ) : null}
+              <span className="shrink-0 text-muted-foreground">
+                {event.durationMs ? `${event.durationMs}ms` : ""}
+              </span>
+              {hasDetail ? (
+                <span className={`text-muted-foreground transition-transform ${isExpanded ? "rotate-90" : ""}`}>
+                  ›
+                </span>
+              ) : null}
+            </button>
+            {isExpanded && hasDetail ? (
+              <div className="border-t border-dashed bg-muted/20 px-3 py-2 text-[11px]">
+                {event.eventFamily === "tool" ? (
+                  <ToolCallDetail payload={payload} eventName={event.eventName} />
+                ) : event.eventFamily === "response" ? (
+                  <ResponseDetail payload={payload} />
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function EventDot({ family, status }: { family: string; status: string }) {
+  const color =
+    status === "failed" ? "bg-red-500"
+    : status === "running" ? "bg-amber-500"
+    : family === "tool" ? "bg-blue-500"
+    : family === "handoff" ? "bg-purple-500"
+    : family === "response" ? "bg-emerald-500"
+    : family === "node" ? "bg-sky-400"
+    : "bg-muted-foreground/50";
+
+  return <span className={`h-2 w-2 shrink-0 rounded-full ${color}`} />;
+}
+
+function ToolCallDetail({ payload, eventName }: { payload: Record<string, unknown> | undefined; eventName: string }) {
+  if (!payload) return <p className="text-muted-foreground">Sem dados.</p>;
+
+  const input = payload.input as Record<string, unknown> | undefined;
+  const result = payload.result as Record<string, unknown> | undefined;
+
+  return (
+    <div className="space-y-1.5">
+      {eventName === "started" && input ? (
+        <div>
+          <p className="font-medium text-foreground">Entrada:</p>
+          <pre className="mt-0.5 max-h-20 overflow-auto rounded bg-background p-1.5 text-[10px] text-muted-foreground">
+            {JSON.stringify(input, null, 2)}
+          </pre>
+        </div>
+      ) : null}
+      {eventName === "completed" && result ? (
+        <div>
+          <p className="font-medium text-foreground">Resultado:</p>
+          <pre className="mt-0.5 max-h-20 overflow-auto rounded bg-background p-1.5 text-[10px] text-muted-foreground">
+            {JSON.stringify(result, null, 2)}
+          </pre>
+        </div>
+      ) : null}
+      {!input && !result ? (
+        <pre className="max-h-20 overflow-auto rounded bg-background p-1.5 text-[10px] text-muted-foreground">
+          {JSON.stringify(payload, null, 2)}
+        </pre>
+      ) : null}
+    </div>
+  );
+}
+
+function ResponseDetail({ payload }: { payload: Record<string, unknown> | undefined }) {
+  if (!payload) return <p className="text-muted-foreground">Sem dados.</p>;
+  const contentText = payload.contentText as string | undefined;
+  return (
+    <div className="space-y-1">
+      {contentText ? (
+        <p className="max-h-24 overflow-auto whitespace-pre-wrap text-foreground leading-relaxed">
+          {contentText.length > 300 ? contentText.slice(0, 300) + "..." : contentText}
+        </p>
+      ) : (
+        <pre className="max-h-20 overflow-auto rounded bg-background p-1.5 text-[10px] text-muted-foreground">
+          {JSON.stringify(payload, null, 2)}
+        </pre>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Custom node with hover popover
 // ---------------------------------------------------------------------------
 
 const AgentNode = memo(function AgentNode({ data }: NodeProps<Node<AgentNodeData>>) {
-  const { actorName, description, status, statusLabel, active, tone, nodeId } = data;
+  const { actorName, description, status, statusLabel, active, tone, nodeId, events } = data;
+  const [isHovered, setIsHovered] = useState(false);
+  const agentEvents = (events ?? []) as RunExecutionEvent[];
+  const eventCount = agentEvents.length;
+  const toolCount = agentEvents.filter((e) => e.eventFamily === "tool").length;
+  const responseCount = agentEvents.filter((e) => e.eventFamily === "response").length;
 
   return (
     <div
-      className={`rounded-2xl border px-4 py-3 shadow-sm transition-colors min-w-[140px] max-w-[180px] ${
-        active
-          ? "border-primary/60 bg-primary/10 ring-2 ring-primary/20"
-          : status === "completed"
-            ? "border-emerald-200 bg-emerald-50/80"
-            : status === "skipped" || status === "not_invoked" || status === "not_applicable" || tone === "muted"
-              ? "border-dashed border-border/70 bg-muted/20"
-              : "border-border bg-background"
-      }`}
+      className="relative"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      <Handle type="target" position={Position.Left} className="!bg-transparent !border-0 !w-0 !h-0" />
-      <Handle type="source" position={Position.Right} className="!bg-transparent !border-0 !w-0 !h-0" />
-      <div className="flex items-center gap-2">
-        <span
-          className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-            active
-              ? "bg-primary animate-pulse"
-              : status === "completed"
-                ? "bg-emerald-500"
-                : status === "running"
-                  ? "bg-amber-500"
-                  : status === "failed"
-                    ? "bg-destructive"
-                    : status === "skipped"
-                      ? "bg-slate-500"
-                      : status === "not_applicable"
-                        ? "bg-slate-400"
-                        : status === "not_invoked"
-                          ? "bg-slate-300"
-                      : "bg-muted-foreground/50"
-          }`}
-        />
-        <p className="text-sm font-semibold truncate">{actorName}</p>
+      <div
+        className={`rounded-2xl border px-4 py-3 shadow-sm transition-colors min-w-[140px] max-w-[180px] ${
+          active
+            ? "border-primary/60 bg-primary/10 ring-2 ring-primary/20"
+            : status === "completed"
+              ? "border-emerald-200 bg-emerald-50/80"
+              : status === "skipped" || status === "not_invoked" || status === "not_applicable" || tone === "muted"
+                ? "border-dashed border-border/70 bg-muted/20"
+                : "border-border bg-background"
+        }`}
+      >
+        <Handle type="target" position={Position.Left} className="!bg-transparent !border-0 !w-0 !h-0" />
+        <Handle type="source" position={Position.Right} className="!bg-transparent !border-0 !w-0 !h-0" />
+        <div className="flex items-center gap-2">
+          <span
+            className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+              active
+                ? "bg-primary animate-pulse"
+                : status === "completed"
+                  ? "bg-emerald-500"
+                  : status === "running"
+                    ? "bg-amber-500"
+                    : status === "failed"
+                      ? "bg-destructive"
+                      : status === "skipped"
+                        ? "bg-slate-500"
+                        : status === "not_applicable"
+                          ? "bg-slate-400"
+                          : status === "not_invoked"
+                            ? "bg-slate-300"
+                        : "bg-muted-foreground/50"
+            }`}
+          />
+          <p className="text-sm font-semibold truncate">{actorName}</p>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <Badge variant={tone ?? statusBadgeVariant(status)}>
+            {statusLabel ?? formatNodeStatusLabel(status)}
+          </Badge>
+          {eventCount > 0 ? (
+            <span className="text-[10px] text-muted-foreground">
+              {toolCount > 0 ? `${toolCount} tool` : ""}
+              {toolCount > 0 && responseCount > 0 ? " · " : ""}
+              {responseCount > 0 ? `${responseCount} resp` : ""}
+              {toolCount === 0 && responseCount === 0 ? `${eventCount} evt` : ""}
+            </span>
+          ) : null}
+        </div>
       </div>
-      <p className="mt-1 text-xs text-muted-foreground">{description}</p>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <Badge variant={tone ?? statusBadgeVariant(status)}>
-          {statusLabel ?? formatNodeStatusLabel(status)}
-        </Badge>
-        {nodeId ? (
-          <span className="truncate text-[11px] text-muted-foreground">{nodeId}</span>
-        ) : null}
-      </div>
+
+      {isHovered && eventCount > 0 ? (
+        <div
+          className="absolute left-1/2 top-full z-50 mt-2 w-72 -translate-x-1/2 rounded-lg border bg-card shadow-xl"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <div className="flex items-center justify-between border-b px-3 py-2">
+            <p className="text-xs font-semibold">{actorName}</p>
+            <span className="text-[10px] text-muted-foreground">{eventCount} eventos</span>
+          </div>
+          <AgentEventTimeline events={agentEvents} />
+        </div>
+      ) : null}
     </div>
   );
 });
 
 // ---------------------------------------------------------------------------
-// Custom animated edge
+// Custom animated edge — with handoff coloring
 // ---------------------------------------------------------------------------
+
+const EDGE_COLORS: Record<EdgeState, string> = {
+  active: "#2563eb",
+  recent: "#059669",
+  settled: "#6366f1",
+  idle: "#cbd5e1",
+};
 
 function AnimatedEdge(props: EdgeProps) {
   const { sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data } = props;
@@ -107,13 +276,8 @@ function AnimatedEdge(props: EdgeProps) {
     targetPosition,
   });
 
-  const color =
-    state === "active"
-      ? "#007f5f"
-      : state === "recent" || state === "settled"
-        ? "#1f9d61"
-        : "#c5d0de";
-  const strokeWidth = state === "active" ? 2.5 : state === "recent" || state === "settled" ? 1.8 : 1;
+  const color = EDGE_COLORS[state];
+  const strokeWidth = state === "active" ? 2.5 : state === "recent" ? 2 : state === "settled" ? 1.6 : 1;
   const animated = state === "active" || state === "recent";
 
   return (
@@ -123,15 +287,43 @@ function AnimatedEdge(props: EdgeProps) {
         style={{
           stroke: color,
           strokeWidth,
-          opacity: state === "idle" ? 0.35 : 0.85,
+          opacity: state === "idle" ? 0.3 : 0.9,
         }}
+        markerEnd={state !== "idle" ? `url(#marker-${state})` : undefined}
       />
       {animated && (
-        <circle r="3" fill={color}>
-          <animateMotion dur={state === "active" ? "1.5s" : "2.5s"} repeatCount="indefinite" path={edgePath} />
+        <circle r="3.5" fill={color}>
+          <animateMotion dur={state === "active" ? "1.2s" : "2s"} repeatCount="indefinite" path={edgePath} />
         </circle>
       )}
     </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// SVG marker definitions for edge arrows
+// ---------------------------------------------------------------------------
+
+function EdgeMarkerDefs() {
+  return (
+    <svg className="absolute h-0 w-0">
+      <defs>
+        {(["active", "recent", "settled"] as EdgeState[]).map((state) => (
+          <marker
+            key={state}
+            id={`marker-${state}`}
+            viewBox="0 0 10 10"
+            refX="8"
+            refY="5"
+            markerWidth="6"
+            markerHeight="6"
+            orient="auto-start-reverse"
+          >
+            <path d="M 0 0 L 10 5 L 0 10 z" fill={EDGE_COLORS[state]} />
+          </marker>
+        ))}
+      </defs>
+    </svg>
   );
 }
 
@@ -158,7 +350,8 @@ function FlowWrapper({
   height?: number;
 }) {
   return (
-    <div style={{ height }} data-testid={testId}>
+    <div style={{ height }} data-testid={testId} className="relative">
+      <EdgeMarkerDefs />
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -198,7 +391,25 @@ const AGENT_NAME_MAP: Record<string, string> = {
   swarm_coordinator: "Par Inicial",
   swarm_synthesizer: "Sintetizador",
   response_streamer: "Resposta",
+  workflow_evidence_agent: "Evidências",
+  workflow_multimodal_agent: "Multimodal",
+  workflow_review_agent: "Revisor",
+  workflow_synthesis_agent: "Síntese",
+  multi_modal: "Multimodal",
+  multi_modal_agent: "Multimodal",
+  multimodal_agent: "Multimodal",
 };
+
+const TOOL_LABEL_MAP: Record<string, string> = {
+  faq_lookup: "FAQ",
+  stock_lookup: "Estoque",
+  attachment_intake: "Anexo",
+  handoff_to_peer: "Handoff",
+};
+
+function formatToolLabel(name: string): string {
+  return TOOL_LABEL_MAP[name] ?? name;
+}
 
 function formatAgentName(name: string): string {
   return AGENT_NAME_MAP[name] ?? name;
@@ -247,6 +458,17 @@ function getHandoffPairKey(value: unknown): string | null {
   return typeof from === "string" && typeof to === "string" ? `${from}->${to}` : null;
 }
 
+function groupEventsByActor(events: RunExecutionEvent[]): Map<string, RunExecutionEvent[]> {
+  const map = new Map<string, RunExecutionEvent[]>();
+  for (const event of events) {
+    const actor = event.actorName ?? "runtime";
+    const list = map.get(actor) ?? [];
+    list.push(event);
+    map.set(actor, list);
+  }
+  return map;
+}
+
 function makeNode(
   id: string,
   actorName: string,
@@ -258,12 +480,13 @@ function makeNode(
   tone?: BadgeProps["variant"],
   nodeId?: string | null,
   statusLabel?: string,
+  events?: RunExecutionEvent[],
 ): Node<AgentNodeData> {
   return {
     id,
     type: "agent",
     position: { x, y },
-    data: { actorName, description, status, statusLabel, active, tone, nodeId },
+    data: { actorName, description, status, statusLabel, active, tone, nodeId, events: events ?? [] },
   };
 }
 
@@ -277,26 +500,18 @@ function makeEdge(source: string, target: string, state: EdgeState): Edge {
   };
 }
 
-/**
- * Derive edge state from runtime events for a specific source→target connection.
- * - "active": an event with status "running" exists where the actor matches source or target
- * - "recent": a recent event with status "completed" exists on this connection
- * - "idle": no relevant activity on this connection
- */
 function edgeStateFromEvents(
   events: RunExecutionEvent[],
   source: string,
   target: string,
   terminal = false,
 ): EdgeState {
-  // Check the last N events for activity on this connection
   const recent = events.slice(-10);
   for (let i = recent.length - 1; i >= 0; i--) {
     const e = recent[i];
     const actor = e.actorName;
     if (!actor) continue;
 
-    // Handoff events: payload.from→payload.to or payload.targetActor
     if (e.eventFamily === "handoff") {
       const p = e.payload as Record<string, unknown>;
       const from = p.from as string | undefined;
@@ -307,7 +522,6 @@ function edgeStateFromEvents(
       }
     }
 
-    // Node/tool events: actor matches the target node of the edge (source is sending to target)
     if (e.eventFamily === "node" || e.eventFamily === "tool") {
       if (actor === target) {
         if (e.status === "running") return "active";
@@ -316,7 +530,6 @@ function edgeStateFromEvents(
       }
     }
 
-    // Response events: actor is response_streamer → edges into response_streamer activate
     if (e.eventFamily === "response" && actor === target) {
       if (e.status === "running") return "active";
       if (e.status === "completed") return terminal ? "settled" : "recent";
@@ -344,6 +557,7 @@ export function CentralizedFlow({
   const { nodes, edges } = useMemo(() => {
     const findActor = (name: string) => actors.find((a) => getActorName(a) === name);
     const terminal = isTerminalRunStatus(runStatus);
+    const eventsByActor = groupEventsByActor(executionEvents);
 
     const sup = findActor("supervisor_agent");
     const supStatus = getStatus(sup, terminal);
@@ -360,12 +574,17 @@ export function CentralizedFlow({
     const respActive = "response_streamer" === activeActorName;
 
     const nodes: Node<AgentNodeData>[] = [
-      makeNode("supervisor_agent", "Agente Supervisor", "orquestra e roteia", supStatus, supActive, 0, 130, "info", getNodeId(sup)),
+      makeNode(
+        "supervisor_agent", "Agente Supervisor", "orquestra e roteia",
+        supStatus, supActive, 0, 130, "info", getNodeId(sup), undefined,
+        eventsByActor.get("supervisor_agent"),
+      ),
       ...specialists.map((s) => {
         const actor = findActor(s.name) ?? findActor(s.altName);
         const resolvedName = actor ? (getActorName(actor) ?? s.name) : s.name;
         const status = actor ? getStatus(actor, terminal) : terminal ? "not_invoked" : "pending";
         const isActive = s.name === activeActorName || s.altName === activeActorName;
+        const agentEvents = eventsByActor.get(s.name) ?? eventsByActor.get(s.altName) ?? [];
         return makeNode(
           s.name,
           formatAgentName(resolvedName),
@@ -376,9 +595,15 @@ export function CentralizedFlow({
           s.y,
           actor ? undefined : "muted",
           getNodeId(actor),
+          undefined,
+          agentEvents,
         );
       }),
-      makeNode("response_streamer", "Streamer de Resposta", "sintetiza a resposta", respStatus, respActive, 560, 130, undefined, getNodeId(respActor)),
+      makeNode(
+        "response_streamer", "Streamer de Resposta", "sintetiza a resposta",
+        respStatus, respActive, 560, 130, undefined, getNodeId(respActor), undefined,
+        eventsByActor.get("response_streamer"),
+      ),
     ];
 
     const edges: Edge[] = [
@@ -417,10 +642,12 @@ export function WorkflowFlow({
 }) {
   const { nodes, edges } = useMemo(() => {
     const terminal = isTerminalRunStatus(runStatus);
+    const eventsByActor = groupEventsByActor(executionEvents);
+
     const sequence = [
       { stage: "classify", actor: "router_agent", altActors: ["router_agent"], desc: "Classificar intenção" },
       { stage: "gather_evidence", actor: "workflow_evidence_agent", altActors: ["faq_agent", "stock_agent", "image_intake_agent"], desc: "Coletar Evidências" },
-      { stage: "multimodal_analysis", actor: "workflow_multimodal_agent", altActors: ["image_intake_agent"], desc: "Análise Multimodal" },
+      { stage: "multimodal_analysis", actor: "workflow_multimodal_agent", altActors: ["image_intake_agent", "multi_modal", "multimodal_agent"], desc: "Análise Multimodal" },
       { stage: "review_gate", actor: "workflow_review_agent", altActors: ["review_agent"], desc: "Portão de Revisão" },
       { stage: "synthesize", actor: "workflow_synthesis_agent", altActors: ["synthesis_agent"], desc: "Sintetizar saída" },
     ];
@@ -437,7 +664,8 @@ export function WorkflowFlow({
             : "pending";
       const active = actorName === activeActorName || step.altActors.includes(activeActorName);
       const tone: BadgeProps["variant"] | undefined = matching ? undefined : "muted";
-      return makeNode(step.actor, formatAgentName(actorName), step.desc, status, active, i * 200, 0, tone, getNodeId(matching));
+      const agentEvents = eventsByActor.get(step.actor) ?? step.altActors.flatMap((alt) => eventsByActor.get(alt) ?? []);
+      return makeNode(step.actor, formatAgentName(actorName), step.desc, status, active, i * 200, 0, tone, getNodeId(matching), undefined, agentEvents);
     });
 
     const edges: Edge[] = nodes.slice(0, -1).map((n, i) => {
@@ -452,7 +680,7 @@ export function WorkflowFlow({
 }
 
 // ---------------------------------------------------------------------------
-// SwarmFlow — peer-to-peer mesh topology (NOT hub-spoke)
+// SwarmFlow — peer-to-peer mesh topology
 // ---------------------------------------------------------------------------
 
 export function SwarmFlow({
@@ -471,6 +699,7 @@ export function SwarmFlow({
   const { nodes, edges } = useMemo(() => {
     const findActor = (name: string) => actors.find((a) => getActorName(a) === name);
     const terminal = isTerminalRunStatus(runStatus);
+    const eventsByActor = groupEventsByActor(executionEvents);
 
     const peerDefs = [
       { id: "swarm_coordinator", altName: "swarm_coordinator", desc: "par inicial", x: 80, y: 0 },
@@ -485,6 +714,7 @@ export function SwarmFlow({
       const resolvedName = actor ? (getActorName(actor) ?? peer.id) : peer.id;
       const status = actor ? getStatus(actor, terminal) : terminal ? "not_invoked" : "pending";
       const isActive = peer.id === activeActorName || peer.altName === activeActorName;
+      const agentEvents = eventsByActor.get(peer.id) ?? eventsByActor.get(peer.altName) ?? [];
       return makeNode(
         peer.id,
         formatAgentName(resolvedName),
@@ -495,6 +725,8 @@ export function SwarmFlow({
         peer.y,
         actor ? undefined : "muted",
         getNodeId(actor),
+        undefined,
+        agentEvents,
       );
     });
 
