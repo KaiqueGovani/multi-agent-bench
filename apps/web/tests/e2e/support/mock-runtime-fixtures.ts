@@ -76,7 +76,11 @@ const conversationDetails = {
     attachments: [],
     conversation: buildConversation(mockIds.centralizedConversation, "centralized_orchestration", "completed"),
     events: buildConversationEvents(mockIds.centralizedConversation, "centralized_orchestration"),
-    messages: buildMessages(mockIds.centralizedConversation, "Tem dipirona em estoque?", "Temos dipirona 500 mg disponível."),
+    messages: buildMessages(
+      mockIds.centralizedConversation,
+      "Tem dipirona em estoque?",
+      "Temos **dipirona 500 mg** disponível.\n\n- Estoque confirmado\n- Retirada no balcão\n\n[Ver detalhes](https://example.com/produto/dipirona)",
+    ),
     reviewTasks: [],
     runs: runs[mockIds.centralizedConversation],
   },
@@ -122,7 +126,18 @@ const runExecutions = {
       buildRunEvent(mockIds.centralizedRun, mockIds.centralizedConversation, 1, "node", "supervisor.started", "completed", "supervisor_agent"),
       buildRunEvent(mockIds.centralizedRun, mockIds.centralizedConversation, 2, "tool", "faq.lookup", "completed", "faq_agent", { toolName: "faq_lookup" }),
       buildRunEvent(mockIds.centralizedRun, mockIds.centralizedConversation, 3, "tool", "stock.lookup", "completed", "stock_agent", { toolName: "stock_lookup" }),
-      buildRunEvent(mockIds.centralizedRun, mockIds.centralizedConversation, 4, "response", "response.final", "completed", "response_streamer"),
+      buildRunEvent(
+        mockIds.centralizedRun,
+        mockIds.centralizedConversation,
+        4,
+        "response",
+        "final",
+        "completed",
+        "response_streamer",
+        {
+          contentText: "Temos **dipirona 500 mg** disponível.\n\n- Estoque confirmado\n- Retirada no balcão\n\n[Ver detalhes](https://example.com/produto/dipirona)",
+        },
+      ),
     ],
     projection: {
       activeActorName: "response_streamer",
@@ -215,7 +230,7 @@ const runExecutions = {
       buildRunEvent(mockIds.swarmRun, mockIds.swarmConversation, 1, "node", "coordinator.started", "completed", "coordinator_agent"),
       buildRunEvent(mockIds.swarmRun, mockIds.swarmConversation, 2, "handoff", "handoff.faq", "completed", "faq_agent"),
       buildRunEvent(mockIds.swarmRun, mockIds.swarmConversation, 3, "handoff", "handoff.stock", "completed", "stock_agent"),
-      buildRunEvent(mockIds.swarmRun, mockIds.swarmConversation, 4, "response", "response.final", "completed", "swarm_synthesizer"),
+      buildRunEvent(mockIds.swarmRun, mockIds.swarmConversation, 4, "response", "final", "completed", "swarm_synthesizer"),
     ],
     projection: {
       activeActorName: "swarm_synthesizer",
@@ -549,7 +564,7 @@ function buildRunEvent(
   eventName: string,
   status: string,
   actorName: string,
-  extra: { toolName?: string } = {},
+  extra: { contentText?: string; toolName?: string } = {},
 ) {
   return {
     actorName,
@@ -563,7 +578,7 @@ function buildRunEvent(
     id: `${runId}-event-${sequenceNo}`,
     messageId: `${conversationId}-inbound`,
     nodeId: `${actorName}-${sequenceNo}`,
-    payload: {},
+    payload: extra.contentText ? { contentText: extra.contentText } : {},
     runId,
     sequenceNo,
     source: "mock",

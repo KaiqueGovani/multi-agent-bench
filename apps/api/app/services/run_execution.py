@@ -31,6 +31,33 @@ from app.services.event_bus import run_execution_bus
 from app.services.events import EventService
 
 
+def _read_int(mapping: JsonObject, *keys: str) -> int | None:
+    for key in keys:
+        value = mapping.get(key)
+        if isinstance(value, bool):
+            continue
+        if isinstance(value, int):
+            return value
+        if isinstance(value, float) and value.is_integer():
+            return int(value)
+    return None
+
+
+def _token_usage_from_summary(summary: JsonObject) -> JsonObject | None:
+    input_tokens = _read_int(summary, "inputTokens", "input_tokens", "promptTokens", "prompt_tokens")
+    output_tokens = _read_int(summary, "outputTokens", "output_tokens", "completionTokens", "completion_tokens")
+    total_tokens = _read_int(summary, "totalTokens", "total_tokens")
+    if total_tokens is None and input_tokens is not None and output_tokens is not None:
+        total_tokens = input_tokens + output_tokens
+    if input_tokens is None and output_tokens is None and total_tokens is None:
+        return None
+    return {
+        "inputTokens": input_tokens,
+        "outputTokens": output_tokens,
+        "totalTokens": total_tokens,
+    }
+
+
 class RunExecutionService:
     def __init__(self, db: Session) -> None:
         self._db = db
@@ -61,6 +88,9 @@ class RunExecutionService:
         metrics = dict(projection.metrics_json or {})
         state = dict(projection.state_json or {})
         metrics["totalDurationMs"] = run.total_duration_ms
+        token_usage = _token_usage_from_summary(dict(run.summary_json or {}))
+        if token_usage is not None:
+            metrics["tokenUsage"] = token_usage
         state["humanReviewRequired"] = run.human_review_required
         state["finalOutcome"] = run.final_outcome
 

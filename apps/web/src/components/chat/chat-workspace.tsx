@@ -36,7 +36,8 @@ import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useConversation } from "@/hooks/use-conversation";
-import type { ArchitectureMode, ConversationSummary, ExecutionMode, ReviewTask, ReviewTaskStatus, RunExecutionEvent } from "@/lib/types";
+import { getRunExecution } from "@/lib/api/client";
+import type { ArchitectureMode, ConversationSummary, ExecutionMode, ReviewTask, ReviewTaskStatus, Run, RunExecutionEvent, RunExecutionResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { MessageComposer } from "./message-composer";
 import { MessageList } from "./message-list";
@@ -64,6 +65,8 @@ export function ChatWorkspace() {
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [isDraftConversation, setIsDraftConversation] = useState(false);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+  const [selectedFlowRunId, setSelectedFlowRunId] = useState<string | null>(null);
+  const [selectedFlowExecution, setSelectedFlowExecution] = useState<RunExecutionResponse | null>(null);
   const [architectureMode, setArchitectureMode] = useState<ArchitectureMode>(
     "all_architectures"
   );
@@ -100,12 +103,17 @@ export function ChatWorkspace() {
     : "lg:grid-cols-1";
   const requestedConversationId = searchParams.get("conversationId");
   const hasActiveConversation = Boolean(conversationId);
+  const flowRuns = buildLatestArchitectureRuns(runs);
+  const displayedFlowExecution =
+    selectedFlowExecution?.run.id === selectedFlowRunId ? selectedFlowExecution : runExecution;
 
   function handleStartDraftConversation() {
     setIsDraftConversation(true);
     router.replace("/", { scroll: false });
     setIsInspectorOpen(false);
     setSelectedRunId(null);
+    setSelectedFlowRunId(null);
+    setSelectedFlowExecution(null);
     void startConversation();
   }
 
@@ -120,6 +128,49 @@ export function ChatWorkspace() {
     }
     setSelectedRunId((current) => current ?? runs[runs.length - 1].id);
   }, [runs]);
+
+  useEffect(() => {
+    if (flowRuns.length === 0) {
+      setSelectedFlowRunId(null);
+      setSelectedFlowExecution(null);
+      return;
+    }
+    setSelectedFlowRunId((current) => {
+      if (current && flowRuns.some((run) => run.id === current)) {
+        return current;
+      }
+      return flowRuns[0].id;
+    });
+  }, [flowRuns]);
+
+  useEffect(() => {
+    if (!selectedFlowRunId) {
+      setSelectedFlowExecution(null);
+      return;
+    }
+    if (runExecution?.run.id === selectedFlowRunId) {
+      setSelectedFlowExecution(null);
+      return;
+    }
+
+    let cancelled = false;
+    void getRunExecution(selectedFlowRunId)
+      .then((execution) => {
+        if (!cancelled) {
+          setSelectedFlowExecution(execution);
+        }
+      })
+      .catch((caught) => {
+        if (!cancelled) {
+          console.debug("[flow] selected architecture fetch failed", caught);
+          setSelectedFlowExecution(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [runExecution?.run.id, selectedFlowRunId]);
 
   useEffect(() => {
     if (isDraftConversation || !requestedConversationId || requestedConversationId === conversationId) {
@@ -330,22 +381,29 @@ export function ChatWorkspace() {
             <>
               <div className="flex flex-1 flex-col overflow-hidden bg-background">
                 {isFlowOpen ? (
-                  runExecution?.projection ? (
+                  displayedFlowExecution?.projection ? (
                     <div
                       aria-label="Fluxo da arquitetura"
                       className="shrink-0 border-b bg-muted/30 p-2"
                       data-testid="chat-flow-panel"
                       style={{ minHeight: 260, maxHeight: 360, overflow: "auto" }}
                     >
+                      {flowRuns.length > 1 ? (
+                        <ArchitectureFlowPicker
+                          runs={flowRuns}
+                          selectedRunId={selectedFlowRunId}
+                          onSelectRun={setSelectedFlowRunId}
+                        />
+                      ) : null}
                       <ChatRuntimeVisual
                         architectureMode={
-                          isArchitectureMode(runExecution.projection.architectureMode)
-                            ? runExecution.projection.architectureMode
+                          isArchitectureMode(displayedFlowExecution.projection.architectureMode)
+                            ? displayedFlowExecution.projection.architectureMode
                             : architectureMode
                         }
-                        projection={runExecution.projection}
-                        runStatus={runExecution.projection.runStatus}
-                        executionEvents={runExecution.executionEvents ?? []}
+                        projection={displayedFlowExecution.projection}
+                        runStatus={displayedFlowExecution.projection.runStatus}
+                        executionEvents={displayedFlowExecution.executionEvents ?? []}
                       />
                     </div>
                   ) : (
@@ -824,6 +882,42 @@ function formatArchitectureMode(mode: ArchitectureMode): string {
   return formatArchitectureLabelText(mode);
 }
 
+function ArchitectureFlowPicker({
+  runs,
+  selectedRunId,
+  onSelectRun,
+}: {
+  runs: Run[];
+  selectedRunId: string | null;
+  onSelectRun: (runId: string) => void;
+}) {
+  return (
+    <div className="mb-2 flex flex-wrap items-center gap-2">
+      {runs.map((run) => {
+        const architecture = readArchitectureKey(run);
+        const selected = run.id === selectedRunId;
+        return (
+          <button
+            className={cn(
+              "inline-flex h-8 items-center gap-2 rounded-md border px-3 text-xs font-medium transition-colors",
+              selected
+                ? "border-primary bg-primary/10 text-foreground"
+                : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+            key={run.id}
+            onClick={() => onSelectRun(run.id)}
+            type="button"
+          >
+            <ArchitectureIcon mode={architecture} />
+            <span>{formatArchitectureLabel(architecture)}</span>
+            <span className="text-[11px] text-muted-foreground">run {shortId(run.id)}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function ChatRuntimeVisual({
   architectureMode,
   projection,
@@ -959,6 +1053,30 @@ function hasArchitectureComparison(
       .filter((value): value is string => Boolean(value)),
   );
   return keys.size > 1;
+}
+
+function buildLatestArchitectureRuns(runs: Run[]): Run[] {
+  const map = new Map<Exclude<ArchitectureMode, "all_architectures">, Run>();
+  for (const run of runs) {
+    const architecture = readArchitectureKey(run);
+    map.set(architecture, run);
+  }
+  const architectureOrder: Array<Exclude<ArchitectureMode, "all_architectures">> = [
+    "centralized_orchestration",
+    "structured_workflow",
+    "decentralized_swarm",
+  ];
+  return architectureOrder
+    .map((architecture) => map.get(architecture))
+    .filter((run): run is Run => Boolean(run));
+}
+
+function readArchitectureKey(run: Run): Exclude<ArchitectureMode, "all_architectures"> {
+  const value = run.experiment?.architectureKey;
+  if (value === "structured_workflow" || value === "decentralized_swarm") {
+    return value;
+  }
+  return "centralized_orchestration";
 }
 
 function formatConversationPreview(value: string | null | undefined): string {

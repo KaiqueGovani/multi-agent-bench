@@ -77,6 +77,20 @@ class CentralizedExecutor:
         route = _infer_route_from_tools(tool_calls)
         review_required = _detect_review_required_in_text(final_text)
 
+        specialist_actor = ctx.specialist_actor(route)
+        ctx.emit(
+            "node", "started", "running",
+            actor_name=specialist_actor,
+            node_id=f"specialist.{specialist_actor}",
+            payload={"phase": "specialist", "route": route},
+        )
+        ctx.emit(
+            "node", "completed", "completed",
+            actor_name=specialist_actor,
+            node_id=f"specialist.{specialist_actor}",
+            payload={"phase": "specialist", "route": route},
+        )
+
         ctx.emit_final(
             final_text,
             route=route,

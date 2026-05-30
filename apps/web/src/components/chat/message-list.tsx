@@ -1,4 +1,5 @@
 import { getAttachmentUrl } from "@/lib/api/client";
+import { MarkdownContent } from "@/components/common/markdown-content";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -96,12 +97,11 @@ export function MessageList({
                   : "bg-card text-card-foreground"
               }`}
             >
-              <p className="whitespace-pre-wrap">
-                {formatMessageContent(message.contentText)}
-                {isStreaming ? (
-                  <Loader2 className="animate-spin h-3 w-3 inline-block ml-2" aria-label="Streaming" />
-                ) : null}
-              </p>
+              <MarkdownContent
+                className="text-sm"
+                content={formatMessageContent(message.contentText)}
+                isStreaming={isStreaming}
+              />
 
               {attachmentsByMessage[message.id]?.length ? (
                 <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">

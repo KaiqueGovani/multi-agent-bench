@@ -50,6 +50,56 @@ def _coerce_tool_result(result: Any) -> dict:
     return {"value": str(result)[:1000]}
 
 
+def _read_int(value: Any) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    return None
+
+
+def _read_mapping_value(mapping: dict, keys: tuple[str, ...]) -> int | None:
+    for key in keys:
+        value = _read_int(mapping.get(key))
+        if value is not None:
+            return value
+    return None
+
+
+def _extract_strands_usage(result: Any) -> tuple[int | None, int | None, int | None]:
+    """Extract token usage from Strands AgentResult.metrics.accumulated_usage."""
+    metrics = getattr(result, "metrics", None)
+    usage = getattr(metrics, "accumulated_usage", None)
+    if not isinstance(usage, dict):
+        return None, None, None
+
+    input_tokens = _read_mapping_value(usage, ("inputTokens", "input_tokens", "promptTokens", "prompt_tokens"))
+    output_tokens = _read_mapping_value(usage, ("outputTokens", "output_tokens", "completionTokens", "completion_tokens"))
+    total_tokens = _read_mapping_value(usage, ("totalTokens", "total_tokens"))
+    if total_tokens is None and input_tokens is not None and output_tokens is not None:
+        total_tokens = input_tokens + output_tokens
+    return input_tokens, output_tokens, total_tokens
+
+
+class _TrackedAgent:
+    """Small proxy that records Strands usage after each Agent invocation."""
+
+    def __init__(self, agent: Any, ctx: "ExecutionContext", buffer: "_StreamBuffer") -> None:
+        self._agent = agent
+        self._ctx = ctx
+        self._stream_buffer = buffer
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        result = self._agent(*args, **kwargs)
+        self._ctx.record_token_usage(result)
+        return result
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._agent, name)
+
+
 # ---------------------------------------------------------------------------
 # _StreamBuffer — coalesces LLM streaming chunks into response.partial events
 # ---------------------------------------------------------------------------
@@ -150,6 +200,9 @@ class ExecutionContext:
         self.handoff_count: int = 0
         self.first_public_event_ms: int | None = None
         self.first_partial_response_ms: int | None = None
+        self.input_tokens: int | None = None
+        self.output_tokens: int | None = None
+        self.total_tokens: int | None = None
 
     # -- Event emission -------------------------------------------------------
 
@@ -319,8 +372,15 @@ class ExecutionContext:
     # -- Result builder -------------------------------------------------------
 
     def build_result(self, final_text: str, review_required: bool) -> ExecutionResult:
-        input_tokens = max(1, len((self.request.latest_message.content_text or "").split()) * 5)
-        output_tokens = max(1, len(final_text.split()) * 5)
+        input_tokens = self.input_tokens
+        output_tokens = self.output_tokens
+        total_tokens = self.total_tokens
+        if input_tokens is None and output_tokens is None and total_tokens is None:
+            input_tokens = max(1, len((self.request.latest_message.content_text or "").split()) * 5)
+            output_tokens = max(1, len(final_text.split()) * 5)
+            total_tokens = input_tokens + output_tokens
+        elif total_tokens is None and input_tokens is not None and output_tokens is not None:
+            total_tokens = input_tokens + output_tokens
         return ExecutionResult(
             final_text=final_text,
             final_outcome="human_review_required" if review_required else "answered",
@@ -334,7 +394,7 @@ class ExecutionContext:
             time_to_first_partial_response_ms=self.first_partial_response_ms,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
-            total_tokens=input_tokens + output_tokens,
+            total_tokens=total_tokens,
         )
 
     # -- Utility helpers ------------------------------------------------------
@@ -357,6 +417,19 @@ class ExecutionContext:
     def elapsed_ms(self) -> int:
         return int((time.perf_counter() - self.started_at) * 1000)
 
+    def record_token_usage(self, result: Any) -> None:
+        input_tokens, output_tokens, total_tokens = _extract_strands_usage(result)
+        if input_tokens is None and output_tokens is None and total_tokens is None:
+            return
+        if input_tokens is not None:
+            self.input_tokens = (self.input_tokens or 0) + input_tokens
+        if output_tokens is not None:
+            self.output_tokens = (self.output_tokens or 0) + output_tokens
+        if total_tokens is not None:
+            self.total_tokens = (self.total_tokens or 0) + total_tokens
+        elif input_tokens is not None and output_tokens is not None:
+            self.total_tokens = (self.total_tokens or 0) + input_tokens + output_tokens
+
     def invoke_live_agent(self, *, system_prompt: str, prompt: str) -> str | None:
         """Call Strands Agent with Bedrock when ENABLE_LIVE_LLM is on."""
         if not self.settings.enable_live_llm:
@@ -370,6 +443,7 @@ class ExecutionContext:
             )
             agent = Agent(model=model, system_prompt=system_prompt)
             result = agent(prompt)
+            self.record_token_usage(result)
             return str(result).strip()
         except Exception:
             self.tool_error_count += 1
@@ -477,6 +551,7 @@ class ExecutionContext:
                 callback_handler=callback_handler,
             )
             result = agent(user_message)
+            self.record_token_usage(result)
             return str(result).strip(), tool_calls
         except Exception as exc:  # pragma: no cover - network path
             self.tool_error_count += 1
@@ -539,7 +614,7 @@ class ExecutionContext:
             # flushing the buffer afterwards.  We attach the buffer to the agent so
             # callers can call buffer.flush_final() in their own finally block.
             agent._stream_buffer = buffer  # type: ignore[attr-defined]
-            return agent
+            return _TrackedAgent(agent, self, buffer)
         except Exception:  # pragma: no cover - network path
             self.tool_error_count += 1
             try:

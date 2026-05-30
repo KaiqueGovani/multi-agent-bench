@@ -28,6 +28,36 @@ test("keeps chat as the main surface and moves technical monitoring to dashboard
   await expect(page.getByText("Monitor técnico do runtime")).toBeVisible();
 });
 
+test("renders markdown in received chat messages", async ({ page }) => {
+  await installMockEventSource(page);
+  await mockFrontendApi(page);
+
+  await page.goto(`/?conversationId=${mockIds.centralizedConversation}`);
+
+  const outboundMessage = page.getByTestId(`message-${mockIds.centralizedConversation}-outbound`);
+  await expect(outboundMessage.locator("strong")).toHaveText("dipirona 500 mg");
+  await expect(outboundMessage.locator("li")).toHaveText(["Estoque confirmado", "Retirada no balcão"]);
+  await expect(outboundMessage.locator("a")).toHaveAttribute("href", "https://example.com/produto/dipirona");
+});
+
+test("renders overview responses as collapsed markdown", async ({ page }) => {
+  await installMockEventSource(page);
+  await mockFrontendApi(page);
+
+  await page.goto(`/?conversationId=${mockIds.centralizedConversation}`);
+  await page.getByRole("button", { name: "Visão Geral" }).click();
+
+  const responseDisclosure = page.getByTestId("overview-response");
+  await expect(responseDisclosure).not.toHaveAttribute("open", "");
+
+  await responseDisclosure.locator("summary").click();
+
+  await expect(responseDisclosure).toHaveAttribute("open", "");
+  await expect(responseDisclosure.locator("strong")).toHaveText("dipirona 500 mg");
+  await expect(responseDisclosure.locator("li")).toHaveText(["Estoque confirmado", "Retirada no balcão"]);
+  await expect(responseDisclosure.locator("a")).toHaveAttribute("href", "https://example.com/produto/dipirona");
+});
+
 test("starts a local draft and creates the backend conversation only on first send", async ({ page }) => {
   await installMockEventSource(page);
   await mockFrontendApi(page);

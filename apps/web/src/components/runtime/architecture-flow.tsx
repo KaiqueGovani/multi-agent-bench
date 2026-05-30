@@ -189,7 +189,12 @@ const AGENT_NAME_MAP: Record<string, string> = {
   faq_agent: "Agente FAQ",
   stock_agent: "Agente Estoque",
   image_intake_agent: "Agente Imagem",
+  faq_specialist: "Agente FAQ",
+  stock_specialist: "Agente Estoque",
+  image_specialist: "Agente Imagem",
   router_agent: "Agente Roteador",
+  review_agent: "Agente Revisor",
+  synthesis_agent: "Agente Sintese",
   swarm_coordinator: "Coordenador",
   swarm_synthesizer: "Sintetizador",
   response_streamer: "Streamer de Resposta",
@@ -345,9 +350,9 @@ export function CentralizedFlow({
     const supActive = "supervisor_agent" === activeActorName;
 
     const specialists = [
-      { name: "faq_agent", desc: "FAQ e contexto geral", y: 0 },
-      { name: "stock_agent", desc: "estoque e disponibilidade", y: 130 },
-      { name: "image_intake_agent", desc: "imagem ou documento", y: 260 },
+      { name: "faq_agent", altName: "faq_specialist", desc: "FAQ e contexto geral", y: 0 },
+      { name: "stock_agent", altName: "stock_specialist", desc: "estoque e disponibilidade", y: 130 },
+      { name: "image_intake_agent", altName: "image_specialist", desc: "imagem ou documento", y: 260 },
     ];
 
     const respActor = findActor("response_streamer");
@@ -357,14 +362,16 @@ export function CentralizedFlow({
     const nodes: Node<AgentNodeData>[] = [
       makeNode("supervisor_agent", "Agente Supervisor", "orquestra e roteia", supStatus, supActive, 0, 130, "info", getNodeId(sup)),
       ...specialists.map((s) => {
-        const actor = findActor(s.name);
+        const actor = findActor(s.name) ?? findActor(s.altName);
+        const resolvedName = actor ? (getActorName(actor) ?? s.name) : s.name;
         const status = actor ? getStatus(actor, terminal) : terminal ? "not_invoked" : "pending";
+        const isActive = s.name === activeActorName || s.altName === activeActorName;
         return makeNode(
           s.name,
-          formatAgentName(s.name),
+          formatAgentName(resolvedName),
           s.desc,
           status,
-          s.name === activeActorName,
+          isActive,
           280,
           s.y,
           actor ? undefined : "muted",
@@ -375,12 +382,16 @@ export function CentralizedFlow({
     ];
 
     const edges: Edge[] = [
-      ...specialists.map((s) =>
-        makeEdge("supervisor_agent", s.name, edgeStateFromEvents(executionEvents, "supervisor_agent", s.name, terminal)),
-      ),
-      ...specialists.map((s) =>
-        makeEdge(s.name, "response_streamer", edgeStateFromEvents(executionEvents, s.name, "response_streamer", terminal)),
-      ),
+      ...specialists.map((s) => {
+        const actor = findActor(s.name) ?? findActor(s.altName);
+        const resolvedName = actor ? (getActorName(actor) ?? s.name) : s.name;
+        return makeEdge("supervisor_agent", s.name, edgeStateFromEvents(executionEvents, "supervisor_agent", resolvedName, terminal));
+      }),
+      ...specialists.map((s) => {
+        const actor = findActor(s.name) ?? findActor(s.altName);
+        const resolvedName = actor ? (getActorName(actor) ?? s.name) : s.name;
+        return makeEdge(s.name, "response_streamer", edgeStateFromEvents(executionEvents, resolvedName, "response_streamer", terminal));
+      }),
     ];
 
     return { nodes, edges };
@@ -407,11 +418,11 @@ export function WorkflowFlow({
   const { nodes, edges } = useMemo(() => {
     const terminal = isTerminalRunStatus(runStatus);
     const sequence = [
-      { stage: "classify", actor: "router_agent", desc: "Classificar intenção" },
-      { stage: "gather_evidence", actor: "workflow_evidence_agent", desc: "Coletar Evidências" },
-      { stage: "multimodal_analysis", actor: "workflow_multimodal_agent", desc: "Análise Multimodal" },
-      { stage: "review_gate", actor: "workflow_review_agent", desc: "Portão de Revisão" },
-      { stage: "synthesize", actor: "workflow_synthesis_agent", desc: "Sintetizar saída" },
+      { stage: "classify", actor: "router_agent", altActors: ["router_agent"], desc: "Classificar intenção" },
+      { stage: "gather_evidence", actor: "workflow_evidence_agent", altActors: ["faq_agent", "stock_agent", "image_intake_agent"], desc: "Coletar Evidências" },
+      { stage: "multimodal_analysis", actor: "workflow_multimodal_agent", altActors: ["image_intake_agent"], desc: "Análise Multimodal" },
+      { stage: "review_gate", actor: "workflow_review_agent", altActors: ["review_agent"], desc: "Portão de Revisão" },
+      { stage: "synthesize", actor: "workflow_synthesis_agent", altActors: ["synthesis_agent"], desc: "Sintetizar saída" },
     ];
 
     const nodes: Node<AgentNodeData>[] = sequence.map((step, i) => {
@@ -424,9 +435,9 @@ export function WorkflowFlow({
           : terminal
             ? "not_invoked"
             : "pending";
-      const active = actorName === activeActorName;
+      const active = actorName === activeActorName || step.altActors.includes(activeActorName);
       const tone: BadgeProps["variant"] | undefined = matching ? undefined : "muted";
-      return makeNode(step.actor, actorName, step.desc, status, active, i * 200, 0, tone, getNodeId(matching));
+      return makeNode(step.actor, formatAgentName(actorName), step.desc, status, active, i * 200, 0, tone, getNodeId(matching));
     });
 
     const edges: Edge[] = nodes.slice(0, -1).map((n, i) => {
@@ -466,9 +477,9 @@ export function SwarmFlow({
     const coordActive = coordName === activeActorName;
 
     const specialistDefs = [
-      { name: "faq_agent", desc: "especialista", y: 0 },
-      { name: "stock_agent", desc: "especialista", y: 130 },
-      { name: "image_intake_agent", desc: "especialista", y: 260 },
+      { name: "faq_agent", altName: "faq_specialist", desc: "especialista", y: 0 },
+      { name: "stock_agent", altName: "stock_specialist", desc: "especialista", y: 130 },
+      { name: "image_intake_agent", altName: "image_specialist", desc: "especialista", y: 260 },
     ];
 
     const synthActor = findActor("swarm_synthesizer");
@@ -478,14 +489,16 @@ export function SwarmFlow({
     const nodes: Node<AgentNodeData>[] = [
       makeNode(coordName, formatAgentName(coordName), "coordena as transferências", coordStatus, coordActive, 0, 130, "info", getNodeId(coordActor)),
       ...specialistDefs.map((s) => {
-        const actor = findActor(s.name);
+        const actor = findActor(s.name) ?? findActor(s.altName);
+        const resolvedName = actor ? (getActorName(actor) ?? s.name) : s.name;
         const status = actor ? getStatus(actor, terminal) : terminal ? "not_invoked" : "pending";
+        const isActive = s.name === activeActorName || s.altName === activeActorName;
         return makeNode(
           s.name,
-          formatAgentName(s.name),
+          formatAgentName(resolvedName),
           s.desc,
           status,
-          s.name === activeActorName,
+          isActive,
           260,
           s.y,
           actor ? undefined : "muted",
@@ -496,12 +509,16 @@ export function SwarmFlow({
     ];
 
     const edges: Edge[] = [
-      ...specialistDefs.map((s) =>
-        makeEdge(coordName, s.name, edgeStateFromEvents(executionEvents, coordName, s.name, terminal)),
-      ),
-      ...specialistDefs.map((s) =>
-        makeEdge(s.name, "swarm_synthesizer", edgeStateFromEvents(executionEvents, s.name, "swarm_synthesizer", terminal)),
-      ),
+      ...specialistDefs.map((s) => {
+        const actor = findActor(s.name) ?? findActor(s.altName);
+        const resolvedName = actor ? (getActorName(actor) ?? s.name) : s.name;
+        return makeEdge(coordName, s.name, edgeStateFromEvents(executionEvents, coordName, resolvedName, terminal));
+      }),
+      ...specialistDefs.map((s) => {
+        const actor = findActor(s.name) ?? findActor(s.altName);
+        const resolvedName = actor ? (getActorName(actor) ?? s.name) : s.name;
+        return makeEdge(s.name, "swarm_synthesizer", edgeStateFromEvents(executionEvents, resolvedName, "swarm_synthesizer", terminal));
+      }),
     ];
 
     return { nodes, edges };

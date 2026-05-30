@@ -3,13 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
+  ChevronDown,
   Clock3,
   GitCompareArrows,
+  Hash,
   ShieldAlert,
   Timer,
   Wrench,
 } from "lucide-react";
 
+import { MarkdownContent } from "@/components/common/markdown-content";
 import { CentralizedFlow, SwarmFlow, WorkflowFlow } from "@/components/runtime/architecture-flow";
 import {
   formatActorLabel,
@@ -157,6 +160,7 @@ function ArchitectureRunColumn({
   const toolNames = listToolNames(executionEvents);
   const responsePreview = readResponsePreview(executionEvents);
   const metrics = projection?.metrics;
+  const tokenUsage = readTokenUsage(run, metrics);
 
   return (
     <div className="grid gap-4 rounded-2xl border bg-background p-4 shadow-sm">
@@ -187,6 +191,7 @@ function ArchitectureRunColumn({
         <Metric icon={ShieldAlert} label="Revisao humana" value={run?.humanReviewRequired ? "Necessaria" : "Nao"} />
         <Metric icon={Timer} label="Tempo de execucao" value={formatRunDuration(run, now)} />
         <Metric icon={Activity} label="Agente atual" value={formatActorLabel(activeActorName)} />
+        <Metric icon={Hash} label="Tokens usados" value={formatTokenCount(tokenUsage.totalTokens)} />
         <Metric icon={Wrench} label="Ferramentas usadas" value={toolNames.length ? String(toolNames.length) : "0"} />
       </dl>
 
@@ -200,6 +205,10 @@ function ArchitectureRunColumn({
         <MetadataRow
           label="Eventos"
           value={String(readMetricNumber(metrics, "eventCount", executionEvents.length))}
+        />
+        <MetadataRow
+          label="Tokens"
+          value={formatTokenBreakdown(tokenUsage)}
         />
       </div>
 
@@ -225,9 +234,7 @@ function ArchitectureRunColumn({
       <div className="grid gap-3 rounded-xl border bg-card/30 p-3">
         <SectionTitle title="Resposta" />
         {responsePreview ? (
-          <p className="line-clamp-6 text-sm leading-6 text-foreground">
-            {responsePreview}
-          </p>
+          <CollapsibleMarkdownResponse content={responsePreview} />
         ) : (
           <p className="rounded-lg border border-dashed px-3 py-4 text-sm text-muted-foreground">
             A resposta final desta arquitetura ainda nao foi recebida.
@@ -235,6 +242,23 @@ function ArchitectureRunColumn({
         )}
       </div>
     </div>
+  );
+}
+
+function CollapsibleMarkdownResponse({ content }: { content: string }) {
+  return (
+    <details
+      className="group rounded-lg border bg-background/80 text-sm shadow-sm"
+      data-testid="overview-response"
+    >
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 font-medium text-foreground transition-colors hover:bg-muted/50 [&::-webkit-details-marker]:hidden">
+        <span>Mostrar resposta completa</span>
+        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="border-t px-3 py-3">
+        <MarkdownContent className="text-sm leading-6 text-foreground" content={content} />
+      </div>
+    </details>
   );
 }
 
@@ -380,6 +404,72 @@ function readMetricNumber(
   return typeof value === "number" ? value : fallback;
 }
 
+interface TokenUsage {
+  inputTokens: number | null;
+  outputTokens: number | null;
+  totalTokens: number | null;
+}
+
+function readTokenUsage(run: Run | null, metrics: JsonObject | undefined): TokenUsage {
+  const summaryUsage = readTokenUsageFromObject(run?.summary);
+  if (summaryUsage.totalTokens !== null || summaryUsage.inputTokens !== null || summaryUsage.outputTokens !== null) {
+    return summaryUsage;
+  }
+
+  const metricUsage = readTokenUsageFromObject(metrics?.tokenUsage);
+  if (metricUsage.totalTokens !== null || metricUsage.inputTokens !== null || metricUsage.outputTokens !== null) {
+    return metricUsage;
+  }
+
+  return {
+    inputTokens: null,
+    outputTokens: null,
+    totalTokens: null,
+  };
+}
+
+function readTokenUsageFromObject(value: unknown): TokenUsage {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {
+      inputTokens: null,
+      outputTokens: null,
+      totalTokens: null,
+    };
+  }
+
+  const object = value as Record<string, unknown>;
+  const inputTokens = readNumberFromObject(object, [
+    "inputTokens",
+    "input_tokens",
+    "promptTokens",
+    "prompt_tokens",
+  ]);
+  const outputTokens = readNumberFromObject(object, [
+    "outputTokens",
+    "output_tokens",
+    "completionTokens",
+    "completion_tokens",
+  ]);
+  const totalTokens = readNumberFromObject(object, ["totalTokens", "total_tokens"])
+    ?? (inputTokens !== null && outputTokens !== null ? inputTokens + outputTokens : null);
+
+  return {
+    inputTokens,
+    outputTokens,
+    totalTokens,
+  };
+}
+
+function readNumberFromObject(object: Record<string, unknown>, keys: string[]): number | null {
+  for (const key of keys) {
+    const value = object[key];
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+  }
+  return null;
+}
+
 function readString(object: JsonObject | undefined, key: string): string | null {
   const value = object?.[key];
   return typeof value === "string" ? value : null;
@@ -424,6 +514,27 @@ function formatDuration(value: number | null | undefined): string {
     return `${value} ms`;
   }
   return `${(value / 1000).toFixed(1)} s`;
+}
+
+function formatTokenCount(value: number | null): string {
+  if (value === null) {
+    return "n/a";
+  }
+  return new Intl.NumberFormat("pt-BR").format(value);
+}
+
+function formatTokenBreakdown(usage: TokenUsage): string {
+  const parts: string[] = [];
+  if (usage.inputTokens !== null) {
+    parts.push(`entrada ${formatTokenCount(usage.inputTokens)}`);
+  }
+  if (usage.outputTokens !== null) {
+    parts.push(`saida ${formatTokenCount(usage.outputTokens)}`);
+  }
+  if (usage.totalTokens !== null) {
+    parts.push(`total ${formatTokenCount(usage.totalTokens)}`);
+  }
+  return parts.length ? parts.join(" · ") : "Nao informado";
 }
 
 function shortId(value: string): string {
