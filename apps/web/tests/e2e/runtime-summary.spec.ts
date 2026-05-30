@@ -21,20 +21,18 @@ const architectureCases = [
 ] as const;
 
 for (const scenario of architectureCases) {
-  test(`renders user runtime summary for ${scenario.title}`, async ({ page }) => {
+  test(`renders architecture flow for ${scenario.title} in Visão Geral tab`, async ({ page }) => {
     await installMockEventSource(page);
     await mockFrontendApi(page);
 
     await page.goto(`/?conversationId=${scenario.conversationId}`);
 
-    await expect(page.getByTestId("runtime-panel-user")).toBeVisible();
-    await expect(page.getByTestId("runtime-summary-toggle")).toContainText("Ver acompanhamento");
-    await expect(page.getByText("Monitor técnico do runtime")).toHaveCount(0);
-    await expect(page.getByText("Ver detalhes técnicos")).toHaveCount(0);
+    // Switch to Visão Geral tab
+    await page.locator("nav").getByRole("button", { name: "Visão Geral" }).click();
 
-    await page.getByTestId("runtime-summary-toggle").click();
-
-    await expect(page.getByText("Resumo da run")).toBeVisible();
-    await expect(page.getByTestId(scenario.testId)).toBeVisible();
+    // Default architecture mode is all_architectures — comparison overview renders
+    // which shows flow visualizations for each architecture column
+    await expect(page.getByRole("heading", { name: "Comparação das arquiteturas" })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId(scenario.testId)).toBeVisible({ timeout: 10000 });
   });
 }

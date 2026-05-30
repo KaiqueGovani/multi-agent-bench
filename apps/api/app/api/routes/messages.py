@@ -111,13 +111,6 @@ def _classify_scenario(text: str | None, file_types: list[str] | None) -> str:
 
     lower = text.lower()
 
-    stock_keywords = [
-        "estoque", "disponível", "disponibilidade", "tem ", "têm ",
-        "produto", "remédio", "medicamento", "preço", "quanto custa",
-    ]
-    if any(kw in lower for kw in stock_keywords):
-        return "stock_inquiry"
-
     clinical_keywords = [
         "dosagem", "dose", "tomar", "efeito colateral", "interação",
         "gestante", "grávida", "amamentar", "pressão", "diabetes",
@@ -126,9 +119,16 @@ def _classify_scenario(text: str | None, file_types: list[str] | None) -> str:
     if any(kw in lower for kw in clinical_keywords):
         return "clinical_guidance"
 
+    stock_keywords = [
+        "estoque", "disponível", "disponibilidade", "tem ", "têm ",
+        "produto", "remédio", "medicamento", "preço", "quanto custa",
+    ]
+    if any(kw in lower for kw in stock_keywords):
+        return "stock_inquiry"
+
     faq_keywords = [
         "horário", "entrega", "devolução", "pagamento", "troca",
-        "funciona", "aberto", "fecha", "delivery", "frete",
+        "funciona", "aberto", "aberta", "fecha", "delivery", "frete",
     ]
     if any(kw in lower for kw in faq_keywords):
         return "faq_inquiry"

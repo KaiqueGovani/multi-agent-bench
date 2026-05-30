@@ -33,7 +33,8 @@ test.describe("visual validation after UX improvements", () => {
     const select = page.getByTestId("architecture-select");
     await expect(select).toBeVisible();
     const options = select.locator("option");
-    await expect(options.nth(0)).toContainText("Orquestração");
+    await expect(options.nth(0)).toContainText("Todas as arquiteturas");
+    await expect(options.nth(1)).toContainText("Orquestração");
 
     await page.screenshot({ path: "test-results/visual-02-composer-position.png" });
   });
@@ -115,14 +116,10 @@ test.describe("visual validation after UX improvements", () => {
     await expect(page.getByRole("button", { name: "Técnico" })).toHaveCount(0);
   });
 
-  test("Atividade tab hides the events sidebar icon", async ({ page }) => {
+  test("events sidebar toggle is removed from chat header", async ({ page }) => {
     await page.goto("/");
 
-    // On Conversa tab, events toggle may be hidden on desktop (lg:hidden) but present in DOM;
-    // however on Atividade tab it should not be rendered at all
-    await page.locator("nav").getByRole("button", { name: "Atividade" }).click();
-
-    // events-toggle button should NOT exist in the DOM when on Atividade tab
+    // Events sidebar toggle was removed (events are shown only in Atividade tab)
     await expect(page.getByTestId("events-toggle")).toHaveCount(0);
   });
 });

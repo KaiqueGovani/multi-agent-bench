@@ -18,7 +18,10 @@ test("keeps chat as the main surface and moves technical monitoring to dashboard
   await expect(page.getByTestId("message-list")).toContainText("O estoque foi confirmado pelo fluxo swarm.");
   await expect(page.getByText("Arquitetura travada para esta conversa")).toBeVisible();
   await expect(page.getByTestId("architecture-select")).toBeDisabled();
-  await expect(page.getByTestId("runtime-visual-swarm")).toHaveCount(0);
+
+  // In Conversa tab, no runtime panel is shown inline (it's in Visão Geral)
+  await expect(page.getByTestId("runtime-panel-user")).toHaveCount(0);
+  await expect(page.getByTestId("runtime-panel-technical")).toHaveCount(0);
 
   await page.getByTestId("dashboard-link").click();
 
