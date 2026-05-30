@@ -473,8 +473,10 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
       setRunExecution(null);
       return;
     }
-    const latestRun = runs[runs.length - 1];
-    fetchRunExecution(latestRun.id);
+    const preferredRun = pickConversationFlowRun(runs);
+    if (preferredRun) {
+      fetchRunExecution(preferredRun.id);
+    }
   }, [runs, fetchRunExecution]);
 
   const attachmentsByMessage = useMemo(() => {
@@ -510,6 +512,13 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
     startConversation,
     updateReviewTask
   };
+}
+
+function pickConversationFlowRun(runs: Run[]): Run | null {
+  const canonicalRun = [...runs]
+    .reverse()
+    .find((run) => run.experiment?.comparisonOnly !== true);
+  return canonicalRun ?? runs.at(-1) ?? null;
 }
 
 function isArchitectureMode(value: unknown): value is ArchitectureMode {

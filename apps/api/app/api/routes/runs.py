@@ -150,8 +150,10 @@ def complete_run(
             detail="Run not found",
         )
 
-    RunExecutionService(db).sync_run_completion(run_id)
+    execution_service = RunExecutionService(db)
+    execution_service.sync_run_completion(run_id)
     db.commit()
+    execution_service.publish_latest_event(run_id)
 
     if not bool((existing_run.experiment.model_extra or {}).get("comparisonOnly")):
         event_type, event_status = _event_for_run_status(updated_run.status)

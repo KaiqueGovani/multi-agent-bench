@@ -1,5 +1,7 @@
 from uuid import uuid4
 
+import pytest
+
 from app.schemas.runtime import (
     OperationalMetadata,
     RunExperimentMetadata,
@@ -7,7 +9,7 @@ from app.schemas.runtime import (
     RuntimeDispatchRequest,
     RuntimeMessageSnapshot,
 )
-from app.services.execution import RuntimeExecutionService
+from app.services.execution import RuntimeExecutionService, RuntimeExecutor
 
 
 def build_request(architecture_mode: str = "centralized_orchestration") -> RuntimeDispatchRequest:
@@ -54,3 +56,21 @@ def test_runtime_execution_service_returns_deterministic_result(monkeypatch) -> 
     result = RuntimeExecutionService().execute_run(build_request())
     assert result.final_outcome == "answered"
     assert any(item[0] == "response" and item[1] == "final" for item in emitted)
+
+
+def test_runtime_execution_service_reports_failure_callback(monkeypatch) -> None:
+    emitted: list[tuple[str, str]] = []
+
+    def fake_execute(self):  # noqa: ANN001
+        raise RuntimeError("boom")
+
+    def fake_complete(self, **kwargs):  # noqa: ANN003, ANN001
+        emitted.append((kwargs["status"], kwargs["final_outcome"]))
+
+    monkeypatch.setattr(RuntimeExecutor, "execute", fake_execute)
+    monkeypatch.setattr("app.services.callbacks.ChatApiCallbacks.complete_run", fake_complete)
+
+    with pytest.raises(RuntimeError, match="boom"):
+        RuntimeExecutionService().execute_run(build_request())
+
+    assert emitted == [("failed", "runtime_failed")]

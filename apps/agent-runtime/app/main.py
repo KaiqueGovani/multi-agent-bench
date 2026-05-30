@@ -1,4 +1,4 @@
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 import logging
 from fastapi import FastAPI, HTTPException, status
 
@@ -12,6 +12,13 @@ logger = logging.getLogger(__name__)
 # Thread pool for parallel run execution within a single worker.
 # For true parallelism with LLM calls, use multiple uvicorn workers: `uvicorn --workers 4`
 _executor = ThreadPoolExecutor(max_workers=6, thread_name_prefix="runtime-run-")
+
+
+def _log_failed_future(future: Future[object]) -> None:
+    try:
+        future.result()
+    except Exception:
+        logger.exception("Runtime worker failed after request acceptance")
 
 
 def create_app() -> FastAPI:
@@ -44,7 +51,8 @@ def create_app() -> FastAPI:
                 detail="AWS_BEARER_TOKEN_BEDROCK is required when ENABLE_LIVE_LLM=true",
             )
         # Submit to thread pool for parallel execution
-        _executor.submit(RuntimeExecutionService(settings).execute_run, request)
+        future = _executor.submit(RuntimeExecutionService(settings).execute_run, request)
+        future.add_done_callback(_log_failed_future)
         return RuntimeDispatchResponse(run_id=request.run_id)
 
     return application

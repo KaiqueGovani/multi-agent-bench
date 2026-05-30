@@ -81,6 +81,22 @@ class RunExecutionService:
         projection.updated_at = datetime.now(UTC)
         self._db.flush()
 
+    def publish_latest_event(self, run_id: UUID) -> None:
+        statement = (
+            select(RunExecutionEventModel)
+            .where(RunExecutionEventModel.run_id == run_id)
+            .order_by(
+                RunExecutionEventModel.sequence_no.desc(),
+                RunExecutionEventModel.created_at.desc(),
+                RunExecutionEventModel.id.desc(),
+            )
+            .limit(1)
+        )
+        model = self._db.scalars(statement).first()
+        if model is None:
+            return
+        run_execution_bus.publish(run_execution_event_to_schema(model))
+
     def get_by_external_event_id(
         self,
         *,

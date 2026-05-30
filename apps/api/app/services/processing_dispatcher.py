@@ -131,6 +131,7 @@ class ProcessingDispatcher:
             conversation_id=conversation_id,
             message_id=message_id,
             correlation_id=correlation_id,
+            run_id=run_id,
             architecture_mode=architecture_mode,
             comparison_only=comparison_only,
         )

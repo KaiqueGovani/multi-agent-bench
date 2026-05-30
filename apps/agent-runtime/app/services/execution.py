@@ -78,32 +78,52 @@ class RuntimeExecutionService:
         run_id_short = str(request.run_id)[:8]
         architecture = request.architecture_mode
         logger.info("[RUN:%s] Starting execution for %s", run_id_short, architecture)
-        
+
         executor = RuntimeExecutor(request)
-        result = executor.execute()
-        
-        elapsed_ms = executor.elapsed_ms()
-        logger.info("[RUN:%s] Completed %s in %dms", run_id_short, architecture, elapsed_ms)
-        
-        executor.callbacks.complete_run(
-            run_id=str(request.run_id),
-            status="human_review_required" if result.human_review_required else "completed",
-            trace_id=result.trace_id,
-            total_duration_ms=elapsed_ms,
-            human_review_required=result.human_review_required,
-            final_outcome=result.final_outcome,
-            summary=RunSummary(
-                time_to_first_public_event_ms=result.time_to_first_public_event_ms,
-                time_to_first_partial_response_ms=result.time_to_first_partial_response_ms,
-                input_tokens=result.input_tokens,
-                output_tokens=result.output_tokens,
-                total_tokens=result.total_tokens,
-                tool_call_count=result.tool_call_count,
-                tool_error_count=result.tool_error_count,
-                loop_count=result.loop_count,
-                handoff_count=result.handoff_count,
-                stop_reason="completed",
+        try:
+            result = executor.execute()
+
+            elapsed_ms = executor.elapsed_ms()
+            logger.info("[RUN:%s] Completed %s in %dms", run_id_short, architecture, elapsed_ms)
+
+            executor.callbacks.complete_run(
+                run_id=str(request.run_id),
+                status="human_review_required" if result.human_review_required else "completed",
+                trace_id=result.trace_id,
+                total_duration_ms=elapsed_ms,
+                human_review_required=result.human_review_required,
                 final_outcome=result.final_outcome,
-            ),
-        )
-        return result
+                summary=RunSummary(
+                    time_to_first_public_event_ms=result.time_to_first_public_event_ms,
+                    time_to_first_partial_response_ms=result.time_to_first_partial_response_ms,
+                    input_tokens=result.input_tokens,
+                    output_tokens=result.output_tokens,
+                    total_tokens=result.total_tokens,
+                    tool_call_count=result.tool_call_count,
+                    tool_error_count=result.tool_error_count,
+                    loop_count=result.loop_count,
+                    handoff_count=result.handoff_count,
+                    stop_reason="completed",
+                    final_outcome=result.final_outcome,
+                ),
+            )
+            return result
+        except Exception as exc:
+            elapsed_ms = executor.elapsed_ms()
+            logger.exception("[RUN:%s] Failed %s after %dms", run_id_short, architecture, elapsed_ms)
+            try:
+                executor.callbacks.complete_run(
+                    run_id=str(request.run_id),
+                    status="failed",
+                    trace_id=executor.trace_id,
+                    total_duration_ms=elapsed_ms,
+                    human_review_required=False,
+                    final_outcome="runtime_failed",
+                    summary=RunSummary(
+                        stop_reason=str(exc),
+                        final_outcome="runtime_failed",
+                    ),
+                )
+            except Exception:
+                logger.exception("[RUN:%s] Failed to send failure callback", run_id_short)
+            raise
