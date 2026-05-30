@@ -12,6 +12,7 @@ import {
   Wrench,
 } from "lucide-react";
 
+import { ArchitectureRadarChart } from "@/components/common/charts";
 import { MarkdownContent } from "@/components/common/markdown-content";
 import { CentralizedFlow, SwarmFlow, WorkflowFlow } from "@/components/runtime/architecture-flow";
 import {
@@ -78,7 +79,7 @@ export function ArchitectureComparisonOverview({ runs }: ArchitectureComparisonO
     return (
       <Card className="shadow-none">
         <CardContent className="p-6 text-sm text-muted-foreground">
-          Nenhuma execucao comparavel disponivel ainda.
+          Nenhuma execução comparável disponível ainda.
         </CardContent>
       </Card>
     );
@@ -89,10 +90,10 @@ export function ArchitectureComparisonOverview({ runs }: ArchitectureComparisonO
       <CardHeader className="border-b bg-card/60 p-4 pb-3">
         <div className="flex flex-wrap items-center gap-2">
           <GitCompareArrows className="h-4 w-4 text-primary" />
-          <CardTitle>Comparacao das arquiteturas</CardTitle>
+          <CardTitle>Comparação das arquiteturas</CardTitle>
         </div>
         <p className="text-sm text-muted-foreground">
-          Acompanhe execucao, uso de ferramentas e resposta final lado a lado.
+          Acompanhe execução, uso de ferramentas e resposta final lado a lado.
         </p>
       </CardHeader>
       <CardContent className="p-4">
@@ -114,8 +115,57 @@ export function ArchitectureComparisonOverview({ runs }: ArchitectureComparisonO
             />
           ))}
         </div>
+
+        <ComparisonRadarSection comparisons={availableComparisons} />
       </CardContent>
     </Card>
+  );
+}
+
+function ComparisonRadarSection({
+  comparisons,
+}: {
+  comparisons: { architectureMode: string; execution: ReturnType<typeof useRunExecution>; run: Run | null }[];
+}) {
+  const radarData = useMemo(() => {
+    const getRunMetrics = (item: typeof comparisons[0]) => {
+      const proj = item.execution.projection;
+      const run = item.run;
+      const metrics = proj?.metrics as Record<string, unknown> | undefined;
+      return {
+        duration: typeof run?.totalDurationMs === "number" ? run.totalDurationMs : 0,
+        events: typeof metrics?.eventCount === "number" ? metrics.eventCount : item.execution.executionEvents.length,
+        tools: typeof metrics?.toolCallCount === "number" ? metrics.toolCallCount : 0,
+        handoffs: typeof metrics?.handoffCount === "number" ? metrics.handoffCount : 0,
+      };
+    };
+
+    const cent = comparisons.find((c) => c.architectureMode === "centralized_orchestration");
+    const work = comparisons.find((c) => c.architectureMode === "structured_workflow");
+    const swarm = comparisons.find((c) => c.architectureMode === "decentralized_swarm");
+
+    const centM = cent ? getRunMetrics(cent) : { duration: 0, events: 0, tools: 0, handoffs: 0 };
+    const workM = work ? getRunMetrics(work) : { duration: 0, events: 0, tools: 0, handoffs: 0 };
+    const swarmM = swarm ? getRunMetrics(swarm) : { duration: 0, events: 0, tools: 0, handoffs: 0 };
+
+    return [
+      { metric: "Duração (s)", centralized: +(centM.duration / 1000).toFixed(1), workflow: +(workM.duration / 1000).toFixed(1), swarm: +(swarmM.duration / 1000).toFixed(1) },
+      { metric: "Eventos", centralized: centM.events, workflow: workM.events, swarm: swarmM.events },
+      { metric: "Ferramentas", centralized: centM.tools, workflow: workM.tools, swarm: swarmM.tools },
+      { metric: "Handoffs", centralized: centM.handoffs, workflow: workM.handoffs, swarm: swarmM.handoffs },
+    ];
+  }, [comparisons]);
+
+  const hasData = radarData.some((d) => d.centralized > 0 || d.workflow > 0 || d.swarm > 0);
+  if (!hasData) return null;
+
+  return (
+    <div className="mt-4 rounded-xl border bg-card/30 p-4">
+      <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+        Radar comparativo
+      </p>
+      <ArchitectureRadarChart data={radarData} />
+    </div>
   );
 }
 
@@ -170,7 +220,7 @@ function ArchitectureRunColumn({
             {formatArchitectureLabel(architectureMode)}
           </p>
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span>{run ? `run ${shortId(run.id)}` : "Sem run disponivel"}</span>
+            <span>{run ? `run ${shortId(run.id)}` : "Sem run disponível"}</span>
             <span className="text-border">•</span>
             <span>{scenarioLabel}</span>
           </div>
@@ -188,8 +238,8 @@ function ArchitectureRunColumn({
       <dl className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
         <Metric icon={Activity} label="Status" value={formatStatusLabel(run?.status)} />
         <Metric icon={Clock3} label="Fase atual" value={formatPhaseLabel(currentPhase)} />
-        <Metric icon={ShieldAlert} label="Revisao humana" value={run?.humanReviewRequired ? "Necessaria" : "Nao"} />
-        <Metric icon={Timer} label="Tempo de execucao" value={formatRunDuration(run, now)} />
+        <Metric icon={ShieldAlert} label="Revisão humana" value={run?.humanReviewRequired ? "Necessária" : "Não"} />
+        <Metric icon={Timer} label="Tempo de execução" value={formatRunDuration(run, now)} />
         <Metric icon={Activity} label="Agente atual" value={formatActorLabel(activeActorName)} />
         <Metric icon={Hash} label="Tokens usados" value={formatTokenCount(tokenUsage.totalTokens)} />
         <Metric icon={Wrench} label="Ferramentas usadas" value={toolNames.length ? String(toolNames.length) : "0"} />
@@ -197,7 +247,7 @@ function ArchitectureRunColumn({
 
       <div className="grid gap-3 rounded-xl border bg-card/30 p-3">
         <SectionTitle title="Contexto" />
-        <MetadataRow label="Cenario" value={scenarioLabel} />
+        <MetadataRow label="Cenário" value={scenarioLabel} />
         <MetadataRow
           label="Ferramentas usadas"
           value={toolNames.length ? toolNames.join(", ") : "Nenhuma"}
@@ -226,7 +276,7 @@ function ArchitectureRunColumn({
           />
         ) : (
           <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-            Sem telemetria rica disponivel para esta execucao.
+            Sem telemetria rica disponível para esta execução.
           </div>
         )}
       </div>
@@ -237,7 +287,7 @@ function ArchitectureRunColumn({
           <CollapsibleMarkdownResponse content={responsePreview} />
         ) : (
           <p className="rounded-lg border border-dashed px-3 py-4 text-sm text-muted-foreground">
-            A resposta final desta arquitetura ainda nao foi recebida.
+            A resposta final desta arquitetura ainda não foi recebida.
           </p>
         )}
       </div>
@@ -493,12 +543,23 @@ function statusVariant(status: string | null | undefined) {
 
 function formatScenarioLabel(value: string | null): string {
   if (!value) {
-    return "Nao informado";
+    return "Comparação geral";
   }
   return humanizeToken(value);
 }
 
+const TOOL_NAME_MAP: Record<string, string> = {
+  handoff_to_peer: "Handoff entre pares",
+  faq_lookup: "Consulta FAQ",
+  stock_lookup: "Consulta de estoque",
+  attachment_intake: "Análise de anexo",
+};
+
 function humanizeToken(value: string): string {
+  const lower = value.toLowerCase().replaceAll("-", "_");
+  if (TOOL_NAME_MAP[lower]) {
+    return TOOL_NAME_MAP[lower];
+  }
   return value
     .replaceAll("-", " ")
     .replaceAll("_", " ")
@@ -534,7 +595,7 @@ function formatTokenBreakdown(usage: TokenUsage): string {
   if (usage.totalTokens !== null) {
     parts.push(`total ${formatTokenCount(usage.totalTokens)}`);
   }
-  return parts.length ? parts.join(" · ") : "Nao informado";
+  return parts.length ? parts.join(" · ") : "Não informado";
 }
 
 function shortId(value: string): string {

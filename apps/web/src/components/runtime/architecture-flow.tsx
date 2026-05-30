@@ -185,19 +185,19 @@ function FlowWrapper({
 // ---------------------------------------------------------------------------
 
 const AGENT_NAME_MAP: Record<string, string> = {
-  supervisor_agent: "Agente Supervisor",
-  faq_agent: "Agente FAQ",
-  stock_agent: "Agente Estoque",
-  image_intake_agent: "Agente Imagem",
-  faq_specialist: "Agente FAQ",
-  stock_specialist: "Agente Estoque",
-  image_specialist: "Agente Imagem",
-  router_agent: "Agente Roteador",
-  review_agent: "Agente Revisor",
-  synthesis_agent: "Agente Sintese",
-  swarm_coordinator: "Coordenador",
+  supervisor_agent: "Supervisor",
+  faq_agent: "FAQ",
+  stock_agent: "Estoque",
+  image_intake_agent: "Imagem",
+  faq_specialist: "FAQ",
+  stock_specialist: "Estoque",
+  image_specialist: "Imagem",
+  router_agent: "Roteador",
+  review_agent: "Revisor",
+  synthesis_agent: "Síntese",
+  swarm_coordinator: "Par Inicial",
   swarm_synthesizer: "Sintetizador",
-  response_streamer: "Streamer de Resposta",
+  response_streamer: "Resposta",
 };
 
 function formatAgentName(name: string): string {
@@ -452,7 +452,7 @@ export function WorkflowFlow({
 }
 
 // ---------------------------------------------------------------------------
-// SwarmFlow
+// SwarmFlow — peer-to-peer mesh topology (NOT hub-spoke)
 // ---------------------------------------------------------------------------
 
 export function SwarmFlow({
@@ -471,60 +471,78 @@ export function SwarmFlow({
   const { nodes, edges } = useMemo(() => {
     const findActor = (name: string) => actors.find((a) => getActorName(a) === name);
     const terminal = isTerminalRunStatus(runStatus);
-    const coordActor = actors.find((a) => getActorName(a)?.includes("coordinator"));
-    const coordName = getActorName(coordActor) ?? "swarm_coordinator";
-    const coordStatus = getStatus(coordActor, terminal);
-    const coordActive = coordName === activeActorName;
 
-    const specialistDefs = [
-      { name: "faq_agent", altName: "faq_specialist", desc: "especialista", y: 0 },
-      { name: "stock_agent", altName: "stock_specialist", desc: "especialista", y: 130 },
-      { name: "image_intake_agent", altName: "image_specialist", desc: "especialista", y: 260 },
+    const peerDefs = [
+      { id: "swarm_coordinator", altName: "swarm_coordinator", desc: "par inicial", x: 80, y: 0 },
+      { id: "faq_specialist", altName: "faq_agent", desc: "FAQ", x: 320, y: 0 },
+      { id: "stock_specialist", altName: "stock_agent", desc: "estoque", x: 0, y: 180 },
+      { id: "image_specialist", altName: "image_intake_agent", desc: "imagem", x: 400, y: 180 },
+      { id: "swarm_synthesizer", altName: "swarm_synthesizer", desc: "síntese", x: 200, y: 300 },
     ];
 
-    const synthActor = findActor("swarm_synthesizer");
-    const synthStatus = getStatus(synthActor, terminal);
-    const synthActive = "swarm_synthesizer" === activeActorName;
+    const nodes: Node<AgentNodeData>[] = peerDefs.map((peer) => {
+      const actor = findActor(peer.id) ?? findActor(peer.altName);
+      const resolvedName = actor ? (getActorName(actor) ?? peer.id) : peer.id;
+      const status = actor ? getStatus(actor, terminal) : terminal ? "not_invoked" : "pending";
+      const isActive = peer.id === activeActorName || peer.altName === activeActorName;
+      return makeNode(
+        peer.id,
+        formatAgentName(resolvedName),
+        peer.desc,
+        status,
+        isActive,
+        peer.x,
+        peer.y,
+        actor ? undefined : "muted",
+        getNodeId(actor),
+      );
+    });
 
-    const nodes: Node<AgentNodeData>[] = [
-      makeNode(coordName, formatAgentName(coordName), "coordena as transferências", coordStatus, coordActive, 0, 130, "info", getNodeId(coordActor)),
-      ...specialistDefs.map((s) => {
-        const actor = findActor(s.name) ?? findActor(s.altName);
-        const resolvedName = actor ? (getActorName(actor) ?? s.name) : s.name;
-        const status = actor ? getStatus(actor, terminal) : terminal ? "not_invoked" : "pending";
-        const isActive = s.name === activeActorName || s.altName === activeActorName;
-        return makeNode(
-          s.name,
-          formatAgentName(resolvedName),
-          s.desc,
-          status,
-          isActive,
-          260,
-          s.y,
-          actor ? undefined : "muted",
-          getNodeId(actor),
-        );
-      }),
-      makeNode("swarm_synthesizer", "Sintetizador", "síntese final", synthStatus, synthActive, 520, 130, undefined, getNodeId(synthActor)),
-    ];
+    const meshEdges: Edge[] = [];
 
-    const edges: Edge[] = [
-      ...specialistDefs.map((s) => {
-        const actor = findActor(s.name) ?? findActor(s.altName);
-        const resolvedName = actor ? (getActorName(actor) ?? s.name) : s.name;
-        return makeEdge(coordName, s.name, edgeStateFromEvents(executionEvents, coordName, resolvedName, terminal));
-      }),
-      ...specialistDefs.map((s) => {
-        const actor = findActor(s.name) ?? findActor(s.altName);
-        const resolvedName = actor ? (getActorName(actor) ?? s.name) : s.name;
-        return makeEdge(s.name, "swarm_synthesizer", edgeStateFromEvents(executionEvents, resolvedName, "swarm_synthesizer", terminal));
-      }),
-    ];
+    const observedHandoffs = new Set<string>();
+    for (const h of handoffs) {
+      const key = getHandoffPairKey(h);
+      if (key) observedHandoffs.add(key);
+    }
+    for (const e of executionEvents) {
+      if (e.eventFamily === "handoff") {
+        const p = e.payload as Record<string, unknown>;
+        const from = (p.from ?? e.actorName) as string | undefined;
+        const to = (p.to ?? p.targetActor) as string | undefined;
+        if (from && to) observedHandoffs.add(`${from}->${to}`);
+      }
+    }
 
-    return { nodes, edges };
+    const peerIds = new Set(peerDefs.map((p) => p.id));
+    const altToId = new Map(peerDefs.map((p) => [p.altName, p.id]));
+    const resolveId = (name: string) => peerIds.has(name) ? name : (altToId.get(name) ?? name);
+
+    if (observedHandoffs.size > 0) {
+      for (const pair of observedHandoffs) {
+        const [rawFrom, rawTo] = pair.split("->");
+        const from = resolveId(rawFrom);
+        const to = resolveId(rawTo);
+        if (from && to && peerIds.has(from) && peerIds.has(to) && from !== to) {
+          const state = edgeStateFromEvents(executionEvents, rawFrom, rawTo, terminal);
+          meshEdges.push(makeEdge(from, to, state === "idle" ? "settled" : state));
+        }
+      }
+    } else {
+      meshEdges.push(makeEdge("swarm_coordinator", "faq_specialist", "idle"));
+      meshEdges.push(makeEdge("swarm_coordinator", "stock_specialist", "idle"));
+      meshEdges.push(makeEdge("swarm_coordinator", "image_specialist", "idle"));
+      meshEdges.push(makeEdge("faq_specialist", "swarm_synthesizer", "idle"));
+      meshEdges.push(makeEdge("stock_specialist", "swarm_synthesizer", "idle"));
+      meshEdges.push(makeEdge("image_specialist", "swarm_synthesizer", "idle"));
+      meshEdges.push(makeEdge("faq_specialist", "stock_specialist", "idle"));
+      meshEdges.push(makeEdge("stock_specialist", "image_specialist", "idle"));
+    }
+
+    return { nodes, edges: meshEdges };
   }, [activeActorName, actors, executionEvents, handoffs, runStatus]);
 
-  return <FlowWrapper nodes={nodes} edges={edges} testId="runtime-visual-swarm" height={360} />;
+  return <FlowWrapper nodes={nodes} edges={edges} testId="runtime-visual-swarm" height={400} />;
 }
 
 function isTerminalRunStatus(status: string | null | undefined): boolean {
@@ -534,13 +552,13 @@ function isTerminalRunStatus(status: string | null | undefined): boolean {
 }
 
 function formatNodeStatusLabel(status: string): string {
-  if (status === "completed") return "concluido";
+  if (status === "completed") return "concluído";
   if (status === "running") return "em andamento";
   if (status === "failed") return "falhou";
   if (status === "pending") return "pendente";
   if (status === "skipped") return "ignorado";
-  if (status === "not_invoked") return "nao acionado";
-  if (status === "not_applicable") return "nao aplicavel";
-  if (status === "human_review_required") return "revisao humana";
+  if (status === "not_invoked") return "não acionado";
+  if (status === "not_applicable") return "não aplicável";
+  if (status === "human_review_required") return "revisão humana";
   return status;
 }

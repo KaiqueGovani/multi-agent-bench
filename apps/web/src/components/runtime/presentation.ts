@@ -1,8 +1,8 @@
 import type { ArchitectureMode } from "@/lib/types";
 
 const ARCHITECTURE_LABELS: Record<ArchitectureMode, string> = {
-  all_architectures: "Comparacao das arquiteturas",
-  centralized_orchestration: "Orquestracao Centralizada",
+  all_architectures: "Comparação das arquiteturas",
+  centralized_orchestration: "Orquestração Centralizada",
   structured_workflow: "Workflow Estruturado",
   decentralized_swarm: "Swarm Descentralizado",
 };
@@ -10,11 +10,11 @@ const ARCHITECTURE_LABELS: Record<ArchitectureMode, string> = {
 const STATUS_LABELS: Record<string, string> = {
   pending: "Pendente",
   running: "Em andamento",
-  completed: "Concluida",
+  completed: "Concluída",
   failed: "Falhou",
   cancelled: "Cancelada",
   waiting: "Aguardando",
-  human_review_required: "Revisao humana",
+  human_review_required: "Revisão humana",
 };
 
 const ACTOR_LABELS: Record<string, string> = {
@@ -22,32 +22,35 @@ const ACTOR_LABELS: Record<string, string> = {
   faq_agent: "Agente FAQ",
   stock_agent: "Agente de Estoque",
   image_intake_agent: "Agente de Anexos",
+  faq_specialist: "Agente FAQ",
+  stock_specialist: "Agente de Estoque",
+  image_specialist: "Agente de Anexos",
   router_agent: "Agente Roteador",
-  swarm_coordinator: "Coordenador do Swarm",
-  swarm_synthesizer: "Sintetizador do Swarm",
+  swarm_coordinator: "Par Inicial (Swarm)",
+  swarm_synthesizer: "Sintetizador (Swarm)",
   response_streamer: "Streamer de Resposta",
-  review_agent: "Agente de Revisao",
-  synthesis_agent: "Agente de Sintese",
-  workflow_evidence_agent: "Agente de Evidencias",
+  review_agent: "Agente de Revisão",
+  synthesis_agent: "Agente de Síntese",
+  workflow_evidence_agent: "Agente de Evidências",
   workflow_multimodal_agent: "Agente Multimodal",
-  workflow_review_agent: "Agente de Revisao",
-  workflow_synthesis_agent: "Agente de Sintese",
+  workflow_review_agent: "Agente de Revisão",
+  workflow_synthesis_agent: "Agente de Síntese",
   ai_runtime: "Runtime de IA",
   runtime: "Runtime",
 };
 
 const PHASE_LABELS: Record<string, string> = {
   dispatch: "Despacho",
-  classify: "Classificacao",
-  gather_evidence: "Coleta de evidencias",
-  multimodal_analysis: "Analise multimodal",
-  review_gate: "Portao de revisao",
-  synthesize: "Sintese",
+  classify: "Classificação",
+  gather_evidence: "Coleta de evidências",
+  multimodal_analysis: "Análise multimodal",
+  review_gate: "Portão de revisão",
+  synthesize: "Síntese",
   specialist: "Especialista",
   workflow: "Workflow",
   swarm: "Swarm",
   handoff_loop: "Ciclo de handoff",
-  completed: "Concluida",
+  completed: "Concluída",
 };
 
 export function formatArchitectureLabel(mode: ArchitectureMode | string): string {

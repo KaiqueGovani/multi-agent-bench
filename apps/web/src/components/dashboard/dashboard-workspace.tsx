@@ -22,6 +22,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { DistributionBarChart, DistributionPieChart, ArchitectureBarComparison } from "@/components/common/charts";
 import { RunExecutionPanel } from "@/components/runtime/run-execution-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -239,6 +240,24 @@ export function DashboardWorkspace() {
                           onSelect={() => selectConversation(conversation.conversationId)}
                         />
                       ))
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-none">
+                  <CardHeader className="p-4 pb-2">
+                    <CardTitle>Visão geral das execuções</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid gap-6 p-4 pt-0 lg:grid-cols-2">
+                    <DistributionBarChart data={metrics.byArchitecture} title="Execuções por arquitetura" />
+                    <DistributionPieChart data={metrics.byTool ?? []} title="Uso de ferramentas" />
+                    {metrics.byArchitecture.length > 1 && (
+                      <div className="lg:col-span-2">
+                        <ArchitectureBarComparison
+                          data={buildArchitectureComparisonData(metrics.byArchitecture)}
+                          title="Comparação de latência entre arquiteturas"
+                        />
+                      </div>
                     )}
                   </CardContent>
                 </Card>
@@ -581,4 +600,28 @@ function formatDate(value: string): string {
 
 function shortId(id: string): string {
   return id.slice(0, 8);
+}
+
+function buildArchitectureComparisonData(
+  byArchitecture: DashboardDistributionItem[],
+): { name: string; centralizada: number; workflow: number; swarm: number }[] {
+  const find = (key: string) => byArchitecture.find((item) => item.key === key);
+  const cent = find("centralized_orchestration");
+  const work = find("structured_workflow");
+  const swarm = find("decentralized_swarm");
+
+  return [
+    {
+      name: "Latência (ms)",
+      centralizada: Math.round(cent?.averageRunDurationMs ?? 0),
+      workflow: Math.round(work?.averageRunDurationMs ?? 0),
+      swarm: Math.round(swarm?.averageRunDurationMs ?? 0),
+    },
+    {
+      name: "Execuções",
+      centralizada: cent?.count ?? 0,
+      workflow: work?.count ?? 0,
+      swarm: swarm?.count ?? 0,
+    },
+  ];
 }
