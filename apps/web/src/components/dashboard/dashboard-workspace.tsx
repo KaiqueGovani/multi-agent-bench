@@ -372,7 +372,7 @@ function DistributionCard({
           values.map((item) => (
             <div className="grid gap-1.5" key={item.key}>
               <div className="flex items-center justify-between gap-2">
-                <span className="min-w-0 truncate font-medium">{item.key}</span>
+                <span className="min-w-0 truncate font-medium">{formatDistributionKey(item.key)}</span>
                 <span className="text-muted-foreground">
                   {item.count}
                   {item.averageRunDurationMs ? ` · ${formatDuration(item.averageRunDurationMs)}` : ""}
@@ -600,6 +600,39 @@ function formatDate(value: string): string {
 
 function shortId(id: string): string {
   return id.slice(0, 8);
+}
+
+const DISTRIBUTION_KEY_LABELS: Record<string, string> = {
+  centralized_orchestration: "Orquestração Centralizada",
+  structured_workflow: "Workflow Estruturado",
+  decentralized_swarm: "Swarm Descentralizado",
+  all_architectures: "Todas as arquiteturas",
+  unknown: "Não classificado",
+  stock_lookup: "Consulta de estoque",
+  faq_lookup: "Consulta FAQ",
+  handoff_to_peer: "Handoff entre pares",
+  attachment_intake: "Análise de anexo",
+  multi_modal: "Multimodal",
+  stock_inquiry: "Consulta de estoque",
+  clinical_guidance: "Orientação clínica",
+  faq_inquiry: "Dúvida frequente (FAQ)",
+  general_inquiry: "Consulta geral",
+  attachment_analysis: "Análise de anexo",
+  "image/jpeg": "JPEG",
+  "image/png": "PNG",
+  "image/webp": "WebP",
+  "application/pdf": "PDF",
+};
+
+function formatDistributionKey(key: string): string {
+  if (DISTRIBUTION_KEY_LABELS[key]) {
+    return DISTRIBUTION_KEY_LABELS[key];
+  }
+  return key
+    .replaceAll("_", " ")
+    .replaceAll("-", " ")
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function buildArchitectureComparisonData(

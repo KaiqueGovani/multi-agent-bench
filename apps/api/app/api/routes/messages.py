@@ -64,6 +64,7 @@ async def send_message(
                     metadata,
                     architecture_key=architecture_key,
                     comparison_only=len(architecture_keys) > 1 and index > 0,
+                    text=text,
                 ),
             )
             dispatches.append(
@@ -92,16 +93,62 @@ async def send_message(
         ) from exc
 
 
+def _classify_scenario(text: str | None, file_types: list[str] | None) -> str:
+    """Classify the user message into a scenario based on content and attachments."""
+    has_attachments = bool(file_types and len(file_types) > 0)
+    has_image = has_attachments and any(
+        ft.startswith("image/") for ft in (file_types or [])
+    )
+    has_pdf = has_attachments and any(
+        ft == "application/pdf" for ft in (file_types or [])
+    )
+
+    if has_image or has_pdf:
+        return "attachment_analysis"
+
+    if not text:
+        return "general_inquiry"
+
+    lower = text.lower()
+
+    stock_keywords = [
+        "estoque", "disponível", "disponibilidade", "tem ", "têm ",
+        "produto", "remédio", "medicamento", "preço", "quanto custa",
+    ]
+    if any(kw in lower for kw in stock_keywords):
+        return "stock_inquiry"
+
+    clinical_keywords = [
+        "dosagem", "dose", "tomar", "efeito colateral", "interação",
+        "gestante", "grávida", "amamentar", "pressão", "diabetes",
+        "alergia", "alérgico", "contraindicação", "posologia",
+    ]
+    if any(kw in lower for kw in clinical_keywords):
+        return "clinical_guidance"
+
+    faq_keywords = [
+        "horário", "entrega", "devolução", "pagamento", "troca",
+        "funciona", "aberto", "fecha", "delivery", "frete",
+    ]
+    if any(kw in lower for kw in faq_keywords):
+        return "faq_inquiry"
+
+    return "general_inquiry"
+
+
 def _build_run_experiment(
     metadata: OperationalMetadata,
     *,
     architecture_key: str,
     comparison_only: bool,
+    text: str | None = None,
 ) -> RunExperimentMetadata:
     from app.core.config import get_settings
 
     settings = get_settings()
     extra = metadata.model_extra or {}
+    file_types = metadata.file_types if metadata.file_types else extra.get("fileTypes")
+    scenario_id = extra.get("scenarioId") or _classify_scenario(text, file_types)
     return RunExperimentMetadata.model_validate(
         {
             "architectureFamily": extra.get("architectureFamily")
@@ -123,7 +170,7 @@ def _build_run_experiment(
             or settings.default_prompt_bundle_version,
             "toolsetVersion": extra.get("toolsetVersion") or settings.default_toolset_version,
             "experimentId": extra.get("experimentId") or settings.default_experiment_id,
-            "scenarioId": extra.get("scenarioId"),
+            "scenarioId": scenario_id,
             "runtimeCommitSha": extra.get("runtimeCommitSha"),
             "comparisonOnly": comparison_only,
             "requestedArchitectureMode": metadata.architecture_mode or architecture_key,

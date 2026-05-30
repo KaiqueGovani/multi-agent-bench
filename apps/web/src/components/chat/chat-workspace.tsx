@@ -17,8 +17,6 @@ import {
   Network,
   PanelLeftClose,
   PanelLeftOpen,
-  PanelRightClose,
-  PanelRightOpen,
   Plus,
   Loader2,
   Search,
@@ -61,7 +59,6 @@ export function ChatWorkspace() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [isEventsOpen, setIsEventsOpen] = useState(false);
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [isDraftConversation, setIsDraftConversation] = useState(false);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
@@ -99,7 +96,7 @@ export function ChatWorkspace() {
     updateReviewTask
   } = useConversation(architectureMode, executionMode);
   const layoutColumns = activeTab === "conversa"
-    ? getLayoutColumns(isHistoryOpen, isEventsOpen)
+    ? getLayoutColumns(isHistoryOpen)
     : "lg:grid-cols-1";
   const requestedConversationId = searchParams.get("conversationId");
   const hasActiveConversation = Boolean(conversationId);
@@ -256,22 +253,6 @@ export function ChatWorkspace() {
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            {activeTab !== "atividade" ? (
-            <Button
-              className="lg:hidden"
-              data-testid="events-toggle"
-              onClick={() => setIsEventsOpen((current) => !current)}
-              size="icon"
-              type="button"
-              variant="outline"
-            >
-              {isEventsOpen ? (
-                <PanelRightClose className="h-4 w-4" />
-              ) : (
-                <PanelRightOpen className="h-4 w-4" />
-              )}
-            </Button>
-            ) : null}
             <Button
               aria-label={isFlowOpen ? "Esconder fluxo" : "Mostrar fluxo"}
               aria-pressed={isFlowOpen}
@@ -475,18 +456,6 @@ export function ChatWorkspace() {
         </div>
       </section>
 
-      {activeTab === "conversa" ? (
-        <EventTimeline
-          architectureMode={architectureMode}
-          connectionStatus={connectionStatus}
-          events={events}
-          isOpen={isEventsOpen}
-          onOpenChange={setIsEventsOpen}
-          reviewPanel={
-            <ReviewPanel onResolve={updateReviewTask} reviewTasks={reviewTasks} />
-          }
-        />
-      ) : null}
     </main>
   );
 }
@@ -990,17 +959,11 @@ function ConversationStatusIcon({
   return <Activity className="h-3.5 w-3.5" />;
 }
 
-function getLayoutColumns(historyOpen: boolean, eventsOpen: boolean): string {
-  if (historyOpen && eventsOpen) {
-    return "lg:grid-cols-[300px_minmax(0,1fr)_420px]";
+function getLayoutColumns(historyOpen: boolean): string {
+  if (historyOpen) {
+    return "lg:grid-cols-[300px_minmax(0,1fr)]";
   }
-  if (historyOpen && !eventsOpen) {
-    return "lg:grid-cols-[300px_minmax(0,1fr)_56px]";
-  }
-  if (!historyOpen && eventsOpen) {
-    return "lg:grid-cols-[56px_minmax(0,1fr)_420px]";
-  }
-  return "lg:grid-cols-[56px_minmax(0,1fr)_56px]";
+  return "lg:grid-cols-[56px_minmax(0,1fr)]";
 }
 
 function isArchitectureMode(value: string | null | undefined): value is ArchitectureMode {

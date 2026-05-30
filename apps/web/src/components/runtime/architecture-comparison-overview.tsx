@@ -12,7 +12,7 @@ import {
   Wrench,
 } from "lucide-react";
 
-import { ArchitectureRadarChart } from "@/components/common/charts";
+import { ArchitectureBarComparison, ArchitectureRadarChart } from "@/components/common/charts";
 import { MarkdownContent } from "@/components/common/markdown-content";
 import { CentralizedFlow, SwarmFlow, WorkflowFlow } from "@/components/runtime/architecture-flow";
 import {
@@ -116,27 +116,38 @@ export function ArchitectureComparisonOverview({ runs }: ArchitectureComparisonO
           ))}
         </div>
 
-        <ComparisonRadarSection comparisons={availableComparisons} />
+        <ComparisonChartsSection comparisons={availableComparisons} />
       </CardContent>
     </Card>
   );
 }
 
-function ComparisonRadarSection({
+function ComparisonChartsSection({
   comparisons,
 }: {
   comparisons: { architectureMode: string; execution: ReturnType<typeof useRunExecution>; run: Run | null }[];
 }) {
-  const radarData = useMemo(() => {
+  const { radarData, barData } = useMemo(() => {
     const getRunMetrics = (item: typeof comparisons[0]) => {
       const proj = item.execution.projection;
       const run = item.run;
       const metrics = proj?.metrics as Record<string, unknown> | undefined;
+      const summary = run?.summary as Record<string, unknown> | undefined;
       return {
         duration: typeof run?.totalDurationMs === "number" ? run.totalDurationMs : 0,
         events: typeof metrics?.eventCount === "number" ? metrics.eventCount : item.execution.executionEvents.length,
-        tools: typeof metrics?.toolCallCount === "number" ? metrics.toolCallCount : 0,
+        tools: typeof metrics?.toolCallCount === "number" ? metrics.toolCallCount
+          : typeof summary?.toolCallCount === "number" ? summary.toolCallCount : 0,
         handoffs: typeof metrics?.handoffCount === "number" ? metrics.handoffCount : 0,
+        inputTokens: typeof summary?.inputTokens === "number" ? summary.inputTokens
+          : typeof (metrics?.tokenUsage as Record<string, unknown> | undefined)?.inputTokens === "number"
+            ? (metrics!.tokenUsage as Record<string, number>).inputTokens : 0,
+        outputTokens: typeof summary?.outputTokens === "number" ? summary.outputTokens
+          : typeof (metrics?.tokenUsage as Record<string, unknown> | undefined)?.outputTokens === "number"
+            ? (metrics!.tokenUsage as Record<string, number>).outputTokens : 0,
+        totalTokens: typeof summary?.totalTokens === "number" ? summary.totalTokens
+          : typeof (metrics?.tokenUsage as Record<string, unknown> | undefined)?.totalTokens === "number"
+            ? (metrics!.tokenUsage as Record<string, number>).totalTokens : 0,
       };
     };
 
@@ -144,27 +155,50 @@ function ComparisonRadarSection({
     const work = comparisons.find((c) => c.architectureMode === "structured_workflow");
     const swarm = comparisons.find((c) => c.architectureMode === "decentralized_swarm");
 
-    const centM = cent ? getRunMetrics(cent) : { duration: 0, events: 0, tools: 0, handoffs: 0 };
-    const workM = work ? getRunMetrics(work) : { duration: 0, events: 0, tools: 0, handoffs: 0 };
-    const swarmM = swarm ? getRunMetrics(swarm) : { duration: 0, events: 0, tools: 0, handoffs: 0 };
+    const centM = cent ? getRunMetrics(cent) : { duration: 0, events: 0, tools: 0, handoffs: 0, inputTokens: 0, outputTokens: 0, totalTokens: 0 };
+    const workM = work ? getRunMetrics(work) : { duration: 0, events: 0, tools: 0, handoffs: 0, inputTokens: 0, outputTokens: 0, totalTokens: 0 };
+    const swarmM = swarm ? getRunMetrics(swarm) : { duration: 0, events: 0, tools: 0, handoffs: 0, inputTokens: 0, outputTokens: 0, totalTokens: 0 };
 
-    return [
+    const radar = [
       { metric: "Duração (s)", centralized: +(centM.duration / 1000).toFixed(1), workflow: +(workM.duration / 1000).toFixed(1), swarm: +(swarmM.duration / 1000).toFixed(1) },
       { metric: "Eventos", centralized: centM.events, workflow: workM.events, swarm: swarmM.events },
       { metric: "Ferramentas", centralized: centM.tools, workflow: workM.tools, swarm: swarmM.tools },
       { metric: "Handoffs", centralized: centM.handoffs, workflow: workM.handoffs, swarm: swarmM.handoffs },
     ];
+
+    const bar = [
+      { name: "Latência (s)", centralizada: +(centM.duration / 1000).toFixed(1), workflow: +(workM.duration / 1000).toFixed(1), swarm: +(swarmM.duration / 1000).toFixed(1) },
+      { name: "Tokens totais", centralizada: centM.totalTokens, workflow: workM.totalTokens, swarm: swarmM.totalTokens },
+      { name: "Tokens entrada", centralizada: centM.inputTokens, workflow: workM.inputTokens, swarm: swarmM.inputTokens },
+      { name: "Tokens saída", centralizada: centM.outputTokens, workflow: workM.outputTokens, swarm: swarmM.outputTokens },
+      { name: "Ferramentas", centralizada: centM.tools, workflow: workM.tools, swarm: swarmM.tools },
+      { name: "Eventos", centralizada: centM.events, workflow: workM.events, swarm: swarmM.events },
+    ];
+
+    return { radarData: radar, barData: bar };
   }, [comparisons]);
 
   const hasData = radarData.some((d) => d.centralized > 0 || d.workflow > 0 || d.swarm > 0);
   if (!hasData) return null;
 
+  const barDataWithValues = barData.filter((d) => d.centralizada > 0 || d.workflow > 0 || d.swarm > 0);
+
   return (
-    <div className="mt-4 rounded-xl border bg-card/30 p-4">
-      <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-        Radar comparativo
-      </p>
-      <ArchitectureRadarChart data={radarData} />
+    <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      {barDataWithValues.length > 0 ? (
+        <div className="rounded-xl border bg-card/30 p-4">
+          <ArchitectureBarComparison
+            data={barDataWithValues}
+            title="Comparação entre arquiteturas"
+          />
+        </div>
+      ) : null}
+      <div className="rounded-xl border bg-card/30 p-4">
+        <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+          Radar comparativo
+        </p>
+        <ArchitectureRadarChart data={radarData} />
+      </div>
     </div>
   );
 }
@@ -541,11 +575,20 @@ function statusVariant(status: string | null | undefined) {
   return "outline" as const;
 }
 
+const SCENARIO_LABELS: Record<string, string> = {
+  stock_inquiry: "Consulta de estoque",
+  clinical_guidance: "Orientação clínica",
+  faq_inquiry: "Dúvida frequente (FAQ)",
+  general_inquiry: "Consulta geral",
+  attachment_analysis: "Análise de anexo",
+  unknown: "Não classificado",
+};
+
 function formatScenarioLabel(value: string | null): string {
   if (!value) {
     return "Comparação geral";
   }
-  return humanizeToken(value);
+  return SCENARIO_LABELS[value] ?? humanizeToken(value);
 }
 
 const TOOL_NAME_MAP: Record<string, string> = {
@@ -553,6 +596,7 @@ const TOOL_NAME_MAP: Record<string, string> = {
   faq_lookup: "Consulta FAQ",
   stock_lookup: "Consulta de estoque",
   attachment_intake: "Análise de anexo",
+  multi_modal: "Multimodal",
 };
 
 function humanizeToken(value: string): string {
