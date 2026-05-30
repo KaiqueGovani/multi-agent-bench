@@ -160,10 +160,10 @@ export function ArchitectureRadarChart({
       <RadarChart data={data} cx="50%" cy="50%" outerRadius="70%">
         <PolarGrid className="stroke-border/40" />
         <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11 }} className="fill-muted-foreground" />
-        <PolarRadiusAxis tick={{ fontSize: 10 }} className="fill-muted-foreground" />
-        <Radar name="Centralizada" dataKey="centralized" stroke="#2563eb" fill="#2563eb" fillOpacity={0.15} />
-        <Radar name="Workflow" dataKey="workflow" stroke="#7c3aed" fill="#7c3aed" fillOpacity={0.15} />
-        <Radar name="Swarm" dataKey="swarm" stroke="#059669" fill="#059669" fillOpacity={0.15} />
+        <PolarRadiusAxis tick={{ fontSize: 10 }} className="fill-muted-foreground" angle={30} />
+        <Radar name="Centralizada" dataKey="centralized" stroke="#2563eb" strokeWidth={2} fill="#2563eb" fillOpacity={0.2} />
+        <Radar name="Swarm" dataKey="swarm" stroke="#059669" strokeWidth={2} fill="#059669" fillOpacity={0.15} />
+        <Radar name="Workflow" dataKey="workflow" stroke="#7c3aed" strokeWidth={2} fill="#7c3aed" fillOpacity={0.1} />
         <Legend wrapperStyle={{ fontSize: 12 }} />
         <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(var(--border))" }} />
       </RadarChart>

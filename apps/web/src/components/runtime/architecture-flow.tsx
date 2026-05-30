@@ -258,8 +258,8 @@ const AgentNode = memo(function AgentNode({ data }: NodeProps<Node<AgentNodeData
 
 const EDGE_COLORS: Record<EdgeState, string> = {
   active: "#2563eb",
-  recent: "#059669",
-  settled: "#6366f1",
+  recent: "#10b981",
+  settled: "#059669",
   idle: "#cbd5e1",
 };
 
@@ -505,8 +505,16 @@ function edgeStateFromEvents(
   source: string,
   target: string,
   terminal = false,
+  altNames?: Map<string, string[]>,
 ): EdgeState {
-  const recent = events.slice(-10);
+  const sourceNames = new Set([source, ...(altNames?.get(source) ?? [])]);
+  const targetNames = new Set([target, ...(altNames?.get(target) ?? [])]);
+
+  const matchesSource = (name: string) => sourceNames.has(name);
+  const matchesTarget = (name: string) => targetNames.has(name);
+
+  // Check recent events for active/recent state
+  const recent = events.slice(-12);
   for (let i = recent.length - 1; i >= 0; i--) {
     const e = recent[i];
     const actor = e.actorName;
@@ -516,26 +524,43 @@ function edgeStateFromEvents(
       const p = e.payload as Record<string, unknown>;
       const from = p.from as string | undefined;
       const to = (p.to ?? p.targetActor) as string | undefined;
-      if ((from === source && to === target) || (actor === source && to === target)) {
+      if (
+        (from && to && matchesSource(from) && matchesTarget(to)) ||
+        (matchesSource(actor) && to && matchesTarget(to))
+      ) {
         if (e.status === "running") return "active";
         return terminal ? "settled" : "recent";
       }
     }
 
     if (e.eventFamily === "node" || e.eventFamily === "tool") {
-      if (actor === target) {
+      if (matchesTarget(actor)) {
         if (e.status === "running") return "active";
         if (e.status === "completed") return terminal ? "settled" : "recent";
-        return "idle";
       }
     }
 
-    if (e.eventFamily === "response" && actor === target) {
+    if (e.eventFamily === "response" && matchesTarget(actor)) {
       if (e.status === "running") return "active";
       if (e.status === "completed") return terminal ? "settled" : "recent";
-      return "idle";
     }
   }
+
+  // For terminal runs, check the full event history to see if target was ever active
+  if (terminal) {
+    const targetHasActivity = events.some((e) =>
+      e.actorName && matchesTarget(e.actorName) &&
+      (e.eventFamily === "node" || e.eventFamily === "tool" || e.eventFamily === "response") &&
+      e.status === "completed"
+    );
+    const sourceHasActivity = events.some((e) =>
+      e.actorName && matchesSource(e.actorName) &&
+      (e.eventFamily === "node" || e.eventFamily === "tool" || e.eventFamily === "response" || e.eventFamily === "handoff")
+    );
+    if (targetHasActivity && sourceHasActivity) return "settled";
+    if (targetHasActivity) return "settled";
+  }
+
   return "idle";
 }
 
@@ -606,17 +631,20 @@ export function CentralizedFlow({
       ),
     ];
 
+    const centralizedAltNames = new Map<string, string[]>();
+    centralizedAltNames.set("supervisor_agent", []);
+    centralizedAltNames.set("response_streamer", []);
+    for (const s of specialists) {
+      centralizedAltNames.set(s.name, [s.altName]);
+    }
+
     const edges: Edge[] = [
-      ...specialists.map((s) => {
-        const actor = findActor(s.name) ?? findActor(s.altName);
-        const resolvedName = actor ? (getActorName(actor) ?? s.name) : s.name;
-        return makeEdge("supervisor_agent", s.name, edgeStateFromEvents(executionEvents, "supervisor_agent", resolvedName, terminal));
-      }),
-      ...specialists.map((s) => {
-        const actor = findActor(s.name) ?? findActor(s.altName);
-        const resolvedName = actor ? (getActorName(actor) ?? s.name) : s.name;
-        return makeEdge(s.name, "response_streamer", edgeStateFromEvents(executionEvents, resolvedName, "response_streamer", terminal));
-      }),
+      ...specialists.map((s) =>
+        makeEdge("supervisor_agent", s.name, edgeStateFromEvents(executionEvents, "supervisor_agent", s.name, terminal, centralizedAltNames)),
+      ),
+      ...specialists.map((s) =>
+        makeEdge(s.name, "response_streamer", edgeStateFromEvents(executionEvents, s.name, "response_streamer", terminal, centralizedAltNames)),
+      ),
     ];
 
     return { nodes, edges };
@@ -652,6 +680,11 @@ export function WorkflowFlow({
       { stage: "synthesize", actor: "workflow_synthesis_agent", altActors: ["synthesis_agent"], desc: "Sintetizar saída" },
     ];
 
+    const altNameMap = new Map<string, string[]>();
+    for (const step of sequence) {
+      altNameMap.set(step.actor, step.altActors);
+    }
+
     const nodes: Node<AgentNodeData>[] = sequence.map((step, i) => {
       const matching = stages.filter((s) => getStage(s) === step.stage).at(-1);
       const actorName = getActorName(matching) ?? step.actor;
@@ -670,7 +703,7 @@ export function WorkflowFlow({
 
     const edges: Edge[] = nodes.slice(0, -1).map((n, i) => {
       const next = nodes[i + 1];
-      return makeEdge(n.id, next.id, edgeStateFromEvents(executionEvents, n.data.actorName, next.data.actorName, terminal));
+      return makeEdge(n.id, next.id, edgeStateFromEvents(executionEvents, n.id, next.id, terminal, altNameMap));
     });
 
     return { nodes, edges };
@@ -748,6 +781,10 @@ export function SwarmFlow({
 
     const peerIds = new Set(peerDefs.map((p) => p.id));
     const altToId = new Map(peerDefs.map((p) => [p.altName, p.id]));
+    const swarmAltNames = new Map<string, string[]>();
+    for (const p of peerDefs) {
+      swarmAltNames.set(p.id, p.altName !== p.id ? [p.altName] : []);
+    }
     const resolveId = (name: string) => peerIds.has(name) ? name : (altToId.get(name) ?? name);
 
     if (observedHandoffs.size > 0) {
@@ -756,7 +793,7 @@ export function SwarmFlow({
         const from = resolveId(rawFrom);
         const to = resolveId(rawTo);
         if (from && to && peerIds.has(from) && peerIds.has(to) && from !== to) {
-          const state = edgeStateFromEvents(executionEvents, rawFrom, rawTo, terminal);
+          const state = edgeStateFromEvents(executionEvents, from, to, terminal, swarmAltNames);
           meshEdges.push(makeEdge(from, to, state === "idle" ? "settled" : state));
         }
       }

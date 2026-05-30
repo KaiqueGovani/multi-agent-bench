@@ -69,10 +69,7 @@ export function ChatWorkspace() {
   );
   const [executionMode, setExecutionMode] = useState<ExecutionMode>("mock");
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("conversa");
-  const [isFlowOpen, setIsFlowOpen] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("chat-flow-open") === "true";
-  });
+  const [isFlowOpen, setIsFlowOpen] = useState(false);
   const {
     attachments,
     attachmentsByMessage,
@@ -113,6 +110,10 @@ export function ChatWorkspace() {
     setSelectedFlowExecution(null);
     void startConversation();
   }
+
+  useEffect(() => {
+    setIsFlowOpen(localStorage.getItem("chat-flow-open") === "true");
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("chat-flow-open", String(isFlowOpen));
