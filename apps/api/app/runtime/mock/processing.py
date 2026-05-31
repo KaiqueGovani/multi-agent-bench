@@ -1,3 +1,4 @@
+import random
 import time
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
@@ -185,6 +186,29 @@ class MockProcessingRuntime:
                     event_context,
                 ),
             )
+
+            # Emit run-execution telemetry for the primary run so its projection (metrics + flow)
+            # matches the comparison runs. suppress_public_events=True keeps the main flow above
+            # the SOLE source of the outbound message and conversation events (no duplicates).
+            if run_id is not None:
+                saved_delay = self._step_delay_seconds
+                self._step_delay_seconds = 0
+                try:
+                    self._process_comparison_run(
+                        db,
+                        run_id=run_id,
+                        conversation_id=conversation_id,
+                        message=message,
+                        correlation_id=correlation_id,
+                        architecture_mode=resolved_architecture_mode,
+                        event_context=event_context,
+                        review_required=review_required,
+                        started_at=started_at,
+                        suppress_public_events=True,
+                    )
+                finally:
+                    self._step_delay_seconds = saved_delay
+
             return review_required
 
     def _process_comparison_run(
@@ -199,6 +223,7 @@ class MockProcessingRuntime:
         event_context: dict,
         review_required: bool,
         started_at: datetime,
+        suppress_public_events: bool = False,
     ) -> None:
         run_execution = RunExecutionService(db)
         self._record_run_event(
@@ -211,10 +236,12 @@ class MockProcessingRuntime:
             event_name="started",
             status=ProcessingStatus.RUNNING,
             payload=self._base_payload({"phase": "dispatch"}, event_context),
+            suppress_public_events=suppress_public_events,
         )
 
         route = self._select_route(db, message)
         selected_actor = self._select_actor(db, message)
+        tool_calls = self._TOOL_COUNTS.get(architecture_mode, 2)
 
         if architecture_mode == ArchitectureMode.STRUCTURED_WORKFLOW.value:
             self._simulate_run_node(
@@ -229,6 +256,7 @@ class MockProcessingRuntime:
                 stage="classify",
                 result={"route": route},
                 event_context=event_context,
+                suppress_public_events=suppress_public_events,
             )
             self._simulate_run_node(
                 db,
@@ -242,6 +270,20 @@ class MockProcessingRuntime:
                 stage="gather_evidence",
                 result={"handledBy": selected_actor, "route": route},
                 event_context=event_context,
+                suppress_public_events=suppress_public_events,
+            )
+            self._simulate_tool_call(
+                run_execution,
+                run_id=run_id,
+                conversation_id=conversation_id,
+                message_id=message.id,
+                correlation_id=correlation_id,
+                actor_name="workflow_evidence_agent",
+                node_id="gather_evidence.workflow_evidence_agent",
+                route=route,
+                event_context=event_context,
+                count=tool_calls,
+                suppress_public_events=suppress_public_events,
             )
             if self._has_attachments(db, message.id):
                 self._simulate_run_node(
@@ -256,6 +298,7 @@ class MockProcessingRuntime:
                     stage="multimodal_analysis",
                     result={"attachmentsAnalyzed": True},
                     event_context=event_context,
+                    suppress_public_events=suppress_public_events,
                 )
             if review_required:
                 self._simulate_run_node(
@@ -270,6 +313,7 @@ class MockProcessingRuntime:
                     stage="review_gate",
                     result={"reviewRequired": True},
                     event_context=event_context,
+                    suppress_public_events=suppress_public_events,
                 )
             final_actor = "workflow_synthesis_agent"
             self._simulate_run_node(
@@ -284,6 +328,7 @@ class MockProcessingRuntime:
                 stage="synthesize",
                 result={"reviewRequired": review_required},
                 event_context=event_context,
+                suppress_public_events=suppress_public_events,
             )
         elif architecture_mode == ArchitectureMode.DECENTRALIZED_SWARM.value:
             final_actor = "swarm_synthesizer"
@@ -299,6 +344,7 @@ class MockProcessingRuntime:
                 stage="handoff_loop",
                 result={"route": route},
                 event_context=event_context,
+                suppress_public_events=suppress_public_events,
             )
             self._record_run_event(
                 run_execution,
@@ -315,6 +361,7 @@ class MockProcessingRuntime:
                     {"from": "swarm_coordinator", "to": selected_actor, "route": route},
                     event_context,
                 ),
+                suppress_public_events=suppress_public_events,
             )
             self._simulate_run_node(
                 db,
@@ -328,6 +375,20 @@ class MockProcessingRuntime:
                 stage="specialist",
                 result={"handledBy": selected_actor},
                 event_context=event_context,
+                suppress_public_events=suppress_public_events,
+            )
+            self._simulate_tool_call(
+                run_execution,
+                run_id=run_id,
+                conversation_id=conversation_id,
+                message_id=message.id,
+                correlation_id=correlation_id,
+                actor_name=selected_actor,
+                node_id=f"specialist.{selected_actor}",
+                route=route,
+                event_context=event_context,
+                count=tool_calls,
+                suppress_public_events=suppress_public_events,
             )
             self._record_run_event(
                 run_execution,
@@ -344,6 +405,7 @@ class MockProcessingRuntime:
                     {"from": selected_actor, "to": final_actor, "route": route},
                     event_context,
                 ),
+                suppress_public_events=suppress_public_events,
             )
             self._simulate_run_node(
                 db,
@@ -357,6 +419,7 @@ class MockProcessingRuntime:
                 stage="synthesize",
                 result={"reviewRequired": review_required},
                 event_context=event_context,
+                suppress_public_events=suppress_public_events,
             )
         else:
             final_actor = "response_streamer"
@@ -372,6 +435,7 @@ class MockProcessingRuntime:
                 stage="dispatch",
                 result={"route": route},
                 event_context=event_context,
+                suppress_public_events=suppress_public_events,
             )
             self._simulate_run_node(
                 db,
@@ -385,6 +449,20 @@ class MockProcessingRuntime:
                 stage="specialist",
                 result={"handledBy": selected_actor},
                 event_context=event_context,
+                suppress_public_events=suppress_public_events,
+            )
+            self._simulate_tool_call(
+                run_execution,
+                run_id=run_id,
+                conversation_id=conversation_id,
+                message_id=message.id,
+                correlation_id=correlation_id,
+                actor_name=selected_actor,
+                node_id=f"specialist.{selected_actor}",
+                route=route,
+                event_context=event_context,
+                count=tool_calls,
+                suppress_public_events=suppress_public_events,
             )
             self._simulate_run_node(
                 db,
@@ -398,6 +476,7 @@ class MockProcessingRuntime:
                 stage="synthesize",
                 result={"reviewRequired": review_required},
                 event_context=event_context,
+                suppress_public_events=suppress_public_events,
             )
 
         if review_required:
@@ -419,9 +498,11 @@ class MockProcessingRuntime:
                     },
                     event_context,
                 ),
+                suppress_public_events=suppress_public_events,
             )
 
         total_duration_ms = int((datetime.now(UTC) - started_at).total_seconds() * 1000)
+        token_usage = self._mock_token_usage(architecture_mode)
         self._record_run_event(
             run_execution,
             run_id=run_id,
@@ -439,9 +520,11 @@ class MockProcessingRuntime:
                     "reviewRequired": review_required,
                     "route": route,
                     "finalActor": final_actor,
+                    "tokenUsage": token_usage,
                 },
                 event_context,
             ),
+            suppress_public_events=suppress_public_events,
         )
         self._record_run_event(
             run_execution,
@@ -462,6 +545,7 @@ class MockProcessingRuntime:
                 },
                 event_context,
             ),
+            suppress_public_events=suppress_public_events,
         )
 
     def _invoke_actor(
@@ -537,6 +621,7 @@ class MockProcessingRuntime:
         stage: str,
         result: dict,
         event_context: dict,
+        suppress_public_events: bool = False,
     ) -> None:
         started_at = datetime.now(UTC)
         self._record_run_event(
@@ -551,6 +636,7 @@ class MockProcessingRuntime:
             actor_name=actor_name,
             node_id=node_id,
             payload=self._base_payload({"phase": stage}, event_context),
+            suppress_public_events=suppress_public_events,
         )
         time.sleep(self._step_delay_seconds / 2)
         self._record_run_event(
@@ -572,6 +658,7 @@ class MockProcessingRuntime:
                 },
                 event_context,
             ),
+            suppress_public_events=suppress_public_events,
         )
         time.sleep(self._step_delay_seconds / 2)
         duration_ms = int((datetime.now(UTC) - started_at).total_seconds() * 1000)
@@ -588,6 +675,7 @@ class MockProcessingRuntime:
             node_id=node_id,
             duration_ms=duration_ms,
             payload=self._base_payload(result | {"phase": stage, "durationMs": duration_ms}, event_context),
+            suppress_public_events=suppress_public_events,
         )
         db.expire_all()
 
@@ -606,6 +694,7 @@ class MockProcessingRuntime:
         actor_name: str | None = None,
         node_id: str | None = None,
         duration_ms: int | None = None,
+        suppress_public_events: bool = False,
     ) -> None:
         run_execution.record_event(
             run_id=run_id,
@@ -620,6 +709,7 @@ class MockProcessingRuntime:
             node_id=node_id,
             source="mock_runtime",
             duration_ms=duration_ms,
+            suppress_public_events=suppress_public_events,
         )
 
     def _record(
@@ -806,3 +896,79 @@ class MockProcessingRuntime:
             **(event_context or {}),
             **payload,
         }
+
+    # ------------------------------------------------------------------
+    # Mock metrics helpers
+    # ------------------------------------------------------------------
+
+    _TOOL_FOR_ROUTE: dict[str, str] = {
+        "stock_lookup": "stock_lookup",
+        "image_intake": "attachment_intake",
+        "faq": "faq_lookup",
+    }
+
+    _TOOL_COUNTS: dict[str, int] = {
+        "centralized_orchestration": 2,
+        "structured_workflow": 4,
+        "decentralized_swarm": 3,
+    }
+
+    _TOKEN_RANGES: dict[str, tuple[int, int, int, int]] = {
+        "centralized_orchestration": (1800, 2600, 250, 450),
+        "structured_workflow": (1400, 2200, 200, 380),
+        "decentralized_swarm": (2400, 3600, 320, 560),
+    }
+
+    def _simulate_tool_call(
+        self,
+        run_execution: RunExecutionService,
+        *,
+        run_id: UUID,
+        conversation_id: UUID,
+        message_id: UUID,
+        correlation_id: UUID,
+        actor_name: str,
+        node_id: str,
+        route: str,
+        event_context: dict,
+        count: int = 1,
+        suppress_public_events: bool = False,
+    ) -> None:
+        tool_name = self._TOOL_FOR_ROUTE.get(route, "faq_lookup")
+        for _ in range(count):
+            self._record_run_event(
+                run_execution,
+                run_id=run_id,
+                conversation_id=conversation_id,
+                message_id=message_id,
+                correlation_id=correlation_id,
+                event_family="tool",
+                event_name="started",
+                status=ProcessingStatus.RUNNING,
+                actor_name=actor_name,
+                node_id=node_id,
+                payload=self._base_payload({"toolName": tool_name, "input": {"query": "mock"}}, event_context),
+                suppress_public_events=suppress_public_events,
+            )
+            self._record_run_event(
+                run_execution,
+                run_id=run_id,
+                conversation_id=conversation_id,
+                message_id=message_id,
+                correlation_id=correlation_id,
+                event_family="tool",
+                event_name="completed",
+                status=ProcessingStatus.COMPLETED,
+                actor_name=actor_name,
+                node_id=node_id,
+                payload=self._base_payload({"toolName": tool_name, "result": {"status": "ok"}}, event_context),
+                suppress_public_events=suppress_public_events,
+            )
+
+    def _mock_token_usage(self, architecture_mode: str) -> dict[str, int]:
+        in_lo, in_hi, out_lo, out_hi = self._TOKEN_RANGES.get(
+            architecture_mode, (1800, 2600, 250, 450)
+        )
+        input_tokens = random.randint(in_lo, in_hi)
+        output_tokens = random.randint(out_lo, out_hi)
+        return {"inputTokens": input_tokens, "outputTokens": output_tokens, "totalTokens": input_tokens + output_tokens}

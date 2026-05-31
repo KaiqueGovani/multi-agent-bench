@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import random
 from concurrent.futures import ThreadPoolExecutor
 import json
 import time
@@ -144,6 +145,22 @@ class ProcessingDispatcher:
                 and message is not None
                 and message.status == MessageStatus.HUMAN_REVIEW_REQUIRED.value
             )
+            # Generate simulated per-architecture token/tool metrics
+            # tool_call_count must stay aligned with MockProcessingRuntime._TOOL_COUNTS
+            _tool_counts = {"centralized_orchestration": 2, "structured_workflow": 4, "decentralized_swarm": 3}
+            _mock_ranges = {
+                "centralized_orchestration": (1800, 2600, 250, 450),
+                "structured_workflow": (1400, 2200, 200, 380),
+                "decentralized_swarm": (2400, 3600, 320, 560),
+            }
+            in_lo, in_hi, out_lo, out_hi = _mock_ranges.get(
+                architecture_mode, (1800, 2600, 250, 450)
+            )
+            input_tokens = random.randint(in_lo, in_hi)
+            output_tokens = random.randint(out_lo, out_hi)
+            tool_call_count = _tool_counts.get(architecture_mode, 2)
+
+            outcome = "human_review_required" if human_review_required else "answered"
             RunService(db).complete_run(
                 run_id,
                 status=(
@@ -153,17 +170,13 @@ class ProcessingDispatcher:
                 ),
                 total_duration_ms=duration_ms,
                 human_review_required=human_review_required,
-                final_outcome=(
-                    "human_review_required"
-                    if human_review_required
-                    else "answered"
-                ),
+                final_outcome=outcome,
                 summary=RunSummary(
-                    final_outcome=(
-                        "human_review_required"
-                        if human_review_required
-                        else "answered"
-                    )
+                    final_outcome=outcome,
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                    total_tokens=input_tokens + output_tokens,
+                    tool_call_count=tool_call_count,
                 ),
             )
 

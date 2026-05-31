@@ -161,6 +161,7 @@ class RunExecutionService:
         source: str | None = None,
         external_event_id: str | None = None,
         duration_ms: int | None = None,
+        suppress_public_events: bool = False,
     ) -> RunExecutionEvent:
         if external_event_id:
             existing = self.get_by_external_event_id(
@@ -195,13 +196,13 @@ class RunExecutionService:
         self._db.flush()
         self._upsert_projection(model)
         comparison_only = self._is_comparison_only(model.run_id)
-        if not comparison_only:
+        if not comparison_only and not suppress_public_events:
             self._sync_domain_state(model)
         self._db.commit()
         self._db.refresh(model)
         event = run_execution_event_to_schema(model)
         run_execution_bus.publish(event)
-        if not comparison_only:
+        if not comparison_only and not suppress_public_events:
             self._derive_public_event(event)
         return event
 
