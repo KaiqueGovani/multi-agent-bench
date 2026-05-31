@@ -20,7 +20,8 @@ import {
   Plus,
   Loader2,
   Search,
-  Workflow
+  Workflow,
+  X
 } from "lucide-react";
 
 import { EventTimeline } from "@/components/events/event-timeline";
@@ -69,7 +70,8 @@ export function ChatWorkspace() {
   );
   const [executionMode, setExecutionMode] = useState<ExecutionMode>("mock");
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("conversa");
-  const [isFlowOpen, setIsFlowOpen] = useState(false);
+  const [isFlowOpen, setIsFlowOpen] = useState<boolean>(() => typeof window !== "undefined" && window.localStorage.getItem("chat-flow-open") === "true");
+  const [dismissedError, setDismissedError] = useState<string | null>(null);
   const {
     attachments,
     attachmentsByMessage,
@@ -100,6 +102,16 @@ export function ChatWorkspace() {
   const flowRuns = buildLatestArchitectureRuns(runs);
   const displayedFlowExecution =
     selectedFlowExecution?.run.id === selectedFlowRunId ? selectedFlowExecution : runExecution;
+  const isMultiArchitecture = flowRuns.length > 1;
+  const selectedRun = flowRuns.find((r) => r.id === selectedFlowRunId) ?? null;
+  const selectedArchitectureKey = selectedRun ? readArchitectureKey(selectedRun) : null;
+  const branchResponseText = readFinalResponseText(displayedFlowExecution?.executionEvents);
+  const filteredMessages = isMultiArchitecture
+    ? messages.filter((m) => m.direction === "inbound" || m.id === "streaming-" + selectedFlowRunId)
+    : messages;
+  const branchProp = isMultiArchitecture && branchResponseText && selectedArchitectureKey
+    ? { label: formatArchitectureLabel(selectedArchitectureKey), text: branchResponseText }
+    : null;
 
   function handleStartDraftConversation() {
     setIsDraftConversation(true);
@@ -110,10 +122,6 @@ export function ChatWorkspace() {
     setSelectedFlowExecution(null);
     void startConversation();
   }
-
-  useEffect(() => {
-    setIsFlowOpen(localStorage.getItem("chat-flow-open") === "true");
-  }, []);
 
   useEffect(() => {
     localStorage.setItem("chat-flow-open", String(isFlowOpen));
@@ -158,9 +166,8 @@ export function ChatWorkspace() {
           setSelectedFlowExecution(execution);
         }
       })
-      .catch((caught) => {
+      .catch(() => {
         if (!cancelled) {
-          console.debug("[flow] selected architecture fetch failed", caught);
           setSelectedFlowExecution(null);
         }
       });
@@ -340,9 +347,19 @@ export function ChatWorkspace() {
           ))}
         </nav>
 
-        {error ? (
+        {error && error !== dismissedError ? (
           <Alert className="rounded-none border-x-0 border-t-0 px-5 py-2" variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription className="flex items-center justify-between gap-2">
+              <span>{error}</span>
+              <button
+                aria-label="Fechar erro"
+                className="shrink-0 rounded-sm p-0.5 hover:bg-destructive/20"
+                onClick={() => setDismissedError(error)}
+                type="button"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </AlertDescription>
           </Alert>
         ) : null}
 
@@ -362,6 +379,16 @@ export function ChatWorkspace() {
           {activeTab === "conversa" ? (
             <>
               <div className="flex flex-1 flex-col overflow-hidden bg-background">
+                {isMultiArchitecture ? (
+                  <div className="flex items-center gap-2 border-b bg-card/60 px-3 py-2">
+                    <span className="text-xs text-muted-foreground">Arquitetura:</span>
+                    <ArchitectureFlowPicker
+                      runs={flowRuns}
+                      selectedRunId={selectedFlowRunId}
+                      onSelectRun={setSelectedFlowRunId}
+                    />
+                  </div>
+                ) : null}
                 {isFlowOpen ? (
                   displayedFlowExecution?.projection ? (
                     <div
@@ -370,13 +397,6 @@ export function ChatWorkspace() {
                       data-testid="chat-flow-panel"
                       style={{ minHeight: 260, maxHeight: 360, overflow: "auto" }}
                     >
-                      {flowRuns.length > 1 ? (
-                        <ArchitectureFlowPicker
-                          runs={flowRuns}
-                          selectedRunId={selectedFlowRunId}
-                          onSelectRun={setSelectedFlowRunId}
-                        />
-                      ) : null}
                       <ChatRuntimeVisual
                         architectureMode={
                           isArchitectureMode(displayedFlowExecution.projection.architectureMode)
@@ -400,8 +420,9 @@ export function ChatWorkspace() {
                 <div className="flex-1 overflow-y-auto">
                   <MessageList
                     attachmentsByMessage={attachmentsByMessage}
+                    branch={branchProp}
                     isLoading={isLoadingConversation}
-                    messages={messages}
+                    messages={filteredMessages}
                   />
                 </div>
               </div>
@@ -862,7 +883,7 @@ function ArchitectureFlowPicker({
   onSelectRun: (runId: string) => void;
 }) {
   return (
-    <div className="mb-2 flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {runs.map((run) => {
         const architecture = readArchitectureKey(run);
         const selected = run.id === selectedRunId;
@@ -1041,6 +1062,19 @@ function readArchitectureKey(run: Run): Exclude<ArchitectureMode, "all_architect
     return value;
   }
   return "centralized_orchestration";
+}
+
+function readFinalResponseText(events: RunExecutionEvent[] | undefined): string | null {
+  if (!events) return null;
+  for (let i = events.length - 1; i >= 0; i--) {
+    const evt = events[i];
+    if (evt.eventFamily === "response" && evt.eventName === "final") {
+      const raw = evt.payload["contentText"];
+      const text = typeof raw === "string" ? raw.trim() : null;
+      if (text) return text;
+    }
+  }
+  return null;
 }
 
 function formatConversationPreview(value: string | null | undefined): string {

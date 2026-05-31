@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { FileText, Loader2, Paperclip, Send, X } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -46,6 +46,7 @@ export function MessageComposer({
   const [attachments, setAttachments] = useState<SelectedAttachment[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
   const [fileInputKey, setFileInputKey] = useState(0);
+  const formRef = useRef<HTMLFormElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const attachmentsRef = useRef<SelectedAttachment[]>([]);
 
@@ -127,8 +128,17 @@ export function MessageComposer({
     });
   }
 
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+      event.preventDefault();
+      if (!disabled && !isSending && canSubmit) {
+        formRef.current?.requestSubmit();
+      }
+    }
+  }
+
   return (
-    <form className="border-t bg-card/95 p-3 shadow-sm" onSubmit={handleSubmit}>
+    <form className="border-t bg-card/95 p-3 shadow-sm" onSubmit={handleSubmit} ref={formRef}>
       <div className="mx-auto w-full max-w-5xl">
         {attachments.length > 0 ? (
           <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -147,6 +157,7 @@ export function MessageComposer({
                     </div>
                   )}
                   <Button
+                    aria-label={`Remover ${attachment.file.name}`}
                     className="absolute right-1 top-1 h-7 w-7"
                     disabled={disabled || isSending}
                     onClick={() => removeAttachment(index)}
@@ -228,6 +239,7 @@ export function MessageComposer({
             className="min-h-20 resize-none text-sm"
             data-testid="message-composer-input"
             disabled={disabled || isSending}
+            onKeyDown={handleKeyDown}
             placeholder={disabled ? "Crie uma conversa para enviar mensagens" : "Digite sua mensagem"}
             rows={3}
             value={text}
