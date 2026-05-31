@@ -13,7 +13,8 @@ import {
   MarkerType,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { memo, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import type { RunExecutionEvent } from "@/lib/types";
@@ -170,21 +171,62 @@ function ResponseDetail({ payload }: { payload: Record<string, unknown> | undefi
 // Custom node with hover popover
 // ---------------------------------------------------------------------------
 
+interface PopoverPosition {
+  top: number;
+  left: number;
+  below: boolean;
+}
+
+const POPOVER_WIDTH = 288; // w-72
+const POPOVER_DISMISS_MS = 120;
+
 const AgentNode = memo(function AgentNode({ data }: NodeProps<Node<AgentNodeData>>) {
   const { actorName, description, status, statusLabel, active, tone, nodeId, events } = data;
-  const [isHovered, setIsHovered] = useState(false);
+  const [popoverPos, setPopoverPos] = useState<PopoverPosition | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const agentEvents = (events ?? []) as RunExecutionEvent[];
   const eventCount = agentEvents.length;
   const toolCount = agentEvents.filter((e) => e.eventFamily === "tool").length;
   const responseCount = agentEvents.filter((e) => e.eventFamily === "response").length;
 
+  useEffect(() => {
+    return () => {
+      if (dismissTimer.current) clearTimeout(dismissTimer.current);
+    };
+  }, []);
+
+  const showPopover = () => {
+    if (dismissTimer.current) {
+      clearTimeout(dismissTimer.current);
+      dismissTimer.current = null;
+    }
+    if (!cardRef.current || eventCount === 0) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const below = rect.bottom + 300 <= window.innerHeight;
+    const rawLeft = rect.left + rect.width / 2 - POPOVER_WIDTH / 2;
+    const left = Math.max(8, Math.min(rawLeft, window.innerWidth - POPOVER_WIDTH - 8));
+    const top = below ? rect.bottom + 6 : rect.top - 6;
+    setPopoverPos({ top, left, below });
+  };
+
+  const scheduleDismiss = () => {
+    dismissTimer.current = setTimeout(() => {
+      setPopoverPos(null);
+    }, POPOVER_DISMISS_MS);
+  };
+
+  const cancelDismiss = () => {
+    if (dismissTimer.current) {
+      clearTimeout(dismissTimer.current);
+      dismissTimer.current = null;
+    }
+  };
+
   return (
-    <div
-      className="relative"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+    <div className="relative">
       <div
+        ref={cardRef}
         className={`rounded-2xl border px-4 py-3 shadow-sm transition-colors min-w-[140px] max-w-[180px] ${
           active
             ? "border-primary/60 bg-primary/10 ring-2 ring-primary/20"
@@ -194,6 +236,8 @@ const AgentNode = memo(function AgentNode({ data }: NodeProps<Node<AgentNodeData
                 ? "border-dashed border-border/70 bg-muted/20"
                 : "border-border bg-background"
         }`}
+        onMouseEnter={showPopover}
+        onMouseLeave={scheduleDismiss}
       >
         <Handle type="target" position={Position.Left} className="!bg-transparent !border-0 !w-0 !h-0" />
         <Handle type="source" position={Position.Right} className="!bg-transparent !border-0 !w-0 !h-0" />
@@ -235,19 +279,28 @@ const AgentNode = memo(function AgentNode({ data }: NodeProps<Node<AgentNodeData
         </div>
       </div>
 
-      {isHovered && eventCount > 0 ? (
-        <div
-          className="absolute left-1/2 top-full z-50 mt-2 w-72 -translate-x-1/2 rounded-lg border bg-card shadow-xl"
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-        >
-          <div className="flex items-center justify-between border-b px-3 py-2">
-            <p className="text-xs font-semibold">{actorName}</p>
-            <span className="text-[10px] text-muted-foreground">{eventCount} eventos</span>
-          </div>
-          <AgentEventTimeline events={agentEvents} />
-        </div>
-      ) : null}
+      {popoverPos && eventCount > 0 && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className="w-72 rounded-lg border bg-card shadow-xl z-[60]"
+              style={{
+                position: "fixed",
+                top: popoverPos.below ? popoverPos.top : undefined,
+                bottom: popoverPos.below ? undefined : window.innerHeight - popoverPos.top,
+                left: popoverPos.left,
+              }}
+              onMouseEnter={cancelDismiss}
+              onMouseLeave={scheduleDismiss}
+            >
+              <div className="flex items-center justify-between border-b px-3 py-2">
+                <p className="text-xs font-semibold">{actorName}</p>
+                <span className="text-[10px] text-muted-foreground">{eventCount} eventos</span>
+              </div>
+              <AgentEventTimeline events={agentEvents} />
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 });
