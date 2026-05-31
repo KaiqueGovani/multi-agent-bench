@@ -176,6 +176,7 @@ export function EventTimeline({
             </div>
           ) : null}
           <button
+            aria-label={isOpen ? "Fechar painel de eventos" : "Abrir painel de eventos"}
             className="hidden h-8 w-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:inline-flex"
             onClick={() => onOpenChange(!isOpen)}
             type="button"
@@ -568,7 +569,7 @@ function eventCardAccent(
 
 function formatArchitectureMode(mode: ArchitectureMode): string {
   const labels: Record<ArchitectureMode, string> = {
-    all_architectures: "Comparacao das arquiteturas",
+    all_architectures: "Comparação das arquiteturas",
     centralized_orchestration: "Orquestração centralizada",
     decentralized_swarm: "Swarm descentralizado",
     structured_workflow: "Workflow estruturado"

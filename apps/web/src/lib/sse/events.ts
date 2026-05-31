@@ -16,7 +16,7 @@ export function openConversationEventStream(
   const source = new EventSource(url.toString());
 
   source.onopen = () => onConnectionChange?.("open");
-  source.onerror = () => onConnectionChange?.("reconnecting");
+  source.onerror = () => onConnectionChange?.(source.readyState === EventSource.CLOSED ? "error" : "reconnecting");
 
   source.addEventListener("processing.event", (message) => {
     onEvent(JSON.parse(message.data) as ProcessingEvent);
@@ -44,7 +44,7 @@ export function openRunExecutionStream(
   const source = new EventSource(url.toString());
 
   source.onopen = () => onConnectionChange?.("open");
-  source.onerror = () => onConnectionChange?.("reconnecting");
+  source.onerror = () => onConnectionChange?.(source.readyState === EventSource.CLOSED ? "error" : "reconnecting");
 
   source.addEventListener("run.execution", (message) => {
     onEvent(JSON.parse(message.data) as RunExecutionEvent);

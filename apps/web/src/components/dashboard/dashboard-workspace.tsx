@@ -10,14 +10,11 @@ import {
   ClipboardCheck,
   ClipboardX,
   Clock3,
-  Database,
-  FileText,
   Loader2,
   MessageSquare,
   Network,
   ShieldAlert,
   Timer,
-  Workflow,
   XCircle,
   type LucideIcon,
 } from "lucide-react";
@@ -148,18 +145,22 @@ export function DashboardWorkspace() {
     status: "resolved" | "cancelled" | "in_review",
     note: string,
   ) {
-    await resolveReviewTask(reviewTaskId, {
-      note: note.trim() || undefined,
-      resolvedBy: "dashboard_operator",
-      status,
-    });
+    try {
+      await resolveReviewTask(reviewTaskId, {
+        note: note.trim() || undefined,
+        resolvedBy: "dashboard_operator",
+        status,
+      });
 
-    const [metricsResponse, reviewsResponse] = await Promise.all([
-      getDashboardMetrics(),
-      listOpenReviewTasks(),
-    ]);
-    setMetrics(metricsResponse);
-    setReviewTasks(reviewsResponse.reviewTasks);
+      const [metricsResponse, reviewsResponse] = await Promise.all([
+        getDashboardMetrics(),
+        listOpenReviewTasks(),
+      ]);
+      setMetrics(metricsResponse);
+      setReviewTasks(reviewsResponse.reviewTasks);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Falha ao resolver revisão");
+    }
   }
 
   function selectConversation(conversationId: string) {

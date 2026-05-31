@@ -81,7 +81,7 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
     runExecLastFetchRef.current = now;
     getRunExecution(runId)
       .then((res) => setRunExecution(res))
-      .catch((err) => console.debug("[flow] projection fetch failed", err));
+      .catch(() => {});
   }, []);
 
   const activeArchitectureMode = useMemo<ArchitectureMode>(() => {
@@ -175,7 +175,6 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
     (id: string, force = false) => {
       const now = Date.now();
       if (!force && now - lastRefreshTsRef.current < 500) {
-        console.debug("[streaming] debounced refresh skipped, recent refresh at", lastRefreshTsRef.current);
         return;
       }
       lastRefreshTsRef.current = now;
@@ -338,7 +337,6 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
         }
       }
       if (staleRunIds.length > 0) {
-        console.debug("[streaming] cleaning up stale streaming messages:", staleRunIds);
         for (const runId of staleRunIds) {
           streamingTimestampsRef.current.delete(runId);
         }
@@ -443,7 +441,6 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
           }
           // On SSE error/reconnect: purge ghost streaming messages
           if (status === "error" || status === "reconnecting") {
-            console.debug("[streaming] SSE disconnect, purging streaming messages");
             streamingTimestampsRef.current.clear();
             setMessages((prev) => prev.filter((m) => !m.id.startsWith("streaming-")));
             void refreshConversationDetail(conversationId);
