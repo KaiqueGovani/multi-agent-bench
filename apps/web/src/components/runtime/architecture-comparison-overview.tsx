@@ -182,22 +182,46 @@ function ComparisonChartsSection({
   if (!hasData) return null;
 
   const barDataWithValues = barData.filter((d) => d.centralizada > 0 || d.workflow > 0 || d.swarm > 0);
+  const tokenBars = barDataWithValues.filter((d) => d.name.startsWith("Tokens"));
+  const opsBars = barDataWithValues.filter((d) => !d.name.startsWith("Tokens"));
+
+  const radarDataNormalized = radarData.map((row) => {
+    const max = Math.max(row.centralized, row.workflow, row.swarm);
+    const norm = (v: number) => (max > 0 ? Math.round((v / max) * 100) : 0);
+    return {
+      metric: row.metric,
+      centralized: norm(row.centralized),
+      workflow: norm(row.workflow),
+      swarm: norm(row.swarm),
+      centralizedRaw: row.centralized,
+      workflowRaw: row.workflow,
+      swarmRaw: row.swarm,
+    };
+  });
 
   return (
     <div className="mt-4 grid gap-4 lg:grid-cols-2">
-      {barDataWithValues.length > 0 ? (
+      {tokenBars.length > 0 && (
         <div className="rounded-xl border bg-card/30 p-4">
           <ArchitectureBarComparison
-            data={barDataWithValues}
-            title="Comparação entre arquiteturas"
+            data={tokenBars}
+            title="Tokens por arquitetura"
           />
         </div>
-      ) : null}
-      <div className="rounded-xl border bg-card/30 p-4">
+      )}
+      {opsBars.length > 0 && (
+        <div className="rounded-xl border bg-card/30 p-4">
+          <ArchitectureBarComparison
+            data={opsBars}
+            title="Operação (latência · ferramentas · eventos)"
+          />
+        </div>
+      )}
+      <div className="rounded-xl border bg-card/30 p-4 lg:col-span-2">
         <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
           Radar comparativo
         </p>
-        <ArchitectureRadarChart data={radarData} />
+        <ArchitectureRadarChart data={radarDataNormalized} />
       </div>
     </div>
   );
