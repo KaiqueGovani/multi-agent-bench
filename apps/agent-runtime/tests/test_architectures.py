@@ -442,8 +442,15 @@ def test_swarm_max_handoffs_guardrail() -> None:
     mock_peer = MagicMock(return_value="ok")
     agents = {"faq_specialist": mock_peer}
     handoff_count_ref = [0]
+    actor_stack = ["swarm_coordinator"]
 
-    handoff_fn = swarm._make_handoff_tool(ctx, agents, handoff_count_ref, original_text="test")
+    handoff_fn = swarm._make_handoff_tool(
+        ctx,
+        agents,
+        handoff_count_ref,
+        original_text="test",
+        actor_stack=actor_stack,
+    )
 
     # First 3 calls succeed
     for i in range(3):
@@ -501,8 +508,15 @@ def test_swarm_handoff_tool_handles_peer_exception() -> None:
     boom_peer = MagicMock(side_effect=RuntimeError("boom"))
     agents = {"exploder": boom_peer}
     handoff_count_ref = [0]
+    actor_stack = ["swarm_coordinator"]
 
-    handoff_fn = swarm._make_handoff_tool(ctx, agents, handoff_count_ref, original_text="test")
+    handoff_fn = swarm._make_handoff_tool(
+        ctx,
+        agents,
+        handoff_count_ref,
+        original_text="test",
+        actor_stack=actor_stack,
+    )
     result = handoff_fn(peer_name="exploder", reason="test")
 
     assert result["error"] == "peer_failed"

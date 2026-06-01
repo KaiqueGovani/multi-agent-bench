@@ -25,11 +25,22 @@ except Exception:  # pragma: no cover
 # Handoff tool factory — closure captures ctx, agents dict, and counters
 # ---------------------------------------------------------------------------
 
-def _make_handoff_tool(ctx: ExecutionContext, agents: dict, handoff_count_ref: list[int], original_text: str):
+def _make_handoff_tool(
+    ctx: ExecutionContext,
+    agents: dict,
+    handoff_count_ref: list[int],
+    original_text: str,
+    actor_stack: list[str],
+):
     """Build a ``handoff_to_peer`` tool bound to the current execution context.
 
     The *agents* dict is captured **by reference** so specialists added after
     this factory call are visible to the tool at invocation time.
+
+    *actor_stack* tracks the active caller chain so each handoff can record
+    its source actor (``from``) in the emitted payload.  The orchestrator
+    seeds the stack with the coordinator before the first invocation; this
+    tool pushes the destination peer while it runs and pops it on exit.
     """
 
     @strands_tool()
@@ -48,6 +59,8 @@ def _make_handoff_tool(ctx: ExecutionContext, agents: dict, handoff_count_ref: l
                 "message": f"Agente '{peer_name}' nao encontrado.",
             }
 
+        from_actor = actor_stack[-1] if actor_stack else "swarm_coordinator"
+
         handoff_count_ref[0] += 1
         ctx.handoff_count = handoff_count_ref[0]
         ctx.loop_count += 1
@@ -56,15 +69,21 @@ def _make_handoff_tool(ctx: ExecutionContext, agents: dict, handoff_count_ref: l
             "handoff", "requested", "running",
             actor_name=peer_name,
             node_id=f"swarm.handoff.{handoff_count_ref[0]}",
-            payload={"to": peer_name, "reason": reason, "hop": handoff_count_ref[0]},
+            payload={
+                "from": from_actor,
+                "to": peer_name,
+                "reason": reason,
+                "hop": handoff_count_ref[0],
+            },
         )
         ctx.emit(
             "node", "started", "running",
             actor_name=peer_name,
             node_id=f"swarm.{peer_name}",
-            payload={"stage": "handoff_loop"},
+            payload={"stage": "handoff_loop", "from": from_actor},
         )
 
+        actor_stack.append(peer_name)
         try:
             peer_result = str(peer(f"Contexto delegado: {reason}. Pergunta original: {original_text}"))
         except Exception as exc:
@@ -73,20 +92,23 @@ def _make_handoff_tool(ctx: ExecutionContext, agents: dict, handoff_count_ref: l
                 "node", "completed", "failed",
                 actor_name=peer_name,
                 node_id=f"swarm.{peer_name}",
-                payload={"stage": "handoff_loop", "error": str(exc)[:300]},
+                payload={"stage": "handoff_loop", "from": from_actor, "error": str(exc)[:300]},
             )
             return {
                 "error": "peer_failed",
                 "peer": peer_name,
                 "message": f"Especialista '{peer_name}' falhou: {str(exc)[:200]}",
             }
+        finally:
+            if actor_stack and actor_stack[-1] == peer_name:
+                actor_stack.pop()
 
         ctx.emit_message(peer_name, f"swarm.{peer_name}.message", peer_result[:200])
         ctx.emit(
             "node", "completed", "completed",
             actor_name=peer_name,
             node_id=f"swarm.{peer_name}",
-            payload={"stage": "handoff_loop"},
+            payload={"stage": "handoff_loop", "from": from_actor},
         )
 
         return {"peer": peer_name, "result": peer_result}
@@ -161,9 +183,16 @@ class SwarmExecutor:
         # 1. Shared mutable state
         agents: dict = {}
         handoff_count_ref: list[int] = [0]
+        actor_stack: list[str] = []
 
         # 2. Build handoff tool (captures agents dict by reference)
-        handoff_tool = _make_handoff_tool(ctx, agents, handoff_count_ref, original_text=text)
+        handoff_tool = _make_handoff_tool(
+            ctx,
+            agents,
+            handoff_count_ref,
+            original_text=text,
+            actor_stack=actor_stack,
+        )
 
         # 3. Create specialist agents — populate the shared dict
         faq_agent = ctx.create_agent(
@@ -217,7 +246,12 @@ class SwarmExecutor:
             payload={"stage": "dispatch"},
         )
 
-        coordinator_result = str(coordinator(text))
+        actor_stack.append("swarm_coordinator")
+        try:
+            coordinator_result = str(coordinator(text))
+        finally:
+            if actor_stack and actor_stack[-1] == "swarm_coordinator":
+                actor_stack.pop()
 
         ctx.emit(
             "node", "completed", "completed",
@@ -234,11 +268,24 @@ class SwarmExecutor:
         )
 
         if needs_synthesis:
+            handoff_count_ref[0] += 1
+            ctx.handoff_count = handoff_count_ref[0]
+            ctx.emit(
+                "handoff", "requested", "running",
+                actor_name="swarm_synthesizer",
+                node_id=f"swarm.handoff.{handoff_count_ref[0]}",
+                payload={
+                    "from": "swarm_coordinator",
+                    "to": "swarm_synthesizer",
+                    "reason": "compor resposta final",
+                    "hop": handoff_count_ref[0],
+                },
+            )
             ctx.emit(
                 "node", "started", "running",
                 actor_name="swarm_synthesizer",
                 node_id="swarm.swarm_synthesizer",
-                payload={"stage": "synthesis"},
+                payload={"stage": "synthesis", "from": "swarm_coordinator"},
             )
             ctx.emit_reasoning(
                 "swarm_synthesizer", "swarm.synthesizer.reasoning",

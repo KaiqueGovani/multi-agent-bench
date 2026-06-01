@@ -342,7 +342,7 @@ function AnimatedEdge(props: EdgeProps) {
           strokeWidth,
           opacity: state === "idle" ? 0.3 : 0.9,
         }}
-        markerEnd={state !== "idle" ? `url(#marker-${state})` : undefined}
+        markerEnd={`url(#marker-${state})`}
       />
       {animated && (
         <circle r="3.5" fill={color}>
@@ -361,7 +361,7 @@ function EdgeMarkerDefs() {
   return (
     <svg className="absolute h-0 w-0">
       <defs>
-        {(["active", "recent", "settled"] as EdgeState[]).map((state) => (
+        {(["active", "recent", "settled", "idle"] as EdgeState[]).map((state) => (
           <marker
             key={state}
             id={`marker-${state}`}
@@ -441,7 +441,8 @@ const AGENT_NAME_MAP: Record<string, string> = {
   router_agent: "Roteador",
   review_agent: "Revisor",
   synthesis_agent: "Síntese",
-  swarm_coordinator: "Par Inicial",
+  swarm_coordinator: "Iniciador",
+  coordinator_agent: "Iniciador",
   swarm_synthesizer: "Sintetizador",
   response_streamer: "Resposta",
   workflow_evidence_agent: "Evidências",
@@ -786,20 +787,23 @@ export function SwarmFlow({
     const terminal = isTerminalRunStatus(runStatus);
     const eventsByActor = groupEventsByActor(executionEvents);
 
-    const peerDefs = [
-      { id: "swarm_coordinator", altName: "swarm_coordinator", desc: "par inicial", x: 80, y: 0 },
-      { id: "faq_specialist", altName: "faq_agent", desc: "FAQ", x: 320, y: 0 },
-      { id: "stock_specialist", altName: "stock_agent", desc: "estoque", x: 0, y: 180 },
-      { id: "image_specialist", altName: "image_intake_agent", desc: "imagem", x: 400, y: 180 },
-      { id: "swarm_synthesizer", altName: "swarm_synthesizer", desc: "síntese", x: 200, y: 300 },
+    const peerDefs: Array<{ id: string; altNames: string[]; desc: string; x: number; y: number }> = [
+      { id: "swarm_coordinator", altNames: ["coordinator_agent"], desc: "abre a colaboração", x: 80, y: 0 },
+      { id: "faq_specialist", altNames: ["faq_agent"], desc: "FAQ", x: 320, y: 0 },
+      { id: "stock_specialist", altNames: ["stock_agent"], desc: "estoque", x: 0, y: 180 },
+      { id: "image_specialist", altNames: ["image_intake_agent"], desc: "imagem", x: 400, y: 180 },
+      { id: "swarm_synthesizer", altNames: [], desc: "síntese", x: 200, y: 300 },
     ];
 
     const nodes: Node<AgentNodeData>[] = peerDefs.map((peer) => {
-      const actor = findActor(peer.id) ?? findActor(peer.altName);
+      const actor = findActor(peer.id) ?? peer.altNames.map((alt) => findActor(alt)).find(Boolean);
       const resolvedName = actor ? (getActorName(actor) ?? peer.id) : peer.id;
       const status = actor ? getStatus(actor, terminal) : terminal ? "not_invoked" : "pending";
-      const isActive = peer.id === activeActorName || peer.altName === activeActorName;
-      const agentEvents = eventsByActor.get(peer.id) ?? eventsByActor.get(peer.altName) ?? [];
+      const isActive = peer.id === activeActorName || peer.altNames.includes(activeActorName);
+      const agentEvents =
+        eventsByActor.get(peer.id) ??
+        peer.altNames.map((alt) => eventsByActor.get(alt)).find(Boolean) ??
+        [];
       return makeNode(
         peer.id,
         formatAgentName(resolvedName),
@@ -815,52 +819,85 @@ export function SwarmFlow({
       );
     });
 
-    const meshEdges: Edge[] = [];
-
-    const observedHandoffs = new Set<string>();
-    for (const h of handoffs) {
-      const key = getHandoffPairKey(h);
-      if (key) observedHandoffs.add(key);
-    }
-    for (const e of executionEvents) {
-      if (e.eventFamily === "handoff") {
-        const p = e.payload as Record<string, unknown>;
-        const from = (p.from ?? e.actorName) as string | undefined;
-        const to = (p.to ?? p.targetActor) as string | undefined;
-        if (from && to) observedHandoffs.add(`${from}->${to}`);
-      }
-    }
-
     const peerIds = new Set(peerDefs.map((p) => p.id));
-    const altToId = new Map(peerDefs.map((p) => [p.altName, p.id]));
+    const altToId = new Map<string, string>();
+    for (const p of peerDefs) {
+      for (const alt of p.altNames) altToId.set(alt, p.id);
+    }
     const swarmAltNames = new Map<string, string[]>();
     for (const p of peerDefs) {
-      swarmAltNames.set(p.id, p.altName !== p.id ? [p.altName] : []);
+      swarmAltNames.set(p.id, p.altNames);
     }
-    const resolveId = (name: string) => peerIds.has(name) ? name : (altToId.get(name) ?? name);
+    const resolveId = (name: string) => (peerIds.has(name) ? name : (altToId.get(name) ?? name));
 
-    if (observedHandoffs.size > 0) {
-      for (const pair of observedHandoffs) {
-        const [rawFrom, rawTo] = pair.split("->");
-        const from = resolveId(rawFrom);
-        const to = resolveId(rawTo);
-        if (from && to && peerIds.has(from) && peerIds.has(to) && from !== to) {
-          const state = edgeStateFromEvents(executionEvents, from, to, terminal, swarmAltNames);
-          meshEdges.push(makeEdge(from, to, state === "idle" ? "settled" : state));
-        }
+    // Collect observed handoffs from architectureView and from execution events.
+    // Live runs may emit handoffs without an explicit 'from' in the payload — in
+    // that case we infer the source as the most recent actor that started/completed
+    // work before the handoff event.
+    const observedHandoffs = new Set<string>();
+    const recordPair = (rawFrom: unknown, rawTo: unknown) => {
+      if (typeof rawFrom !== "string" || typeof rawTo !== "string") return;
+      const from = resolveId(rawFrom);
+      const to = resolveId(rawTo);
+      if (peerIds.has(from) && peerIds.has(to) && from !== to) {
+        observedHandoffs.add(`${from}->${to}`);
       }
-    } else {
-      meshEdges.push(makeEdge("swarm_coordinator", "faq_specialist", "idle"));
-      meshEdges.push(makeEdge("swarm_coordinator", "stock_specialist", "idle"));
-      meshEdges.push(makeEdge("swarm_coordinator", "image_specialist", "idle"));
-      meshEdges.push(makeEdge("faq_specialist", "swarm_synthesizer", "idle"));
-      meshEdges.push(makeEdge("stock_specialist", "swarm_synthesizer", "idle"));
-      meshEdges.push(makeEdge("image_specialist", "swarm_synthesizer", "idle"));
-      meshEdges.push(makeEdge("faq_specialist", "stock_specialist", "idle"));
-      meshEdges.push(makeEdge("stock_specialist", "image_specialist", "idle"));
+    };
+
+    for (const h of handoffs) {
+      if (!h || typeof h !== "object") continue;
+      const payload = (h as Record<string, unknown>).payload;
+      if (!payload || typeof payload !== "object") continue;
+      const p = payload as Record<string, unknown>;
+      recordPair(p.from, p.to ?? p.targetActor);
     }
 
-    return { nodes, edges: meshEdges };
+    let lastActiveActor: string | null = null;
+    for (const e of executionEvents) {
+      if (e.eventFamily === "handoff") {
+        const p = (e.payload ?? {}) as Record<string, unknown>;
+        const inferredFrom = (p.from as string | undefined) ?? lastActiveActor ?? "swarm_coordinator";
+        const inferredTo = (p.to ?? p.targetActor ?? e.actorName) as string | undefined;
+        recordPair(inferredFrom, inferredTo);
+        if (typeof inferredTo === "string") lastActiveActor = resolveId(inferredTo);
+      } else if (e.actorName && (e.eventFamily === "node" || e.eventFamily === "tool" || e.eventFamily === "response")) {
+        const id = resolveId(e.actorName);
+        if (peerIds.has(id)) lastActiveActor = id;
+      }
+    }
+
+    // Always render the canonical swarm topology so the structure is visible,
+    // and elevate edges that match an observed handoff to "active/recent/settled".
+    const canonicalEdges: Array<[string, string]> = [
+      ["swarm_coordinator", "faq_specialist"],
+      ["swarm_coordinator", "stock_specialist"],
+      ["swarm_coordinator", "image_specialist"],
+      ["faq_specialist", "swarm_synthesizer"],
+      ["stock_specialist", "swarm_synthesizer"],
+      ["image_specialist", "swarm_synthesizer"],
+      ["swarm_coordinator", "swarm_synthesizer"],
+    ];
+
+    const edgeMap = new Map<string, Edge>();
+    for (const [from, to] of canonicalEdges) {
+      const state = edgeStateFromEvents(executionEvents, from, to, terminal, swarmAltNames);
+      const observed = observedHandoffs.has(`${from}->${to}`);
+      const finalState: EdgeState = observed && state === "idle" ? "settled" : state;
+      edgeMap.set(`${from}->${to}`, makeEdge(from, to, finalState));
+    }
+
+    // Add any observed peer-to-peer handoff that isn't part of the canonical layout
+    // (e.g. faq_specialist -> stock_specialist in a chained delegation).
+    for (const pair of observedHandoffs) {
+      if (edgeMap.has(pair)) continue;
+      const [from, to] = pair.split("->");
+      if (!from || !to) continue;
+      const state = edgeStateFromEvents(executionEvents, from, to, terminal, swarmAltNames);
+      const finalState: EdgeState = state === "idle" ? "settled" : state;
+      edgeMap.set(pair, makeEdge(from, to, finalState));
+    }
+
+    return { nodes, edges: Array.from(edgeMap.values()) };
   }, [activeActorName, actors, executionEvents, handoffs, runStatus]);
 
   return <FlowWrapper nodes={nodes} edges={edges} testId="runtime-visual-swarm" height={400} />;
