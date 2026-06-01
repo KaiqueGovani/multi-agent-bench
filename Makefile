@@ -3,6 +3,11 @@
 # Usage:  make up          (first time: infra + deps + migrations + run)
 #         make dev         (just start services, assumes setup done)
 #         make up DB_PORT=5434 API_PORT=9000   (override any port)
+#
+# Live LLM (AWS Bedrock):
+#         make up ENABLE_LIVE_LLM=true AWS_BEARER_TOKEN_BEDROCK=<token>
+#         make dev ENABLE_LIVE_LLM=true AWS_BEARER_TOKEN_BEDROCK=<token>
+#         Or export these vars in your shell before running make.
 # ═══════════════════════════════════════════════════════════════════════
 
 # ── Ports ─────────────────────────────────────────────────────────────
@@ -20,14 +25,24 @@ DB_PASSWORD        ?= postgres
 DB_URL             := postgresql+psycopg://$(DB_USER):$(DB_PASSWORD)@127.0.0.1:$(DB_PORT)/$(DB_NAME)
 
 # ── Secrets / keys ────────────────────────────────────────────────────
-API_KEY            ?= poc-dev-key-2026
-AI_SERVICE_SECRET  ?= local-runtime-secret
+API_KEY                  ?= poc-dev-key-2026
+AI_SERVICE_SECRET        ?= local-runtime-secret
+
+# ── LLM / Bedrock ─────────────────────────────────────────────────────
+# Set ENABLE_LIVE_LLM=true and supply AWS_BEARER_TOKEN_BEDROCK to use
+# real LLM calls. Both can be overridden on the command line or via
+# shell exports without editing this file.
+ENABLE_LIVE_LLM          ?= false
+AWS_BEARER_TOKEN_BEDROCK ?=
+BEDROCK_MODEL_ID         ?= us.anthropic.claude-haiku-4-5-20251001-v1:0
+AWS_REGION               ?= us-east-1
 
 # ── Compose ───────────────────────────────────────────────────────────
 COMPOSE_FILE       ?= infra/docker/docker-compose.yml
 
-# Forward to docker-compose
-export DB_PORT DB_NAME DB_USER DB_PASSWORD MINIO_PORT MINIO_CONSOLE_PORT
+# Forward to docker-compose and sub-processes
+export DB_PORT DB_NAME DB_USER DB_PASSWORD MINIO_PORT MINIO_CONSOLE_PORT \
+       ENABLE_LIVE_LLM AWS_BEARER_TOKEN_BEDROCK BEDROCK_MODEL_ID AWS_REGION
 
 # ═══════════════════════════════════════════════════════════════════════
 .PHONY: up dev setup install sync-env infra db-migrate \
@@ -65,13 +80,7 @@ APP_BASE_URL=http://127.0.0.1:$(API_PORT)\n\
 API_KEY=$(API_KEY)\n\
 AI_SERVICE_SECRET=$(AI_SERVICE_SECRET)\n\
 CORS_ALLOWED_ORIGINS=http://localhost:$(WEB_PORT),http://127.0.0.1:$(WEB_PORT)" > apps/api/.env
-	@echo "APP_ENV=local\n\
-ENABLE_LIVE_LLM=false\n\
-ENABLE_OTEL=false\n\
-DEFAULT_ARCHITECTURE_MODE=centralized_orchestration\n\
-RUNTIME_MAX_HANDOFFS=6\n\
-RUNTIME_TIMEOUT_SECONDS=45\n\
-CHAT_API_CALLBACK_TIMEOUT_SECONDS=10" > apps/agent-runtime/.env
+	@printf "APP_ENV=local\nENABLE_LIVE_LLM=$(ENABLE_LIVE_LLM)\nAWS_BEARER_TOKEN_BEDROCK=$(AWS_BEARER_TOKEN_BEDROCK)\nBEDROCK_MODEL_ID=$(BEDROCK_MODEL_ID)\nAWS_REGION=$(AWS_REGION)\nENABLE_OTEL=false\nDEFAULT_ARCHITECTURE_MODE=centralized_orchestration\nRUNTIME_MAX_HANDOFFS=6\nRUNTIME_TIMEOUT_SECONDS=45\nCHAT_API_CALLBACK_TIMEOUT_SECONDS=10\n" > apps/agent-runtime/.env
 	@echo "NEXT_PUBLIC_API_BASE_URL=http://localhost:$(API_PORT)\n\
 NEXT_PUBLIC_API_KEY=$(API_KEY)" > apps/web/.env.local
 	@rm -rf apps/web/.next
