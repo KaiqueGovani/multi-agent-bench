@@ -186,12 +186,16 @@ export function ArchitectureRadarChart({
   return (
     <ResponsiveContainer height={280} width="100%">
       <RadarChart data={data} cx="50%" cy="50%" outerRadius="70%">
-        <PolarGrid className="stroke-border/40" />
-        <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11 }} className="fill-muted-foreground" />
+        <PolarGrid stroke="hsl(var(--border))" strokeOpacity={0.4} />
+        <PolarAngleAxis
+          dataKey="metric"
+          tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+          axisLine={{ stroke: "hsl(var(--border))", strokeOpacity: 0.4 }}
+        />
         <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
-        <Radar name="Centralizada" dataKey="centralized" stroke="#2563eb" strokeWidth={2.5} fill="none" dot={{ r: 2.5 }} />
-        <Radar name="Swarm" dataKey="swarm" stroke="#059669" strokeWidth={2.5} fill="none" dot={{ r: 2.5 }} />
-        <Radar name="Workflow" dataKey="workflow" stroke="#7c3aed" strokeWidth={2.5} fill="none" dot={{ r: 2.5 }} />
+        <Radar name="Centralizada" dataKey="centralized" stroke="#2563eb" strokeWidth={2.5} fill="#2563eb" fillOpacity={0.12} dot={{ r: 2.5 }} />
+        <Radar name="Swarm" dataKey="swarm" stroke="#059669" strokeWidth={2.5} fill="#059669" fillOpacity={0.12} dot={{ r: 2.5 }} />
+        <Radar name="Workflow" dataKey="workflow" stroke="#7c3aed" strokeWidth={2.5} fill="#7c3aed" fillOpacity={0.12} dot={{ r: 2.5 }} />
         <Legend wrapperStyle={{ fontSize: 12 }} />
         <Tooltip content={<RadarValueTooltip />} />
       </RadarChart>

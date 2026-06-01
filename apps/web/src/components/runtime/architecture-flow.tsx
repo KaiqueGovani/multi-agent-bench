@@ -539,6 +539,9 @@ function makeNode(
     id,
     type: "agent",
     position: { x, y },
+    // ReactFlow disables pointer-events on the wrapper when selectable/draggable/click handlers
+    // are all off. We need hover for the agent popover, so re-enable pointer events here.
+    style: { pointerEvents: "all" },
     data: { actorName, description, status, statusLabel, active, tone, nodeId, events: events ?? [] },
   };
 }
@@ -566,52 +569,48 @@ function edgeStateFromEvents(
   const matchesSource = (name: string) => sourceNames.has(name);
   const matchesTarget = (name: string) => targetNames.has(name);
 
-  // Check recent events for active/recent state
-  const recent = events.slice(-12);
-  for (let i = recent.length - 1; i >= 0; i--) {
-    const e = recent[i];
+  const isActivityEvent = (e: RunExecutionEvent) =>
+    e.eventFamily === "node" || e.eventFamily === "tool" || e.eventFamily === "response";
+
+  const sourceCompleted = events.some(
+    (e) => e.actorName != null && matchesSource(e.actorName) && isActivityEvent(e) && e.status === "completed",
+  );
+  const targetCompleted = events.some(
+    (e) => e.actorName != null && matchesTarget(e.actorName) && isActivityEvent(e) && e.status === "completed",
+  );
+  const sourceRunning = events.some(
+    (e) => e.actorName != null && matchesSource(e.actorName) && isActivityEvent(e) && e.status === "running",
+  );
+  const targetRunning = events.some(
+    (e) => e.actorName != null && matchesTarget(e.actorName) && isActivityEvent(e) && e.status === "running",
+  );
+
+  // Explicit handoff between this exact pair always wins.
+  for (let i = events.length - 1; i >= 0; i--) {
+    const e = events[i];
+    if (e.eventFamily !== "handoff") continue;
     const actor = e.actorName;
-    if (!actor) continue;
-
-    if (e.eventFamily === "handoff") {
-      const p = e.payload as Record<string, unknown>;
-      const from = p.from as string | undefined;
-      const to = (p.to ?? p.targetActor) as string | undefined;
-      if (
-        (from && to && matchesSource(from) && matchesTarget(to)) ||
-        (matchesSource(actor) && to && matchesTarget(to))
-      ) {
-        if (e.status === "running") return "active";
-        return terminal ? "settled" : "recent";
-      }
-    }
-
-    if (e.eventFamily === "node" || e.eventFamily === "tool") {
-      if (matchesTarget(actor)) {
-        if (e.status === "running") return "active";
-        if (e.status === "completed") return terminal ? "settled" : "recent";
-      }
-    }
-
-    if (e.eventFamily === "response" && matchesTarget(actor)) {
+    const p = (e.payload ?? {}) as Record<string, unknown>;
+    const from = (p.from as string | undefined) ?? actor ?? undefined;
+    const to = (p.to ?? p.targetActor) as string | undefined;
+    if (from && to && matchesSource(from) && matchesTarget(to)) {
       if (e.status === "running") return "active";
-      if (e.status === "completed") return terminal ? "settled" : "recent";
+      return terminal ? "settled" : "recent";
     }
   }
 
-  // For terminal runs, check the full event history to see if target was ever active
-  if (terminal) {
-    const targetHasActivity = events.some((e) =>
-      e.actorName && matchesTarget(e.actorName) &&
-      (e.eventFamily === "node" || e.eventFamily === "tool" || e.eventFamily === "response") &&
-      e.status === "completed"
-    );
-    const sourceHasActivity = events.some((e) =>
-      e.actorName && matchesSource(e.actorName) &&
-      (e.eventFamily === "node" || e.eventFamily === "tool" || e.eventFamily === "response" || e.eventFamily === "handoff")
-    );
-    if (targetHasActivity && sourceHasActivity) return "settled";
-    if (targetHasActivity) return "settled";
+  // Both endpoints actually did work → edge represents a real path.
+  if (sourceCompleted && targetCompleted) {
+    if (!terminal && targetRunning) return "active";
+    return terminal ? "settled" : "recent";
+  }
+
+  // Live run: target currently running with source already done → in-flight handoff.
+  if (!terminal && sourceCompleted && targetRunning) {
+    return "active";
+  }
+  if (!terminal && sourceRunning && targetRunning) {
+    return "active";
   }
 
   return "idle";
