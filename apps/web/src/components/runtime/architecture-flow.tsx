@@ -595,8 +595,13 @@ function edgeStateFromEvents(
     const from = (p.from as string | undefined) ?? actor ?? undefined;
     const to = (p.to ?? p.targetActor) as string | undefined;
     if (from && to && matchesSource(from) && matchesTarget(to)) {
+      // Once the run has reached a terminal status, no edge should keep
+      // animating. A handoff event whose status is still "running" only
+      // means the runtime never wrote a completion update — the run is
+      // over either way, so collapse to "settled".
+      if (terminal) return "settled";
       if (e.status === "running") return "active";
-      return terminal ? "settled" : "recent";
+      return "recent";
     }
   }
 

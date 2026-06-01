@@ -144,14 +144,29 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
         return null;
       }
       setConversation(detail.conversation);
-      // Replace messages but strip any remaining optimistic/streaming messages
+      // Replace messages but keep any optimistic/streaming messages whose
+      // persisted outbound counterpart hasn't landed yet. We use the
+      // streaming id ("streaming-<runId>") to look up a matching outbound
+      // by metadata.runtimeRunId — once the real message is present, the
+      // streaming twin is dropped to avoid showing duplicates.
       setMessages((current) => {
         const realMessages = detail.messages;
-        // Keep streaming messages that don't yet have a server counterpart
-        const activeStreaming = current.filter(
-          (m) => m.id.startsWith("streaming-")
+        const persistedRunIds = new Set<string>(
+          realMessages
+            .filter((m) => m.direction === "outbound")
+            .map((m) => readRuntimeRunId(m.metadata))
+            .filter((value): value is string => Boolean(value)),
         );
-        return [...realMessages, ...activeStreaming];
+        const remainingStreaming = current.filter((m) => {
+          if (!m.id.startsWith("streaming-")) return false;
+          const runId = m.id.slice("streaming-".length);
+          if (persistedRunIds.has(runId)) {
+            streamingTimestampsRef.current.delete(runId);
+            return false;
+          }
+          return true;
+        });
+        return [...realMessages, ...remainingStreaming];
       });
       setAttachments(detail.attachments);
       setEvents((current) => mergeEventsForConversation(id, current, detail.events));
@@ -167,7 +182,7 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
       }
       return null;
     }
-  }, [refreshConversations]);
+  }, [refreshConversations, refreshOpenReviewTasks]);
 
   /** Debounced refresh: skips if another refresh happened within 500ms.
    *  Set `force` to true to bypass debounce (for critical events like run completion). */
@@ -420,17 +435,27 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
             });
           }
 
-          if (
-            (event.eventType === "response.final" || event.eventType === "processing.completed")
-            && payloadRunId
-          ) {
-            const streamingId = "streaming-" + payloadRunId;
-            streamingTimestampsRef.current.delete(payloadRunId);
-            setMessages((prev) => prev.filter((m) => m.id !== streamingId));
-            // Force refresh on completion to ensure all parallel runs are updated
-            debouncedRefreshDetail(conversationId, true);
-          } else if (event.eventType === "response.final" || event.eventType === "processing.completed") {
-            // Fallback: no runId in payload — still refresh (backward compat with mock mode)
+          if (event.eventType === "response.final" || event.eventType === "processing.completed") {
+            // Don't remove the streaming bubble here. The persisted outbound
+            // message lands via refreshConversationDetail, which then drops
+            // the streaming twin (matched by runtimeRunId). Removing here
+            // would cause the response to flicker — visible during streaming
+            // → blank → visible again once the refresh completes.
+            if (payloadRunId
+              && event.eventType === "response.final"
+              && typeof event.payload?.contentText === "string") {
+              // Also fold in the final contentText so the bubble shows the
+              // complete text immediately, even before the refresh.
+              const streamingId = "streaming-" + payloadRunId;
+              const finalText = event.payload.contentText as string;
+              setMessages((prev) => {
+                const idx = prev.findIndex((m) => m.id === streamingId);
+                if (idx < 0) return prev;
+                const updated = [...prev];
+                updated[idx] = { ...updated[idx], contentText: finalText, status: "completed" };
+                return updated;
+              });
+            }
             debouncedRefreshDetail(conversationId, true);
           }
         },
@@ -509,6 +534,12 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
     startConversation,
     updateReviewTask
   };
+}
+
+function readRuntimeRunId(metadata: unknown): string | null {
+  if (!metadata || typeof metadata !== "object") return null;
+  const value = (metadata as Record<string, unknown>).runtimeRunId;
+  return typeof value === "string" && value.length > 0 ? value : null;
 }
 
 function pickConversationFlowRun(runs: Run[]): Run | null {

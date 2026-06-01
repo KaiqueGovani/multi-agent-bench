@@ -134,6 +134,7 @@ class MockProcessingRuntime:
                 correlation_id=correlation_id,
                 review_required=review_required,
                 architecture_mode=resolved_architecture_mode,
+                run_id=run_id,
             )
 
             self._record(
@@ -503,6 +504,22 @@ class MockProcessingRuntime:
 
         total_duration_ms = int((datetime.now(UTC) - started_at).total_seconds() * 1000)
         token_usage = self._mock_token_usage(architecture_mode)
+
+        # For comparison-only runs, the run-execution domain sync is skipped
+        # (see RunExecutionService._is_comparison_only), so we explicitly
+        # persist a per-run outbound message here. This lets the UI display
+        # the response of every architecture in a multi-architecture run,
+        # not just the canonical one.
+        if not suppress_public_events:
+            self._create_outbound_message(
+                db,
+                inbound_message=message,
+                correlation_id=correlation_id,
+                review_required=review_required,
+                architecture_mode=architecture_mode,
+                run_id=run_id,
+            )
+
         self._record_run_event(
             run_execution,
             run_id=run_id,
@@ -746,7 +763,16 @@ class MockProcessingRuntime:
         correlation_id: UUID,
         review_required: bool,
         architecture_mode: str,
+        run_id: UUID | None = None,
     ) -> MessageModel:
+        metadata: dict = {
+            "channel": self._settings.default_channel,
+            "architectureMode": architecture_mode,
+            "runtimeMode": self._settings.runtime_mode,
+            "reviewRequired": review_required,
+        }
+        if run_id is not None:
+            metadata["runtimeRunId"] = str(run_id)
         outbound = MessageModel(
             id=uuid4(),
             conversation_id=inbound_message.conversation_id,
@@ -755,12 +781,7 @@ class MockProcessingRuntime:
             created_at_server=datetime.now(UTC),
             status=MessageStatus.COMPLETED.value,
             correlation_id=correlation_id,
-            metadata_json={
-                "channel": self._settings.default_channel,
-                "architectureMode": architecture_mode,
-                "runtimeMode": self._settings.runtime_mode,
-                "reviewRequired": review_required,
-            },
+            metadata_json=metadata,
             model_context_json={
                 "language": "pt-BR",
                 "inferredIntent": self._infer_intent(inbound_message.content_text),

@@ -29,6 +29,7 @@ from app.schemas.domain import (
 from app.schemas.domain import RunSummary
 from app.schemas.enums import MessageStatus, ProcessingEventType, ProcessingStatus, RunStatus
 from app.services.events import EventService
+from app.services.run_execution import RunExecutionService
 from app.services.runs import RunService
 
 
@@ -179,6 +180,13 @@ class ProcessingDispatcher:
                     tool_call_count=tool_call_count,
                 ),
             )
+            # Mirror the live-runtime PATCH /runs/{id} contract: projection
+            # run_status must reflect the run's final status so the UI flow
+            # diagram can settle (no stale "active" arrows after completion).
+            execution_service = RunExecutionService(db)
+            execution_service.sync_run_completion(run_id)
+            db.commit()
+            execution_service.publish_latest_event(run_id)
 
     def _dispatch_external(
         self,

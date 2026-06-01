@@ -20,23 +20,21 @@ import {
 interface MessageListProps {
   messages: Message[];
   attachmentsByMessage: Record<string, Attachment[]>;
-  branch?: { label: string; text: string } | null;
   isLoading?: boolean;
 }
 
 export function MessageList({
   messages,
   attachmentsByMessage,
-  branch,
   isLoading = false
 }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (messages.length > 0 || branch) {
+    if (messages.length > 0) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     }
-  }, [messages.length, branch]);
+  }, [messages.length]);
 
   if (isLoading) {
     return (
@@ -51,7 +49,7 @@ export function MessageList({
     );
   }
 
-  if (messages.length === 0 && !branch) {
+  if (messages.length === 0) {
     return (
       <div className="flex h-full items-center justify-center px-6" data-testid="message-list-empty">
         <Card className="max-w-md border-dashed text-center">
@@ -164,25 +162,6 @@ export function MessageList({
           </article>
         );
       })}
-      {branch ? (
-        <article className="flex gap-3 justify-start" data-testid="message-branch">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-secondary text-xs font-semibold text-secondary-foreground">
-            <Bot className="h-4 w-4" />
-          </div>
-          <div className="max-w-[min(36rem,82vw)] flex flex-col items-start">
-            <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Bot className="h-3.5 w-3.5" />
-                Sistema
-              </span>
-              <Badge variant="outline">{branch.label}</Badge>
-            </div>
-            <div className="rounded-lg border bg-card px-4 py-3 text-sm leading-6 shadow-sm text-card-foreground">
-              <MarkdownContent className="text-sm" content={branch.text} />
-            </div>
-          </div>
-        </article>
-      ) : null}
       <div ref={bottomRef} />
     </div>
   );

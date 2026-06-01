@@ -36,7 +36,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useConversation } from "@/hooks/use-conversation";
 import { getRunExecution } from "@/lib/api/client";
-import type { ArchitectureMode, ConversationSummary, ExecutionMode, ReviewTask, ReviewTaskStatus, Run, RunExecutionEvent, RunExecutionResponse } from "@/lib/types";
+import type { ArchitectureMode, ConversationSummary, ExecutionMode, Message, ReviewTask, ReviewTaskStatus, Run, RunExecutionEvent, RunExecutionResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { MessageComposer } from "./message-composer";
 import { MessageList } from "./message-list";
@@ -100,18 +100,22 @@ export function ChatWorkspace() {
   const requestedConversationId = searchParams.get("conversationId");
   const hasActiveConversation = Boolean(conversationId);
   const flowRuns = buildLatestArchitectureRuns(runs);
-  const displayedFlowExecution =
-    selectedFlowExecution?.run.id === selectedFlowRunId ? selectedFlowExecution : runExecution;
   const isMultiArchitecture = flowRuns.length > 1;
   const selectedRun = flowRuns.find((r) => r.id === selectedFlowRunId) ?? null;
   const selectedArchitectureKey = selectedRun ? readArchitectureKey(selectedRun) : null;
-  const branchResponseText = readFinalResponseText(displayedFlowExecution?.executionEvents);
-  const filteredMessages = isMultiArchitecture
-    ? messages.filter((m) => m.direction === "inbound" || m.id === "streaming-" + selectedFlowRunId)
-    : messages;
-  const branchProp = isMultiArchitecture && branchResponseText && selectedArchitectureKey
-    ? { label: formatArchitectureLabel(selectedArchitectureKey), text: branchResponseText }
-    : null;
+  const displayedFlowExecution = pickDisplayedExecution({
+    selectedFlowRunId,
+    selectedFlowExecution,
+    runExecution,
+    isMultiArchitecture,
+  });
+  const filteredMessages = filterMessagesForArchitecture({
+    messages,
+    runs,
+    isMultiArchitecture,
+    selectedArchitectureKey,
+    selectedFlowRunId,
+  });
 
   function handleStartDraftConversation() {
     setIsDraftConversation(true);
@@ -420,7 +424,6 @@ export function ChatWorkspace() {
                 <div className="flex-1 overflow-y-auto">
                   <MessageList
                     attachmentsByMessage={attachmentsByMessage}
-                    branch={branchProp}
                     isLoading={isLoadingConversation}
                     messages={filteredMessages}
                   />
@@ -1064,17 +1067,87 @@ function readArchitectureKey(run: Run): Exclude<ArchitectureMode, "all_architect
   return "centralized_orchestration";
 }
 
-function readFinalResponseText(events: RunExecutionEvent[] | undefined): string | null {
-  if (!events) return null;
-  for (let i = events.length - 1; i >= 0; i--) {
-    const evt = events[i];
-    if (evt.eventFamily === "response" && evt.eventName === "final") {
-      const raw = evt.payload["contentText"];
-      const text = typeof raw === "string" ? raw.trim() : null;
-      if (text) return text;
+function readMessageRuntimeRunId(message: { metadata?: unknown }): string | null {
+  const meta = message.metadata;
+  if (!meta || typeof meta !== "object") return null;
+  const value = (meta as Record<string, unknown>).runtimeRunId;
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+/**
+ * In multi-architecture mode every architecture produces its own outbound
+ * message tagged with `metadata.runtimeRunId`. The chat view should show
+ * the user's inbound messages plus only the outbound responses that belong
+ * to the currently-selected architecture (across all turns), so switching
+ * architectures swaps out the AI side of the conversation cleanly.
+ */
+function filterMessagesForArchitecture({
+  messages,
+  runs,
+  isMultiArchitecture,
+  selectedArchitectureKey,
+  selectedFlowRunId,
+}: {
+  messages: Message[];
+  runs: Run[];
+  isMultiArchitecture: boolean;
+  selectedArchitectureKey: Exclude<ArchitectureMode, "all_architectures"> | null;
+  selectedFlowRunId: string | null;
+}): Message[] {
+  if (!isMultiArchitecture || !selectedArchitectureKey) {
+    return messages;
+  }
+  const runIdToArchitecture = new Map<string, string>();
+  for (const run of runs) {
+    const key = run.experiment?.architectureKey;
+    if (typeof key === "string") {
+      runIdToArchitecture.set(run.id, key);
     }
   }
-  return null;
+  return messages.filter((message) => {
+    if (message.direction === "inbound") {
+      return true;
+    }
+    if (message.id.startsWith("streaming-")) {
+      const runId = message.id.slice("streaming-".length);
+      return runId === selectedFlowRunId;
+    }
+    if (message.direction === "outbound") {
+      const runId = readMessageRuntimeRunId(message);
+      if (!runId) return false;
+      return runIdToArchitecture.get(runId) === selectedArchitectureKey;
+    }
+    return true;
+  });
+}
+
+function pickDisplayedExecution({
+  selectedFlowRunId,
+  selectedFlowExecution,
+  runExecution,
+  isMultiArchitecture,
+}: {
+  selectedFlowRunId: string | null;
+  selectedFlowExecution: RunExecutionResponse | null;
+  runExecution: RunExecutionResponse | null;
+  isMultiArchitecture: boolean;
+}): RunExecutionResponse | null {
+  if (!selectedFlowRunId) return runExecution;
+  // Prefer the explicitly fetched execution for the selected run when present.
+  if (selectedFlowExecution?.run.id === selectedFlowRunId) {
+    return selectedFlowExecution;
+  }
+  // If the live runExecution already matches the selected run, use it.
+  if (runExecution?.run.id === selectedFlowRunId) {
+    return runExecution;
+  }
+  // In multi-architecture mode, fall back to NULL rather than the canonical
+  // run's execution. Showing the wrong architecture's flow while waiting for
+  // the right one to load misleads the user; the placeholder is honest.
+  if (isMultiArchitecture) {
+    return null;
+  }
+  return runExecution;
 }
 
 function formatConversationPreview(value: string | null | undefined): string {

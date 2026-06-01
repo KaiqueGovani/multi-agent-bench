@@ -198,6 +198,17 @@ class RunExecutionService:
         comparison_only = self._is_comparison_only(model.run_id)
         if not comparison_only and not suppress_public_events:
             self._sync_domain_state(model)
+        elif (
+            comparison_only
+            and not suppress_public_events
+            and event_family == "response"
+            and event_name == "final"
+        ):
+            # Comparison runs (multi-architecture batches) skip the global
+            # domain sync to avoid clobbering the canonical conversation
+            # state, but they should still persist their own outbound
+            # message so the UI can display every architecture's response.
+            self._sync_comparison_outbound(model)
         self._db.commit()
         self._db.refresh(model)
         event = run_execution_event_to_schema(model)
@@ -413,6 +424,16 @@ class RunExecutionService:
 
         self._db.flush()
 
+    def _sync_comparison_outbound(self, event: RunExecutionEventModel) -> None:
+        payload = event.payload_json or {}
+        review_required = bool(payload.get("reviewRequired"))
+        outbound = self._ensure_outbound_message(
+            event=event,
+            content_text=str(payload.get("contentText") or "").strip(),
+            review_required=review_required,
+        )
+        payload.setdefault("messageId", str(outbound.id))
+
     def _ensure_outbound_message(
         self,
         *,
@@ -420,12 +441,17 @@ class RunExecutionService:
         content_text: str,
         review_required: bool,
     ) -> MessageModel:
+        # Match per (conversation, correlation, run) so each architecture run
+        # in a multi-architecture batch gets its own persisted outbound.
+        # Falls back to (conversation, correlation, direction) for legacy
+        # rows that pre-date the runtimeRunId tagging.
         statement = (
             select(MessageModel)
             .where(
                 MessageModel.conversation_id == event.conversation_id,
                 MessageModel.correlation_id == event.correlation_id,
                 MessageModel.direction == MessageDirection.OUTBOUND.value,
+                MessageModel.metadata_json["runtimeRunId"].astext == str(event.run_id),
             )
             .order_by(MessageModel.created_at_server.desc(), MessageModel.id.desc())
             .limit(1)
