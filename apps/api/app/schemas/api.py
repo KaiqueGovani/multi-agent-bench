@@ -35,6 +35,7 @@ class HealthResponse(ApiModel):
     service: str
     version: str
     environment: str
+    runtime: JsonObject = Field(default_factory=dict)
 
 
 class CreateConversationRequest(ApiModel):

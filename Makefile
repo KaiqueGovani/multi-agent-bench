@@ -29,20 +29,24 @@ API_KEY                  ?= poc-dev-key-2026
 AI_SERVICE_SECRET        ?= local-runtime-secret
 
 # ── LLM / Bedrock ─────────────────────────────────────────────────────
-# Set ENABLE_LIVE_LLM=true and supply AWS_BEARER_TOKEN_BEDROCK to use
-# real LLM calls. Both can be overridden on the command line or via
-# shell exports without editing this file.
-ENABLE_LIVE_LLM          ?= false
+# Live LLM is the local default. Supply AWS_BEARER_TOKEN_BEDROCK for
+# real LLM calls, or override ENABLE_LIVE_LLM=false for deterministic mock mode.
+ENABLE_LIVE_LLM          ?= true
 AWS_BEARER_TOKEN_BEDROCK ?=
 BEDROCK_MODEL_ID         ?= us.anthropic.claude-haiku-4-5-20251001-v1:0
 AWS_REGION               ?= us-east-1
+EXISTING_AWS_BEARER_TOKEN_BEDROCK := $(shell awk -F= '/^AWS_BEARER_TOKEN_BEDROCK=/{print substr($$0, index($$0,"=")+1)}' apps/agent-runtime/.env 2>/dev/null)
+EFFECTIVE_AWS_BEARER_TOKEN_BEDROCK := $(if $(AWS_BEARER_TOKEN_BEDROCK),$(AWS_BEARER_TOKEN_BEDROCK),$(EXISTING_AWS_BEARER_TOKEN_BEDROCK))
 
 # ── Compose ───────────────────────────────────────────────────────────
 COMPOSE_FILE       ?= infra/docker/docker-compose.yml
 
 # Forward to docker-compose and sub-processes
 export DB_PORT DB_NAME DB_USER DB_PASSWORD MINIO_PORT MINIO_CONSOLE_PORT \
-       ENABLE_LIVE_LLM AWS_BEARER_TOKEN_BEDROCK BEDROCK_MODEL_ID AWS_REGION
+       ENABLE_LIVE_LLM BEDROCK_MODEL_ID AWS_REGION
+ifneq ($(strip $(EFFECTIVE_AWS_BEARER_TOKEN_BEDROCK)),)
+export AWS_BEARER_TOKEN_BEDROCK := $(EFFECTIVE_AWS_BEARER_TOKEN_BEDROCK)
+endif
 
 # ═══════════════════════════════════════════════════════════════════════
 .PHONY: up dev setup install sync-env infra db-migrate \
@@ -80,7 +84,7 @@ APP_BASE_URL=http://127.0.0.1:$(API_PORT)\n\
 API_KEY=$(API_KEY)\n\
 AI_SERVICE_SECRET=$(AI_SERVICE_SECRET)\n\
 CORS_ALLOWED_ORIGINS=http://localhost:$(WEB_PORT),http://127.0.0.1:$(WEB_PORT)" > apps/api/.env
-	@printf "APP_ENV=local\nENABLE_LIVE_LLM=$(ENABLE_LIVE_LLM)\nAWS_BEARER_TOKEN_BEDROCK=$(AWS_BEARER_TOKEN_BEDROCK)\nBEDROCK_MODEL_ID=$(BEDROCK_MODEL_ID)\nAWS_REGION=$(AWS_REGION)\nENABLE_OTEL=false\nDEFAULT_ARCHITECTURE_MODE=centralized_orchestration\nRUNTIME_MAX_HANDOFFS=6\nRUNTIME_TIMEOUT_SECONDS=45\nCHAT_API_CALLBACK_TIMEOUT_SECONDS=10\n" > apps/agent-runtime/.env
+	@printf "APP_ENV=local\nENABLE_LIVE_LLM=$(ENABLE_LIVE_LLM)\nAWS_BEARER_TOKEN_BEDROCK=$(EFFECTIVE_AWS_BEARER_TOKEN_BEDROCK)\nBEDROCK_MODEL_ID=$(BEDROCK_MODEL_ID)\nAWS_REGION=$(AWS_REGION)\nENABLE_OTEL=false\nDEFAULT_ARCHITECTURE_MODE=centralized_orchestration\nRUNTIME_MAX_HANDOFFS=6\nRUNTIME_TIMEOUT_SECONDS=45\nCHAT_API_CALLBACK_TIMEOUT_SECONDS=10\n" > apps/agent-runtime/.env
 	@echo "NEXT_PUBLIC_API_BASE_URL=http://localhost:$(API_PORT)\n\
 NEXT_PUBLIC_API_KEY=$(API_KEY)" > apps/web/.env.local
 	@rm -rf apps/web/.next

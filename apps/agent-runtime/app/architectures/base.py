@@ -447,6 +447,7 @@ class ExecutionContext:
             return str(result).strip()
         except Exception:
             self.tool_error_count += 1
+            logger.exception("Live LLM invocation failed; falling back to mock response")
             return None
 
     def _build_tool_hook_provider(

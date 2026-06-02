@@ -35,8 +35,8 @@ import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useConversation } from "@/hooks/use-conversation";
-import { getRunExecution } from "@/lib/api/client";
-import type { ArchitectureMode, ConversationSummary, ExecutionMode, Message, ReviewTask, ReviewTaskStatus, Run, RunExecutionEvent, RunExecutionResponse } from "@/lib/types";
+import { getHealth, getRunExecution } from "@/lib/api/client";
+import type { ArchitectureMode, ConversationSummary, ExecutionMode, Message, ReviewTask, ReviewTaskStatus, Run, RunExecutionEvent, RunExecutionResponse, RuntimeHealthStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { MessageComposer } from "./message-composer";
 import { MessageList } from "./message-list";
@@ -68,7 +68,8 @@ export function ChatWorkspace() {
   const [architectureMode, setArchitectureMode] = useState<ArchitectureMode>(
     "all_architectures"
   );
-  const [executionMode, setExecutionMode] = useState<ExecutionMode>("mock");
+  const [executionMode, setExecutionMode] = useState<ExecutionMode>("real");
+  const [runtimeStatus, setRuntimeStatus] = useState<RuntimeHealthStatus | null>(null);
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("conversa");
   const [isFlowOpen, setIsFlowOpen] = useState<boolean>(() => typeof window !== "undefined" && window.localStorage.getItem("chat-flow-open") === "true");
   const [dismissedError, setDismissedError] = useState<string | null>(null);
@@ -130,6 +131,34 @@ export function ChatWorkspace() {
   useEffect(() => {
     localStorage.setItem("chat-flow-open", String(isFlowOpen));
   }, [isFlowOpen]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function refreshRuntimeStatus() {
+      try {
+        const health = await getHealth();
+        if (!cancelled) {
+          setRuntimeStatus(health.runtime);
+        }
+      } catch {
+        if (!cancelled) {
+          setRuntimeStatus({
+            mode: executionMode,
+            reachable: false,
+            ready: false,
+            llm: null,
+            error: "API indisponivel",
+          });
+        }
+      }
+    }
+    void refreshRuntimeStatus();
+    const intervalId = window.setInterval(refreshRuntimeStatus, 15000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [executionMode]);
 
   useEffect(() => {
     if (!runs.length) {
@@ -257,6 +286,7 @@ export function ChatWorkspace() {
                 <HeaderContextTooltip
                   architectureMode={architectureMode}
                   executionMode={executionMode}
+                  runtimeStatus={runtimeStatus}
                 />
               </div>
               <p className="truncate text-xs text-muted-foreground">
@@ -289,6 +319,7 @@ export function ChatWorkspace() {
             <ExecutionModeToggle
               executionMode={executionMode}
               onExecutionModeChange={setExecutionMode}
+              runtimeStatus={runtimeStatus}
             />
             {openReviewTasks.length > 0 ? (
               <Link
@@ -816,36 +847,44 @@ function ReviewPanel({
 
 function ExecutionModeToggle({
   executionMode,
-  onExecutionModeChange
+  onExecutionModeChange,
+  runtimeStatus
 }: {
   executionMode: ExecutionMode;
   onExecutionModeChange: (mode: ExecutionMode) => void;
+  runtimeStatus: RuntimeHealthStatus | null;
 }) {
   const isMock = executionMode === "mock";
+  const isChecking = !isMock && !runtimeStatus;
+  const isReady = !isMock && Boolean(runtimeStatus?.ready);
+  const label = isMock ? "Simulado" : isChecking ? "Verificando" : isReady ? "LLM ativo" : "LLM off";
   return (
     <button
-      aria-label={`Modo de execução: ${isMock ? "Simulado" : "Real"}`}
+      aria-label={`Modo de execução: ${label}`}
       className="flex h-9 items-center gap-2 rounded-md border bg-background px-3 text-sm transition-colors hover:bg-muted"
       onClick={() => onExecutionModeChange(isMock ? "real" : "mock")}
       type="button"
     >
       <span
         className={`inline-block h-2 w-2 rounded-full ${
-          isMock ? "bg-amber-400" : "bg-emerald-500"
+          isMock ? "bg-amber-400" : isChecking ? "bg-sky-500" : isReady ? "bg-emerald-500" : "bg-red-500"
         }`}
       />
-      <span className="hidden sm:inline">{isMock ? "Simulado" : "Real"}</span>
+      <span className="hidden sm:inline">{label}</span>
     </button>
   );
 }
 
 function HeaderContextTooltip({
   architectureMode,
-  executionMode
+  executionMode,
+  runtimeStatus
 }: {
   architectureMode: ArchitectureMode;
   executionMode: ExecutionMode;
+  runtimeStatus: RuntimeHealthStatus | null;
 }) {
+  const llm = runtimeStatus?.llm;
   return (
     <div className="group relative hidden shrink-0 sm:block">
       <button
@@ -864,12 +903,34 @@ function HeaderContextTooltip({
           <div className="grid gap-1 text-muted-foreground">
             <p>Plataforma: web chat</p>
             <p>Runtime: {executionMode === "real" ? "agent runtime" : "mock runtime"}</p>
+            <p>LLM: {formatRuntimeStatus(runtimeStatus)}</p>
+            {llm ? <p>Modelo: {llm.modelId}</p> : null}
+            {runtimeStatus?.error ? <p>Erro: {runtimeStatus.error}</p> : null}
             <p>Arquitetura: {formatArchitectureMode(architectureMode)}</p>
           </div>
         </div>
       </div>
     </div>
   );
+}
+
+function formatRuntimeStatus(status: RuntimeHealthStatus | null): string {
+  if (!status) {
+    return "verificando";
+  }
+  if (status.ready) {
+    return "ativo, token configurado";
+  }
+  if (!status.reachable) {
+    return "runtime indisponivel";
+  }
+  if (status.llm && !status.llm.tokenConfigured) {
+    return "token ausente";
+  }
+  if (status.llm && !status.llm.enabled) {
+    return "live LLM desligado";
+  }
+  return "nao pronto";
 }
 
 function formatArchitectureMode(mode: ArchitectureMode): string {

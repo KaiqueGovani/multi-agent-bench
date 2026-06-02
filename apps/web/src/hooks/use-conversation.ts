@@ -29,7 +29,7 @@ import type {
 
 type ConnectionStatus = "idle" | "connecting" | "open" | "closed" | "error" | "reconnecting";
 
-export function useConversation(architectureMode: ArchitectureMode, executionMode: ExecutionMode = "mock") {
+export function useConversation(architectureMode: ArchitectureMode, executionMode: ExecutionMode = "real") {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);

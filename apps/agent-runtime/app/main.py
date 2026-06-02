@@ -2,8 +2,9 @@ from concurrent.futures import Future, ThreadPoolExecutor
 import logging
 from fastapi import FastAPI, HTTPException, status
 
+from app.architectures.base import Agent, BedrockModel
 from app.core.config import get_settings
-from app.schemas.runtime import HealthResponse, RuntimeDispatchRequest, RuntimeDispatchResponse
+from app.schemas.runtime import HealthResponse, LlmRuntimeStatus, RuntimeDispatchRequest, RuntimeDispatchResponse
 from app.services.execution import RuntimeExecutionService
 from app.telemetry.setup import configure_logging, configure_telemetry
 
@@ -34,11 +35,21 @@ def create_app() -> FastAPI:
 
     @application.get("/health", response_model=HealthResponse)
     def health() -> HealthResponse:
+        token_configured = bool(settings.aws_bearer_token_bedrock)
+        sdk_available = Agent is not None and BedrockModel is not None
         return HealthResponse(
             status="ok",
             service=settings.app_name,
             version=settings.app_version,
             environment=settings.environment,
+            llm=LlmRuntimeStatus(
+                enabled=settings.enable_live_llm,
+                token_configured=token_configured,
+                sdk_available=sdk_available,
+                ready=settings.enable_live_llm and token_configured and sdk_available,
+                model_id=settings.bedrock_model_id,
+                region=settings.aws_region,
+            ),
         )
 
     @application.post("/runs", response_model=RuntimeDispatchResponse, status_code=status.HTTP_202_ACCEPTED)

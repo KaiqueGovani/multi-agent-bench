@@ -163,9 +163,9 @@ defaults:
 
 ## Mock vs Live
 
-Por padrão o backend roda com `ENABLE_LIVE_LLM=false` — respostas são templates fixos. Asserções sobre keywords fazem sentido porque os templates são escritos em PT-BR e conhecidos.
+Por padrão o ambiente local roda em modo live (`ENABLE_LIVE_LLM=true` e `RUNTIME_MODE=real`). Para testes determinísticos, force `ENABLE_LIVE_LLM=false` ou envie `runtimeMode=mock` — nesse caso as respostas são templates fixos. Asserções sobre keywords fazem sentido porque os templates são escritos em PT-BR e conhecidos.
 
-Quando o modo live for ligado (`ENABLE_LIVE_LLM=true`), as respostas passam a ser geradas por LLM real. Aí é que faz sentido adicionar avaliação semântica (deepeval, LLM-as-Judge) — mas isso fica para depois. Keywords e eventos SSE continuam valendo.
+Quando o modo live estiver ligado, as respostas passam a ser geradas por LLM real. Aí é que faz sentido adicionar avaliação semântica (deepeval, LLM-as-Judge) — mas isso fica para depois. Keywords e eventos SSE continuam valendo.
 
 ---
 

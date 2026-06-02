@@ -112,6 +112,23 @@ class RuntimeDispatchResponse(ApiModel):
     status: Literal["accepted"] = "accepted"
 
 
+class LlmRuntimeStatus(ApiModel):
+    enabled: bool
+    token_configured: bool
+    sdk_available: bool
+    ready: bool
+    model_id: str
+    region: str
+
+
+class HealthResponse(ApiModel):
+    status: str
+    service: str
+    version: str
+    environment: str
+    llm: LlmRuntimeStatus
+
+
 class RunSummary(ApiModel):
     model_config = ConfigDict(
         alias_generator=lambda field_name: "".join(
@@ -163,9 +180,3 @@ class IngestRunExecutionEventRequest(ApiModel):
     external_event_id: str | None = None
     payload: JsonObject = Field(default_factory=dict)
 
-
-class HealthResponse(ApiModel):
-    status: str
-    service: str
-    version: str
-    environment: str

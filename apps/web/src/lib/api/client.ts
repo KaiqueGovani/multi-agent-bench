@@ -5,6 +5,7 @@ import type {
   ConversationDetailResponse,
   CreateConversationResponse,
   ExecutionMode,
+  HealthResponse,
   MessageListResponse,
   ProcessingEvent,
   Run,
@@ -91,6 +92,10 @@ export function getDashboardMetrics(): Promise<DashboardMetricsResponse> {
   return request<DashboardMetricsResponse>("/dashboard/metrics");
 }
 
+export function getHealth(): Promise<HealthResponse> {
+  return request<HealthResponse>("/health");
+}
+
 export function getConversation(conversationId: string): Promise<ConversationDetailResponse> {
   return request<ConversationDetailResponse>(`/conversations/${conversationId}`);
 }
@@ -134,7 +139,7 @@ export function sendMessage(
   text: string,
   files: File[],
   architectureMode: ArchitectureMode,
-  executionMode: ExecutionMode = "mock"
+  executionMode: ExecutionMode = "real"
 ): Promise<SendMessageResponse> {
   const body = new FormData();
   body.append("conversationId", conversationId);
@@ -160,7 +165,7 @@ export function sendMessage(
   });
 }
 
-function getClientMetadata(architectureMode: ArchitectureMode, executionMode: ExecutionMode = "mock") {
+function getClientMetadata(architectureMode: ArchitectureMode, executionMode: ExecutionMode = "real") {
   return {
     clientTimestamp: new Date().toISOString(),
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,

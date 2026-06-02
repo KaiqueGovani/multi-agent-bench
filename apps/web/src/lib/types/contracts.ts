@@ -8,6 +8,32 @@ export type ArchitectureMode =
 
 export type ExecutionMode = "mock" | "real";
 
+export interface LlmRuntimeStatus {
+  enabled: boolean;
+  tokenConfigured: boolean;
+  sdkAvailable: boolean;
+  ready: boolean;
+  modelId: string;
+  region: string;
+}
+
+export interface RuntimeHealthStatus {
+  mode: ExecutionMode | string;
+  runtimeUrl?: string | null;
+  reachable: boolean;
+  ready: boolean;
+  llm?: LlmRuntimeStatus | null;
+  error?: string | null;
+}
+
+export interface HealthResponse {
+  status: string;
+  service: string;
+  version: string;
+  environment: string;
+  runtime: RuntimeHealthStatus;
+}
+
 export type ConversationStatus =
   | "active"
   | "waiting"

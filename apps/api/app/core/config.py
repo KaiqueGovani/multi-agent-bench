@@ -30,13 +30,13 @@ class Settings:
     default_memory_strategy: str = "session_only"
     default_tool_executor_mode: str = "sequential"
     default_review_policy_version: str = "mock-review-v1"
-    default_model_provider: str = "mock"
-    default_model_name: str = "mock-agent-runtime"
+    default_model_provider: str = "bedrock"
+    default_model_name: str = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
     default_model_version: str = "poc"
     default_prompt_bundle_version: str = "mock-prompts-v1"
     default_toolset_version: str = "mock-tools-v1"
     default_experiment_id: str = "poc-local"
-    runtime_mode: str = "mock"
+    runtime_mode: str = "real"
     mock_runtime_step_delay_seconds: float = 0.9
     ai_runtime_url: str | None = None
     ai_runtime_timeout_seconds: int = 10
