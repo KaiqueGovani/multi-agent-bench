@@ -397,6 +397,9 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
 
           // --- Streaming assistant message handling ---
           const payloadRunId = typeof event.payload?.runId === "string" ? event.payload.runId : null;
+          const payloadArchitectureMode = isArchitectureMode(event.payload?.architectureMode)
+            ? event.payload.architectureMode
+            : null;
 
           // --- Live projection fetch (throttled) ---
           if (payloadRunId) {
@@ -408,31 +411,17 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
             && typeof event.payload?.contentText === "string"
             && payloadRunId
           ) {
-            const streamingId = "streaming-" + payloadRunId;
-            const contentText = event.payload.contentText as string;
             streamingTimestampsRef.current.set(payloadRunId, Date.now());
-            setMessages((prev) => {
-              const existing = prev.findIndex((m) => m.id === streamingId);
-              if (existing >= 0) {
-                // Replace contentText in-place
-                const updated = [...prev];
-                updated[existing] = { ...updated[existing], contentText };
-                return updated;
-              }
-              // Append new streaming message
-              const streamingMsg: Message = {
-                id: streamingId,
-                conversationId,
-                direction: "outbound",
-                contentText,
-                createdAtClient: null,
-                createdAtServer: event.createdAt,
-                status: "processing",
-                correlationId: event.correlationId,
-                metadata: {}
-              };
-              return [...prev, streamingMsg];
-            });
+            setMessages((prev) => upsertStreamingMessage({
+              architectureMode: payloadArchitectureMode,
+              contentText: event.payload.contentText as string,
+              conversationId,
+              correlationId: event.correlationId,
+              createdAt: event.createdAt,
+              messages: prev,
+              runId: payloadRunId,
+              status: "processing",
+            }));
           }
 
           if (event.eventType === "response.final" || event.eventType === "processing.completed") {
@@ -446,15 +435,16 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
               && typeof event.payload?.contentText === "string") {
               // Also fold in the final contentText so the bubble shows the
               // complete text immediately, even before the refresh.
-              const streamingId = "streaming-" + payloadRunId;
-              const finalText = event.payload.contentText as string;
-              setMessages((prev) => {
-                const idx = prev.findIndex((m) => m.id === streamingId);
-                if (idx < 0) return prev;
-                const updated = [...prev];
-                updated[idx] = { ...updated[idx], contentText: finalText, status: "completed" };
-                return updated;
-              });
+              setMessages((prev) => upsertStreamingMessage({
+                architectureMode: payloadArchitectureMode,
+                contentText: event.payload.contentText as string,
+                conversationId,
+                correlationId: event.correlationId,
+                createdAt: event.createdAt,
+                messages: prev,
+                runId: payloadRunId,
+                status: "completed",
+              }));
             }
             debouncedRefreshDetail(conversationId, true);
           }
@@ -540,6 +530,59 @@ function readRuntimeRunId(metadata: unknown): string | null {
   if (!metadata || typeof metadata !== "object") return null;
   const value = (metadata as Record<string, unknown>).runtimeRunId;
   return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function upsertStreamingMessage({
+  architectureMode,
+  contentText,
+  conversationId,
+  correlationId,
+  createdAt,
+  messages,
+  runId,
+  status,
+}: {
+  architectureMode: ArchitectureMode | null;
+  contentText: string;
+  conversationId: string;
+  correlationId: string;
+  createdAt: string;
+  messages: Message[];
+  runId: string;
+  status: Message["status"];
+}): Message[] {
+  const streamingId = "streaming-" + runId;
+  const existing = messages.findIndex((m) => m.id === streamingId);
+  const existingMetadata = existing >= 0 ? messages[existing].metadata : null;
+  const metadata = {
+    ...(existingMetadata && typeof existingMetadata === "object" ? existingMetadata : {}),
+    ...(architectureMode ? { architectureMode } : {}),
+    runtimeRunId: runId,
+  };
+  if (existing >= 0) {
+    const updated = [...messages];
+    updated[existing] = {
+      ...updated[existing],
+      contentText,
+      metadata,
+      status,
+    };
+    return updated;
+  }
+  return [
+    ...messages,
+    {
+      id: streamingId,
+      conversationId,
+      direction: "outbound",
+      contentText,
+      createdAtClient: null,
+      createdAtServer: createdAt,
+      status,
+      correlationId,
+      metadata,
+    },
+  ];
 }
 
 function pickConversationFlowRun(runs: Run[]): Run | null {

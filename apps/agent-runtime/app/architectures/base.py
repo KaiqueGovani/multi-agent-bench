@@ -23,7 +23,9 @@ from app.schemas.runtime import (
 from app.services.callbacks import ChatApiCallbacks
 from app.tools.domain_tools import (
     attachment_intake,
+    catalog_contains,
     faq_lookup,
+    normalize_text,
     stock_lookup,
 )
 
@@ -313,6 +315,63 @@ class ExecutionContext:
             node_id="response_streamer.completed",
         )
 
+    # -- Conversation context ------------------------------------------------
+
+    def conversation_context_text(self, *, max_messages: int = 8) -> str:
+        """Render recent normalized turns for routing, tools, and prompts."""
+        history = self.request.conversation_history or [self.request.latest_message]
+        selected = history[-max_messages:]
+        lines: list[str] = []
+        for message in selected:
+            text = (message.content_text or "").strip()
+            if not text and not message.attachments:
+                continue
+            role = {
+                "inbound": "Usuario",
+                "outbound": "Assistente",
+                "system": "Sistema",
+            }.get(message.direction, message.direction)
+            attachment_note = ""
+            if message.attachments:
+                attachment_note = f" [anexos: {len(message.attachments)}]"
+            lines.append(f"{role}{attachment_note}: {text}".strip())
+        return "\n".join(lines)
+
+    def contextual_user_message(self) -> str:
+        context = self.conversation_context_text()
+        latest = self.request.latest_message.content_text or ""
+        if not context:
+            return latest
+        return (
+            "Contexto recente da conversa:\n"
+            f"{context}\n\n"
+            "Responda considerando que a ultima mensagem do usuario pode ser uma continuacao "
+            "dos turnos anteriores."
+        )
+
+    def tool_query_text(self) -> str:
+        latest = self.request.latest_message.content_text or ""
+        context = self.conversation_context_text()
+        if not context:
+            return latest
+        return f"Ultima mensagem do usuario: {latest}\n\nContexto recente:\n{context}"
+
+    def infer_route_from_context(self) -> str:
+        if self.request.latest_message.attachments:
+            return "image_intake"
+
+        latest_text = self.request.latest_message.content_text or ""
+        context_text = self.tool_query_text()
+        latest_normalized = normalize_text(latest_text)
+        context_normalized = normalize_text(context_text)
+        stock_terms = ["estoque", "disponivel", "disponibilidade", "tem ", "preco", "preço", "quanto custa"]
+        latest_has_stock_term = any(term in latest_normalized for term in stock_terms)
+        context_has_stock_term = any(term in context_normalized for term in stock_terms)
+        latest_mentions_catalog_product = catalog_contains(latest_text) is not None
+        if latest_has_stock_term or (latest_mentions_catalog_product and context_has_stock_term):
+            return "stock_lookup"
+        return "faq"
+
     # -- Specialist execution -------------------------------------------------
 
     def run_specialist(self, actor_name: str, *, phase: str) -> dict:
@@ -321,7 +380,7 @@ class ExecutionContext:
             if actor_name == "stock_agent":
                 self.tool_call_count += 1
                 self.emit("tool", "started", "running", actor_name=actor_name, tool_name="stock_lookup", node_id=f"{phase}.{actor_name}.tool", payload={"phase": phase})
-                result = stock_lookup(self.request.latest_message.content_text or "")
+                result = stock_lookup(self.tool_query_text())
                 self.emit("tool", "completed", "completed", actor_name=actor_name, tool_name="stock_lookup", node_id=f"{phase}.{actor_name}.tool", payload=result)
             elif actor_name == "image_intake_agent":
                 self.tool_call_count += 1
@@ -331,7 +390,7 @@ class ExecutionContext:
             else:
                 self.tool_call_count += 1
                 self.emit("tool", "started", "running", actor_name=actor_name, tool_name="faq_lookup", node_id=f"{phase}.{actor_name}.tool", payload={"phase": phase})
-                result = faq_lookup(self.request.latest_message.content_text or "")
+                result = faq_lookup(self.tool_query_text())
                 self.emit("tool", "completed", "completed", actor_name=actor_name, tool_name="faq_lookup", node_id=f"{phase}.{actor_name}.tool", payload=result)
         except Exception as exc:  # pragma: no cover - defensive
             self.tool_error_count += 1
@@ -357,12 +416,22 @@ class ExecutionContext:
                 "consultar um farmacêutico."
             ),
             prompt=(
+                f"Contexto recente da conversa:\n{self.conversation_context_text()}\n\n"
                 f"Informação coletada pelo especialista: {specialist_result}. "
-                "Componha a resposta final ao usuário."
+                "Componha a resposta final ao usuário considerando a ultima mensagem como possivel follow-up."
             ),
         )
         if live_text:
             return live_text
+        if route == "faq" and isinstance(specialist_result.get("answer"), str):
+            return f"[modo mock] {specialist_result['answer']}"
+        if route == "stock_lookup" and "product" in specialist_result:
+            product = specialist_result.get("product") or "produto"
+            quantity = specialist_result.get("quantity", 0)
+            unit = specialist_result.get("unit", "itens")
+            if specialist_result.get("available"):
+                return f"[modo mock] Temos {quantity} {unit} de {product} disponíveis no estoque simulado da POC."
+            return f"[modo mock] Nao encontrei {product} disponivel no estoque simulado da POC."
         return (
             f"[modo mock] Resposta fixa da arquitetura {architecture}. "
             "Ative ENABLE_LIVE_LLM=true com AWS_BEARER_TOKEN_BEDROCK configurado "

@@ -281,7 +281,13 @@ class ProcessingDispatcher:
             architecture_mode=run_model.experiment_json.get("architectureKey", self._settings.default_architecture_mode),
             experiment=run_model.experiment_json,
             latest_message=self._message_snapshot(message_model),
-            conversation_history=self._conversation_history(run_model.conversation_id),
+            conversation_history=self._conversation_history(
+                run_model.conversation_id,
+                architecture_mode=run_model.experiment_json.get(
+                    "architectureKey",
+                    self._settings.default_architecture_mode,
+                ),
+            ),
             callback=RuntimeCallbackConfig(
                 base_url=self._settings.app_base_url.rstrip("/"),
                 api_key=self._settings.api_key,
@@ -289,17 +295,46 @@ class ProcessingDispatcher:
             ),
         )
 
-    def _conversation_history(self, conversation_id: UUID) -> list[RuntimeMessageSnapshot]:
+    def _conversation_history(
+        self,
+        conversation_id: UUID,
+        *,
+        architecture_mode: str | None,
+    ) -> list[RuntimeMessageSnapshot]:
         with SessionLocal() as db:
             models = (
                 db.query(MessageModel)
                 .filter(MessageModel.conversation_id == conversation_id)
                 .order_by(MessageModel.created_at_server.desc(), MessageModel.id.desc())
-                .limit(self._settings.runtime_history_window_messages)
+                .limit(self._settings.runtime_history_window_messages * 4)
                 .all()
             )
-            ordered = list(reversed(models))
-            return [self._message_snapshot(model, db=db) for model in ordered]
+            ordered = [
+                model
+                for model in reversed(models)
+                if self._belongs_to_runtime_history(model, architecture_mode)
+            ]
+            windowed = ordered[-self._settings.runtime_history_window_messages:]
+            return [self._message_snapshot(model, db=db) for model in windowed]
+
+    def _belongs_to_runtime_history(
+        self,
+        message_model: MessageModel,
+        architecture_mode: str | None,
+    ) -> bool:
+        if message_model.direction in {"inbound", "system"}:
+            return True
+        if message_model.direction != "outbound":
+            return False
+
+        metadata = message_model.metadata_json or {}
+        message_architecture = metadata.get("architectureMode")
+        if message_architecture:
+            return message_architecture == architecture_mode
+
+        # Legacy outbound rows were created before per-architecture tagging.
+        # They belonged to the canonical centralized response.
+        return architecture_mode in {None, self._settings.default_architecture_mode, "centralized_orchestration"}
 
     def _message_snapshot(
         self,

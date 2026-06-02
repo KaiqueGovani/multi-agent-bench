@@ -233,6 +233,146 @@ test.describe("Regression — multi-architecture message visibility (bugs #2, #3
     // bubble must still display *something* the moment response.final fires.
     await expect(list).toContainText("Resposta completa final", { timeout: 4000 });
   });
+
+  test("selected architecture shows final response before run refresh catches up", async ({ page }) => {
+    await installMockEventSource(page);
+    await mockFrontendApi(page);
+
+    const NOW = "2026-04-29T03:54:36.000Z";
+    const conversationId = "66666666-6666-4666-8666-666666666666";
+    const centralRunId = "66666666-1111-4111-8111-111111111111";
+    const workflowRunId = "66666666-2222-4222-8222-222222222222";
+    const swarmRunId = "66666666-3333-4333-8333-333333333333";
+    const nextWorkflowRunId = "66666666-4444-4444-8444-444444444444";
+
+    const buildRunFixture = (id: string, key: string) => ({
+      id,
+      conversationId,
+      messageId: `${conversationId}-inbound`,
+      correlationId: `corr-${conversationId}-1`,
+      aiSessionId: null,
+      createdAt: NOW,
+      updatedAt: NOW,
+      startedAt: NOW,
+      finishedAt: NOW,
+      status: "completed",
+      totalDurationMs: 1000,
+      experiment: { architectureKey: key, comparisonOnly: key !== "centralized_orchestration" },
+      summary: {},
+    });
+
+    await page.route(/^https?:\/\/(127\.0\.0\.1|localhost):8000\/conversations\/[^/]+$/, async (route) => {
+      const body = {
+        attachments: [],
+        conversation: {
+          id: conversationId,
+          channel: "web_chat",
+          createdAt: NOW,
+          updatedAt: NOW,
+          status: "completed",
+          userSessionId: "session-multi-arch-final",
+          metadata: { architectureMode: "all_architectures" },
+        },
+        events: [],
+        messages: [
+          {
+            contentText: "Compare o atendimento.",
+            conversationId,
+            correlationId: `corr-${conversationId}-1`,
+            createdAtClient: NOW,
+            createdAtServer: NOW,
+            direction: "inbound",
+            id: `${conversationId}-inbound`,
+            metadata: {},
+            status: "completed",
+          },
+        ],
+        reviewTasks: [],
+        runs: [
+          buildRunFixture(centralRunId, "centralized_orchestration"),
+          buildRunFixture(workflowRunId, "structured_workflow"),
+          buildRunFixture(swarmRunId, "decentralized_swarm"),
+        ],
+      };
+      await route.fulfill({ body: JSON.stringify(body), contentType: "application/json", status: 200 });
+    });
+
+    await page.route(/^https?:\/\/(127\.0\.0\.1|localhost):8000\/runs\/[^/]+\/execution$/, async (route) => {
+      const runId = new URL(route.request().url()).pathname.split("/")[2];
+      const architectureMode = runId === swarmRunId
+        ? "decentralized_swarm"
+        : runId === centralRunId
+          ? "centralized_orchestration"
+          : "structured_workflow";
+      const body = {
+        executionEvents: [],
+        projection: {
+          activeActorName: null,
+          activeNodeId: null,
+          architectureMode,
+          architectureView: { actors: {}, handoffs: [], stages: [] },
+          conversationId,
+          currentPhase: "completed",
+          messageId: `${conversationId}-inbound`,
+          metrics: { eventCount: 0, handoffCount: 0, toolCallCount: 0 },
+          runId,
+          runStatus: "completed",
+          source: "mock",
+          state: {},
+          updatedAt: NOW,
+        },
+        run: buildRunFixture(runId, architectureMode),
+      };
+      await route.fulfill({ body: JSON.stringify(body), contentType: "application/json", status: 200 });
+    });
+
+    await page.addInitScript(({ targetConversationId, targetRunId }) => {
+      const Original = window.EventSource;
+      class FinalOnlyEventSource extends Original {
+        constructor(url: string) {
+          super(url);
+          if (!url.includes(`/conversations/${targetConversationId}/`)) {
+            return;
+          }
+          setTimeout(() => {
+            const finalEvent = {
+              id: "workflow-final-before-refresh",
+              conversationId: targetConversationId,
+              messageId: null,
+              eventType: "response.final",
+              actorName: "workflow_response_streamer",
+              parentEventId: null,
+              correlationId: "corr-workflow-next",
+              payload: {
+                architectureMode: "structured_workflow",
+                contentText: "Workflow final visivel antes do refresh.",
+                runId: targetRunId,
+              },
+              createdAt: new Date().toISOString(),
+              durationMs: 250,
+              status: "completed",
+            };
+            const listeners = (this as unknown as { listeners: Map<string, Array<(e: MessageEvent) => void>> }).listeners;
+            for (const listener of listeners.get("processing.event") ?? []) {
+              listener(new MessageEvent("processing.event", { data: JSON.stringify(finalEvent) }));
+            }
+          }, 500);
+        }
+      }
+      Object.defineProperty(window, "EventSource", {
+        configurable: true,
+        value: FinalOnlyEventSource,
+        writable: true,
+      });
+    }, { targetConversationId: conversationId, targetRunId: nextWorkflowRunId });
+
+    await page.goto(`/?conversationId=${conversationId}`);
+    const list = page.getByTestId("message-list");
+    await expect(list).toBeVisible();
+    await page.getByRole("button", { name: /Workflow estruturado/i }).click();
+
+    await expect(list).toContainText("Workflow final visivel antes do refresh", { timeout: 4000 });
+  });
 });
 
 test.describe("Regression — SwarmFlow settles when run completes (bug #4)", () => {

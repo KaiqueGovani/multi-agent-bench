@@ -14,6 +14,12 @@ def test_faq_lookup_returns_controlled_answer() -> None:
     assert result["topic"] == "horario"
 
 
+def test_faq_lookup_handles_accented_opening_hours_question() -> None:
+    result = faq_lookup("Qual é o horário de funcionamento da farmácia?")
+    assert result["topic"] == "horario"
+    assert "08:00" in result["answer"]
+
+
 def test_stock_lookup_uses_controlled_catalog() -> None:
     result = stock_lookup("Tem dipirona em estoque?")
     assert result["product"] == "dipirona"
@@ -47,6 +53,14 @@ def test_request_human_review() -> None:
 
 def test_catalog_contains_finds_product() -> None:
     assert catalog_contains("Tem dipirona em estoque?") == "dipirona"
+
+
+def test_stock_lookup_prefers_earliest_product_mention() -> None:
+    result = stock_lookup(
+        "Ultima mensagem do usuario: E ibuprofeno?\n"
+        "Contexto recente: Usuario: Tem dipirona disponivel?"
+    )
+    assert result["product"] == "ibuprofeno"
 
 
 def test_catalog_contains_returns_none_for_unknown() -> None:

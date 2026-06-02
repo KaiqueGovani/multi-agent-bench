@@ -30,18 +30,18 @@ def _build_request(
     architecture_mode: str,
     content_text: str,
     attachments: list[RuntimeAttachmentDescriptor] | None = None,
+    conversation_history: list[RuntimeMessageSnapshot] | None = None,
 ) -> RuntimeDispatchRequest:
     correlation_id = uuid4()
-    message = RuntimeMessageSnapshot(
-        id=uuid4(),
-        direction="inbound",
-        content_text=content_text,
-        created_at_server="2026-04-29T00:00:00Z",
-        status="accepted",
+    message = _make_message(
+        architecture_mode,
+        content_text,
         correlation_id=correlation_id,
-        metadata=OperationalMetadata(architecture_mode=architecture_mode, runtime_mode="real"),
-        attachments=attachments or [],
+        attachments=attachments,
     )
+    history = conversation_history if conversation_history is not None else [message]
+    if history[-1].id != message.id:
+        history = [*history, message]
     return RuntimeDispatchRequest(
         run_id=uuid4(),
         conversation_id=uuid4(),
@@ -54,8 +54,28 @@ def _build_request(
             model_name="test-model",
         ),
         latest_message=message,
-        conversation_history=[message],
+        conversation_history=history,
         callback=RuntimeCallbackConfig(base_url="http://127.0.0.1:8000"),
+    )
+
+
+def _make_message(
+    architecture_mode: str,
+    content_text: str,
+    *,
+    direction: str = "inbound",
+    correlation_id=None,
+    attachments: list[RuntimeAttachmentDescriptor] | None = None,
+) -> RuntimeMessageSnapshot:
+    return RuntimeMessageSnapshot(
+        id=uuid4(),
+        direction=direction,
+        content_text=content_text,
+        created_at_server="2026-04-29T00:00:00Z",
+        status="accepted",
+        correlation_id=correlation_id or uuid4(),
+        metadata=OperationalMetadata(architecture_mode=architecture_mode, runtime_mode="real"),
+        attachments=attachments or [],
     )
 
 
@@ -117,13 +137,13 @@ SAMPLE_MESSAGES = [
 
 
 # ---------------------------------------------------------------------------
-# Smoke tests — one per architecture: fixed mock response
+# Smoke tests — one per architecture: mock response routes by current turn
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("arch", ARCHITECTURES)
 @pytest.mark.parametrize("question", SAMPLE_MESSAGES)
 def test_mock_returns_fixed_response(monkeypatch, arch, question) -> None:
-    """Any message in mock mode → route=faq, reviewRequired=False, [modo mock] label."""
+    """Mock mode should route the current turn and return readable prose."""
     full_events = _patch_callbacks_full(monkeypatch)
     result = RuntimeExecutionService().execute_run(_build_request(arch, question))
 
@@ -134,18 +154,19 @@ def test_mock_returns_fixed_response(monkeypatch, arch, question) -> None:
     final_events = [e for e in full_events if e.event_family == "response" and e.event_name == "final"]
     assert len(final_events) == 1
     payload = final_events[0].payload
-    assert payload["route"] == "faq"
+    expected_route = "stock_lookup" if "disponivel" in question else "faq"
+    assert payload["route"] == expected_route
     assert payload["reviewRequired"] is False
     assert "[modo mock]" in payload["contentText"]
     assert "{'" not in payload["contentText"]
 
 
 # ---------------------------------------------------------------------------
-# Attachment scenario — still routes to faq in mock mode
+# Attachment scenario — routes to image intake in mock mode
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("arch", ARCHITECTURES)
-def test_attachment_still_routes_faq_in_mock(monkeypatch, arch) -> None:
+def test_attachment_routes_image_intake_in_mock(monkeypatch, arch) -> None:
     full_events = _patch_callbacks_full(monkeypatch)
     attachment = _make_attachment()
     result = RuntimeExecutionService().execute_run(
@@ -154,7 +175,7 @@ def test_attachment_still_routes_faq_in_mock(monkeypatch, arch) -> None:
     assert result.final_outcome == "answered"
     assert result.tool_call_count > 0
     final_events = [e for e in full_events if e.event_family == "response" and e.event_name == "final"]
-    assert final_events[0].payload["route"] == "faq"
+    assert final_events[0].payload["route"] == "image_intake"
 
 
 # ---------------------------------------------------------------------------
@@ -198,6 +219,44 @@ def test_content_text_is_mock_prose(monkeypatch, arch) -> None:
     content = final_events[0].payload["contentText"]
     assert "[modo mock]" in content
     assert "{'" not in content
+
+
+@pytest.mark.parametrize("arch", ARCHITECTURES)
+def test_faq_opening_hours_answer_reaches_final_response(monkeypatch, arch) -> None:
+    full_events = _patch_callbacks_full(monkeypatch)
+    RuntimeExecutionService().execute_run(_build_request(arch, "Qual é o horário de funcionamento da farmácia?"))
+    final_events = [e for e in full_events if e.event_family == "response" and e.event_name == "final"]
+    content = final_events[0].payload["contentText"]
+    assert "[modo mock]" in content
+    assert "08:00" in content
+    assert "22:00" in content
+
+
+@pytest.mark.parametrize("arch", ARCHITECTURES)
+def test_follow_up_uses_conversation_history_for_stock_route(monkeypatch, arch) -> None:
+    full_events = _patch_callbacks_full(monkeypatch)
+    prior_user = _make_message(arch, "Tem dipirona disponivel?")
+    prior_assistant = _make_message(
+        arch,
+        "[modo mock] Temos 17 frascos de dipirona disponíveis no estoque simulado da POC.",
+        direction="outbound",
+        correlation_id=prior_user.correlation_id,
+    )
+    current_user = _make_message(arch, "E ibuprofeno?")
+
+    RuntimeExecutionService().execute_run(
+        _build_request(
+            arch,
+            current_user.content_text or "",
+            conversation_history=[prior_user, prior_assistant, current_user],
+        )
+    )
+
+    final_events = [e for e in full_events if e.event_family == "response" and e.event_name == "final"]
+    payload = final_events[0].payload
+    assert payload["route"] == "stock_lookup"
+    assert "ibuprofeno" in payload["contentText"]
+    assert "9 caixas" in payload["contentText"]
 
 
 # ---------------------------------------------------------------------------

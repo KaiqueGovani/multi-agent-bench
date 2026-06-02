@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import unicodedata
 from typing import Any
 
 
@@ -24,6 +25,10 @@ FAQ_KB = {
     "generico": "Sempre oferecemos a opcao de medicamento generico quando disponivel. Genericos possuem o mesmo principio ativo e eficacia comprovada pela Anvisa. (POC simulada)",
 }
 
+FAQ_ALIASES = {
+    "horario": ["horario", "funcionamento", "abre", "abrem", "abertura", "fecha", "fechamento"],
+}
+
 STOCK_CATALOG = {
     "dipirona": {"available": True, "quantity": 17, "unit": "frascos"},
     "ibuprofeno": {"available": True, "quantity": 9, "unit": "caixas"},
@@ -38,19 +43,29 @@ STOCK_CATALOG = {
 
 
 def infer_product_name(text: str | None) -> str:
-    normalized = (text or "").lower()
-    for candidate in STOCK_CATALOG:
-        if candidate in normalized:
-            return candidate
+    normalized = normalize_text(text)
+    matches = [
+        (normalized.index(candidate), candidate)
+        for candidate in STOCK_CATALOG
+        if candidate in normalized
+    ]
+    if matches:
+        return min(matches)[1]
     return "produto_nao_identificado"
+
+
+def normalize_text(text: str | None) -> str:
+    normalized = unicodedata.normalize("NFKD", text or "")
+    return "".join(char for char in normalized if not unicodedata.combining(char)).lower()
 
 
 @tool()
 def faq_lookup(question: str) -> dict[str, Any]:
     """Busca na base de FAQ da farmácia pelo tema mais relevante à pergunta do usuário. Use quando a pergunta for genérica ou clínica."""
-    normalized = question.lower()
+    normalized = normalize_text(question)
     for key, answer in FAQ_KB.items():
-        if key in normalized:
+        aliases = FAQ_ALIASES.get(key, [key])
+        if any(alias in normalized for alias in aliases):
             return {"topic": key, "answer": answer}
     return {
         "topic": "geral",

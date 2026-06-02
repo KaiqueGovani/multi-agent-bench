@@ -69,7 +69,7 @@ class WorkflowExecutor:
                            thought="Classificando intenção...", decision="pending")
 
         try:
-            raw_route = str(router(text)).strip().lower()
+            raw_route = str(router(ctx.contextual_user_message())).strip().lower()
         except Exception:
             raw_route = "faq"
 
@@ -107,7 +107,7 @@ class WorkflowExecutor:
                            thought=f"Coletando evidência via {tool_name}...", decision=tool_name)
 
         try:
-            evidence_text = str(evidence_agent(text)).strip()
+            evidence_text = str(evidence_agent(ctx.contextual_user_message())).strip()
         except Exception:
             evidence_text = ""
 
@@ -136,7 +136,7 @@ class WorkflowExecutor:
                                thought="Analisando anexos...", decision="attachment_intake")
 
             try:
-                mm_result = str(mm_agent(text)).strip()
+                mm_result = str(mm_agent(ctx.contextual_user_message())).strip()
                 evidence_text = f"{evidence_text}\n{mm_result}"
             except Exception:
                 pass
@@ -166,7 +166,7 @@ class WorkflowExecutor:
         ctx.emit_reasoning("review_agent", "workflow.review.reasoning",
                            thought="Avaliando necessidade de revisão...", decision="pending")
 
-        review_input = f"Pergunta: {text}\nEvidência: {evidence_text}"
+        review_input = f"Contexto:\n{ctx.conversation_context_text()}\n\nPergunta atual: {text}\nEvidência: {evidence_text}"
         try:
             review_output = str(review_agent(review_input)).strip().lower()
             review_required = "true" in review_output
@@ -202,7 +202,7 @@ class WorkflowExecutor:
         ctx.emit_reasoning("synthesis_agent", "workflow.synthesize.reasoning",
                            thought="Sintetizando resposta final...", decision="composing")
 
-        synth_input = f"Pergunta: {text}\nEvidência: {evidence_text}\nReview: {review_required}"
+        synth_input = f"Contexto:\n{ctx.conversation_context_text()}\n\nPergunta atual: {text}\nEvidência: {evidence_text}\nReview: {review_required}"
         try:
             final_text = str(synthesis_agent(synth_input)).strip()
         except Exception:
@@ -224,7 +224,7 @@ class WorkflowExecutor:
     # ------------------------------------------------------------------
 
     def _execute_mock(self, ctx: ExecutionContext, text: str) -> ExecutionResult:
-        route = "faq"
+        route = ctx.infer_route_from_context()
         specialist_actor = ctx.specialist_actor(route)
         has_attachments = bool(ctx.request.latest_message.attachments)
 

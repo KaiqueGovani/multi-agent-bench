@@ -190,7 +190,7 @@ class SwarmExecutor:
             ctx,
             agents,
             handoff_count_ref,
-            original_text=text,
+            original_text=ctx.contextual_user_message(),
             actor_stack=actor_stack,
         )
 
@@ -248,7 +248,7 @@ class SwarmExecutor:
 
         actor_stack.append("swarm_coordinator")
         try:
-            coordinator_result = str(coordinator(text))
+            coordinator_result = str(coordinator(ctx.contextual_user_message()))
         finally:
             if actor_stack and actor_stack[-1] == "swarm_coordinator":
                 actor_stack.pop()
@@ -293,7 +293,7 @@ class SwarmExecutor:
                 "synthesis",
             )
             synthesizer_result = str(synthesizer(
-                f"Resultado do swarm: {coordinator_result}. Pergunta original: {text}"
+                f"Contexto recente:\n{ctx.conversation_context_text()}\n\nResultado do swarm: {coordinator_result}. Pergunta atual: {text}"
             ))
             ctx.emit(
                 "node", "completed", "completed",
@@ -306,17 +306,7 @@ class SwarmExecutor:
             final_text = coordinator_result.strip()
 
         # 7. Route inference and finalization
-        route = "faq"  # default
-        # Infer from tool calls tracked by hook providers on each agent
-        # The handoff_count_ref tells us specialists ran; use first tool heuristic
-        # Since tool_calls are tracked per-agent via hooks, we check ctx counters
-        if ctx.tool_call_count > 0:
-            # Heuristic: if stock_lookup was called, route is stock_lookup
-            lower_text = text.lower()
-            if any(kw in lower_text for kw in ["estoque", "disponivel", "disponibilidade", "tem "]):
-                route = "stock_lookup"
-            elif ctx.request.latest_message.attachments:
-                route = "image_intake"
+        route = ctx.infer_route_from_context()
 
         review_required = _detect_review_required_in_text(final_text)
 
@@ -338,8 +328,8 @@ class SwarmExecutor:
     # ------------------------------------------------------------------
 
     def _execute_mock(self, ctx: ExecutionContext, text: str) -> ExecutionResult:
-        route = "faq"
-        specialist_actor = "faq_agent"
+        route = ctx.infer_route_from_context()
+        specialist_actor = ctx.specialist_actor(route)
 
         # Handoff chain: coordinator → specialist → synthesizer
         chain = ["swarm_coordinator", specialist_actor, "swarm_synthesizer"]

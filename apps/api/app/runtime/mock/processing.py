@@ -1,5 +1,6 @@
 import random
 import time
+import unicodedata
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
@@ -20,6 +21,21 @@ from app.schemas.enums import (
 )
 from app.services.events import EventService
 from app.services.run_execution import RunExecutionService
+
+
+STOCK_CATALOG = {
+    "dipirona": {"available": True, "quantity": 17, "unit": "frascos"},
+    "ibuprofeno": {"available": True, "quantity": 9, "unit": "caixas"},
+    "amoxicilina": {"available": False, "quantity": 0, "unit": "caixas"},
+    "paracetamol": {"available": True, "quantity": 23, "unit": "caixas"},
+    "omeprazol": {"available": True, "quantity": 5, "unit": "caixas"},
+    "loratadina": {"available": True, "quantity": 12, "unit": "caixas"},
+    "azitromicina": {"available": False, "quantity": 0, "unit": "caixas"},
+    "rivotril": {"available": False, "quantity": 0, "unit": "caixas"},
+    "insulina": {"available": True, "quantity": 2, "unit": "frascos"},
+}
+
+STOCK_TERMS = ["tem ", "estoque", "disponivel", "disponibilidade", "preco", "quanto custa"]
 
 
 class MockProcessingRuntime:
@@ -50,6 +66,7 @@ class MockProcessingRuntime:
             started_at = datetime.now(UTC)
             resolved_architecture_mode = architecture_mode or self._settings.default_architecture_mode
             event_context = self._event_context(message, resolved_architecture_mode)
+            context_text = self._contextual_query_text(db, message, resolved_architecture_mode)
             review_required = self._requires_review(message)
 
             if comparison_only:
@@ -81,6 +98,7 @@ class MockProcessingRuntime:
                 payload=self._base_payload({"messageId": str(message_id)}, event_context),
             )
 
+            route = self._select_route(db, message, context_text)
             self._invoke_actor(
                 db,
                 event_service,
@@ -89,11 +107,11 @@ class MockProcessingRuntime:
                 correlation_id=correlation_id,
                 actor_name="router_agent",
                 reason="classifying incoming request",
-                result={"route": self._select_route(db, message)},
+                result={"route": route},
                 event_context=event_context,
             )
 
-            selected_actor = self._select_actor(db, message)
+            selected_actor = self._select_actor(db, message, context_text, route=route)
             self._invoke_actor(
                 db,
                 event_service,
@@ -134,6 +152,8 @@ class MockProcessingRuntime:
                 correlation_id=correlation_id,
                 review_required=review_required,
                 architecture_mode=resolved_architecture_mode,
+                context_text=context_text,
+                route=route,
                 run_id=run_id,
             )
 
@@ -240,8 +260,9 @@ class MockProcessingRuntime:
             suppress_public_events=suppress_public_events,
         )
 
-        route = self._select_route(db, message)
-        selected_actor = self._select_actor(db, message)
+        context_text = self._contextual_query_text(db, message, architecture_mode)
+        route = self._select_route(db, message, context_text)
+        selected_actor = self._select_actor(db, message, context_text, route=route)
         tool_calls = self._TOOL_COUNTS.get(architecture_mode, 2)
 
         if architecture_mode == ArchitectureMode.STRUCTURED_WORKFLOW.value:
@@ -517,6 +538,8 @@ class MockProcessingRuntime:
                 correlation_id=correlation_id,
                 review_required=review_required,
                 architecture_mode=architecture_mode,
+                context_text=context_text,
+                route=route,
                 run_id=run_id,
             )
 
@@ -533,7 +556,7 @@ class MockProcessingRuntime:
             node_id=f"{final_actor}.final",
             payload=self._base_payload(
                 {
-                    "contentText": self._build_response_text(review_required),
+                    "contentText": self._build_response_text(review_required, context_text, route=route),
                     "reviewRequired": review_required,
                     "route": route,
                     "finalActor": final_actor,
@@ -763,6 +786,8 @@ class MockProcessingRuntime:
         correlation_id: UUID,
         review_required: bool,
         architecture_mode: str,
+        context_text: str | None = None,
+        route: str | None = None,
         run_id: UUID | None = None,
     ) -> MessageModel:
         metadata: dict = {
@@ -777,14 +802,18 @@ class MockProcessingRuntime:
             id=uuid4(),
             conversation_id=inbound_message.conversation_id,
             direction=MessageDirection.OUTBOUND.value,
-            content_text=self._build_response_text(review_required),
+            content_text=self._build_response_text(
+                review_required,
+                context_text or inbound_message.content_text,
+                route=route,
+            ),
             created_at_server=datetime.now(UTC),
             status=MessageStatus.COMPLETED.value,
             correlation_id=correlation_id,
             metadata_json=metadata,
             model_context_json={
                 "language": "pt-BR",
-                "inferredIntent": self._infer_intent(inbound_message.content_text),
+                "inferredIntent": self._infer_intent(context_text or inbound_message.content_text),
             },
         )
         db.add(outbound)
@@ -837,15 +866,22 @@ class MockProcessingRuntime:
             ),
         )
 
-    def _select_route(self, db: Session, message: MessageModel) -> str:
+    def _select_route(self, db: Session, message: MessageModel, context_text: str | None = None) -> str:
         if self._has_attachments(db, message.id):
             return "image_intake"
-        if self._looks_like_stock_question(message.content_text):
+        if self._looks_like_stock_question(message.content_text, context_text):
             return "stock_lookup"
         return "faq"
 
-    def _select_actor(self, db: Session, message: MessageModel) -> str:
-        route = self._select_route(db, message)
+    def _select_actor(
+        self,
+        db: Session,
+        message: MessageModel,
+        context_text: str | None = None,
+        *,
+        route: str | None = None,
+    ) -> str:
+        route = route or self._select_route(db, message, context_text)
         if route == "image_intake":
             return "image_intake_agent"
         if route == "stock_lookup":
@@ -853,9 +889,30 @@ class MockProcessingRuntime:
         return "faq_agent"
 
     @staticmethod
-    def _build_response_text(review_required: bool) -> str:
+    def _build_response_text(
+        review_required: bool,
+        text: str | None = None,
+        *,
+        route: str | None = None,
+    ) -> str:
         if review_required:
             return "Recebi sua solicitacao e encaminhei este caso para revisao humana simulada."
+        if route in {None, "faq"} and _looks_like_opening_hours_question(text):
+            return (
+                "A farmacia funciona diariamente das 08:00 as 22:00 no contexto "
+                "simulado da POC."
+            )
+        if route == "stock_lookup":
+            product = _infer_product_name(text)
+            item = STOCK_CATALOG.get(product)
+            if item is not None and item["available"]:
+                return (
+                    f"Temos {item['quantity']} {item['unit']} de {product} "
+                    "disponiveis no estoque simulado da POC."
+                )
+            if item is not None:
+                return f"Nao encontrei {product} disponivel no estoque simulado da POC."
+            return "Nao consegui identificar o produto no estoque simulado da POC."
         return (
             "Recebi sua solicitacao. Esta e uma resposta simulada da POC; "
             "nenhum agente real ou decisao farmaceutica foi executado."
@@ -869,9 +926,14 @@ class MockProcessingRuntime:
         return "general_question"
 
     @staticmethod
-    def _looks_like_stock_question(text: str | None) -> bool:
-        normalized = (text or "").lower()
-        return any(term in normalized for term in ["tem ", "estoque", "disponivel", "disponível"])
+    def _looks_like_stock_question(text: str | None, context_text: str | None = None) -> bool:
+        latest = _normalize_text(text)
+        context = _normalize_text(context_text)
+        return _looks_like_stock_question_text(text) or (
+            _infer_product_name(text) is not None
+            and any(term in context for term in STOCK_TERMS)
+            and len(latest.split()) <= 6
+        )
 
     @staticmethod
     def _looks_like_review_request(text: str | None) -> bool:
@@ -901,6 +963,69 @@ class MockProcessingRuntime:
             .first()
             is not None
         )
+
+    def _conversation_context_text(
+        self,
+        db: Session,
+        message: MessageModel,
+        architecture_mode: str,
+    ) -> str:
+        models = (
+            db.query(MessageModel)
+            .filter(MessageModel.conversation_id == message.conversation_id)
+            .order_by(MessageModel.created_at_server.desc(), MessageModel.id.desc())
+            .limit(self._settings.runtime_history_window_messages * 4)
+            .all()
+        )
+        selected = [
+            model
+            for model in reversed(models)
+            if self._belongs_to_runtime_history(model, architecture_mode)
+        ][-self._settings.runtime_history_window_messages:]
+
+        lines: list[str] = []
+        for model in selected:
+            text = (model.content_text or "").strip()
+            if not text:
+                continue
+            role = {
+                MessageDirection.INBOUND.value: "Usuario",
+                MessageDirection.OUTBOUND.value: "Assistente",
+                "system": "Sistema",
+            }.get(model.direction, model.direction)
+            lines.append(f"{role}: {text}")
+        return "\n".join(lines) or (message.content_text or "")
+
+    def _contextual_query_text(
+        self,
+        db: Session,
+        message: MessageModel,
+        architecture_mode: str,
+    ) -> str:
+        context = self._conversation_context_text(db, message, architecture_mode)
+        latest = message.content_text or ""
+        if not context:
+            return latest
+        return f"Ultima mensagem do usuario: {latest}\n\nContexto recente:\n{context}"
+
+    def _belongs_to_runtime_history(
+        self,
+        message: MessageModel,
+        architecture_mode: str,
+    ) -> bool:
+        if message.direction in {MessageDirection.INBOUND.value, "system"}:
+            return True
+        if message.direction != MessageDirection.OUTBOUND.value:
+            return False
+
+        message_architecture = (message.metadata_json or {}).get("architectureMode")
+        if message_architecture:
+            return message_architecture == architecture_mode
+
+        return architecture_mode in {
+            self._settings.default_architecture_mode,
+            ArchitectureMode.CENTRALIZED_ORCHESTRATION.value,
+        }
 
     def _event_context(self, message: MessageModel, architecture_mode: str) -> dict:
         metadata = message.metadata_json or {}
@@ -993,3 +1118,31 @@ class MockProcessingRuntime:
         input_tokens = random.randint(in_lo, in_hi)
         output_tokens = random.randint(out_lo, out_hi)
         return {"inputTokens": input_tokens, "outputTokens": output_tokens, "totalTokens": input_tokens + output_tokens}
+
+
+def _normalize_text(text: str | None) -> str:
+    normalized = unicodedata.normalize("NFKD", text or "")
+    return "".join(char for char in normalized if not unicodedata.combining(char)).lower()
+
+
+def _infer_product_name(text: str | None) -> str | None:
+    normalized = _normalize_text(text)
+    matches = [
+        (normalized.index(product), product)
+        for product in STOCK_CATALOG
+        if product in normalized
+    ]
+    return min(matches)[1] if matches else None
+
+
+def _looks_like_stock_question_text(text: str | None) -> bool:
+    normalized = _normalize_text(text)
+    return any(term in normalized for term in STOCK_TERMS)
+
+
+def _looks_like_opening_hours_question(text: str | None) -> bool:
+    normalized = _normalize_text(text)
+    return any(
+        term in normalized
+        for term in ["horario", "funcionamento", "abre", "abrem", "abertura", "fecha", "fechamento"]
+    )

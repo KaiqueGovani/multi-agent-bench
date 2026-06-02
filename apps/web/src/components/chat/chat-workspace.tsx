@@ -178,9 +178,19 @@ export function ChatWorkspace() {
       if (current && flowRuns.some((run) => run.id === current)) {
         return current;
       }
+      const currentRun = current ? runs.find((run) => run.id === current) : undefined;
+      const currentArchitecture = currentRun ? readArchitectureKey(currentRun) : null;
+      if (currentArchitecture) {
+        const latestForCurrentArchitecture = flowRuns.find(
+          (run) => readArchitectureKey(run) === currentArchitecture
+        );
+        if (latestForCurrentArchitecture) {
+          return latestForCurrentArchitecture.id;
+        }
+      }
       return flowRuns[0].id;
     });
-  }, [flowRuns]);
+  }, [flowRuns, runs]);
 
   useEffect(() => {
     if (!selectedFlowRunId) {
@@ -1052,7 +1062,7 @@ function getLayoutColumns(historyOpen: boolean): string {
   return "lg:grid-cols-[56px_minmax(0,1fr)]";
 }
 
-function isArchitectureMode(value: string | null | undefined): value is ArchitectureMode {
+function isArchitectureMode(value: unknown): value is ArchitectureMode {
   return architectureOptions.some((option) => option.value === value);
 }
 
@@ -1120,8 +1130,8 @@ function buildLatestArchitectureRuns(runs: Run[]): Run[] {
     .filter((run): run is Run => Boolean(run));
 }
 
-function readArchitectureKey(run: Run): Exclude<ArchitectureMode, "all_architectures"> {
-  const value = run.experiment?.architectureKey;
+function readArchitectureKey(run: Run | undefined): Exclude<ArchitectureMode, "all_architectures"> {
+  const value = run?.experiment?.architectureKey;
   if (value === "structured_workflow" || value === "decentralized_swarm") {
     return value;
   }
@@ -1133,6 +1143,13 @@ function readMessageRuntimeRunId(message: { metadata?: unknown }): string | null
   if (!meta || typeof meta !== "object") return null;
   const value = (meta as Record<string, unknown>).runtimeRunId;
   return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function readMessageArchitectureMode(message: { metadata?: unknown }): ArchitectureMode | null {
+  const meta = message.metadata;
+  if (!meta || typeof meta !== "object") return null;
+  const value = (meta as Record<string, unknown>).architectureMode;
+  return isArchitectureMode(value) ? value : null;
 }
 
 /**
@@ -1171,7 +1188,12 @@ function filterMessagesForArchitecture({
     }
     if (message.id.startsWith("streaming-")) {
       const runId = message.id.slice("streaming-".length);
-      return runId === selectedFlowRunId;
+      const architectureMode = readMessageArchitectureMode(message);
+      return (
+        runId === selectedFlowRunId
+        || architectureMode === selectedArchitectureKey
+        || runIdToArchitecture.get(runId) === selectedArchitectureKey
+      );
     }
     if (message.direction === "outbound") {
       const runId = readMessageRuntimeRunId(message);

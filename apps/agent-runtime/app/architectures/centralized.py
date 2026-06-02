@@ -66,7 +66,7 @@ class CentralizedExecutor:
 
         result = ctx.invoke_live_supervisor(
             system_prompt=system_prompt,
-            user_message=text,
+            user_message=ctx.contextual_user_message(),
             tools=[faq_lookup, stock_lookup, attachment_intake],
         )
 
@@ -103,8 +103,8 @@ class CentralizedExecutor:
         return ctx.build_result(final_text, review_required)
 
     def _execute_mock(self, ctx: ExecutionContext, text: str) -> ExecutionResult:
-        route = "faq"
-        specialist_actor = "faq_agent"
+        route = ctx.infer_route_from_context()
+        specialist_actor = ctx.specialist_actor(route)
 
         # Single supervisor reasoning — mirrors live pattern (no handoffs)
         ctx.emit_reasoning(

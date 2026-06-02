@@ -213,7 +213,7 @@ class RunExecutionService:
         self._db.refresh(model)
         event = run_execution_event_to_schema(model)
         run_execution_bus.publish(event)
-        if not comparison_only and not suppress_public_events:
+        if not suppress_public_events:
             self._derive_public_event(event)
         return event
 
@@ -562,6 +562,8 @@ class RunExecutionService:
             else:
                 return
 
+        run = self._db.get(RunModel, event.run_id)
+        architecture_mode = (run.experiment_json or {}).get("architectureKey") if run else None
         EventService(self._db).record_event(
             conversation_id=event.conversation_id,
             message_id=event.message_id,
@@ -571,6 +573,7 @@ class RunExecutionService:
             status=event.status,
             payload={
                 **event.payload,
+                **({"architectureMode": architecture_mode} if architecture_mode else {}),
                 "runId": str(event.run_id),
                 "eventFamily": event.event_family,
                 "eventName": event.event_name,
