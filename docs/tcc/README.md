@@ -7,7 +7,7 @@ Esta pasta é a fonte versionada do TCC. O documento Word é a apresentação of
 - Protótipo implementado com três estratégias de coordenação: orquestração, workflow e swarm.
 - Fase atual: preparação da coleta, anonimização e execução dos testes comparativos.
 - Documento-base: `TCC_Base_MAB_Facens.docx`, mantido fora do repositório como artefato editável.
-- Branch de operação futura: `agent/tcc-ralph-loop`.
+- Branch de operação: `agent/tcc-ralph-setup`.
 - Um único pull request em modo draft deve concentrar os incrementos diários.
 
 ## Estrutura
@@ -22,4 +22,3 @@ Esta pasta é a fonte versionada do TCC. O documento Word é a apresentação of
 ## Princípio de trabalho
 
 Cada execução escolhe uma única ação pequena e de maior valor, produz evidência verificável, atualiza o estado e encerra. Nenhum resultado experimental pode ser inventado ou antecipado.
-
