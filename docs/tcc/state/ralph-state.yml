@@ -1,0 +1,46 @@
+project:
+  title: "Sistema multiagente para atendimento inteligente em farmácias: uma análise comparativa de arquiteturas de coordenação"
+  repository: "KaiqueGovani/multi-agent-bench"
+  stage: "preparacao_e_inicio_dos_testes"
+  prototype_status: "implementado"
+  architectures:
+    - orchestration
+    - workflow
+    - swarm
+
+artifacts:
+  manuscript: "docs/tcc/manuscript"
+  reference_registry: "docs/tcc/references/registry.csv"
+  word_document: "TCC_Base_MAB_Facens.docx"
+  working_branch: "agent/tcc-ralph-loop"
+  pr_policy: "um_pull_request_draft_persistente"
+
+current_objective: "Congelar o protocolo experimental e preparar uma coleta de WhatsApp anonimizada antes dos testes definitivos."
+
+next_actions:
+  - priority: 1
+    action: "Definir finalidade, campos mínimos, anonimização e critérios de inclusão dos dados de WhatsApp."
+    status: pending
+  - priority: 2
+    action: "Formalizar hipóteses, baseline, cenários e métricas antes da coleta definitiva."
+    status: pending
+  - priority: 3
+    action: "Revisar as referências atuais e substituir entradas genéricas ou pouco relacionadas ao problema arquitetural."
+    status: pending
+  - priority: 4
+    action: "Redigir a Fundamentação Teórica na nova ordem, começando por IA no atendimento e LLM/agentes."
+    status: pending
+  - priority: 5
+    action: "Alinhar os capítulos de Modelagem e Desenvolvimento à implementação atual do repositório."
+    status: pending
+
+constraints:
+  - "Sem resultados experimentais antes de execução e validação."
+  - "Sem dados pessoais ou conversas brutas no repositório público."
+  - "Referência nova exige verificação na fonte primária."
+  - "Uma ação delimitada por execução."
+  - "Documento Word deve seguir as regras Facens."
+
+last_run: "2026-08-15"
+next_recommended_action: "Especificar o protocolo de dados do WhatsApp e os critérios de anonimização."
+
