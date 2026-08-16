@@ -10,4 +10,5 @@
 8. Não grave dados brutos de WhatsApp, nomes, telefones, anexos, identificadores ou transcrições reconhecíveis no repositório.
 9. Alinhe a descrição técnica ao código atual. Se houver divergência, registre-a como pendência; não “corrija” a narrativa inventando uma implementação.
 10. Atualize `state/ralph-state.yml` e crie um registro em `state/runs/` ao fim de cada execução.
-
+11. Antes de editar os capítulos 7, 8 ou 9, leia `state/evidence-gates.yml`. Se o gate correspondente estiver `closed`, preserve somente títulos e placeholders; escolha outra ação do backlog.
+12. O agente nunca pode alterar um gate de `closed` para `open`. Essa mudança exige autorização humana explícita dos autores após verificação das evidências.
