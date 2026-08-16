@@ -13,3 +13,15 @@ Os critérios de inclusão priorizam trabalhos que: definam ou organizem sistema
 O desenvolvimento tecnológico foi dividido em quatro etapas: modelagem de uma interface comum de execução; implementação das arquiteturas centralizada, workflow e swarm; instrumentação de eventos e métricas; e preparação dos cenários comparáveis. A etapa experimental utilizará a mesma entrada, conjunto de ferramentas, modelo, configuração e limites operacionais para as três arquiteturas. Ordem de execução, repetições, seed quando disponível, versão do código e parâmetros do modelo deverão ser preservados junto aos artefatos do experimento.
 
 A origem e a transformação dos cenários derivados de conversas de WhatsApp permanecem pendentes da OQ-001. Até a decisão dos autores, nenhum dado real será copiado para o repositório e o protocolo utilizará apenas o esquema de campos e cenários sintéticos já existentes.
+
+## 4.3 DEFINIÇÃO DO PROBLEMA E HIPÓTESES
+
+A pergunta de pesquisa é: como a escolha entre orquestração centralizada, workflow estruturado e coordenação descentralizada por handoffs influencia a eficiência operacional, a qualidade das respostas e o custo de coordenação de um sistema de atendimento farmacêutico, quando as demais condições são mantidas constantes?
+
+As hipóteses foram formuladas de maneira não direcional para evitar presumir uma arquitetura vencedora antes dos testes:
+
+- H0: não existe diferença estatisticamente detectável entre as arquiteturas nas métricas primárias definidas no protocolo.
+- H1: pelo menos uma arquitetura apresenta diferença estatisticamente detectável em uma ou mais métricas primárias.
+- H2: o efeito da arquitetura depende do tipo de cenário, especialmente da necessidade de ferramentas, anexos, continuidade de contexto ou revisão humana.
+
+As hipóteses permanecem com status de proposta até aprovação dos autores e congelamento do protocolo. Qualquer alteração posterior à coleta deverá ser identificada como exploratória e registrada no histórico.
