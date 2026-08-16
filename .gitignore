@@ -27,6 +27,14 @@ uploads/
 var/
 *.log
 
+# Sensitive research data (never commit WhatsApp exports or raw participant data)
+data/raw/
+data/private/
+research-data/raw/
+research-data/private/
+*.whatsapp-export.*
+*.chat-export.*
+
 # Test artifacts
 test-results/
 playwright-report/
