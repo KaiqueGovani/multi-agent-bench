@@ -8,7 +8,7 @@ Realizar apenas a próxima ação pequena de maior valor para aproximar o TCC de
 
 ## Procedimento obrigatório
 
-1. Abra o repositório e leia `docs/tcc/AGENTS.md`, `docs/tcc/state/ralph-state.yml`, `docs/tcc/automation/focus-calendar.md` e `docs/tcc/data-governance.md`.
+1. Abra o repositório e leia `docs/tcc/AGENTS.md`, `docs/tcc/state/ralph-state.yml`, `docs/tcc/state/evidence-gates.yml`, `docs/tcc/automation/focus-calendar.md` e `docs/tcc/data-governance.md`.
 2. Inspecione as alterações recentes do código e do TCC. Reavalie o backlog, considerando o foco do dia.
 3. Escolha uma única ação delimitada. Exemplos: concluir uma subseção; verificar cinco referências; formalizar uma métrica; corrigir uma divergência código–texto; revisar formatação de um capítulo.
 4. Execute a ação na branch `agent/tcc-ralph-setup`. Reutilize o pull request draft nº 3; não abra um PR novo por dia.
@@ -26,6 +26,9 @@ Realizar apenas a próxima ação pequena de maior valor para aproximar o TCC de
 ## Restrições
 
 - Nunca invente resultados, autores, DOI, citações ou detalhes de implementação.
+- Os capítulos 7 — Experimentos e Resultados, 8 — Discussão e 9 — Considerações Finais estão protegidos pelos gates de `docs/tcc/state/evidence-gates.yml`. Enquanto um gate estiver `closed`, mantenha apenas títulos, subtítulos e placeholders explícitos; não redija resultados preliminares, interpretações, conclusões, contribuições confirmadas ou trabalhos futuros apresentados como decorrentes dos experimentos.
+- Nem dados preliminares nem arquivos parciais abrem um gate. O agente não pode alterar o status de um gate. Somente uma autorização humana explícita dos autores, após a verificação das evidências, permite a abertura.
+- Se a ação mais prioritária exigir um capítulo bloqueado, registre a dependência e selecione a próxima ação permitida.
 - Nunca copie dados brutos de WhatsApp para o GitHub ou para o texto.
 - Não altere código do protótipo salvo quando a tarefa do TCC exigir uma correção documental mínima e explicitamente segura; prefira registrar a divergência.
 - Não faça mudanças amplas. Se a ação não couber em uma revisão curta, divida e execute apenas a primeira parte completa.
