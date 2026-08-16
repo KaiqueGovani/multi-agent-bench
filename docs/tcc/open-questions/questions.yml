@@ -1,0 +1,10 @@
+policy:
+  id_format: "OQ-NNN"
+  next_id: "OQ-001"
+  max_new_per_run: 1
+  max_active: 5
+  issue_title_prefix: "[TCC][Open Question]"
+  response_hint: "ANSWER:"
+  agent_may_open_evidence_gate_from_answer: false
+
+questions: []
