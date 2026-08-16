@@ -2,22 +2,14 @@
 
 ## 4.1 TIPO DE PESQUISA
 
-Pesquisa aplicada, bibliográfica, tecnológica e experimental.
+O trabalho caracteriza-se como pesquisa aplicada, bibliográfica, tecnológica e experimental. É aplicada porque busca produzir conhecimento utilizável na construção de um sistema de atendimento; bibliográfica porque organiza conceitos e evidências publicados sobre agentes e coordenação; tecnológica porque envolve modelagem e implementação de um protótipo; e experimental porque compara arquiteturas sob condições controladas. A comparação será realizada somente após o congelamento do protocolo e a preparação do conjunto de cenários.
 
 ## 4.2 ETAPAS DO TRABALHO
 
-Para identificar os trabalhos mais relevantes, foi conduzida uma revisão sistemática da literatura com recorte temporal concentrado em publicações recentes, principalmente entre 2023 e 2025, complementadas por estudos diretamente relacionados à comparação entre arquiteturas de agentes. As buscas priorizaram bases e repositórios científicos com aderência ao tema, incluindo Springer, ScienceDirect, ACL Anthology, arXiv e periódicos da área de farmácia e serviços em saúde.
+A revisão bibliográfica realizada até este estágio é classificada como revisão estruturada da literatura, e não como revisão sistemática. Foram usadas expressões relacionadas a sistemas multiagentes baseados em LLMs, orquestração, workflow, swarm, agentes distribuídos, avaliação de agentes e IA aplicada a farmácias. As fontes foram localizadas em páginas de editoras, bibliotecas digitais, repositórios de preprints e documentos institucionais. A rastreabilidade é mantida no registro vivo de referências, que armazena URL, prioridade, tipo, seção-alvo e decisão editorial.
 
-As expressões de busca foram definidas a partir do problema de pesquisa e combinaram termos como: “multi-agent systems”, “LLM-based multi-agent systems”, “agent orchestration”, “workflow”, “swarm intelligence”, “distributed agents”, “pharmacy AI” e “intelligent service”. O objetivo não foi levantar qualquer aplicação de IA em farmácia, mas selecionar trabalhos que ajudassem a compreender como diferentes arquiteturas de coordenação influenciam o comportamento de sistemas multiagentes.
+Os critérios de inclusão priorizam trabalhos que: definam ou organizem sistemas multiagentes; discutam arquiteturas de coordenação; comparem empiricamente estratégias arquiteturais; proponham métricas de avaliação; ou contextualizem o atendimento farmacêutico. São excluídos textos sem relação direta com a pergunta de pesquisa, materiais de marketing usados como única sustentação científica e referências cujo metadado primário não possa ser verificado. A revisão não reivindica exaustividade, protocolo PRISMA, dupla triagem independente ou cobertura completa de bases indexadas, pois essas etapas não foram executadas e documentadas.
 
-Foram incluídos estudos que atendessem a pelo menos um dos seguintes critérios: apresentar taxonomia ou revisão de sistemas multiagentes; discutir arquiteturas de coordenação, workflow ou descentralização; avaliar empiricamente o efeito da arquitetura sobre desempenho; ou descrever aplicações relevantes de agentes em serviços, especialmente no contexto farmacêutico. Foram excluídos trabalhos muito genéricos sobre IA em saúde, estudos sem relação com coordenação entre agentes e textos meramente opinativos sem contribuição metodológica clara.
+O desenvolvimento tecnológico foi dividido em quatro etapas: modelagem de uma interface comum de execução; implementação das arquiteturas centralizada, workflow e swarm; instrumentação de eventos e métricas; e preparação dos cenários comparáveis. A etapa experimental utilizará a mesma entrada, conjunto de ferramentas, modelo, configuração e limites operacionais para as três arquiteturas. Ordem de execução, repetições, seed quando disponível, versão do código e parâmetros do modelo deverão ser preservados junto aos artefatos do experimento.
 
-A seleção final privilegiou seis referências centrais. Quatro delas sustentam o núcleo teórico do trabalho, sistemas multiagentes, coordenação, workflow, swarm e comparação arquitetural, e duas ajudam a justificar a farmácia como estudo de caso, mostrando que, nesse domínio, as aplicações atuais de IA tendem a ser orientadas a fluxo operacional, triagem, produtividade e suporte ao atendimento.
-
-## 4.3 DEFINIÇÃO DO PROBLEMA E HIPÓTESES
-
-As hipóteses deverão ser congeladas antes da coleta definitiva.
-
-## 4.4 MÉTRICAS DE AVALIAÇÃO
-
-A definir no protocolo experimental versionado.
+A origem e a transformação dos cenários derivados de conversas de WhatsApp permanecem pendentes da OQ-001. Até a decisão dos autores, nenhum dado real será copiado para o repositório e o protocolo utilizará apenas o esquema de campos e cenários sintéticos já existentes.
