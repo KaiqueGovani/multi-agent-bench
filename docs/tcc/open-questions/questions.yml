@@ -1,0 +1,48 @@
+policy:
+  id_format: "OQ-NNN"
+  next_id: "OQ-003"
+  max_new_per_run: 1
+  max_active: 5
+  issue_title_prefix: "[TCC][Open Question]"
+  response_hint: "ANSWER:"
+  agent_may_open_evidence_gate_from_answer: false
+
+questions:
+  - id: "OQ-001"
+    status: open
+    created_at: "2026-08-16"
+    created_by: "setup_manual_run"
+    priority: high
+    blocking: true
+    target_sections:
+      - "4.2 Etapas do Trabalho"
+      - "4.4 Métricas de Avaliação"
+      - "7.1 Cenários de Teste (preparação; gate fechado)"
+    question: "Qual estratégia de dados do WhatsApp será adotada para gerar os cenários experimentais?"
+    recommendation: "Estratégia híbrida: padrões agregados de dados autorizados em ambiente privado e cenários sintéticos equivalentes."
+    issue_number: 4
+    issue_url: "https://github.com/KaiqueGovani/multi-agent-bench/issues/4"
+    response_summary: null
+    answered_by: null
+    answered_at: null
+    integrated_files: []
+    integrated_at: null
+
+  - id: "OQ-002"
+    status: open
+    created_at: "2026-08-16"
+    created_by: "ralph_batch_iteration_04"
+    priority: high
+    blocking: true
+    target_sections:
+      - "4.4 Métricas de Avaliação"
+      - "docs/tcc/method/experimental-protocol.md"
+    question: "Qual método será adotado para avaliar a qualidade das respostas em modo live?"
+    recommendation: "Abordagem híbrida: LLM-as-Judge em todas as respostas, calibrado e auditado por amostra humana cega."
+    issue_number: 5
+    issue_url: "https://github.com/KaiqueGovani/multi-agent-bench/issues/5"
+    response_summary: null
+    answered_by: null
+    answered_at: null
+    integrated_files: []
+    integrated_at: null

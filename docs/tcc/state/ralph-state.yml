@@ -1,0 +1,104 @@
+project:
+  title: "Sistema multiagente para atendimento inteligente em farmácias: uma análise comparativa de arquiteturas de coordenação"
+  repository: "KaiqueGovani/multi-agent-bench"
+  stage: "preparacao_e_inicio_dos_testes"
+  prototype_status: "implementado"
+  architectures:
+    - orchestration
+    - workflow
+    - swarm
+
+artifacts:
+  manuscript: "docs/tcc/manuscript"
+  method: "docs/tcc/method"
+  reference_registry: "docs/tcc/references/registry.csv"
+  word_document: "TCC_Base_MAB_Facens.docx"
+  working_branch: "agent/tcc-ralph-setup"
+  branch_policy: "commits_diretos_sem_pull_request"
+  evidence_gates: "docs/tcc/state/evidence-gates.yml"
+  open_questions: "docs/tcc/open-questions/questions.yml"
+
+current_objective: "Responder as decisões humanas pendentes, congelar o protocolo e preparar a execução dos testes definitivos."
+
+batch_execution:
+  date: "2026-08-16"
+  requested_iterations: 10
+  completed_iterations: 10
+  source_code_changed: false
+  chapters_protected:
+    - 7
+    - 8
+    - 9
+
+next_actions:
+  - priority: 1
+    action: "Responder e integrar a OQ-001 sobre a estratégia de dados do WhatsApp."
+    status: waiting_human
+  - priority: 2
+    action: "Responder e integrar a OQ-002 sobre a avaliação de qualidade das respostas."
+    status: waiting_human
+  - priority: 3
+    action: "Definir número de repetições, critérios inferenciais e congelar as hipóteses com os autores."
+    status: pending
+  - priority: 4
+    action: "Montar o catálogo definitivo de cenários após a decisão sobre a fonte dos dados."
+    status: blocked_by_OQ-001
+  - priority: 5
+    action: "Criar a versão tabular e versionável do quadro de trabalhos correlatos e reconciliar citações com a lista ABNT."
+    status: pending
+  - priority: 6
+    action: "Continuar o refinamento textual dos capítulos 1 a 6 e sincronizar o DOCX."
+    status: pending
+
+constraints:
+  - "Sem resultados experimentais antes de execução e validação."
+  - "Capítulos 7, 8 e 9 permanecem com placeholders enquanto seus evidence gates estiverem fechados."
+  - "Somente os autores podem abrir um evidence gate por autorização humana explícita."
+  - "Sem dados pessoais ou conversas brutas no repositório público."
+  - "Referência nova exige verificação na fonte primária."
+  - "Uma ação delimitada por execução."
+  - "Documento Word deve seguir as regras Facens."
+  - "No máximo uma Open Question nova por execução e cinco questões ativas."
+  - "Agentes não alteram código-fonte, testes, infraestrutura ou configuração do protótipo."
+  - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
+
+audit:
+  date: "2026-08-16"
+  status: "ready_for_human_decisions"
+  open_questions:
+    active: 2
+    answered: 0
+    blocking:
+      - "OQ-001"
+      - "OQ-002"
+  evidence_gates:
+    results: closed
+    discussion: closed
+    conclusion: closed
+    placeholders_verified: true
+  references:
+    total: 38
+    candidate: 14
+    verified: 2
+    cited: 6
+    watch: 7
+    reject: 9
+  manuscript:
+    substantial_drafts:
+      - "01 Introdução"
+      - "02 Fundamentação Teórica"
+      - "03 Trabalhos Correlatos"
+      - "04 Metodologia"
+      - "05 Modelagem da Solução"
+      - "06 Desenvolvimento"
+    protected_placeholders:
+      - "07 Experimentos e Resultados"
+      - "08 Discussão"
+      - "09 Considerações Finais"
+  risks:
+    - "Origem, autorização, volume e retenção dos dados dependem da OQ-001."
+    - "Rubrica e avaliadores de qualidade dependem da OQ-002."
+    - "Número de repetições e plano inferencial ainda não foram congelados."
+
+last_run: "2026-08-16-batch-10"
+next_recommended_action: "Integrar a primeira resposta humana disponível entre OQ-001 e OQ-002."
