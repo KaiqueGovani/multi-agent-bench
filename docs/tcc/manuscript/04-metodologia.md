@@ -25,3 +25,11 @@ As hipóteses foram formuladas de maneira não direcional para evitar presumir u
 - H2: o efeito da arquitetura depende do tipo de cenário, especialmente da necessidade de ferramentas, anexos, continuidade de contexto ou revisão humana.
 
 As hipóteses permanecem com status de proposta até aprovação dos autores e congelamento do protocolo. Qualquer alteração posterior à coleta deverá ser identificada como exploratória e registrada no histórico.
+
+## 4.4 MÉTRICAS DE AVALIAÇÃO
+
+As métricas operacionais disponíveis no protótipo serão calculadas por arquitetura e por cenário. O sucesso técnico corresponde à conclusão da execução sem erro; a latência será resumida por mediana (p50) e percentil 95 (p95); tokens serão separados em entrada, saída e total; chamadas de ferramenta, erros de ferramenta, ciclos e handoffs serão contados a partir da telemetria; e a taxa de revisão corresponderá à proporção de execuções encaminhadas para avaliação humana.
+
+A qualidade da resposta não será inferida apenas pelo sucesso técnico. Ela exigirá uma rubrica que considere correção em relação ao cenário, aderência à intenção, segurança, completude e clareza. A escolha entre avaliação humana, LLM-as-Judge ou abordagem híbrida permanece aberta na OQ-002. Até essa decisão, a métrica de qualidade é um campo metodológico pendente e não será calculada retroativamente sem registrar a versão da rubrica.
+
+Para reduzir viés, as comparações deverão manter constantes o conjunto de cenários, a versão do modelo, as ferramentas, os prompts de domínio e os limites de execução. Sempre que a distribuição permitir, serão apresentados medida central, dispersão e intervalo de confiança. A análise inferencial e o número mínimo de repetições serão definidos no congelamento do protocolo, antes dos testes definitivos.
