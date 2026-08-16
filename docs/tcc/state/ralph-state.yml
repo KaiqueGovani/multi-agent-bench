@@ -12,7 +12,7 @@ artifacts:
   manuscript: "docs/tcc/manuscript"
   reference_registry: "docs/tcc/references/registry.csv"
   word_document: "TCC_Base_MAB_Facens.docx"
-  working_branch: "agent/tcc-ralph-loop"
+  working_branch: "agent/tcc-ralph-setup"
   pr_policy: "um_pull_request_draft_persistente"
 
 current_objective: "Congelar o protocolo experimental e preparar uma coleta de WhatsApp anonimizada antes dos testes definitivos."
@@ -43,4 +43,3 @@ constraints:
 
 last_run: "2026-08-15"
 next_recommended_action: "Especificar o protocolo de dados do WhatsApp e os critérios de anonimização."
-
