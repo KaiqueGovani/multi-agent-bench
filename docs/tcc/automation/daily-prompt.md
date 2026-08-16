@@ -11,7 +11,7 @@ Realizar apenas a próxima ação pequena de maior valor para aproximar o TCC de
 1. Abra o repositório e leia `docs/tcc/AGENTS.md`, `docs/tcc/state/ralph-state.yml`, `docs/tcc/automation/focus-calendar.md` e `docs/tcc/data-governance.md`.
 2. Inspecione as alterações recentes do código e do TCC. Reavalie o backlog, considerando o foco do dia.
 3. Escolha uma única ação delimitada. Exemplos: concluir uma subseção; verificar cinco referências; formalizar uma métrica; corrigir uma divergência código–texto; revisar formatação de um capítulo.
-4. Execute a ação na branch `agent/tcc-ralph-loop`. Reutilize o mesmo pull request draft; não abra um PR novo por dia.
+4. Execute a ação na branch `agent/tcc-ralph-setup`. Reutilize o pull request draft nº 3; não abra um PR novo por dia.
 5. Se o trabalho alterar texto do manuscrito, reflita a mudança no DOCX. Preserve as regras Facens registradas em `docs/tcc/format/facens-rules.md`.
 6. Valide o resultado: referências e URLs verificáveis, afirmações apoiadas, alinhamento com o código, formatação e ausência de dados pessoais.
 7. Atualize `docs/tcc/state/ralph-state.yml` e crie `docs/tcc/state/runs/AAAA-MM-DD.md` com ação, evidência, arquivos alterados, riscos e próxima sugestão.
@@ -30,4 +30,3 @@ Realizar apenas a próxima ação pequena de maior valor para aproximar o TCC de
 - Não altere código do protótipo salvo quando a tarefa do TCC exigir uma correção documental mínima e explicitamente segura; prefira registrar a divergência.
 - Não faça mudanças amplas. Se a ação não couber em uma revisão curta, divida e execute apenas a primeira parte completa.
 - Se faltar acesso, evidência ou decisão do orientador, registre um bloqueio e encerre sem improvisar.
-
