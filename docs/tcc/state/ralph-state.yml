@@ -14,6 +14,7 @@ artifacts:
   word_document: "TCC_Base_MAB_Facens.docx"
   working_branch: "agent/tcc-ralph-setup"
   pr_policy: "um_pull_request_draft_persistente"
+  evidence_gates: "docs/tcc/state/evidence-gates.yml"
 
 current_objective: "Congelar o protocolo experimental e preparar uma coleta de WhatsApp anonimizada antes dos testes definitivos."
 
@@ -36,6 +37,8 @@ next_actions:
 
 constraints:
   - "Sem resultados experimentais antes de execução e validação."
+  - "Capítulos 7, 8 e 9 permanecem com placeholders enquanto seus evidence gates estiverem fechados."
+  - "Somente os autores podem abrir um evidence gate por autorização humana explícita."
   - "Sem dados pessoais ou conversas brutas no repositório público."
   - "Referência nova exige verificação na fonte primária."
   - "Uma ação delimitada por execução."
