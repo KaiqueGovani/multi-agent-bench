@@ -12,3 +12,7 @@
 10. Atualize `state/ralph-state.yml` e crie um registro em `state/runs/` ao fim de cada execução.
 11. Antes de editar os capítulos 7, 8 ou 9, leia `state/evidence-gates.yml`. Se o gate correspondente estiver `closed`, preserve somente títulos e placeholders; escolha outra ação do backlog.
 12. O agente nunca pode alterar um gate de `closed` para `open`. Essa mudança exige autorização humana explícita dos autores após verificação das evidências.
+13. No início da execução, consulte `open-questions/questions.yml` e as Issues vinculadas. Priorize incorporar respostas humanas já recebidas quando isso produzir um incremento textual completo e verificável.
+14. Quando uma decisão, experiência prática ou informação não recuperável das fontes bloquear ou enriquecer materialmente o texto, registre uma Open Question conforme `open-questions/README.md` e abra uma Issue com o prefixo `[TCC][Open Question]`.
+15. Crie no máximo uma pergunta por execução e mantenha no máximo cinco perguntas com status `open` ou `answered`. Não faça perguntas genéricas, duplicadas ou respondíveis pelo código, documentos ou literatura disponível.
+16. Respostas humanas são insumos editoriais e decisões dos autores; não substituem referências acadêmicas para afirmações factuais externas e não abrem evidence gates.
