@@ -21,19 +21,19 @@ current_objective: "Congelar o protocolo experimental e preparar uma coleta de W
 
 next_actions:
   - priority: 1
-    action: "Definir finalidade, campos mínimos, anonimização e critérios de inclusão dos dados de WhatsApp."
-    status: pending
+    action: "Responder e integrar a OQ-001 sobre a estratégia de dados do WhatsApp."
+    status: waiting_human
   - priority: 2
-    action: "Formalizar hipóteses, baseline, cenários e métricas antes da coleta definitiva."
+    action: "Criar o esqueleto versionado do protocolo experimental com hipóteses, baseline, métricas, esquema de cenários e campos de anonimização; manter decisões dependentes da OQ-001 como placeholders."
     status: pending
   - priority: 3
-    action: "Revisar as referências atuais e substituir entradas genéricas ou pouco relacionadas ao problema arquitetural."
+    action: "Verificar se a revisão bibliográfica atende aos requisitos de revisão sistemática; caso contrário, corrigir a classificação e documentar o protocolo realmente executado."
     status: pending
   - priority: 4
-    action: "Redigir a Fundamentação Teórica na nova ordem, começando por IA no atendimento e LLM/agentes."
+    action: "Revisar as referências atuais e substituir entradas genéricas ou pouco relacionadas ao problema arquitetural."
     status: pending
   - priority: 5
-    action: "Alinhar os capítulos de Modelagem e Desenvolvimento à implementação atual do repositório."
+    action: "Redigir a Fundamentação Teórica e alinhar Modelagem/Desenvolvimento à implementação atual."
     status: pending
 
 constraints:
@@ -46,5 +46,46 @@ constraints:
   - "Documento Word deve seguir as regras Facens."
   - "No máximo uma Open Question nova por execução e cinco questões ativas."
 
-last_run: "2026-08-15"
-next_recommended_action: "Especificar o protocolo de dados do WhatsApp e os critérios de anonimização."
+weekly_audit:
+  date: "2026-08-16"
+  status: "attention_required"
+  pull_request:
+    number: 3
+    state: "open_draft"
+    changed_files: 24
+    ahead_by_commits: 38
+  open_questions:
+    active: 1
+    answered: 0
+    blocking:
+      - "OQ-001"
+  evidence_gates:
+    results: closed
+    discussion: closed
+    conclusion: closed
+    placeholders_verified: true
+  references:
+    total: 37
+    candidate: 19
+    verified: 2
+    watch: 7
+    reject: 9
+  manuscript:
+    substantial_drafts:
+      - "01 Introdução"
+      - "03 Trabalhos Correlatos"
+      - "06 Desenvolvimento"
+    incomplete:
+      - "02 Fundamentação Teórica"
+      - "05 Modelagem da Solução"
+    protected_placeholders:
+      - "07 Experimentos e Resultados"
+      - "08 Discussão"
+      - "09 Considerações Finais"
+  risks:
+    - "A seção 4.2 declara uma revisão sistemática, mas ainda não há protocolo versionado suficiente para sustentar essa classificação."
+    - "Somente 2 das 37 referências estão verificadas; 19 ainda são candidatas."
+    - "A definição final da fonte e transformação dos dados está bloqueada pela OQ-001."
+
+last_run: "2026-08-16"
+next_recommended_action: "Criar o esqueleto versionado do protocolo experimental, mantendo como placeholders todos os campos dependentes da OQ-001."
