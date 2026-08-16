@@ -1,0 +1,47 @@
+policy:
+  default: closed
+  agent_may_open_gate: false
+  human_authorization_required: true
+  authorized_by: []
+  rule: "Enquanto um gate estiver fechado, o capítulo correspondente deve conter apenas títulos, subtítulos e placeholders explícitos."
+
+gates:
+  results:
+    status: closed
+    protects:
+      - "docs/tcc/manuscript/07-experimentos-resultados.md"
+      - "DOCX: capítulo 7 — Experimentos e Resultados"
+    prerequisites:
+      - "protocolo experimental congelado antes da execução definitiva"
+      - "dados anonimizados e versão da amostra registrada"
+      - "execuções reproduzíveis e artefatos preservados"
+      - "métricas calculadas a partir das evidências"
+      - "resultados revisados pelos autores"
+      - "autorização humana explícita para abrir o gate"
+
+  discussion:
+    status: closed
+    protects:
+      - "docs/tcc/manuscript/08-discussao.md"
+      - "DOCX: capítulo 8 — Discussão"
+    prerequisites:
+      - "gate results aberto"
+      - "resultados comparados com a literatura verificada"
+      - "limitações e ameaças à validade identificadas"
+      - "autorização humana explícita para abrir o gate"
+
+  conclusion:
+    status: closed
+    protects:
+      - "docs/tcc/manuscript/09-consideracoes-finais.md"
+      - "DOCX: capítulo 9 — Considerações Finais"
+    prerequisites:
+      - "gates results e discussion abertos"
+      - "pergunta de pesquisa respondida pelas evidências"
+      - "contribuições e limitações revisadas pelos autores"
+      - "autorização humana explícita para abrir o gate"
+
+on_blocked_action:
+  - "não preencher o capítulo"
+  - "registrar a dependência no run log"
+  - "escolher a próxima ação permitida do backlog"
