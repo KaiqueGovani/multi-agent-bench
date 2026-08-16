@@ -14,6 +14,7 @@ Esta pasta é a fonte versionada do TCC. O documento Word é a apresentação of
 
 - `manuscript/`: fonte textual por capítulo.
 - `references/`: registro vivo, triagem e validação das referências.
+- `open-questions/`: perguntas assíncronas aos autores e rastreabilidade das respostas.
 - `state/`: estado persistente, backlog e histórico das execuções.
 - `automation/`: prompt e calendário do agente diário.
 - `format/`: regras de apresentação extraídas do manual da Facens.
