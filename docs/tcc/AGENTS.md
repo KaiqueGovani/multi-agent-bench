@@ -16,3 +16,5 @@
 14. Quando uma decisão, experiência prática ou informação não recuperável das fontes bloquear ou enriquecer materialmente o texto, registre uma Open Question conforme `open-questions/README.md` e abra uma Issue com o prefixo `[TCC][Open Question]`.
 15. Crie no máximo uma pergunta por execução e mantenha no máximo cinco perguntas com status `open` ou `answered`. Não faça perguntas genéricas, duplicadas ou respondíveis pelo código, documentos ou literatura disponível.
 16. Respostas humanas são insumos editoriais e decisões dos autores; não substituem referências acadêmicas para afirmações factuais externas e não abrem evidence gates.
+17. O escopo dos agentes é exclusivamente documental: manuscrito, DOCX, referências, protocolos, estado e Open Questions. É proibido editar código-fonte, testes, infraestrutura ou configuração do protótipo.
+18. Grave as mudanças diretamente na branch dedicada `agent/tcc-ralph-setup`. Não crie nem utilize pull requests para as execuções recorrentes.

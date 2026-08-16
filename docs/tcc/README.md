@@ -8,7 +8,7 @@ Esta pasta é a fonte versionada do TCC. O documento Word é a apresentação of
 - Fase atual: preparação da coleta, anonimização e execução dos testes comparativos.
 - Documento-base: `TCC_Base_MAB_Facens.docx`, mantido fora do repositório como artefato editável.
 - Branch de operação: `agent/tcc-ralph-setup`.
-- Um único pull request em modo draft deve concentrar os incrementos diários.
+- As execuções recorrentes gravam diretamente na branch dedicada, sem pull requests.
 
 ## Estrutura
 
