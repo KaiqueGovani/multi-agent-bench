@@ -15,6 +15,7 @@ artifacts:
   working_branch: "agent/tcc-ralph-setup"
   pr_policy: "um_pull_request_draft_persistente"
   evidence_gates: "docs/tcc/state/evidence-gates.yml"
+  open_questions: "docs/tcc/open-questions/questions.yml"
 
 current_objective: "Congelar o protocolo experimental e preparar uma coleta de WhatsApp anonimizada antes dos testes definitivos."
 
@@ -43,6 +44,7 @@ constraints:
   - "Referência nova exige verificação na fonte primária."
   - "Uma ação delimitada por execução."
   - "Documento Word deve seguir as regras Facens."
+  - "No máximo uma Open Question nova por execução e cinco questões ativas."
 
 last_run: "2026-08-15"
 next_recommended_action: "Especificar o protocolo de dados do WhatsApp e os critérios de anonimização."
