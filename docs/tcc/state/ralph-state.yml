@@ -12,6 +12,7 @@ artifacts:
   manuscript: "docs/tcc/manuscript"
   method: "docs/tcc/method"
   reference_registry: "docs/tcc/references/registry.csv"
+  related_works_matrix: "docs/tcc/references/related-works-matrix.csv"
   word_document: "TCC_Base_MAB_Facens.docx"
   working_branch: "agent/tcc-ralph-setup"
   branch_policy: "commits_diretos_sem_pull_request"
@@ -45,7 +46,7 @@ next_actions:
     status: blocked_by_OQ-001
   - priority: 5
     action: "Criar a versão tabular e versionável do quadro de trabalhos correlatos e reconciliar citações com a lista ABNT."
-    status: pending
+    status: completed_2026-08-17
   - priority: 6
     action: "Continuar o refinamento textual dos capítulos 1 a 6 e sincronizar o DOCX."
     status: pending
@@ -63,8 +64,8 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
-  date: "2026-08-16"
-  status: "ready_for_human_decisions"
+  date: "2026-08-17"
+  status: "related_works_matrix_reconciled"
   open_questions:
     active: 2
     answered: 0
@@ -77,10 +78,10 @@ audit:
     conclusion: closed
     placeholders_verified: true
   references:
-    total: 38
+    total: 41
     candidate: 14
     verified: 2
-    cited: 6
+    cited: 9
     watch: 7
     reject: 9
   manuscript:
@@ -99,6 +100,7 @@ audit:
     - "Origem, autorização, volume e retenção dos dados dependem da OQ-001."
     - "Rubrica e avaliadores de qualidade dependem da OQ-002."
     - "Número de repetições e plano inferencial ainda não foram congelados."
+    - "As entradas ABNT de Balaprakash et al. e Hatzimanolis et al. no DOCX exigem correção na próxima sincronização documental."
 
-last_run: "2026-08-16-batch-10"
-next_recommended_action: "Integrar a primeira resposta humana disponível entre OQ-001 e OQ-002."
+last_run: "2026-08-17"
+next_recommended_action: "Se não houver resposta humana nas OQs, preparar uma proposta documentada para o número de repetições e os critérios inferenciais, sem congelá-los antes da aprovação dos autores."
