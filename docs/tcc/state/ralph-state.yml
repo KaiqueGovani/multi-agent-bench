@@ -13,7 +13,7 @@ artifacts:
   method: "docs/tcc/method"
   reference_registry: "docs/tcc/references/registry.csv"
   related_works_matrix: "docs/tcc/references/related-works-matrix.csv"
-  word_document: "TCC_Base_MAB_Facens.docx"
+  word_document: "/TCC/TCC_MAB_Facens_Ralph_10x.docx"
   working_branch: "agent/tcc-ralph-setup"
   branch_policy: "commits_diretos_sem_pull_request"
   evidence_gates: "docs/tcc/state/evidence-gates.yml"
@@ -49,7 +49,7 @@ next_actions:
     status: completed_2026-08-17
   - priority: 6
     action: "Continuar o refinamento textual dos capítulos 1 a 6 e sincronizar o DOCX."
-    status: pending
+    status: in_progress_latest_2.4.4_2026-08-18
 
 constraints:
   - "Sem resultados experimentais antes de execução e validação."
@@ -64,8 +64,8 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
-  date: "2026-08-17"
-  status: "related_works_matrix_reconciled"
+  date: "2026-08-18"
+  status: "theoretical_subsection_2.4.4_expanded"
   open_questions:
     active: 2
     answered: 0
@@ -85,6 +85,8 @@ audit:
     watch: 7
     reject: 9
   manuscript:
+    latest_refinement: "2.4.4 Comparação entre arquiteturas"
+    latest_refinement_words: 625
     substantial_drafts:
       - "01 Introdução"
       - "02 Fundamentação Teórica"
@@ -102,5 +104,5 @@ audit:
     - "Número de repetições e plano inferencial ainda não foram congelados."
     - "As entradas ABNT de Balaprakash et al. e Hatzimanolis et al. no DOCX exigem correção na próxima sincronização documental."
 
-last_run: "2026-08-17"
-next_recommended_action: "Se não houver resposta humana nas OQs, preparar uma proposta documentada para o número de repetições e os critérios inferenciais, sem congelá-los antes da aprovação dos autores."
+last_run: "2026-08-18"
+next_recommended_action: "Na descoberta de quarta-feira, buscar e triar até cinco referências acadêmicas sobre comparação controlada de arquiteturas multiagentes, custos de coordenação e avaliação de qualidade."
