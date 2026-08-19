@@ -24,6 +24,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import pdfplumber
+from PIL import ImageFont
 from docx import Document
 from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.text import (
@@ -46,6 +47,7 @@ RIGHT_MARGIN_CM = 2.0
 TOP_MARGIN_CM = 3.0
 BOTTOM_MARGIN_CM = 2.0
 TOC_RIGHT_TAB_CM = PAGE_WIDTH_CM - LEFT_MARGIN_CM - RIGHT_MARGIN_CM
+TOC_INDENTS_CM = {1: 0.0, 2: 0.75, 3: 1.5}
 ET_AL_RE = re.compile(r"\bet\s+al\.", re.IGNORECASE)
 MANUAL_NUMBER_RE = re.compile(r"^\s*\d+(?:\.\d+)*\.?\s+")
 
@@ -92,6 +94,18 @@ def set_style_font(style, size: int, *, bold: bool = False, caps: bool = False) 
     style.font.bold = bold
     style.font.all_caps = caps
     style.font.color.rgb = RGBColor(0, 0, 0)
+    remove_theme_color(style._element.get_or_add_rPr())
+
+
+def remove_theme_color(r_pr) -> None:
+    """Força preto absoluto; Word prioriza themeColor sobre w:val em alguns casos."""
+    color = r_pr.find(qn("w:color"))
+    if color is None:
+        color = OxmlElement("w:color")
+        r_pr.append(color)
+    color.set(qn("w:val"), "000000")
+    for attribute in ("themeColor", "themeTint", "themeShade"):
+        color.attrib.pop(qn(f"w:{attribute}"), None)
 
 
 def configure_styles(doc: Document) -> None:
@@ -150,14 +164,13 @@ def configure_styles(doc: Document) -> None:
     reference.paragraph_format.space_after = Pt(12)
     reference.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
 
-    indents = {1: 0.0, 2: 0.75, 3: 1.5}
     for level, style_name in TOC_STYLES.items():
         style = styles[style_name]
         set_style_font(style, 12, bold=(level == 1), caps=False)
         fmt = style.paragraph_format
         fmt.alignment = WD_ALIGN_PARAGRAPH.LEFT
         fmt.first_line_indent = Cm(0)
-        fmt.left_indent = Cm(indents[level])
+        fmt.left_indent = Cm(TOC_INDENTS_CM[level])
         fmt.right_indent = Cm(0)
         fmt.space_before = Pt(0)
         fmt.space_after = Pt(0)
@@ -178,6 +191,8 @@ def set_run_typography(run, size: int, *, bold: bool | None = None, caps: bool |
     run.font.name = "Arial"
     set_fonts(run._element)
     run.font.size = Pt(size)
+    run.font.color.rgb = RGBColor(0, 0, 0)
+    remove_theme_color(run._r.get_or_add_rPr())
     if bold is not None:
         run.font.bold = bold
     if caps is not None:
@@ -579,6 +594,34 @@ def add_internal_hyperlink(paragraph, text: str, anchor: str) -> None:
     paragraph._p.append(hyperlink)
 
 
+def toc_font(level: int):
+    """Métrica compatível com Arial para calcular pontos literais do sumário."""
+    family = "NimbusSans-Bold.otf" if level == 1 else "NimbusSans-Regular.otf"
+    candidates = [
+        Path("/usr/share/fonts/opentype/urw-base35") / family,
+        Path("/usr/share/fonts/truetype/msttcorefonts/Arial.ttf"),
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return ImageFont.truetype(str(candidate), 1200)
+    return None
+
+
+def literal_dot_leader(entry: TocEntry, page_text: str) -> str:
+    """Gera pontos reais para sobreviver a Word Online e importadores DOCX."""
+    font = toc_font(entry.level)
+    fallback = max(4, 92 - len(entry.display) - len(page_text))
+    if font is None:
+        return "." * fallback
+
+    available_pt = (TOC_RIGHT_TAB_CM - TOC_INDENTS_CM[entry.level]) * 72 / 2.54
+    # Fonte carregada a 1200 px representa Arial 12 pt em escala 100:1.
+    target = (available_pt - 5) * 100
+    occupied = font.getlength(entry.display) + font.getlength(page_text)
+    dot_width = max(font.getlength("."), 1)
+    return "." * max(4, int((target - occupied) // dot_width))
+
+
 def toc_boundary(doc: Document, toc_heading) -> object:
     cursor = toc_heading._p.getnext()
     while cursor is not None:
@@ -607,14 +650,10 @@ def rebuild_toc(doc: Document, entries: list[TocEntry]) -> None:
     for entry in entries:
         paragraph = doc.add_paragraph(style=TOC_STYLES[entry.level])
         paragraph.paragraph_format.tab_stops.clear_all()
-        paragraph.paragraph_format.tab_stops.add_tab_stop(
-            Cm(TOC_RIGHT_TAB_CM),
-            WD_TAB_ALIGNMENT.RIGHT,
-            WD_TAB_LEADER.DOTS,
-        )
         add_internal_hyperlink(paragraph, entry.display, entry.bookmark)
-        paragraph.add_run("\t")
         page_text = str(entry.page) if entry.page is not None else "—"
+        dots = paragraph.add_run(literal_dot_leader(entry, page_text))
+        set_run_typography(dots, 12, bold=(entry.level == 1), caps=False)
         add_internal_hyperlink(paragraph, page_text, entry.bookmark)
         boundary.addprevious(paragraph._p)
 
@@ -734,11 +773,19 @@ def audit(input_path: Path, pdf_path: Path | None = None) -> list[str]:
     if any("—" in p.text or "Atualize o sumário" in p.text for p in toc_paragraphs):
         errors.append("Sumário ainda contém marcador provisório.")
     for paragraph in toc_paragraphs:
-        tabs = paragraph.paragraph_format.tab_stops
-        if len(tabs) != 1 or tabs[0].leader != WD_TAB_LEADER.DOTS:
-            errors.append(f"Entrada do sumário sem pontilhado explícito: {paragraph.text}")
-        if "\t" not in paragraph.text:
-            errors.append(f"Entrada do sumário sem tabulação antes da página: {paragraph.text}")
+        if not re.search(r"\.{4,}\d+$", paragraph.text):
+            errors.append(f"Entrada do sumário sem pontos literais: {paragraph.text}")
+
+    for paragraph in headings:
+        for run in paragraph.runs:
+            r_pr = run._r.rPr
+            color = r_pr.find(qn("w:color")) if r_pr is not None else None
+            if color is None or color.get(qn("w:val")) != "000000":
+                errors.append(f"Título sem preto absoluto: {paragraph.text}")
+                break
+            if any(color.get(qn(f"w:{name}")) for name in ("themeColor", "themeTint", "themeShade")):
+                errors.append(f"Título ainda depende de cor de tema: {paragraph.text}")
+                break
 
     reference_heading = next(
         (p for p in doc.paragraphs if normalized(p.text) == "REFERÊNCIAS"), None

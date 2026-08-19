@@ -24,3 +24,5 @@
 22. Em qualquer parte do documento, inclusive tabelas e referências, `et al.` deve permanecer em itálico.
 23. A hierarquia tipográfica obrigatória é: corpo Arial 12; nível 1 Arial 14, negrito e caixa alta; nível 2 Arial 12, negrito e caixa alta; nível 3 ou superior Arial 12, sem negrito e caixa alta.
 24. O sumário deve usar pontilhado contínuo entre cada título e o número da página, com todos os números alinhados na mesma margem direita.
+25. Títulos devem usar preto absoluto no estilo e na formatação direta; remova atributos de cor de tema para impedir azul no Word Online ou em importadores.
+26. O pontilhado do sumário deve conter caracteres `.` literais, não somente líderes de tabulação.
