@@ -64,8 +64,8 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
-  date: "2026-08-18"
-  status: "theoretical_subsection_2.4.4_expanded"
+  date: "2026-08-19"
+  status: "reference_discovery_5_candidates"
   open_questions:
     active: 2
     answered: 0
@@ -78,12 +78,20 @@ audit:
     conclusion: closed
     placeholders_verified: true
   references:
-    total: 41
-    candidate: 14
+    total: 46
+    candidate: 19
     verified: 2
     cited: 9
     watch: 7
     reject: 9
+    latest_discovery:
+      date: "2026-08-19"
+      ids:
+        - "R042"
+        - "R043"
+        - "R044"
+        - "R045"
+        - "R046"
   manuscript:
     latest_refinement: "2.4.4 Comparação entre arquiteturas"
     latest_refinement_words: 625
@@ -104,5 +112,5 @@ audit:
     - "Número de repetições e plano inferencial ainda não foram congelados."
     - "As entradas ABNT de Balaprakash et al. e Hatzimanolis et al. no DOCX exigem correção na próxima sincronização documental."
 
-last_run: "2026-08-18"
-next_recommended_action: "Na descoberta de quarta-feira, buscar e triar até cinco referências acadêmicas sobre comparação controlada de arquiteturas multiagentes, custos de coordenação e avaliação de qualidade."
+last_run: "2026-08-19"
+next_recommended_action: "Na quinta-feira metodológica, preparar uma proposta documentada para número de repetições e critérios inferenciais, mantendo as escolhas dependentes de aprovação humana como não congeladas."
