@@ -13,8 +13,8 @@ Realizar apenas a próxima ação pequena de maior valor para aproximar o TCC de
 3. Reavalie o backlog documental, considerando o foco do dia. Consulte o código-fonte somente em modo leitura quando for indispensável para verificar uma descrição técnica.
 4. Escolha uma única ação delimitada. Exemplos: concluir uma subseção; verificar cinco referências; formalizar uma métrica; corrigir uma divergência código–texto; revisar formatação de um capítulo.
 5. Execute e grave a ação diretamente na branch dedicada `agent/tcc-ralph-setup`. Não abra, reutilize ou dependa de pull requests.
-6. Se o trabalho alterar texto do manuscrito, reflita a mudança no DOCX. Preserve as regras Facens registradas em `docs/tcc/format/facens-rules.md`.
-7. Valide o resultado: referências e URLs verificáveis, afirmações apoiadas, alinhamento com o código, formatação e ausência de dados pessoais.
+6. Se o trabalho alterar texto do manuscrito, reflita a mudança no DOCX. Execute integralmente o pipeline de duas passagens de `docs/tcc/format/README.md`, preserve `docs/tcc/format/facens-rules.md` e nunca digite a numeração dos títulos manualmente.
+7. Valide o resultado: referências e URLs verificáveis, afirmações apoiadas, alinhamento com o código, ausência de dados pessoais e auditoria estrutural do DOCX. Renderize e inspecione visualmente todas as páginas; confirme sumário, capítulos, paginação, referências e `et al.` em itálico, inclusive em tabelas.
 8. Atualize `docs/tcc/state/ralph-state.yml` e crie um registro único em `docs/tcc/state/runs/` com ação, evidência, arquivos alterados, riscos e próxima sugestão. Para várias execuções no mesmo dia, use sufixo sequencial.
 9. Produza um resumo curto do que mudou, das Open Questions pendentes e do que precisa de decisão humana.
 

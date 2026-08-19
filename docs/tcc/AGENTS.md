@@ -18,3 +18,7 @@
 16. Respostas humanas são insumos editoriais e decisões dos autores; não substituem referências acadêmicas para afirmações factuais externas e não abrem evidence gates.
 17. O escopo dos agentes é exclusivamente documental: manuscrito, DOCX, referências, protocolos, estado e Open Questions. É proibido editar código-fonte, testes, infraestrutura ou configuração do protótipo.
 18. Grave as mudanças diretamente na branch dedicada `agent/tcc-ralph-setup`. Não crie nem utilize pull requests para as execuções recorrentes.
+19. Ao alterar o manuscrito ou o DOCX, execute obrigatoriamente o pipeline de duas passagens descrito em `format/README.md`: preparar, renderizar, reconstruir o sumário com páginas reais, renderizar novamente e auditar.
+20. Não grave números manualmente nos títulos. Use uma única lista multinível vinculada aos estilos de Título 1, Título 2 e Título 3.
+21. Inspecione visualmente todas as páginas renderizadas antes do commit, com atenção especial ao sumário, quebras de capítulo, tabelas, paginação e referências.
+22. Em qualquer parte do documento, inclusive tabelas e referências, `et al.` deve permanecer em itálico.

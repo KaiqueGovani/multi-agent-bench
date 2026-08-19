@@ -1,0 +1,747 @@
+#!/usr/bin/env python3
+"""Formata e valida o DOCX do TCC segundo o manual técnico da Facens.
+
+Fluxo determinístico em duas passagens:
+
+1. ``prepare`` normaliza estilos, seções, numeração, referências e cria um
+   sumário estático provisório.
+2. O DOCX é renderizado em PDF.
+3. ``finalize-toc`` lê as páginas efetivas do PDF e grava os números corretos
+   no sumário, preservando links internos para os títulos.
+4. ``audit`` verifica estrutura, referências e, se fornecido, paginação.
+
+O sumário estático é intencional: evita a dependência de atualização manual de
+campos do Word/LibreOffice em execuções headless do Ralph loop.
+"""
+
+from __future__ import annotations
+
+import argparse
+import copy
+import re
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+
+import pdfplumber
+from docx import Document
+from docx.enum.style import WD_STYLE_TYPE
+from docx.enum.text import (
+    WD_ALIGN_PARAGRAPH,
+    WD_LINE_SPACING,
+    WD_TAB_ALIGNMENT,
+    WD_TAB_LEADER,
+)
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.shared import Cm, Pt, RGBColor
+
+
+HEADING_STYLES = {"Heading 1": 1, "Heading 2": 2, "Heading 3": 3}
+TOC_STYLES = {1: "Facens TOC 1", 2: "Facens TOC 2", 3: "Facens TOC 3"}
+PAGE_WIDTH_CM = 21.0
+PAGE_HEIGHT_CM = 29.7
+LEFT_MARGIN_CM = 3.0
+RIGHT_MARGIN_CM = 2.0
+TOP_MARGIN_CM = 3.0
+BOTTOM_MARGIN_CM = 2.0
+TOC_RIGHT_TAB_CM = PAGE_WIDTH_CM - LEFT_MARGIN_CM - RIGHT_MARGIN_CM
+ET_AL_RE = re.compile(r"\bet\s+al\.", re.IGNORECASE)
+MANUAL_NUMBER_RE = re.compile(r"^\s*\d+(?:\.\d+)*\.?\s+")
+
+
+@dataclass(frozen=True)
+class TocEntry:
+    level: int
+    title: str
+    display: str
+    bookmark: str
+    page: int | None = None
+
+
+def normalized(text: str) -> str:
+    return re.sub(r"\s+", " ", text.replace("\u00a0", " ").strip()).upper()
+
+
+def iter_table_paragraphs(table):
+    for row in table.rows:
+        for cell in row.cells:
+            yield from cell.paragraphs
+            for nested in cell.tables:
+                yield from iter_table_paragraphs(nested)
+
+
+def iter_all_paragraphs(doc: Document):
+    """Percorre corpo e tabelas sem limitar a regra tipográfica ao texto corrido."""
+    yield from doc.paragraphs
+    for table in doc.tables:
+        yield from iter_table_paragraphs(table)
+
+
+def set_fonts(element, family: str = "Arial") -> None:
+    r_pr = element.get_or_add_rPr()
+    fonts = r_pr.get_or_add_rFonts()
+    for name in ("ascii", "hAnsi", "eastAsia", "cs"):
+        fonts.set(qn(f"w:{name}"), family)
+
+
+def set_style_font(style, size: int, *, bold: bool = False, caps: bool = False) -> None:
+    style.font.name = "Arial"
+    set_fonts(style._element)
+    style.font.size = Pt(size)
+    style.font.bold = bold
+    style.font.all_caps = caps
+    style.font.color.rgb = RGBColor(0, 0, 0)
+
+
+def configure_styles(doc: Document) -> None:
+    styles = doc.styles
+
+    normal = styles["Normal"]
+    set_style_font(normal, 12)
+    normal.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    normal.paragraph_format.first_line_indent = Cm(1.25)
+    normal.paragraph_format.left_indent = Cm(0)
+    normal.paragraph_format.right_indent = Cm(0)
+    normal.paragraph_format.space_before = Pt(0)
+    normal.paragraph_format.space_after = Pt(0)
+    normal.paragraph_format.line_spacing_rule = WD_LINE_SPACING.ONE_POINT_FIVE
+
+    specifications = {
+        "Heading 1": (14, True, True, True),
+        "Heading 2": (12, False, True, False),
+        "Heading 3": (12, False, False, False),
+    }
+    for name, (size, bold, caps, new_page) in specifications.items():
+        style = styles[name]
+        set_style_font(style, size, bold=bold, caps=caps)
+        fmt = style.paragraph_format
+        fmt.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        fmt.first_line_indent = Cm(0)
+        fmt.left_indent = Cm(0)
+        fmt.right_indent = Cm(0)
+        fmt.space_before = Pt(0)
+        fmt.space_after = Pt(18)
+        fmt.line_spacing_rule = WD_LINE_SPACING.ONE_POINT_FIVE
+        fmt.keep_with_next = True
+        fmt.keep_together = True
+        fmt.page_break_before = new_page
+
+    for style_name in ["Front Matter Heading", "Reference Entry", *TOC_STYLES.values()]:
+        if style_name not in styles:
+            styles.add_style(style_name, WD_STYLE_TYPE.PARAGRAPH)
+
+    front = styles["Front Matter Heading"]
+    set_style_font(front, 14, bold=True, caps=True)
+    front.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    front.paragraph_format.first_line_indent = Cm(0)
+    front.paragraph_format.space_before = Pt(0)
+    front.paragraph_format.space_after = Pt(18)
+    front.paragraph_format.line_spacing_rule = WD_LINE_SPACING.ONE_POINT_FIVE
+    front.paragraph_format.keep_with_next = True
+
+    reference = styles["Reference Entry"]
+    set_style_font(reference, 12)
+    reference.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    reference.paragraph_format.first_line_indent = Cm(0)
+    reference.paragraph_format.left_indent = Cm(0)
+    reference.paragraph_format.right_indent = Cm(0)
+    reference.paragraph_format.space_before = Pt(0)
+    reference.paragraph_format.space_after = Pt(12)
+    reference.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
+
+    indents = {1: 0.0, 2: 0.75, 3: 1.5}
+    for level, style_name in TOC_STYLES.items():
+        style = styles[style_name]
+        set_style_font(style, 12, bold=(level == 1), caps=False)
+        fmt = style.paragraph_format
+        fmt.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        fmt.first_line_indent = Cm(0)
+        fmt.left_indent = Cm(indents[level])
+        fmt.right_indent = Cm(0)
+        fmt.space_before = Pt(0)
+        fmt.space_after = Pt(0)
+        fmt.line_spacing_rule = WD_LINE_SPACING.ONE_POINT_FIVE
+        fmt.keep_together = True
+        fmt.tab_stops.clear_all()
+        fmt.tab_stops.add_tab_stop(
+            Cm(TOC_RIGHT_TAB_CM - indents[level]),
+            WD_TAB_ALIGNMENT.RIGHT,
+            WD_TAB_LEADER.DOTS,
+        )
+
+
+def configure_sections(doc: Document) -> None:
+    for section in doc.sections:
+        section.page_width = Cm(PAGE_WIDTH_CM)
+        section.page_height = Cm(PAGE_HEIGHT_CM)
+        section.left_margin = Cm(LEFT_MARGIN_CM)
+        section.right_margin = Cm(RIGHT_MARGIN_CM)
+        section.top_margin = Cm(TOP_MARGIN_CM)
+        section.bottom_margin = Cm(BOTTOM_MARGIN_CM)
+        section.header_distance = Cm(1.25)
+        section.footer_distance = Cm(1.25)
+
+    if len(doc.sections) < 3:
+        raise ValueError("O documento precisa preservar as seções de capa, pré-textuais e texto.")
+
+    # A capa não é contada. A folha de rosto (segunda seção) inicia a contagem em 1.
+    prelim = doc.sections[1]._sectPr
+    pg_num = prelim.find(qn("w:pgNumType"))
+    if pg_num is None:
+        pg_num = OxmlElement("w:pgNumType")
+        prelim.append(pg_num)
+    pg_num.set(qn("w:start"), "1")
+
+    # A seção textual continua a contagem; não usa um valor fixo, pois o sumário
+    # pode crescer durante o Ralph loop.
+    body = doc.sections[2]._sectPr
+    body_pg_num = body.find(qn("w:pgNumType"))
+    if body_pg_num is not None:
+        body_pg_num.attrib.pop(qn("w:start"), None)
+
+    for index, section in enumerate(doc.sections):
+        section.footer.is_linked_to_previous = False
+        if index < 2:
+            for paragraph in section.footer.paragraphs:
+                paragraph.clear()
+        else:
+            footer = section.footer
+            while len(footer.paragraphs) > 1:
+                footer._element.remove(footer.paragraphs[-1]._p)
+            paragraph = footer.paragraphs[0]
+            paragraph.clear()
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            run = paragraph.add_run()
+            run.font.name = "Arial"
+            set_fonts(run._element)
+            run.font.size = Pt(10)
+            begin = OxmlElement("w:fldChar")
+            begin.set(qn("w:fldCharType"), "begin")
+            instruction = OxmlElement("w:instrText")
+            instruction.set(qn("xml:space"), "preserve")
+            instruction.text = " PAGE "
+            separate = OxmlElement("w:fldChar")
+            separate.set(qn("w:fldCharType"), "separate")
+            cached = OxmlElement("w:t")
+            cached.text = "1"
+            end = OxmlElement("w:fldChar")
+            end.set(qn("w:fldCharType"), "end")
+            run._r.extend([begin, instruction, separate, cached, end])
+
+
+def numbering_definition_is_facens(numbering, num_id: str) -> bool:
+    num = numbering.find(f"./{qn('w:num')}[@{qn('w:numId')}='{num_id}']")
+    if num is None:
+        return False
+    abstract_ref = num.find(qn("w:abstractNumId"))
+    if abstract_ref is None:
+        return False
+    abstract_id = abstract_ref.get(qn("w:val"))
+    abstract = numbering.find(
+        f"./{qn('w:abstractNum')}[@{qn('w:abstractNumId')}='{abstract_id}']"
+    )
+    if abstract is None:
+        return False
+    values = []
+    for level in range(3):
+        lvl = abstract.find(f"./{qn('w:lvl')}[@{qn('w:ilvl')}='{level}']")
+        if lvl is None or lvl.find(qn("w:lvlText")) is None:
+            return False
+        values.append(lvl.find(qn("w:lvlText")).get(qn("w:val")))
+    return values == ["%1", "%1.%2", "%1.%2.%3"]
+
+
+def create_numbering_definition(doc: Document) -> int:
+    numbering = doc.part.numbering_part.element
+    abstract_ids = [
+        int(el.get(qn("w:abstractNumId")))
+        for el in numbering.findall(qn("w:abstractNum"))
+    ]
+    num_ids = [int(el.get(qn("w:numId"))) for el in numbering.findall(qn("w:num"))]
+    abstract_id = max(abstract_ids, default=-1) + 1
+    num_id = max(num_ids, default=0) + 1
+
+    abstract = OxmlElement("w:abstractNum")
+    abstract.set(qn("w:abstractNumId"), str(abstract_id))
+    multi = OxmlElement("w:multiLevelType")
+    multi.set(qn("w:val"), "multilevel")
+    abstract.append(multi)
+    for level, level_text in enumerate(["%1", "%1.%2", "%1.%2.%3"]):
+        lvl = OxmlElement("w:lvl")
+        lvl.set(qn("w:ilvl"), str(level))
+        start = OxmlElement("w:start")
+        start.set(qn("w:val"), "1")
+        fmt = OxmlElement("w:numFmt")
+        fmt.set(qn("w:val"), "decimal")
+        text = OxmlElement("w:lvlText")
+        text.set(qn("w:val"), level_text)
+        suffix = OxmlElement("w:suff")
+        suffix.set(qn("w:val"), "space")
+        p_style = OxmlElement("w:pStyle")
+        p_style.set(qn("w:val"), f"Heading{level + 1}")
+        p_pr = OxmlElement("w:pPr")
+        ind = OxmlElement("w:ind")
+        ind.set(qn("w:left"), "0")
+        ind.set(qn("w:hanging"), "0")
+        p_pr.append(ind)
+        lvl.extend([start, fmt, text, suffix, p_style, p_pr])
+        if level > 0:
+            restart = OxmlElement("w:lvlRestart")
+            restart.set(qn("w:val"), str(level - 1))
+            lvl.insert(1, restart)
+        abstract.append(lvl)
+    numbering.append(abstract)
+
+    num = OxmlElement("w:num")
+    num.set(qn("w:numId"), str(num_id))
+    abstract_ref = OxmlElement("w:abstractNumId")
+    abstract_ref.set(qn("w:val"), str(abstract_id))
+    num.append(abstract_ref)
+    numbering.append(num)
+    return num_id
+
+
+def configure_heading_numbering(doc: Document) -> int:
+    numbering = doc.part.numbering_part.element
+    num_id = None
+    for paragraph in doc.paragraphs:
+        if paragraph.style.name not in HEADING_STYLES:
+            continue
+        p_pr = paragraph._p.pPr
+        if p_pr is None or p_pr.numPr is None or p_pr.numPr.numId is None:
+            continue
+        candidate = str(p_pr.numPr.numId.val)
+        if numbering_definition_is_facens(numbering, candidate):
+            num_id = int(candidate)
+            break
+    if num_id is None:
+        num_id = create_numbering_definition(doc)
+
+    for paragraph in doc.paragraphs:
+        level = HEADING_STYLES.get(paragraph.style.name)
+        if level is None:
+            continue
+        if MANUAL_NUMBER_RE.match(paragraph.text):
+            paragraph.text = MANUAL_NUMBER_RE.sub("", paragraph.text, count=1)
+        p_pr = paragraph._p.get_or_add_pPr()
+        old = p_pr.find(qn("w:numPr"))
+        if old is not None:
+            p_pr.remove(old)
+        num_pr = OxmlElement("w:numPr")
+        ilvl = OxmlElement("w:ilvl")
+        ilvl.set(qn("w:val"), str(level - 1))
+        num = OxmlElement("w:numId")
+        num.set(qn("w:val"), str(num_id))
+        num_pr.extend([ilvl, num])
+        p_pr.append(num_pr)
+    return num_id
+
+
+def replace_reference_text(paragraph, text: str) -> None:
+    paragraph.clear()
+    paragraph.add_run(text)
+    paragraph.style = "Reference Entry"
+
+
+def italicize_et_al(paragraph) -> None:
+    for run in list(paragraph.runs):
+        if not ET_AL_RE.search(run.text):
+            continue
+        parent = run._r.getparent()
+        position = parent.index(run._r)
+        pieces = ET_AL_RE.split(run.text)
+        matches = list(ET_AL_RE.finditer(run.text))
+        rebuilt = []
+        for index, piece in enumerate(pieces):
+            if piece:
+                new_run = copy.deepcopy(run._r)
+                for text_node in new_run.findall(".//" + qn("w:t")):
+                    text_node.getparent().remove(text_node)
+                text_node = OxmlElement("w:t")
+                text_node.text = piece
+                if piece[:1].isspace() or piece[-1:].isspace():
+                    text_node.set(qn("xml:space"), "preserve")
+                new_run.append(text_node)
+                rebuilt.append(new_run)
+            if index < len(matches):
+                new_run = copy.deepcopy(run._r)
+                for text_node in new_run.findall(".//" + qn("w:t")):
+                    text_node.getparent().remove(text_node)
+                r_pr = new_run.get_or_add_rPr()
+                italic = r_pr.find(qn("w:i"))
+                if italic is None:
+                    italic = OxmlElement("w:i")
+                    r_pr.append(italic)
+                italic.set(qn("w:val"), "1")
+                italic_cs = r_pr.find(qn("w:iCs"))
+                if italic_cs is None:
+                    italic_cs = OxmlElement("w:iCs")
+                    r_pr.append(italic_cs)
+                italic_cs.set(qn("w:val"), "1")
+                text_node = OxmlElement("w:t")
+                text_node.text = matches[index].group(0)
+                new_run.append(text_node)
+                rebuilt.append(new_run)
+        parent.remove(run._r)
+        for offset, rebuilt_run in enumerate(rebuilt):
+            parent.insert(position + offset, rebuilt_run)
+
+
+def configure_references(doc: Document) -> None:
+    heading = next(
+        (p for p in doc.paragraphs if normalized(p.text) == "REFERÊNCIAS"), None
+    )
+    if heading is None:
+        raise ValueError("Título REFERÊNCIAS não encontrado.")
+    heading.style = "Front Matter Heading"
+    heading.paragraph_format.page_break_before = True
+
+    corrections = {
+        "BALAPRAKASH, PRASANNA": (
+            "BALAPRAKASH, Prasanna et al. SWARM: reimagining scientific workflow "
+            "management systems in a distributed world. International Journal of High "
+            "Performance Computing Applications, [S. l.], v. 39, n. 5, p. 692-712, "
+            "2025. DOI: 10.1177/10943420251339317. Disponível em: "
+            "https://doi.org/10.1177/10943420251339317. Acesso em: 30 mar. 2026."
+        ),
+        "HATZIMANOLIS, ANDREW": (
+            "HATZIMANOLIS, Andrew et al. Applications of artificial intelligence in "
+            "current pharmacy practice: a scoping review. Research in Social and "
+            "Administrative Pharmacy, [S. l.], v. 21, n. 3, p. 134-141, 2025. DOI: "
+            "10.1016/j.sapharm.2024.12.007. Disponível em: "
+            "https://doi.org/10.1016/j.sapharm.2024.12.007. Acesso em: 30 mar. 2026."
+        ),
+    }
+    entries = []
+    seen = False
+    for paragraph in doc.paragraphs:
+        if paragraph._p is heading._p:
+            seen = True
+            continue
+        if not seen or not paragraph.text.strip():
+            continue
+        upper = normalized(paragraph.text)
+        for prefix, replacement in corrections.items():
+            if upper.startswith(prefix):
+                replace_reference_text(paragraph, replacement)
+                break
+        paragraph.style = "Reference Entry"
+        paragraph.paragraph_format.page_break_before = False
+        italicize_et_al(paragraph)
+        entries.append(paragraph)
+
+    entries.sort(key=lambda p: normalized(p.text).split(".", 1)[0])
+    parent = heading._p.getparent()
+    for paragraph in entries:
+        parent.remove(paragraph._p)
+    anchor = heading._p
+    for paragraph in entries:
+        anchor.addnext(paragraph._p)
+        anchor = paragraph._p
+
+    # A regra vale também para citações no corpo.
+    for paragraph in iter_all_paragraphs(doc):
+        italicize_et_al(paragraph)
+
+
+def remove_own_bookmarks(paragraph) -> None:
+    for tag in ("w:bookmarkStart", "w:bookmarkEnd"):
+        for element in list(paragraph._p.findall(".//" + qn(tag))):
+            if tag == "w:bookmarkStart" and not element.get(qn("w:name"), "").startswith(
+                "_TCC_H_"
+            ):
+                continue
+            parent = element.getparent()
+            if parent is not None:
+                parent.remove(element)
+
+
+def add_bookmark(paragraph, name: str, bookmark_id: int) -> None:
+    remove_own_bookmarks(paragraph)
+    start = OxmlElement("w:bookmarkStart")
+    start.set(qn("w:id"), str(bookmark_id))
+    start.set(qn("w:name"), name)
+    end = OxmlElement("w:bookmarkEnd")
+    end.set(qn("w:id"), str(bookmark_id))
+    p_pr = paragraph._p.pPr
+    insert_at = 1 if p_pr is not None else 0
+    paragraph._p.insert(insert_at, start)
+    paragraph._p.append(end)
+
+
+def collect_toc_entries(doc: Document) -> list[TocEntry]:
+    entries = []
+    counters = [0, 0, 0]
+    started = False
+    bookmark_id = 1000
+    for paragraph in doc.paragraphs:
+        style = paragraph.style.name
+        if style == "Heading 1":
+            started = True
+        if not started:
+            continue
+        level = HEADING_STYLES.get(style)
+        if level:
+            counters[level - 1] += 1
+            for index in range(level, 3):
+                counters[index] = 0
+            number = ".".join(str(value) for value in counters[:level])
+            title = re.sub(r"\s+", " ", paragraph.text.replace("\u00a0", " ").strip())
+            bookmark = f"_TCC_H_{bookmark_id:04d}"
+            add_bookmark(paragraph, bookmark, bookmark_id)
+            entries.append(TocEntry(level, title, f"{number} {title}", bookmark))
+            bookmark_id += 1
+            continue
+        if normalized(paragraph.text) == "REFERÊNCIAS":
+            bookmark = f"_TCC_H_{bookmark_id:04d}"
+            add_bookmark(paragraph, bookmark, bookmark_id)
+            entries.append(TocEntry(1, "REFERÊNCIAS", "REFERÊNCIAS", bookmark))
+            break
+    return entries
+
+
+def add_internal_hyperlink(paragraph, text: str, anchor: str) -> None:
+    hyperlink = OxmlElement("w:hyperlink")
+    hyperlink.set(qn("w:anchor"), anchor)
+    hyperlink.set(qn("w:history"), "1")
+    run = OxmlElement("w:r")
+    r_pr = OxmlElement("w:rPr")
+    fonts = OxmlElement("w:rFonts")
+    for name in ("ascii", "hAnsi", "eastAsia", "cs"):
+        fonts.set(qn(f"w:{name}"), "Arial")
+    color = OxmlElement("w:color")
+    color.set(qn("w:val"), "000000")
+    underline = OxmlElement("w:u")
+    underline.set(qn("w:val"), "none")
+    size = OxmlElement("w:sz")
+    size.set(qn("w:val"), "24")
+    r_pr.extend([fonts, color, underline, size])
+    run.append(r_pr)
+    text_node = OxmlElement("w:t")
+    text_node.text = text
+    if text[:1].isspace() or text[-1:].isspace():
+        text_node.set(qn("xml:space"), "preserve")
+    run.append(text_node)
+    hyperlink.append(run)
+    paragraph._p.append(hyperlink)
+
+
+def toc_boundary(doc: Document, toc_heading) -> object:
+    cursor = toc_heading._p.getnext()
+    while cursor is not None:
+        p_pr = cursor.find(qn("w:pPr"))
+        if p_pr is not None and p_pr.find(qn("w:sectPr")) is not None:
+            return cursor
+        cursor = cursor.getnext()
+    raise ValueError("Quebra de seção após o SUMÁRIO não encontrada.")
+
+
+def rebuild_toc(doc: Document, entries: list[TocEntry]) -> None:
+    toc_heading = next(
+        (p for p in doc.paragraphs if normalized(p.text) == "SUMÁRIO"), None
+    )
+    if toc_heading is None:
+        raise ValueError("Título SUMÁRIO não encontrado.")
+    toc_heading.style = "Front Matter Heading"
+    toc_heading.paragraph_format.page_break_before = True
+    boundary = toc_boundary(doc, toc_heading)
+    cursor = toc_heading._p.getnext()
+    while cursor is not None and cursor is not boundary:
+        following = cursor.getnext()
+        cursor.getparent().remove(cursor)
+        cursor = following
+
+    for entry in entries:
+        paragraph = doc.add_paragraph(style=TOC_STYLES[entry.level])
+        add_internal_hyperlink(paragraph, entry.display, entry.bookmark)
+        paragraph.add_run("\t")
+        page_text = str(entry.page) if entry.page is not None else "—"
+        add_internal_hyperlink(paragraph, page_text, entry.bookmark)
+        boundary.addprevious(paragraph._p)
+
+
+def page_map_from_pdf(pdf_path: Path, entries: list[TocEntry]) -> dict[str, int]:
+    pages = []
+    with pdfplumber.open(pdf_path) as pdf:
+        for page in pdf.pages:
+            pages.append(normalized(page.extract_text() or ""))
+    page_map = {}
+    for entry in entries:
+        needle = normalized(entry.display)
+        matches = [index + 1 for index, text in enumerate(pages) if needle in text]
+        if not matches:
+            raise ValueError(f"Título não localizado no PDF: {entry.display}")
+        physical_page = max(matches)
+        # O manual Facens exclui a capa da contagem.
+        page_map[entry.bookmark] = physical_page - 1
+    return page_map
+
+
+def prepare(input_path: Path, output_path: Path) -> None:
+    doc = Document(input_path)
+    configure_styles(doc)
+    configure_sections(doc)
+    configure_heading_numbering(doc)
+    configure_references(doc)
+    entries = collect_toc_entries(doc)
+    rebuild_toc(doc, entries)
+    settings = doc.settings._element
+    update_fields = settings.find(qn("w:updateFields"))
+    if update_fields is None:
+        update_fields = OxmlElement("w:updateFields")
+        settings.append(update_fields)
+    update_fields.set(qn("w:val"), "true")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    doc.save(output_path)
+
+
+def finalize_toc(input_path: Path, pdf_path: Path, output_path: Path) -> None:
+    doc = Document(input_path)
+    entries = collect_toc_entries(doc)
+    page_map = page_map_from_pdf(pdf_path, entries)
+    final_entries = [
+        TocEntry(entry.level, entry.title, entry.display, entry.bookmark, page_map[entry.bookmark])
+        for entry in entries
+    ]
+    rebuild_toc(doc, final_entries)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    doc.save(output_path)
+
+
+def run_is_italic(run) -> bool:
+    if run.italic is not None:
+        return bool(run.italic)
+    r_pr = run._r.rPr
+    if r_pr is None or r_pr.find(qn("w:i")) is None:
+        return False
+    return r_pr.find(qn("w:i")).get(qn("w:val"), "1") not in {"0", "false", "off"}
+
+
+def audit(input_path: Path, pdf_path: Path | None = None) -> list[str]:
+    doc = Document(input_path)
+    errors = []
+    tolerance = 0.03
+    for index, section in enumerate(doc.sections, start=1):
+        expected = [21.0, 29.7, 3.0, 2.0, 3.0, 2.0]
+        actual = [
+            section.page_width.cm,
+            section.page_height.cm,
+            section.left_margin.cm,
+            section.right_margin.cm,
+            section.top_margin.cm,
+            section.bottom_margin.cm,
+        ]
+        if any(abs(a - e) > tolerance for a, e in zip(actual, expected)):
+            errors.append(f"Seção {index}: geometria fora do padrão Facens: {actual}")
+
+    headings = [p for p in doc.paragraphs if p.style.name in HEADING_STYLES]
+    if not headings:
+        errors.append("Nenhum título estruturado foi encontrado.")
+    num_ids = set()
+    for paragraph in headings:
+        if MANUAL_NUMBER_RE.match(paragraph.text):
+            errors.append(f"Numeração manual em título: {paragraph.text}")
+        p_pr = paragraph._p.pPr
+        if p_pr is None or p_pr.numPr is None or p_pr.numPr.numId is None:
+            errors.append(f"Título sem numeração multinível: {paragraph.text}")
+        else:
+            num_ids.add(str(p_pr.numPr.numId.val))
+    if len(num_ids) != 1:
+        errors.append(f"Títulos usam mais de uma lista multinível: {sorted(num_ids)}")
+
+    toc_paragraphs = [p for p in doc.paragraphs if p.style.name in TOC_STYLES.values()]
+    entries = collect_toc_entries(doc)
+    if len(toc_paragraphs) != len(entries):
+        errors.append(
+            f"Sumário incompleto: {len(toc_paragraphs)} entradas para {len(entries)} títulos."
+        )
+    if any("—" in p.text or "Atualize o sumário" in p.text for p in toc_paragraphs):
+        errors.append("Sumário ainda contém marcador provisório.")
+
+    reference_heading = next(
+        (p for p in doc.paragraphs if normalized(p.text) == "REFERÊNCIAS"), None
+    )
+    if reference_heading is None:
+        errors.append("Seção REFERÊNCIAS ausente.")
+    elif not reference_heading.paragraph_format.page_break_before:
+        errors.append("REFERÊNCIAS não inicia em nova página.")
+
+    reference_entries = []
+    in_references = False
+    for paragraph in doc.paragraphs:
+        if reference_heading is not None and paragraph._p is reference_heading._p:
+            in_references = True
+            continue
+        if in_references and paragraph.text.strip():
+            reference_entries.append(paragraph)
+            if paragraph.style.name != "Reference Entry":
+                errors.append(f"Referência com estilo incorreto: {paragraph.text[:80]}")
+    keys = [normalized(p.text).split(".", 1)[0] for p in reference_entries]
+    if keys != sorted(keys):
+        errors.append("Referências não estão em ordem alfabética.")
+
+    for p_index, paragraph in enumerate(iter_all_paragraphs(doc)):
+        if not ET_AL_RE.search(paragraph.text):
+            continue
+        for run in paragraph.runs:
+            if ET_AL_RE.search(run.text) and not run_is_italic(run):
+                errors.append(f"'et al.' sem itálico no parágrafo {p_index}: {paragraph.text[:90]}")
+
+    if pdf_path is not None:
+        try:
+            page_map = page_map_from_pdf(pdf_path, entries)
+        except ValueError as exc:
+            errors.append(str(exc))
+        else:
+            toc_pages = {}
+            for paragraph, entry in zip(toc_paragraphs, entries):
+                match = re.search(r"(\d+)\s*$", paragraph.text)
+                if match:
+                    toc_pages[entry.bookmark] = int(match.group(1))
+            for entry in entries:
+                if toc_pages.get(entry.bookmark) != page_map[entry.bookmark]:
+                    errors.append(
+                        f"Página divergente no sumário: {entry.display} "
+                        f"({toc_pages.get(entry.bookmark)} != {page_map[entry.bookmark]})"
+                    )
+    return errors
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    prepare_parser = subparsers.add_parser("prepare")
+    prepare_parser.add_argument("input", type=Path)
+    prepare_parser.add_argument("output", type=Path)
+
+    toc_parser = subparsers.add_parser("finalize-toc")
+    toc_parser.add_argument("input", type=Path)
+    toc_parser.add_argument("pdf", type=Path)
+    toc_parser.add_argument("output", type=Path)
+
+    audit_parser = subparsers.add_parser("audit")
+    audit_parser.add_argument("input", type=Path)
+    audit_parser.add_argument("--pdf", type=Path)
+
+    args = parser.parse_args()
+    if args.command == "prepare":
+        prepare(args.input, args.output)
+        print(args.output)
+        return 0
+    if args.command == "finalize-toc":
+        finalize_toc(args.input, args.pdf, args.output)
+        print(args.output)
+        return 0
+    errors = audit(args.input, args.pdf)
+    if errors:
+        for error in errors:
+            print(f"ERRO: {error}")
+        return 1
+    print("OK: DOCX em conformidade estrutural com o perfil Facens.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
