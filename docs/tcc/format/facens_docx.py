@@ -109,8 +109,8 @@ def configure_styles(doc: Document) -> None:
 
     specifications = {
         "Heading 1": (14, True, True, True),
-        "Heading 2": (12, False, True, False),
-        "Heading 3": (12, False, False, False),
+        "Heading 2": (12, True, True, False),
+        "Heading 3": (12, False, True, False),
     }
     for name, (size, bold, caps, new_page) in specifications.items():
         style = styles[name]
@@ -165,10 +165,58 @@ def configure_styles(doc: Document) -> None:
         fmt.keep_together = True
         fmt.tab_stops.clear_all()
         fmt.tab_stops.add_tab_stop(
-            Cm(TOC_RIGHT_TAB_CM - indents[level]),
+            # Todos os números de página terminam na mesma margem direita.
+            # O recuo altera apenas o início do título, nunca o fim do pontilhado.
+            Cm(TOC_RIGHT_TAB_CM),
             WD_TAB_ALIGNMENT.RIGHT,
             WD_TAB_LEADER.DOTS,
         )
+
+
+def set_run_typography(run, size: int, *, bold: bool | None = None, caps: bool | None = None) -> None:
+    """Remove a dependência de fontes diretas herdadas do modelo antigo."""
+    run.font.name = "Arial"
+    set_fonts(run._element)
+    run.font.size = Pt(size)
+    if bold is not None:
+        run.font.bold = bold
+    if caps is not None:
+        run.font.all_caps = caps
+
+
+def enforce_document_typography(doc: Document) -> None:
+    """Aplica a hierarquia Facens ao texto visível, inclusive em tabelas."""
+    body_started = False
+    for paragraph in doc.paragraphs:
+        style_name = paragraph.style.name
+        if style_name == "Heading 1":
+            body_started = True
+
+        if style_name == "Heading 1":
+            for run in paragraph.runs:
+                set_run_typography(run, 14, bold=True, caps=True)
+        elif style_name == "Heading 2":
+            for run in paragraph.runs:
+                set_run_typography(run, 12, bold=True, caps=True)
+        elif style_name == "Heading 3":
+            for run in paragraph.runs:
+                set_run_typography(run, 12, bold=False, caps=True)
+        elif style_name == "Front Matter Heading":
+            for run in paragraph.runs:
+                set_run_typography(run, 14, bold=True, caps=True)
+        elif style_name in TOC_STYLES.values():
+            level = next(level for level, name in TOC_STYLES.items() if name == style_name)
+            for run in paragraph.runs:
+                set_run_typography(run, 12, bold=(level == 1), caps=False)
+        elif style_name == "Reference Entry" or body_started:
+            for run in paragraph.runs:
+                set_run_typography(run, 12)
+
+    # As tabelas pertencem ao corpo acadêmico nesta versão do documento.
+    for table in doc.tables:
+        for paragraph in iter_table_paragraphs(table):
+            for run in paragraph.runs:
+                set_run_typography(run, 12)
 
 
 def configure_sections(doc: Document) -> None:
@@ -322,8 +370,12 @@ def configure_heading_numbering(doc: Document) -> int:
         level = HEADING_STYLES.get(paragraph.style.name)
         if level is None:
             continue
-        if MANUAL_NUMBER_RE.match(paragraph.text):
-            paragraph.text = MANUAL_NUMBER_RE.sub("", paragraph.text, count=1)
+        title = MANUAL_NUMBER_RE.sub("", paragraph.text, count=1)
+        # A caixa alta é gravada no texto, não apenas simulada pelo estilo. Isso
+        # mantém a mesma grafia no corpo, no sumário e em outros leitores DOCX.
+        title = re.sub(r"\s+", " ", title.replace("\u00a0", " ").strip()).upper()
+        if paragraph.text != title:
+            paragraph.text = title
         p_pr = paragraph._p.get_or_add_pPr()
         old = p_pr.find(qn("w:numPr"))
         if old is not None:
@@ -554,6 +606,12 @@ def rebuild_toc(doc: Document, entries: list[TocEntry]) -> None:
 
     for entry in entries:
         paragraph = doc.add_paragraph(style=TOC_STYLES[entry.level])
+        paragraph.paragraph_format.tab_stops.clear_all()
+        paragraph.paragraph_format.tab_stops.add_tab_stop(
+            Cm(TOC_RIGHT_TAB_CM),
+            WD_TAB_ALIGNMENT.RIGHT,
+            WD_TAB_LEADER.DOTS,
+        )
         add_internal_hyperlink(paragraph, entry.display, entry.bookmark)
         paragraph.add_run("\t")
         page_text = str(entry.page) if entry.page is not None else "—"
@@ -586,6 +644,7 @@ def prepare(input_path: Path, output_path: Path) -> None:
     configure_references(doc)
     entries = collect_toc_entries(doc)
     rebuild_toc(doc, entries)
+    enforce_document_typography(doc)
     settings = doc.settings._element
     update_fields = settings.find(qn("w:updateFields"))
     if update_fields is None:
@@ -605,6 +664,7 @@ def finalize_toc(input_path: Path, pdf_path: Path, output_path: Path) -> None:
         for entry in entries
     ]
     rebuild_toc(doc, final_entries)
+    enforce_document_typography(doc)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     doc.save(output_path)
 
@@ -639,7 +699,22 @@ def audit(input_path: Path, pdf_path: Path | None = None) -> list[str]:
     if not headings:
         errors.append("Nenhum título estruturado foi encontrado.")
     num_ids = set()
+    expected_heading_styles = {
+        "Heading 1": (14, True, True),
+        "Heading 2": (12, True, True),
+        "Heading 3": (12, False, True),
+    }
+    for style_name, (size, bold, caps) in expected_heading_styles.items():
+        style = doc.styles[style_name]
+        if style.font.name != "Arial" or style.font.size != Pt(size):
+            errors.append(f"{style_name}: fonte deve ser Arial {size}.")
+        if bool(style.font.bold) != bold:
+            errors.append(f"{style_name}: negrito incorreto.")
+        if bool(style.font.all_caps) != caps:
+            errors.append(f"{style_name}: caixa alta incorreta.")
     for paragraph in headings:
+        if paragraph.text != paragraph.text.upper():
+            errors.append(f"Título fora de caixa alta: {paragraph.text}")
         if MANUAL_NUMBER_RE.match(paragraph.text):
             errors.append(f"Numeração manual em título: {paragraph.text}")
         p_pr = paragraph._p.pPr
@@ -658,6 +733,12 @@ def audit(input_path: Path, pdf_path: Path | None = None) -> list[str]:
         )
     if any("—" in p.text or "Atualize o sumário" in p.text for p in toc_paragraphs):
         errors.append("Sumário ainda contém marcador provisório.")
+    for paragraph in toc_paragraphs:
+        tabs = paragraph.paragraph_format.tab_stops
+        if len(tabs) != 1 or tabs[0].leader != WD_TAB_LEADER.DOTS:
+            errors.append(f"Entrada do sumário sem pontilhado explícito: {paragraph.text}")
+        if "\t" not in paragraph.text:
+            errors.append(f"Entrada do sumário sem tabulação antes da página: {paragraph.text}")
 
     reference_heading = next(
         (p for p in doc.paragraphs if normalized(p.text) == "REFERÊNCIAS"), None

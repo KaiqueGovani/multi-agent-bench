@@ -22,3 +22,5 @@
 20. Não grave números manualmente nos títulos. Use uma única lista multinível vinculada aos estilos de Título 1, Título 2 e Título 3.
 21. Inspecione visualmente todas as páginas renderizadas antes do commit, com atenção especial ao sumário, quebras de capítulo, tabelas, paginação e referências.
 22. Em qualquer parte do documento, inclusive tabelas e referências, `et al.` deve permanecer em itálico.
+23. A hierarquia tipográfica obrigatória é: corpo Arial 12; nível 1 Arial 14, negrito e caixa alta; nível 2 Arial 12, negrito e caixa alta; nível 3 ou superior Arial 12, sem negrito e caixa alta.
+24. O sumário deve usar pontilhado contínuo entre cada título e o número da página, com todos os números alinhados na mesma margem direita.

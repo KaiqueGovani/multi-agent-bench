@@ -37,10 +37,11 @@ O caminho de `render_docx.py` pode variar no ambiente. Quando isso ocorrer, use 
 
 - página A4 e margens Facens;
 - estilos hierárquicos de capítulos e subseções;
+- nível 1 em Arial 14, negrito e caixa alta; nível 2 em Arial 12, negrito e caixa alta; níveis 3 ou superiores em Arial 12 e caixa alta;
 - numeração multinível única e reinício coerente entre capítulos;
 - capítulos de primeiro nível iniciando em nova página;
 - corpo em Arial 12, justificado, espaçamento 1,5 e recuo de primeira linha;
-- sumário estático reproduzível, com links internos, pontilhado e páginas conferidas no PDF;
+- sumário estático reproduzível, com links internos, pontilhado contínuo até uma coluna única de páginas e páginas conferidas no PDF;
 - referências em ordem alfabética, alinhadas à esquerda, espaço simples e separação entre entradas;
 - `et al.` sempre em itálico, inclusive em tabelas e referências;
 - paginação visível a partir da Introdução, sem exibir número na capa e nos elementos pré-textuais;

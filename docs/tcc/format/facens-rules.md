@@ -16,15 +16,16 @@ Consolidação baseada no modelo Word e nos manuais técnicos fornecidos pelos a
 
 - usar numeração progressiva decimal, sem ponto depois do último número;
 - capítulo (nível 1): Arial 14, negrito, caixa alta, alinhado à esquerda e iniciado em nova página;
-- seção (nível 2): Arial 12, sem negrito, caixa alta e alinhada à esquerda;
-- subseção (nível 3): Arial 12, sem negrito, apenas a inicial conforme a ortografia normal e alinhada à esquerda;
+- seção (nível 2): Arial 12, negrito, caixa alta e alinhada à esquerda;
+- subseção (nível 3 ou superior): Arial 12, sem negrito, caixa alta e alinhada à esquerda;
 - toda numeração deve ser gerada por uma única lista multinível vinculada aos estilos de título; números digitados manualmente no texto do título são proibidos.
 
 ## Sumário
 
 - título `SUMÁRIO` em Arial 14, negrito e centralizado;
 - incluir seções textuais e pós-textuais, sem elementos pré-textuais;
-- entradas em Arial 12, espaçamento 1,5 e pontilhado até o número da página;
+- entradas em Arial 12, espaçamento 1,5 e pontilhado contínuo entre o fim do título e o número da página;
+- alinhar todos os números de página na mesma margem direita, independentemente do nível da entrada;
 - refletir exatamente a hierarquia e a grafia dos títulos;
 - incluir `REFERÊNCIAS` sem número de seção;
 - o pipeline de `README.md` deve reconstruir o sumário e conferir as páginas contra o PDF renderizado.
