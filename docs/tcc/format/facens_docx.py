@@ -4,7 +4,7 @@
 Fluxo determinístico em duas passagens:
 
 1. ``prepare`` normaliza estilos, seções, numeração, referências e cria um
-   sumário estático provisório.
+   sumário estático provisório com líderes de tabulação automáticos.
 2. O DOCX é renderizado em PDF.
 3. ``finalize-toc`` lê as páginas efetivas do PDF e grava os números corretos
    no sumário, preservando links internos para os títulos.
@@ -24,7 +24,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import pdfplumber
-from PIL import ImageFont
 from docx import Document
 from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.text import (
@@ -731,34 +730,6 @@ def add_internal_hyperlink(paragraph, text: str, anchor: str) -> None:
     paragraph._p.append(hyperlink)
 
 
-def toc_font(level: int):
-    """Métrica compatível com Arial para calcular pontos literais do sumário."""
-    family = "NimbusSans-Bold.otf" if level == 1 else "NimbusSans-Regular.otf"
-    candidates = [
-        Path("/usr/share/fonts/opentype/urw-base35") / family,
-        Path("/usr/share/fonts/truetype/msttcorefonts/Arial.ttf"),
-    ]
-    for candidate in candidates:
-        if candidate.exists():
-            return ImageFont.truetype(str(candidate), 1200)
-    return None
-
-
-def literal_dot_leader(entry: TocEntry, page_text: str) -> str:
-    """Gera pontos reais para sobreviver a Word Online e importadores DOCX."""
-    font = toc_font(entry.level)
-    fallback = max(4, 92 - len(entry.display) - len(page_text))
-    if font is None:
-        return "." * fallback
-
-    available_pt = (TOC_RIGHT_TAB_CM - TOC_INDENTS_CM[entry.level]) * 72 / 2.54
-    # Fonte carregada a 1200 px representa Arial 12 pt em escala 100:1.
-    target = (available_pt - 5) * 100
-    occupied = font.getlength(entry.display) + font.getlength(page_text)
-    dot_width = max(font.getlength("."), 1)
-    return "." * max(4, int((target - occupied) // dot_width))
-
-
 def toc_boundary(doc: Document, toc_heading) -> object:
     cursor = toc_heading._p.getnext()
     while cursor is not None:
@@ -787,10 +758,15 @@ def rebuild_toc(doc: Document, entries: list[TocEntry]) -> None:
     for entry in entries:
         paragraph = doc.add_paragraph(style=TOC_STYLES[entry.level])
         paragraph.paragraph_format.tab_stops.clear_all()
+        paragraph.paragraph_format.tab_stops.add_tab_stop(
+            Cm(TOC_RIGHT_TAB_CM),
+            WD_TAB_ALIGNMENT.RIGHT,
+            WD_TAB_LEADER.DOTS,
+        )
         add_internal_hyperlink(paragraph, entry.display, entry.bookmark)
         page_text = str(entry.page) if entry.page is not None else "—"
-        dots = paragraph.add_run(literal_dot_leader(entry, page_text))
-        set_run_typography(dots, 12, bold=(entry.level == 1), caps=False)
+        separator = paragraph.add_run("\t")
+        set_run_typography(separator, 12, bold=(entry.level == 1), caps=False)
         add_internal_hyperlink(paragraph, page_text, entry.bookmark)
         boundary.addprevious(paragraph._p)
 
@@ -924,8 +900,26 @@ def audit(input_path: Path, pdf_path: Path | None = None) -> list[str]:
     if any("—" in p.text or "Atualize o sumário" in p.text for p in toc_paragraphs):
         errors.append("Sumário ainda contém marcador provisório.")
     for paragraph in toc_paragraphs:
-        if not re.search(r"\.{4,}\d+$", paragraph.text):
-            errors.append(f"Entrada do sumário sem pontos literais: {paragraph.text}")
+        if re.search(r"\.{4,}", paragraph.text):
+            errors.append(f"Entrada do sumário simula líder com pontos literais: {paragraph.text}")
+        p_pr = paragraph._p.pPr
+        tabs = p_pr.find(qn("w:tabs")) if p_pr is not None else None
+        right_dot_tabs = [] if tabs is None else [
+            tab for tab in tabs.findall(qn("w:tab"))
+            if tab.get(qn("w:val")) == "right"
+            and tab.get(qn("w:leader")) == "dot"
+        ]
+        if len(right_dot_tabs) != 1:
+            errors.append(
+                f"Entrada do sumário sem tabulador direito com líder automático: {paragraph.text}"
+            )
+        content_tabs = paragraph._p.findall(
+            ".//" + qn("w:r") + "/" + qn("w:tab")
+        )
+        if len(content_tabs) != 1:
+            errors.append(
+                f"Entrada do sumário sem separador de tabulação único: {paragraph.text}"
+            )
 
     for paragraph in headings:
         for run in paragraph.runs:

@@ -34,7 +34,8 @@ Consolidação baseada no modelo Word e nos manuais técnicos fornecidos pelos a
 - título `SUMÁRIO` em Arial 14, negrito e centralizado;
 - incluir seções textuais e pós-textuais, sem elementos pré-textuais;
 - entradas em Arial 12, espaçamento 1,5 e pontilhado contínuo entre o fim do título e o número da página;
-- o pontilhado deve ser composto por caracteres `.` reais; não depender exclusivamente de líderes de tabulação, que podem desaparecer em editores web;
+- gerar o pontilhado pelo recurso automático de tabulação do Word: tab stop à direita com líder pontilhado (`w:val="right"` e `w:leader="dot"`) e um elemento `w:tab` entre título e página;
+- não digitar nem calcular sequências de caracteres `.` para simular o preenchimento;
 - alinhar todos os números de página na mesma margem direita, independentemente do nível da entrada;
 - refletir exatamente a hierarquia e a grafia dos títulos;
 - incluir `REFERÊNCIAS` sem número de seção;
@@ -59,4 +60,4 @@ Consolidação baseada no modelo Word e nos manuais técnicos fornecidos pelos a
 
 ## Validação obrigatória
 
-Toda alteração do DOCX deve passar por `docs/tcc/format/facens_docx.py`, renderização integral e inspeção visual de todas as páginas. A auditoria automatizada não substitui a conferência visual de quebras, tabelas, sumário, rodapés e referências.
+Toda alteração do DOCX deve passar por `docs/tcc/format/facens_docx.py`, renderização integral e inspeção visual de todas as páginas. A auditoria deve verificar estruturalmente a presença do tab stop automático e a ausência de pontos literais usados como líder. A auditoria automatizada não substitui a conferência visual de quebras, tabelas, sumário, rodapés e referências.

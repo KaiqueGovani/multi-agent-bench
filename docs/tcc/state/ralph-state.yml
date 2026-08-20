@@ -65,7 +65,7 @@ constraints:
 
 audit:
   date: "2026-08-20"
-  status: "experimental_repetition_and_inference_plan_proposed"
+  status: "toc_automatic_tab_leaders_verified"
   open_questions:
     active: 3
     answered: 0
@@ -114,15 +114,15 @@ audit:
       - "09 Considerações Finais"
   word_document:
     formatting_pipeline: "docs/tcc/format/facens_docx.py"
-    toc: "static_with_internal_links_and_pdf_verified_pages"
+    toc: "static_with_internal_links_pdf_verified_pages_and_automatic_tab_leaders"
     chapter_numbering: "single_multilevel_list"
     references: "alphabetical_single_spacing_bold_title_element_et_al_italic"
     visual_validation_pages: 38
     automated_audit: passed
     typography: "body_arial12_h1_arial14_bold_upper_h2_arial12_bold_upper_h3plus_arial12_upper"
-    toc_dot_leaders: "continuous_right_aligned"
+    toc_dot_leaders: "automatic_word_tab_stop_right_aligned"
     heading_color: "absolute_black_without_theme_color"
-    toc_compatibility: "literal_dots_not_tab_leaders"
+    toc_compatibility: "w_tab_right_dot_without_literal_dot_sequences"
     heading_spacing: "one_and_half_line_before_and_after_without_double_gap"
     foreign_terms: "isolated_terms_italic_with_abstract_and_reference_exceptions"
     reference_emphasis: "bold_title_or_container_per_facens_examples"
@@ -132,5 +132,5 @@ audit:
     - "Número de repetições e plano inferencial dependem da decisão humana na OQ-003."
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
 
-last_run: "2026-08-20-01"
+last_run: "2026-08-20-02"
 next_recommended_action: "Na sexta-feira bibliográfica, verificar metadados em fontes primárias, substituir fontes fracas e integrar apenas citações relevantes; manter as OQ-001, OQ-002 e OQ-003 aguardando decisão humana."

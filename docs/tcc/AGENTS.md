@@ -23,9 +23,9 @@
 21. Inspecione visualmente todas as páginas renderizadas antes do commit, com atenção especial ao sumário, quebras de capítulo, tabelas, paginação e referências.
 22. Em qualquer parte do documento, inclusive tabelas e referências, `et al.` deve permanecer em itálico.
 23. A hierarquia tipográfica obrigatória é: corpo Arial 12; nível 1 Arial 14, negrito e caixa alta; nível 2 Arial 12, negrito e caixa alta; nível 3 ou superior Arial 12, sem negrito e caixa alta.
-24. O sumário deve usar pontilhado contínuo entre cada título e o número da página, com todos os números alinhados na mesma margem direita.
+24. O sumário deve usar um tab stop automático à direita com líder pontilhado entre cada título e o número da página, com todos os números alinhados na mesma margem direita.
 25. Títulos devem usar preto absoluto no estilo e na formatação direta; remova atributos de cor de tema para impedir azul no Word Online ou em importadores.
-26. O pontilhado do sumário deve conter caracteres `.` literais, não somente líderes de tabulação.
+26. É proibido digitar ou calcular sequências de caracteres `.` para simular o pontilhado do sumário. Preserve `w:tab w:val="right" w:leader="dot"` na formatação do parágrafo e um elemento `w:tab` entre título e página; a auditoria deve validar ambos.
 27. Títulos numerados devem manter uma linha e meia de separação antes e depois; títulos consecutivos não podem somar dois intervalos no mesmo ponto.
 28. Palavras e expressões estrangeiras isoladas no texto em português devem ficar em itálico. O `ABSTRACT` e os elementos bibliográficos seguem suas regras próprias e não recebem itálico indiscriminado.
 29. Referências seguem a NBR 6023:2018 e o padrão exemplificado no manual Facens: Arial 12, alinhamento à esquerda, espaço simples, uma linha simples entre entradas, ordem alfabética e título/veículo em negrito de forma uniforme.
