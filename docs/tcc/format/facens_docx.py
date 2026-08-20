@@ -50,6 +50,47 @@ TOC_RIGHT_TAB_CM = PAGE_WIDTH_CM - LEFT_MARGIN_CM - RIGHT_MARGIN_CM
 TOC_INDENTS_CM = {1: 0.0, 2: 0.75, 3: 1.5}
 ET_AL_RE = re.compile(r"\bet\s+al\.", re.IGNORECASE)
 MANUAL_NUMBER_RE = re.compile(r"^\s*\d+(?:\.\d+)*\.?\s+")
+FOREIGN_TERM_RE = re.compile(
+    r"\b(?:"
+    r"large\s+language\s+models?|multi-agent\s+benchmark|customer\s+care|"
+    r"service\s+operations|server-sent\s+events|llm-as-judge|scoping\s+review|"
+    r"recall@3|swarm\s+intelligence|chatbots?|benchmarks?|pipelines?|workflows?|"
+    r"swarms?|handoffs?|runs?|seeds?|hooks?|backends?|frontends?|stacks?|"
+    r"dashboards?|workspaces?|runtimes?|loops?|timeouts?|endpoints?|baselines?|"
+    r"centralized_orchestration|structured_workflow|decentralized_swarm|"
+    r"faq_lookup|stock_lookup|attachment_intake|live|mock|recall|chat|software"
+    r")\b",
+    re.IGNORECASE,
+)
+
+# A NBR 6023:2018 permite diferentes recursos tipográficos para o elemento
+# título, desde que o recurso escolhido seja uniforme. O manual Facens usa
+# negrito nos exemplos; em artigos, o destaque recai no título do periódico.
+REFERENCE_EMPHASIS = {
+    "ADA HEALTH.": "Health. Powered by Ada",
+    "ALVAREZ,": "Exploratory Research in Clinical and Social Pharmacy",
+    "AMAZON.": "Pharmacy AI Assistant FAQs",
+    "AMAZON SCIENCE.": "The life of a prescription at Amazon Pharmacy",
+    "ANTHROPIC.": "Building effective AI agents",
+    "BALAPRAKASH": "International Journal of High Performance Computing Applications",
+    "BUESING": "Where is customer care in 2024?",
+    "FIP.": "An artificial intelligence toolkit for pharmacy: an introduction and resource guide for pharmacists",
+    "HAMMOND": "Multi-Agent Risks from Advanced AI",
+    "HATZIMANOLIS": "Research in Social and Administrative Pharmacy",
+    "INFERMEDICA.": "Symptom Checker",
+    "INTERCOM.": "Fin AI Agent explained",
+    "JAGATAP": "Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies",
+    "KIM": "Nature Machine Intelligence",
+    "LI": "Vicinagearth",
+    "MCKINSEY & COMPANY.": "The state of AI in early 2024: gen AI adoption spikes and starts to generate value",
+    "PGEU.": "Position paper on artificial intelligence",
+    "PICCIALLI": "Expert Systems with Applications",
+    "SALESFORCE.": "AI Customer Service Agents",
+    "STANFORD HAI.": "AI Index Report 2025",
+    "WHO EUROPE.": "Advancing the role of pharmacists to meet changing patient and health system needs",
+    "YU": "2025 8th International Conference on Artificial Intelligence and Big Data (ICAIBD)",
+    "ZENDESK.": "About AI agents",
+}
 
 
 @dataclass(frozen=True)
@@ -163,6 +204,7 @@ def configure_styles(doc: Document) -> None:
     reference.paragraph_format.space_before = Pt(0)
     reference.paragraph_format.space_after = Pt(12)
     reference.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
+    reference.paragraph_format.keep_together = True
 
     for level, style_name in TOC_STYLES.items():
         style = styles[style_name]
@@ -232,6 +274,88 @@ def enforce_document_typography(doc: Document) -> None:
         for paragraph in iter_table_paragraphs(table):
             for run in paragraph.runs:
                 set_run_typography(run, 12)
+
+
+def configure_heading_spacing(doc: Document) -> None:
+    """Mantém uma linha e meia antes/depois dos títulos sem duplicar intervalos."""
+    previous_was_heading = False
+    for paragraph in doc.paragraphs:
+        level = HEADING_STYLES.get(paragraph.style.name)
+        if level is None:
+            previous_was_heading = False
+            continue
+        fmt = paragraph.paragraph_format
+        # Títulos de nível 1 já iniciam nova página. Nos demais, 18 pt equivale
+        # ao intervalo visual de uma linha e meia em Arial 12.
+        fmt.space_before = Pt(0 if level == 1 or previous_was_heading else 18)
+        fmt.space_after = Pt(18)
+        previous_was_heading = True
+
+
+def set_xml_run_property(run_element, tag: str) -> None:
+    r_pr = run_element.get_or_add_rPr()
+    prop = r_pr.find(qn(f"w:{tag}"))
+    if prop is None:
+        prop = OxmlElement(f"w:{tag}")
+        r_pr.append(prop)
+    prop.set(qn("w:val"), "1")
+
+
+def format_regex_in_paragraph(paragraph, pattern: re.Pattern, *, italic=False, bold=False) -> None:
+    """Formata correspondências inclusive dentro de hyperlinks do sumário."""
+    for run_element in list(paragraph._p.findall(".//" + qn("w:r"))):
+        text_nodes = run_element.findall(".//" + qn("w:t"))
+        text = "".join(node.text or "" for node in text_nodes)
+        matches = list(pattern.finditer(text))
+        if not matches:
+            continue
+        parent = run_element.getparent()
+        position = parent.index(run_element)
+        spans = [(match.start(), match.end()) for match in matches]
+        boundaries = sorted({0, len(text), *(value for span in spans for value in span)})
+        rebuilt = []
+        for start, end in zip(boundaries, boundaries[1:]):
+            if start == end:
+                continue
+            new_run = copy.deepcopy(run_element)
+            for node in list(new_run.findall(".//" + qn("w:t"))):
+                node.getparent().remove(node)
+            segment = text[start:end]
+            is_match = any(
+                start >= match_start and end <= match_end
+                for match_start, match_end in spans
+            )
+            if is_match:
+                if italic:
+                    set_xml_run_property(new_run, "i")
+                    set_xml_run_property(new_run, "iCs")
+                if bold:
+                    set_xml_run_property(new_run, "b")
+                    set_xml_run_property(new_run, "bCs")
+            text_node = OxmlElement("w:t")
+            text_node.text = segment
+            if segment[:1].isspace() or segment[-1:].isspace():
+                text_node.set(qn("xml:space"), "preserve")
+            new_run.append(text_node)
+            rebuilt.append(new_run)
+        parent.remove(run_element)
+        for offset, new_run in enumerate(rebuilt):
+            parent.insert(position + offset, new_run)
+
+
+def italicize_foreign_terms(doc: Document) -> None:
+    """Aplica itálico a estrangeirismos isolados, sem reformatar o ABSTRACT."""
+    body_started = False
+    for paragraph in doc.paragraphs:
+        if paragraph.style.name == "Heading 1":
+            body_started = True
+        if normalized(paragraph.text) == "REFERÊNCIAS":
+            body_started = False
+        if body_started or paragraph.style.name in TOC_STYLES.values():
+            format_regex_in_paragraph(paragraph, FOREIGN_TERM_RE, italic=True)
+    for table in doc.tables:
+        for paragraph in iter_table_paragraphs(table):
+            format_regex_in_paragraph(paragraph, FOREIGN_TERM_RE, italic=True)
 
 
 def configure_sections(doc: Document) -> None:
@@ -493,8 +617,21 @@ def configure_references(doc: Document) -> None:
             if upper.startswith(prefix):
                 replace_reference_text(paragraph, replacement)
                 break
+        # Reconstrói a entrada para remover formatações residuais do modelo e
+        # reaplicar de modo determinístico o destaque bibliográfico Facens.
+        reference_text = paragraph.text
+        replace_reference_text(paragraph, reference_text)
         paragraph.style = "Reference Entry"
         paragraph.paragraph_format.page_break_before = False
+        upper = normalized(paragraph.text)
+        emphasis = next(
+            (title for prefix, title in REFERENCE_EMPHASIS.items() if upper.startswith(prefix)),
+            None,
+        )
+        if emphasis and emphasis in paragraph.text:
+            format_regex_in_paragraph(
+                paragraph, re.compile(re.escape(emphasis)), bold=True
+            )
         italicize_et_al(paragraph)
         entries.append(paragraph)
 
@@ -680,10 +817,12 @@ def prepare(input_path: Path, output_path: Path) -> None:
     configure_styles(doc)
     configure_sections(doc)
     configure_heading_numbering(doc)
+    configure_heading_spacing(doc)
     configure_references(doc)
     entries = collect_toc_entries(doc)
     rebuild_toc(doc, entries)
     enforce_document_typography(doc)
+    italicize_foreign_terms(doc)
     settings = doc.settings._element
     update_fields = settings.find(qn("w:updateFields"))
     if update_fields is None:
@@ -704,6 +843,8 @@ def finalize_toc(input_path: Path, pdf_path: Path, output_path: Path) -> None:
     ]
     rebuild_toc(doc, final_entries)
     enforce_document_typography(doc)
+    configure_heading_spacing(doc)
+    italicize_foreign_terms(doc)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     doc.save(output_path)
 
@@ -715,6 +856,16 @@ def run_is_italic(run) -> bool:
     if r_pr is None or r_pr.find(qn("w:i")) is None:
         return False
     return r_pr.find(qn("w:i")).get(qn("w:val"), "1") not in {"0", "false", "off"}
+
+
+def xml_run_has_property(run_element, tag: str) -> bool:
+    r_pr = run_element.find(qn("w:rPr"))
+    prop = r_pr.find(qn(f"w:{tag}")) if r_pr is not None else None
+    return prop is not None and prop.get(qn("w:val"), "1") not in {
+        "0",
+        "false",
+        "off",
+    }
 
 
 def audit(input_path: Path, pdf_path: Path | None = None) -> list[str]:
@@ -787,6 +938,19 @@ def audit(input_path: Path, pdf_path: Path | None = None) -> list[str]:
                 errors.append(f"Título ainda depende de cor de tema: {paragraph.text}")
                 break
 
+    previous_was_heading = False
+    for paragraph in doc.paragraphs:
+        level = HEADING_STYLES.get(paragraph.style.name)
+        if level is None:
+            previous_was_heading = False
+            continue
+        before = paragraph.paragraph_format.space_before.pt
+        after = paragraph.paragraph_format.space_after.pt
+        expected_before = 0 if level == 1 or previous_was_heading else 18
+        if abs(before - expected_before) > 0.1 or abs(after - 18) > 0.1:
+            errors.append(f"Espaçamento incorreto no título: {paragraph.text}")
+        previous_was_heading = True
+
     reference_heading = next(
         (p for p in doc.paragraphs if normalized(p.text) == "REFERÊNCIAS"), None
     )
@@ -808,6 +972,28 @@ def audit(input_path: Path, pdf_path: Path | None = None) -> list[str]:
     keys = [normalized(p.text).split(".", 1)[0] for p in reference_entries]
     if keys != sorted(keys):
         errors.append("Referências não estão em ordem alfabética.")
+    for paragraph in reference_entries:
+        upper = normalized(paragraph.text)
+        emphasis = next(
+            (title for prefix, title in REFERENCE_EMPHASIS.items() if upper.startswith(prefix)),
+            None,
+        )
+        if not emphasis:
+            errors.append(f"Referência sem regra de destaque: {paragraph.text[:80]}")
+            continue
+        matched = False
+        for run_element in paragraph._p.findall(".//" + qn("w:r")):
+            run_text = "".join(
+                node.text or ""
+                for node in run_element.findall(".//" + qn("w:t"))
+            )
+            if emphasis in run_text:
+                matched = True
+                if not xml_run_has_property(run_element, "b"):
+                    errors.append(f"Título bibliográfico sem negrito: {emphasis}")
+                break
+        if not matched:
+            errors.append(f"Destaque bibliográfico não localizado: {emphasis}")
 
     for p_index, paragraph in enumerate(iter_all_paragraphs(doc)):
         if not ET_AL_RE.search(paragraph.text):
@@ -815,6 +1001,31 @@ def audit(input_path: Path, pdf_path: Path | None = None) -> list[str]:
         for run in paragraph.runs:
             if ET_AL_RE.search(run.text) and not run_is_italic(run):
                 errors.append(f"'et al.' sem itálico no parágrafo {p_index}: {paragraph.text[:90]}")
+
+    body_started = False
+    for p_index, paragraph in enumerate(doc.paragraphs):
+        if paragraph.style.name == "Heading 1":
+            body_started = True
+        if normalized(paragraph.text) == "REFERÊNCIAS":
+            body_started = False
+        if not (body_started or paragraph.style.name in TOC_STYLES.values()):
+            continue
+        for run_element in paragraph._p.findall(".//" + qn("w:r")):
+            run_text = "".join(
+                node.text or ""
+                for node in run_element.findall(".//" + qn("w:t"))
+            )
+            if FOREIGN_TERM_RE.search(run_text) and not xml_run_has_property(run_element, "i"):
+                errors.append(f"Estrangeirismo sem itálico no parágrafo {p_index}: {run_text}")
+    for table in doc.tables:
+        for paragraph in iter_table_paragraphs(table):
+            for run_element in paragraph._p.findall(".//" + qn("w:r")):
+                run_text = "".join(
+                    node.text or ""
+                    for node in run_element.findall(".//" + qn("w:t"))
+                )
+                if FOREIGN_TERM_RE.search(run_text) and not xml_run_has_property(run_element, "i"):
+                    errors.append(f"Estrangeirismo sem itálico em tabela: {run_text}")
 
     if pdf_path is not None:
         try:

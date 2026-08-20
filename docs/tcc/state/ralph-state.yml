@@ -65,7 +65,7 @@ constraints:
 
 audit:
   date: "2026-08-19"
-  status: "docx_cross_editor_black_titles_literal_toc_dots"
+  status: "docx_facens_spacing_foreign_terms_and_reference_emphasis"
   open_questions:
     active: 2
     answered: 0
@@ -110,18 +110,21 @@ audit:
     formatting_pipeline: "docs/tcc/format/facens_docx.py"
     toc: "static_with_internal_links_and_pdf_verified_pages"
     chapter_numbering: "single_multilevel_list"
-    references: "alphabetical_single_spacing_et_al_italic"
+    references: "alphabetical_single_spacing_bold_title_element_et_al_italic"
     visual_validation_pages: 38
     automated_audit: passed
     typography: "body_arial12_h1_arial14_bold_upper_h2_arial12_bold_upper_h3plus_arial12_upper"
     toc_dot_leaders: "continuous_right_aligned"
     heading_color: "absolute_black_without_theme_color"
     toc_compatibility: "literal_dots_not_tab_leaders"
+    heading_spacing: "one_and_half_line_before_and_after_without_double_gap"
+    foreign_terms: "isolated_terms_italic_with_abstract_and_reference_exceptions"
+    reference_emphasis: "bold_title_or_container_per_facens_examples"
   risks:
     - "Origem, autorização, volume e retenção dos dados dependem da OQ-001."
     - "Rubrica e avaliadores de qualidade dependem da OQ-002."
     - "Número de repetições e plano inferencial ainda não foram congelados."
-    - "A ênfase tipográfica dos elementos de cada referência deve continuar sendo reconciliada com o registro bibliográfico verificado nas próximas revisões."
+    - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
 
-last_run: "2026-08-19-04"
+last_run: "2026-08-19-05"
 next_recommended_action: "Na quinta-feira metodológica, preparar uma proposta documentada para número de repetições e critérios inferenciais, mantendo as escolhas dependentes de aprovação humana como não congeladas."

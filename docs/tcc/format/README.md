@@ -41,9 +41,11 @@ O caminho de `render_docx.py` pode variar no ambiente. Quando isso ocorrer, use 
 - títulos em preto absoluto, com remoção de `themeColor`, `themeTint` e `themeShade` do OOXML;
 - numeração multinível única e reinício coerente entre capítulos;
 - capítulos de primeiro nível iniciando em nova página;
+- uma linha e meia antes e depois dos títulos, sem intervalo duplicado entre títulos consecutivos;
 - corpo em Arial 12, justificado, espaçamento 1,5 e recuo de primeira linha;
+- palavras e expressões estrangeiras isoladas em itálico, com preservação das exceções bibliográficas;
 - sumário estático reproduzível, com links internos, caracteres `.` reais calculados até uma coluna única de páginas e páginas conferidas no PDF;
-- referências em ordem alfabética, alinhadas à esquerda, espaço simples e separação entre entradas;
+- referências em ordem alfabética, alinhadas à esquerda, espaço simples, uma linha de separação, entrada não fragmentada quando couber e destaque bibliográfico uniforme em negrito;
 - `et al.` sempre em itálico, inclusive em tabelas e referências;
 - paginação visível a partir da Introdução, sem exibir número na capa e nos elementos pré-textuais;
 - preservação dos placeholders dos capítulos protegidos pelos evidence gates.

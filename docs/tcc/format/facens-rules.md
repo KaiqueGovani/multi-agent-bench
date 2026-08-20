@@ -19,7 +19,15 @@ Consolidação baseada no modelo Word e nos manuais técnicos fornecidos pelos a
 - seção (nível 2): Arial 12, negrito, caixa alta e alinhada à esquerda;
 - subseção (nível 3 ou superior): Arial 12, sem negrito, caixa alta e alinhada à esquerda;
 - todos os títulos devem usar preto absoluto (`#000000`), sem cores de tema ou destaque azul herdado;
+- manter uma linha e meia de separação antes e depois de cada título; entre títulos consecutivos, usar apenas um intervalo;
 - toda numeração deve ser gerada por uma única lista multinível vinculada aos estilos de título; números digitados manualmente no texto do título são proibidos.
+
+## Estrangeirismos
+
+- grafar em itálico palavras e expressões estrangeiras isoladas no texto em português;
+- manter nomes próprios, siglas, marcas e identificadores técnicos com a grafia convencional;
+- não aplicar itálico indiscriminadamente ao `ABSTRACT` nem à lista de referências, que seguem regras tipográficas próprias;
+- manter `et al.` em itálico em todos os contextos.
 
 ## Sumário
 
@@ -43,8 +51,9 @@ Consolidação baseada no modelo Word e nos manuais técnicos fornecidos pelos a
 
 - título `REFERÊNCIAS` em Arial 14, negrito, centralizado e iniciado em nova página;
 - entradas em Arial 12, alinhadas à esquerda e em ordem alfabética;
-- espaçamento simples dentro de cada entrada e 12 pt entre entradas;
-- aplicar o destaque tipográfico de modo consistente conforme o modelo institucional;
+- espaçamento simples dentro de cada entrada e uma linha simples de separação entre entradas;
+- manter cada entrada unida na mesma página sempre que couber integralmente;
+- aplicar negrito uniformemente ao elemento título nas obras autônomas e ao título do periódico ou evento em artigos e trabalhos de conferência, conforme os exemplos institucionais;
 - grafar `et al.` sempre em itálico, no texto, em quadros, tabelas, legendas e na lista de referências;
 - não inventar nem completar metadados: título, autoria, veículo, ano, DOI e URL precisam ser verificáveis.
 

@@ -26,3 +26,6 @@
 24. O sumário deve usar pontilhado contínuo entre cada título e o número da página, com todos os números alinhados na mesma margem direita.
 25. Títulos devem usar preto absoluto no estilo e na formatação direta; remova atributos de cor de tema para impedir azul no Word Online ou em importadores.
 26. O pontilhado do sumário deve conter caracteres `.` literais, não somente líderes de tabulação.
+27. Títulos numerados devem manter uma linha e meia de separação antes e depois; títulos consecutivos não podem somar dois intervalos no mesmo ponto.
+28. Palavras e expressões estrangeiras isoladas no texto em português devem ficar em itálico. O `ABSTRACT` e os elementos bibliográficos seguem suas regras próprias e não recebem itálico indiscriminado.
+29. Referências seguem a NBR 6023:2018 e o padrão exemplificado no manual Facens: Arial 12, alinhamento à esquerda, espaço simples, uma linha simples entre entradas, ordem alfabética e título/veículo em negrito de forma uniforme.
