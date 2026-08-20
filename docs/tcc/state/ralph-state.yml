@@ -39,8 +39,8 @@ next_actions:
     action: "Responder e integrar a OQ-002 sobre a avaliação de qualidade das respostas."
     status: waiting_human
   - priority: 3
-    action: "Definir número de repetições, critérios inferenciais e congelar as hipóteses com os autores."
-    status: pending
+    action: "Responder e integrar a OQ-003 sobre repetições e plano inferencial; então congelar essa parte do protocolo com os autores."
+    status: waiting_human
   - priority: 4
     action: "Montar o catálogo definitivo de cenários após a decisão sobre a fonte dos dados."
     status: blocked_by_OQ-001
@@ -64,14 +64,15 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
-  date: "2026-08-19"
-  status: "docx_facens_spacing_foreign_terms_and_reference_emphasis"
+  date: "2026-08-20"
+  status: "experimental_repetition_and_inference_plan_proposed"
   open_questions:
-    active: 2
+    active: 3
     answered: 0
     blocking:
       - "OQ-001"
       - "OQ-002"
+      - "OQ-003"
   evidence_gates:
     results: closed
     discussion: closed
@@ -92,6 +93,11 @@ audit:
         - "R044"
         - "R045"
         - "R046"
+  method:
+    experimental_protocol: "pilot_and_paired_inference_proposal_documented"
+    repetition_policy: "TBD-OQ-003"
+    inferential_plan: "proposed_not_frozen"
+    definitive_collection_authorized: false
   manuscript:
     latest_refinement: "2.4.4 Comparação entre arquiteturas"
     latest_refinement_words: 625
@@ -123,8 +129,8 @@ audit:
   risks:
     - "Origem, autorização, volume e retenção dos dados dependem da OQ-001."
     - "Rubrica e avaliadores de qualidade dependem da OQ-002."
-    - "Número de repetições e plano inferencial ainda não foram congelados."
+    - "Número de repetições e plano inferencial dependem da decisão humana na OQ-003."
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
 
-last_run: "2026-08-19-05"
-next_recommended_action: "Na quinta-feira metodológica, preparar uma proposta documentada para número de repetições e critérios inferenciais, mantendo as escolhas dependentes de aprovação humana como não congeladas."
+last_run: "2026-08-20-01"
+next_recommended_action: "Na sexta-feira bibliográfica, verificar metadados em fontes primárias, substituir fontes fracas e integrar apenas citações relevantes; manter as OQ-001, OQ-002 e OQ-003 aguardando decisão humana."
