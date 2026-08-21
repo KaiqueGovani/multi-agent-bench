@@ -64,8 +64,8 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
-  date: "2026-08-20"
-  status: "toc_automatic_tab_leaders_verified"
+  date: "2026-08-21"
+  status: "references_r042_r046_primary_metadata_verified"
   open_questions:
     active: 3
     answered: 0
@@ -80,8 +80,8 @@ audit:
     placeholders_verified: true
   references:
     total: 46
-    candidate: 19
-    verified: 2
+    candidate: 14
+    verified: 7
     cited: 9
     watch: 7
     reject: 9
@@ -93,6 +93,15 @@ audit:
         - "R044"
         - "R045"
         - "R046"
+    latest_verification:
+      date: "2026-08-21"
+      ids:
+        - "R042"
+        - "R043"
+        - "R044"
+        - "R045"
+        - "R046"
+      outcome: "five_primary_metadata_records_verified; no_manuscript_citation_added"
   method:
     experimental_protocol: "pilot_and_paired_inference_proposal_documented"
     repetition_policy: "TBD-OQ-003"
@@ -132,5 +141,5 @@ audit:
     - "Número de repetições e plano inferencial dependem da decisão humana na OQ-003."
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
 
-last_run: "2026-08-20-02"
-next_recommended_action: "Na sexta-feira bibliográfica, verificar metadados em fontes primárias, substituir fontes fracas e integrar apenas citações relevantes; manter as OQ-001, OQ-002 e OQ-003 aguardando decisão humana."
+last_run: "2026-08-21"
+next_recommended_action: "No sábado de qualidade, revisar a congruência entre o registro bibliográfico, a matriz de trabalhos correlatos e a lista ABNT do DOCX; integrar em uma ação futura apenas as referências verificadas que sustentarem afirmações específicas."
