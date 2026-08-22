@@ -64,8 +64,8 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
-  date: "2026-08-21"
-  status: "references_r042_r046_primary_metadata_verified"
+  date: "2026-08-22"
+  status: "related_works_abnt_status_reconciled"
   open_questions:
     active: 3
     answered: 0
@@ -102,6 +102,12 @@ audit:
         - "R045"
         - "R046"
       outcome: "five_primary_metadata_records_verified; no_manuscript_citation_added"
+    matrix_docx_reconciliation:
+      date: "2026-08-22"
+      ids:
+        - "R040"
+        - "R041"
+      outcome: "stale_needs_correction_markers_closed_after_docx_abnt_verification"
   method:
     experimental_protocol: "pilot_and_paired_inference_proposal_documented"
     repetition_policy: "TBD-OQ-003"
@@ -141,5 +147,5 @@ audit:
     - "Número de repetições e plano inferencial dependem da decisão humana na OQ-003."
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
 
-last_run: "2026-08-21"
-next_recommended_action: "No sábado de qualidade, revisar a congruência entre o registro bibliográfico, a matriz de trabalhos correlatos e a lista ABNT do DOCX; integrar em uma ação futura apenas as referências verificadas que sustentarem afirmações específicas."
+last_run: "2026-08-22"
+next_recommended_action: "Na auditoria semanal de domingo, resumir o progresso, confirmar a preservação dos gates e priorizar a próxima integração textual de uma referência verificada."
