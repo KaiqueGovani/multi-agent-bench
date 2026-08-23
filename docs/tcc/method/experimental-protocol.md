@@ -20,7 +20,7 @@ A unidade experimental é uma execução de um cenário por uma arquitetura, com
 
 O conjunto inicial deve cobrir, no mínimo: perguntas frequentes; consulta de estoque; anexos; mensagens de continuação; solicitações que exigem revisão humana; entradas ambíguas; indisponibilidade de ferramenta; e contexto composto por mais de uma intenção. Cada caso terá identificador, texto de entrada, histórico necessário, anexos sintéticos ou anonimizados, rota esperada, ferramentas esperadas, risco e critérios de qualidade.
 
-Origem definitiva dos cenários de WhatsApp: `TBD-OQ-001`. Enquanto a questão estiver aberta, somente fixtures sintéticas e esquemas sem conteúdo real são permitidos.
+A caracterização exploratória proposta está descrita em `preliminary-whatsapp-data-collection-plan.md`: aproximadamente 20 históricos serão observados em ambiente privado, organizados e anonimizados para apoiar a definição posterior da unidade de análise, dos tipos de solicitação, dos cenários e das métricas viáveis. Esta etapa não corresponde à avaliação final e não congela categorias antecipadamente.\n\nOrigem e governança definitivas dos cenários de WhatsApp: `TBD-OQ-001`. Unidade de análise, segmentação e categorias após a caracterização: `TBD-OQ-004`. Enquanto essas questões estiverem abertas, somente fixtures sintéticas e esquemas sem conteúdo real são permitidos no repositório.
 
 ## 5. Controles
 
