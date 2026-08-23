@@ -64,8 +64,8 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
-  date: "2026-08-22"
-  status: "related_works_abnt_status_reconciled"
+  date: "2026-08-23"
+  status: "weekly_audit_completed"
   open_questions:
     active: 3
     answered: 0
@@ -108,6 +108,13 @@ audit:
         - "R040"
         - "R041"
       outcome: "stale_needs_correction_markers_closed_after_docx_abnt_verification"
+  weekly_summary:
+    period: "2026-08-17_to_2026-08-23"
+    manuscript_progress: "subsection_2.4.4_expanded_and_synchronized"
+    method_progress: "pilot_repetitions_and_paired_inference_proposed_pending_OQ-003"
+    references_progress: "five_new_sources_verified_and_related_works_abnt_matrix_reconciled"
+    format_progress: "facens_pipeline_and_automatic_word_toc_leaders_verified"
+    primary_next_action: "integrate_R042_into_architecture_comparison_with_docx_sync"
   method:
     experimental_protocol: "pilot_and_paired_inference_proposal_documented"
     repetition_policy: "TBD-OQ-003"
@@ -147,5 +154,5 @@ audit:
     - "Número de repetições e plano inferencial dependem da decisão humana na OQ-003."
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
 
-last_run: "2026-08-22"
-next_recommended_action: "Na auditoria semanal de domingo, resumir o progresso, confirmar a preservação dos gates e priorizar a próxima integração textual de uma referência verificada."
+last_run: "2026-08-23"
+next_recommended_action: "Na segunda-feira, integrar R042 em uma revisão pequena da comparação de arquiteturas, atualizar a lista ABNT e sincronizar o DOCX pelo pipeline completo; manter o protocolo aguardando OQ-001, OQ-002 e OQ-003."
