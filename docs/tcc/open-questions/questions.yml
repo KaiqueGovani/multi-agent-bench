@@ -1,6 +1,6 @@
 policy:
   id_format: "OQ-NNN"
-  next_id: "OQ-004"
+  next_id: "OQ-005"
   max_new_per_run: 1
   max_active: 5
   issue_title_prefix: "[TCC][Open Question]"
@@ -22,9 +22,10 @@ questions:
     recommendation: "Estratégia híbrida: padrões agregados de dados autorizados em ambiente privado e cenários sintéticos equivalentes."
     issue_number: 4
     issue_url: "https://github.com/KaiqueGovani/multi-agent-bench/issues/4"
+    related_plan: "docs/tcc/method/preliminary-whatsapp-data-collection-plan.md"
     partial_context:
       status: "received_not_conclusive"
-      summary: "O autor informou que ainda coletará dados das conversas do WhatsApp para brainstorming e análise de padrões; estratégia final, autorização, transformação e retenção ainda não foram definidas."
+      summary: "Foi proposto coletar aproximadamente 20 históricos pelo WhatsApp Web para caracterização exploratória, anonimização e brainstorming, sem categorias ou métricas rígidas definidas antecipadamente. A estratégia final, os requisitos de autorização, o ambiente privado, a transformação e a retenção ainda precisam ser confirmados."
       provided_by: "Kaique Govani"
       provided_at: "2026-08-23"
     response_summary: null
@@ -75,6 +76,29 @@ questions:
       summary: "A decisão sobre repetições e plano inferencial foi adiada até a coleta das conversas e a análise dos padrões; os parâmetros propostos ainda não foram autorizados."
       provided_by: "Kaique Govani"
       provided_at: "2026-08-23"
+    response_summary: null
+    answered_by: null
+    answered_at: null
+    integrated_files: []
+    integrated_at: null
+
+  - id: "OQ-004"
+    status: open
+    created_at: "2026-08-23"
+    created_by: "human_requested_follow_up"
+    priority: high
+    blocking: true
+    target_sections:
+      - "4.2 Etapas do Trabalho"
+      - "4.4 Métricas de Avaliação"
+      - "docs/tcc/method/experimental-protocol.md"
+      - "catálogo definitivo de cenários"
+    question: "Após a coleta exploratória, qual unidade de análise, critério de segmentação e conjunto inicial de categorias deverão ser adotados?"
+    recommendation: "Manter a coleta sem categorias rígidas e avaliar, após a observação, um modelo hierárquico que relacione históricos e episódios, com revisão dos farmacêuticos avaliadores."
+    issue_number: 7
+    issue_url: "https://github.com/KaiqueGovani/multi-agent-bench/issues/7"
+    related_plan: "docs/tcc/method/preliminary-whatsapp-data-collection-plan.md"
+    follow_up_trigger: "Após coletar e analisar exploratoriamente aproximadamente 20 históricos."
     response_summary: null
     answered_by: null
     answered_at: null
