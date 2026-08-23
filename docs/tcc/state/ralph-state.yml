@@ -19,7 +19,7 @@ artifacts:
   evidence_gates: "docs/tcc/state/evidence-gates.yml"
   open_questions: "docs/tcc/open-questions/questions.yml"
 
-current_objective: "Responder as decisões humanas pendentes, congelar o protocolo e preparar a execução dos testes definitivos."
+current_objective: "Preparar a caracterização exploratória das conversas, consolidar as decisões humanas pendentes e então congelar o protocolo experimental."
 
 batch_execution:
   date: "2026-08-16"
@@ -33,24 +33,29 @@ batch_execution:
 
 next_actions:
   - priority: 1
-    action: "Responder e integrar a OQ-001 sobre a estratégia de dados do WhatsApp."
+    action: "Confirmar governança mínima e executar, em ambiente privado, a coleta exploratória de aproximadamente 20 históricos prevista no plano preliminar."
     status: waiting_human
   - priority: 2
-    action: "Responder e integrar a OQ-002 sobre a avaliação de qualidade das respostas."
-    status: waiting_human
+    action: "Após a caracterização exploratória, responder a OQ-004 com unidade de análise, segmentação, categorias agregadas e implicações metodológicas."
+    status: blocked_by_exploratory_collection
   - priority: 3
-    action: "Responder e integrar a OQ-003 sobre repetições e plano inferencial; então congelar essa parte do protocolo com os autores."
+    action: "Responder e integrar a OQ-001 sobre a estratégia definitiva de dados do WhatsApp."
     status: waiting_human
   - priority: 4
-    action: "Montar o catálogo definitivo de cenários após a decisão sobre a fonte dos dados."
-    status: blocked_by_OQ-001
+    action: "Responder e integrar a OQ-002 sobre a avaliação de qualidade das respostas."
+    status: waiting_human
   - priority: 5
+    action: "Responder e integrar a OQ-003 sobre repetições e plano inferencial; então congelar essa parte do protocolo com os autores."
+    status: waiting_human
+  - priority: 6
+    action: "Montar o catálogo definitivo de cenários após as decisões sobre fonte dos dados, unidade de análise e segmentação."
+    status: blocked_by_OQ-001_and_OQ-004
+  - priority: 7
     action: "Criar a versão tabular e versionável do quadro de trabalhos correlatos e reconciliar citações com a lista ABNT."
     status: completed_2026-08-17
-  - priority: 6
+  - priority: 8
     action: "Continuar o refinamento textual dos capítulos 1 a 6 e sincronizar o DOCX."
     status: in_progress_latest_2.4.4_2026-08-18
-
 constraints:
   - "Sem resultados experimentais antes de execução e validação."
   - "Capítulos 7, 8 e 9 permanecem com placeholders enquanto seus evidence gates estiverem fechados."
@@ -65,15 +70,16 @@ constraints:
 
 audit:
   date: "2026-08-23"
-  status: "human_partial_context_recorded"
+  status: "preliminary_collection_plan_recorded"
   open_questions:
-    active: 3
+    active: 4
     answered: 0
     partial_context_received: 3
     blocking:
       - "OQ-001"
       - "OQ-002"
       - "OQ-003"
+      - "OQ-004"
   evidence_gates:
     results: closed
     discussion: closed
@@ -122,7 +128,9 @@ audit:
     inferential_plan: "proposed_not_frozen"
     definitive_collection_authorized: false
     human_evaluators: "one_or_two_pharmacists_pending_confirmation"
-    whatsapp_data_collection: "planned_for_private_brainstorming_and_pattern_analysis_governance_pending"
+    whatsapp_data_collection: "preliminary_plan_for_about_20_histories_in_private_environment_governance_pending"
+    exploratory_unit_definition: "TBD-OQ-004"
+    exploratory_sample_target: "approximately_20_histories"
   manuscript:
     latest_refinement: "2.4.4 Comparação entre arquiteturas"
     latest_refinement_words: 625
@@ -152,10 +160,11 @@ audit:
     foreign_terms: "isolated_terms_italic_with_abstract_and_reference_exceptions"
     reference_emphasis: "bold_title_or_container_per_facens_examples"
   risks:
-    - "A coleta de conversas foi planejada, mas autorização, minimização, ambiente privado, transformação e retenção ainda dependem da OQ-001."
+    - "A coleta exploratória de aproximadamente 20 históricos foi planejada, mas autorização, consentimento ou avaliação ética aplicável, minimização, ambiente privado, anonimização e retenção ainda dependem de confirmação antes da execução."
+    - "A unidade de análise, segmentação e categorias só poderão ser definidas após a caracterização exploratória e dependem da OQ-004."
     - "Há previsão de um ou dois farmacêuticos avaliadores, porém quantidade final, rubrica e desenho de avaliação ainda dependem da OQ-002."
     - "Número de repetições e plano inferencial dependem da decisão humana na OQ-003."
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
 
-last_run: "2026-08-23-02"
-next_recommended_action: "Antes da coleta do WhatsApp, preparar e aprovar governança mínima para armazenamento privado, autorização, minimização, anonimização e retenção; enquanto isso, continuar a integração documental de R042 sem alterar os gates."
+last_run: "2026-08-23-03"
+next_recommended_action: "Confirmar com orientador e instituição os requisitos de autorização, consentimento e avaliação ética; preparar armazenamento privado, anonimização, retenção e descarte; depois executar a amostra exploratória e responder a OQ-004 somente com padrões agregados."
