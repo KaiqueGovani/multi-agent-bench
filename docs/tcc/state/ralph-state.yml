@@ -65,10 +65,11 @@ constraints:
 
 audit:
   date: "2026-08-23"
-  status: "weekly_audit_completed"
+  status: "human_partial_context_recorded"
   open_questions:
     active: 3
     answered: 0
+    partial_context_received: 3
     blocking:
       - "OQ-001"
       - "OQ-002"
@@ -120,6 +121,8 @@ audit:
     repetition_policy: "TBD-OQ-003"
     inferential_plan: "proposed_not_frozen"
     definitive_collection_authorized: false
+    human_evaluators: "one_or_two_pharmacists_pending_confirmation"
+    whatsapp_data_collection: "planned_for_private_brainstorming_and_pattern_analysis_governance_pending"
   manuscript:
     latest_refinement: "2.4.4 Comparação entre arquiteturas"
     latest_refinement_words: 625
@@ -149,10 +152,10 @@ audit:
     foreign_terms: "isolated_terms_italic_with_abstract_and_reference_exceptions"
     reference_emphasis: "bold_title_or_container_per_facens_examples"
   risks:
-    - "Origem, autorização, volume e retenção dos dados dependem da OQ-001."
-    - "Rubrica e avaliadores de qualidade dependem da OQ-002."
+    - "A coleta de conversas foi planejada, mas autorização, minimização, ambiente privado, transformação e retenção ainda dependem da OQ-001."
+    - "Há previsão de um ou dois farmacêuticos avaliadores, porém quantidade final, rubrica e desenho de avaliação ainda dependem da OQ-002."
     - "Número de repetições e plano inferencial dependem da decisão humana na OQ-003."
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
 
-last_run: "2026-08-23"
-next_recommended_action: "Na segunda-feira, integrar R042 em uma revisão pequena da comparação de arquiteturas, atualizar a lista ABNT e sincronizar o DOCX pelo pipeline completo; manter o protocolo aguardando OQ-001, OQ-002 e OQ-003."
+last_run: "2026-08-23-02"
+next_recommended_action: "Antes da coleta do WhatsApp, preparar e aprovar governança mínima para armazenamento privado, autorização, minimização, anonimização e retenção; enquanto isso, continuar a integração documental de R042 sem alterar os gates."
