@@ -22,6 +22,11 @@ questions:
     recommendation: "Estratégia híbrida: padrões agregados de dados autorizados em ambiente privado e cenários sintéticos equivalentes."
     issue_number: 4
     issue_url: "https://github.com/KaiqueGovani/multi-agent-bench/issues/4"
+    partial_context:
+      status: "received_not_conclusive"
+      summary: "O autor informou que ainda coletará dados das conversas do WhatsApp para brainstorming e análise de padrões; estratégia final, autorização, transformação e retenção ainda não foram definidas."
+      provided_by: "Kaique Govani"
+      provided_at: "2026-08-23"
     response_summary: null
     answered_by: null
     answered_at: null
@@ -41,6 +46,11 @@ questions:
     recommendation: "Abordagem híbrida: LLM-as-Judge em todas as respostas, calibrado e auditado por amostra humana cega."
     issue_number: 5
     issue_url: "https://github.com/KaiqueGovani/multi-agent-bench/issues/5"
+    partial_context:
+      status: "received_not_conclusive"
+      summary: "Há previsão de um ou dois avaliadores humanos, ainda sem número confirmado; serão farmacêuticos que normalmente realizam o atendimento aos clientes. O método final de avaliação ainda não foi escolhido."
+      provided_by: "Kaique Govani"
+      provided_at: "2026-08-23"
     response_summary: null
     answered_by: null
     answered_at: null
@@ -60,6 +70,11 @@ questions:
     recommendation: "Cinco repetições-piloto excluídas da análise final e tamanho definitivo fixado entre 10 e 30 antes da coleta, com comparações pareadas e correção de Holm."
     issue_number: 6
     issue_url: "https://github.com/KaiqueGovani/multi-agent-bench/issues/6"
+    partial_context:
+      status: "received_not_conclusive"
+      summary: "A decisão sobre repetições e plano inferencial foi adiada até a coleta das conversas e a análise dos padrões; os parâmetros propostos ainda não foram autorizados."
+      provided_by: "Kaique Govani"
+      provided_at: "2026-08-23"
     response_summary: null
     answered_by: null
     answered_at: null
