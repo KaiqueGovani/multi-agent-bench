@@ -429,13 +429,24 @@ def numbering_definition_is_facens(numbering, num_id: str) -> bool:
     )
     if abstract is None:
         return False
-    values = []
+    expected_texts = ["%1", "%1.%2", "%1.%2.%3"]
     for level in range(3):
         lvl = abstract.find(f"./{qn('w:lvl')}[@{qn('w:ilvl')}='{level}']")
-        if lvl is None or lvl.find(qn("w:lvlText")) is None:
+        if lvl is None:
             return False
-        values.append(lvl.find(qn("w:lvlText")).get(qn("w:val")))
-    return values == ["%1", "%1.%2", "%1.%2.%3"]
+        num_fmt = lvl.find(qn("w:numFmt"))
+        lvl_text = lvl.find(qn("w:lvlText"))
+        p_style = lvl.find(qn("w:pStyle"))
+        if (
+            num_fmt is None
+            or num_fmt.get(qn("w:val")) != "decimal"
+            or lvl_text is None
+            or lvl_text.get(qn("w:val")) != expected_texts[level]
+            or p_style is None
+            or p_style.get(qn("w:val")) != f"Heading{level + 1}"
+        ):
+            return False
+    return True
 
 
 def create_numbering_definition(doc: Document) -> int:
@@ -450,9 +461,13 @@ def create_numbering_definition(doc: Document) -> int:
 
     abstract = OxmlElement("w:abstractNum")
     abstract.set(qn("w:abstractNumId"), str(abstract_id))
+    nsid = OxmlElement("w:nsid")
+    nsid.set(qn("w:val"), "FAC30001")
     multi = OxmlElement("w:multiLevelType")
     multi.set(qn("w:val"), "multilevel")
-    abstract.append(multi)
+    template = OxmlElement("w:tmpl")
+    template.set(qn("w:val"), "FAC30001")
+    abstract.extend([nsid, multi, template])
     for level, level_text in enumerate(["%1", "%1.%2", "%1.%2.%3"]):
         lvl = OxmlElement("w:lvl")
         lvl.set(qn("w:ilvl"), str(level))
@@ -460,22 +475,28 @@ def create_numbering_definition(doc: Document) -> int:
         start.set(qn("w:val"), "1")
         fmt = OxmlElement("w:numFmt")
         fmt.set(qn("w:val"), "decimal")
-        text = OxmlElement("w:lvlText")
-        text.set(qn("w:val"), level_text)
-        suffix = OxmlElement("w:suff")
-        suffix.set(qn("w:val"), "space")
         p_style = OxmlElement("w:pStyle")
         p_style.set(qn("w:val"), f"Heading{level + 1}")
+        suffix = OxmlElement("w:suff")
+        suffix.set(qn("w:val"), "space")
+        text = OxmlElement("w:lvlText")
+        text.set(qn("w:val"), level_text)
+        justification = OxmlElement("w:lvlJc")
+        justification.set(qn("w:val"), "left")
         p_pr = OxmlElement("w:pPr")
+        tabs = OxmlElement("w:tabs")
+        tab = OxmlElement("w:tab")
+        tab.set(qn("w:val"), "num")
+        tab.set(qn("w:pos"), "0")
+        tabs.append(tab)
         ind = OxmlElement("w:ind")
         ind.set(qn("w:left"), "0")
         ind.set(qn("w:hanging"), "0")
-        p_pr.append(ind)
-        lvl.extend([start, fmt, text, suffix, p_style, p_pr])
-        if level > 0:
-            restart = OxmlElement("w:lvlRestart")
-            restart.set(qn("w:val"), str(level - 1))
-            lvl.insert(1, restart)
+        p_pr.extend([tabs, ind])
+        # A ordem segue CT_Lvl. O Word pode descartar vínculos de estilo que
+        # apareçam fora da sequência OOXML, fazendo a lista parecer um bullet
+        # ou deixando os níveis inferiores sem numeração na interface.
+        lvl.extend([start, fmt, p_style, suffix, text, justification, p_pr])
         abstract.append(lvl)
     numbering.append(abstract)
 
@@ -486,6 +507,32 @@ def create_numbering_definition(doc: Document) -> int:
     num.append(abstract_ref)
     numbering.append(num)
     return num_id
+
+
+def make_heading_num_pr(level: int, num_id: int):
+    num_pr = OxmlElement("w:numPr")
+    ilvl = OxmlElement("w:ilvl")
+    ilvl.set(qn("w:val"), str(level - 1))
+    num = OxmlElement("w:numId")
+    num.set(qn("w:val"), str(num_id))
+    num_pr.extend([ilvl, num])
+    return num_pr
+
+
+def replace_num_pr(p_pr, num_pr) -> None:
+    old = p_pr.find(qn("w:numPr"))
+    if old is not None:
+        p_pr.remove(old)
+    # Usa o ponto de inserção definido pelo schema, evitando numPr fora de
+    # ordem tanto em estilos quanto em parágrafos.
+    p_pr._insert_numPr(num_pr)
+
+
+def bind_heading_styles_to_numbering(doc: Document, num_id: int) -> None:
+    """Vincula a lista decimal aos estilos, não só aos parágrafos existentes."""
+    for style_name, level in HEADING_STYLES.items():
+        style_p_pr = doc.styles[style_name]._element.get_or_add_pPr()
+        replace_num_pr(style_p_pr, make_heading_num_pr(level, num_id))
 
 
 def configure_heading_numbering(doc: Document) -> int:
@@ -504,6 +551,8 @@ def configure_heading_numbering(doc: Document) -> int:
     if num_id is None:
         num_id = create_numbering_definition(doc)
 
+    bind_heading_styles_to_numbering(doc, num_id)
+
     for paragraph in doc.paragraphs:
         level = HEADING_STYLES.get(paragraph.style.name)
         if level is None:
@@ -515,16 +564,7 @@ def configure_heading_numbering(doc: Document) -> int:
         if paragraph.text != title:
             paragraph.text = title
         p_pr = paragraph._p.get_or_add_pPr()
-        old = p_pr.find(qn("w:numPr"))
-        if old is not None:
-            p_pr.remove(old)
-        num_pr = OxmlElement("w:numPr")
-        ilvl = OxmlElement("w:ilvl")
-        ilvl.set(qn("w:val"), str(level - 1))
-        num = OxmlElement("w:numId")
-        num.set(qn("w:val"), str(num_id))
-        num_pr.extend([ilvl, num])
-        p_pr.append(num_pr)
+        replace_num_pr(p_pr, make_heading_num_pr(level, num_id))
     return num_id
 
 
@@ -883,13 +923,48 @@ def audit(input_path: Path, pdf_path: Path | None = None) -> list[str]:
             errors.append(f"Título fora de caixa alta: {paragraph.text}")
         if MANUAL_NUMBER_RE.match(paragraph.text):
             errors.append(f"Numeração manual em título: {paragraph.text}")
+        expected_level = HEADING_STYLES[paragraph.style.name] - 1
         p_pr = paragraph._p.pPr
         if p_pr is None or p_pr.numPr is None or p_pr.numPr.numId is None:
             errors.append(f"Título sem numeração multinível: {paragraph.text}")
         else:
             num_ids.add(str(p_pr.numPr.numId.val))
+            if p_pr.numPr.ilvl is None or int(p_pr.numPr.ilvl.val) != expected_level:
+                errors.append(
+                    f"Título no nível numérico incorreto: {paragraph.text} "
+                    f"(esperado {expected_level})"
+                )
     if len(num_ids) != 1:
         errors.append(f"Títulos usam mais de uma lista multinível: {sorted(num_ids)}")
+    else:
+        heading_num_id = next(iter(num_ids))
+        numbering = doc.part.numbering_part.element
+        if not numbering_definition_is_facens(numbering, heading_num_id):
+            errors.append(
+                "Lista dos títulos não possui três níveis decimais vinculados "
+                "a Heading 1, Heading 2 e Heading 3."
+            )
+        for style_name, level in HEADING_STYLES.items():
+            style_p_pr = doc.styles[style_name]._element.pPr
+            style_num_pr = (
+                style_p_pr.find(qn("w:numPr")) if style_p_pr is not None else None
+            )
+            style_ilvl = (
+                style_num_pr.find(qn("w:ilvl")) if style_num_pr is not None else None
+            )
+            style_num_id = (
+                style_num_pr.find(qn("w:numId")) if style_num_pr is not None else None
+            )
+            if (
+                style_ilvl is None
+                or style_num_id is None
+                or style_ilvl.get(qn("w:val")) != str(level - 1)
+                or style_num_id.get(qn("w:val")) != heading_num_id
+            ):
+                errors.append(
+                    f"{style_name}: estilo não vinculado ao nível decimal {level} "
+                    "da lista única dos títulos."
+                )
 
     toc_paragraphs = [p for p in doc.paragraphs if p.style.name in TOC_STYLES.values()]
     entries = collect_toc_entries(doc)

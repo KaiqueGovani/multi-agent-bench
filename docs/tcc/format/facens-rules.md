@@ -21,6 +21,9 @@ Consolidação baseada no modelo Word e nos manuais técnicos fornecidos pelos a
 - todos os títulos devem usar preto absoluto (`#000000`), sem cores de tema ou destaque azul herdado;
 - manter uma linha e meia de separação antes e depois de cada título; entre títulos consecutivos, usar apenas um intervalo;
 - toda numeração deve ser gerada por uma única lista multinível vinculada aos estilos de título; números digitados manualmente no texto do título são proibidos.
+- a lista deve usar exclusivamente o formato decimal nos três níveis: nível 1 `%1` (`1`), nível 2 `%1.%2` (`1.1`) e nível 3 `%1.%2.%3` (`1.1.1`), sem ponto depois do último algarismo;
+- `Heading 1`, `Heading 2` e `Heading 3` devem estar vinculados, respectivamente, aos níveis `0`, `1` e `2` do mesmo `numId`; aplicar numeração somente aos parágrafos existentes não é suficiente;
+- definições do tipo `bullet`, estilos sem `numPr`, níveis ligados a listas diferentes e números digitados no texto devem reprovar a compilação.
 
 ## Estrangeirismos
 
@@ -60,4 +63,4 @@ Consolidação baseada no modelo Word e nos manuais técnicos fornecidos pelos a
 
 ## Validação obrigatória
 
-Toda alteração do DOCX deve passar por `docs/tcc/format/facens_docx.py`, renderização integral e inspeção visual de todas as páginas. A auditoria deve verificar estruturalmente a presença do tab stop automático e a ausência de pontos literais usados como líder. A auditoria automatizada não substitui a conferência visual de quebras, tabelas, sumário, rodapés e referências.
+Toda alteração do DOCX deve passar por `docs/tcc/format/facens_docx.py`, renderização integral e inspeção visual de todas as páginas. A auditoria deve verificar estruturalmente a lista multinível decimal vinculada aos três estilos de título, a presença do tab stop automático e a ausência de pontos literais usados como líder. A auditoria automatizada não substitui a conferência visual de numeração, quebras, tabelas, sumário, rodapés e referências.
