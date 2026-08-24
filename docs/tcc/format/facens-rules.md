@@ -22,9 +22,9 @@ Consolidação baseada no modelo Word e nos manuais técnicos fornecidos pelos a
 - manter uma linha e meia de separação antes e depois de cada título; entre títulos consecutivos, usar apenas um intervalo;
 - toda numeração deve ser gerada por uma única lista multinível vinculada aos estilos de título; números digitados manualmente no texto do título são proibidos.
 - a lista deve usar exclusivamente o formato decimal nos três níveis: nível 1 `%1` (`1`), nível 2 `%1.%2` (`1.1`) e nível 3 `%1.%2.%3` (`1.1.1`), sem ponto depois do último algarismo;
-- o marcador numérico deve declarar Arial nos quatro atributos OOXML de fonte (`ascii`, `hAnsi`, `eastAsia` e `cs`); tamanho e negrito devem acompanhar o estilo do respectivo título;
+- o marcador numérico deve declarar Arial nos quatro atributos OOXML de fonte (`ascii`, `hAnsi`, `eastAsia` e `cs`), sem `asciiTheme`, `hAnsiTheme`, `eastAsiaTheme` ou `cstheme`; tamanho, negrito e cor também devem ser gravados explicitamente conforme o respectivo nível, sem depender da herança do tema;
 - `Heading 1`, `Heading 2` e `Heading 3` devem estar vinculados, respectivamente, aos níveis `0`, `1` e `2` do mesmo `numId`; aplicar numeração somente aos parágrafos existentes não é suficiente;
-- definições do tipo `bullet`, marcadores numéricos fora de Arial, estilos sem `numPr`, níveis ligados a listas diferentes e números digitados no texto devem reprovar a compilação.
+- definições do tipo `bullet`, marcadores numéricos fora de Arial ou dependentes de fontes de tema, estilos sem `numPr`, níveis ligados a listas diferentes e números digitados no texto devem reprovar a compilação.
 
 ## Estrangeirismos
 

@@ -125,6 +125,11 @@ def set_fonts(element, family: str = "Arial") -> None:
     fonts = r_pr.get_or_add_rFonts()
     for name in ("ascii", "hAnsi", "eastAsia", "cs"):
         fonts.set(qn(f"w:{name}"), family)
+    # Atributos de tema podem prevalecer na interface do Word e fazer Arial
+    # aparecer como "+Títulos"/"Calibri (Títulos)" mesmo quando w:ascii está
+    # preenchido. A tipografia Facens não pode depender do tema do documento.
+    for name in ("asciiTheme", "hAnsiTheme", "eastAsiaTheme", "cstheme"):
+        fonts.attrib.pop(qn(f"w:{name}"), None)
 
 
 def set_style_font(style, size: int, *, bold: bool = False, caps: bool = False) -> None:
@@ -134,7 +139,22 @@ def set_style_font(style, size: int, *, bold: bool = False, caps: bool = False) 
     style.font.bold = bold
     style.font.all_caps = caps
     style.font.color.rgb = RGBColor(0, 0, 0)
-    remove_theme_color(style._element.get_or_add_rPr())
+    r_pr = style._element.get_or_add_rPr()
+    remove_theme_color(r_pr)
+    # Normaliza também as propriedades de script complexo para impedir que
+    # resíduos do tema alterem a aparência do título ou de seu marcador.
+    for tag in ("w:sz", "w:szCs"):
+        element = r_pr.find(qn(tag))
+        if element is None:
+            element = OxmlElement(tag)
+            r_pr.append(element)
+        element.set(qn("w:val"), str(size * 2))
+    for tag in ("w:b", "w:bCs"):
+        element = r_pr.find(qn(tag))
+        if element is None:
+            element = OxmlElement(tag)
+            r_pr.append(element)
+        element.set(qn("w:val"), "1" if bold else "0")
 
 
 def remove_theme_color(r_pr) -> None:
@@ -430,6 +450,8 @@ def numbering_definition_is_facens(numbering, num_id: str) -> bool:
     if abstract is None:
         return False
     expected_texts = ["%1", "%1.%2", "%1.%2.%3"]
+    expected_sizes = ["28", "24", "24"]
+    expected_bold = [True, True, False]
     for level in range(3):
         lvl = abstract.find(f"./{qn('w:lvl')}[@{qn('w:ilvl')}='{level}']")
         if lvl is None:
@@ -437,7 +459,29 @@ def numbering_definition_is_facens(numbering, num_id: str) -> bool:
         num_fmt = lvl.find(qn("w:numFmt"))
         lvl_text = lvl.find(qn("w:lvlText"))
         p_style = lvl.find(qn("w:pStyle"))
-        number_fonts = lvl.find(f"./{qn('w:rPr')}/{qn('w:rFonts')}")
+        number_r_pr = lvl.find(qn("w:rPr"))
+        number_fonts = (
+            number_r_pr.find(qn("w:rFonts")) if number_r_pr is not None else None
+        )
+        number_size = number_r_pr.find(qn("w:sz")) if number_r_pr is not None else None
+        number_size_cs = (
+            number_r_pr.find(qn("w:szCs")) if number_r_pr is not None else None
+        )
+        number_bold = number_r_pr.find(qn("w:b")) if number_r_pr is not None else None
+        number_bold_cs = (
+            number_r_pr.find(qn("w:bCs")) if number_r_pr is not None else None
+        )
+        number_color = (
+            number_r_pr.find(qn("w:color")) if number_r_pr is not None else None
+        )
+        bold_is_on = (
+            number_bold is not None
+            and number_bold.get(qn("w:val"), "1") not in ("0", "false", "off")
+        )
+        bold_cs_is_on = (
+            number_bold_cs is not None
+            and number_bold_cs.get(qn("w:val"), "1") not in ("0", "false", "off")
+        )
         if (
             num_fmt is None
             or num_fmt.get(qn("w:val")) != "decimal"
@@ -449,6 +493,24 @@ def numbering_definition_is_facens(numbering, num_id: str) -> bool:
             or any(
                 number_fonts.get(qn(f"w:{attribute}")) != "Arial"
                 for attribute in ("ascii", "hAnsi", "eastAsia", "cs")
+            )
+            or any(
+                number_fonts.get(qn(f"w:{attribute}")) is not None
+                for attribute in ("asciiTheme", "hAnsiTheme", "eastAsiaTheme", "cstheme")
+            )
+            or number_size is None
+            or number_size.get(qn("w:val")) != expected_sizes[level]
+            or number_size_cs is None
+            or number_size_cs.get(qn("w:val")) != expected_sizes[level]
+            or number_bold is None
+            or bold_is_on != expected_bold[level]
+            or number_bold_cs is None
+            or bold_cs_is_on != expected_bold[level]
+            or number_color is None
+            or number_color.get(qn("w:val")) != "000000"
+            or any(
+                number_color.get(qn(f"w:{attribute}")) is not None
+                for attribute in ("themeColor", "themeTint", "themeShade")
             )
         ):
             return False
@@ -504,11 +566,22 @@ def create_numbering_definition(doc: Document) -> int:
         for attribute in ("ascii", "hAnsi", "eastAsia", "cs"):
             number_fonts.set(qn(f"w:{attribute}"), "Arial")
         r_pr.append(number_fonts)
+        bold = OxmlElement("w:b")
+        bold.set(qn("w:val"), "1" if level < 2 else "0")
+        bold_cs = OxmlElement("w:bCs")
+        bold_cs.set(qn("w:val"), "1" if level < 2 else "0")
+        color = OxmlElement("w:color")
+        color.set(qn("w:val"), "000000")
+        size = OxmlElement("w:sz")
+        size.set(qn("w:val"), "28" if level == 0 else "24")
+        size_cs = OxmlElement("w:szCs")
+        size_cs.set(qn("w:val"), "28" if level == 0 else "24")
+        r_pr.extend([bold, bold_cs, color, size, size_cs])
         # A ordem segue CT_Lvl. O Word pode descartar vínculos de estilo que
         # apareçam fora da sequência OOXML, fazendo a lista parecer um bullet
         # ou deixando os níveis inferiores sem numeração na interface.
-        # O rPr define somente a família do marcador. Tamanho e negrito
-        # continuam herdados do estilo do título correspondente.
+        # O rPr explicita família, peso, cor e tamanho. Isso impede o Word de
+        # substituir o marcador por Calibri (Títulos) por herança do tema.
         lvl.extend([start, fmt, p_style, suffix, text, justification, p_pr, r_pr])
         abstract.append(lvl)
     numbering.append(abstract)
@@ -931,6 +1004,17 @@ def audit(input_path: Path, pdf_path: Path | None = None) -> list[str]:
             errors.append(f"{style_name}: negrito incorreto.")
         if bool(style.font.all_caps) != caps:
             errors.append(f"{style_name}: caixa alta incorreta.")
+        style_fonts = style._element.get_or_add_rPr().find(qn("w:rFonts"))
+        if style_fonts is None or any(
+            style_fonts.get(qn(f"w:{attribute}")) != "Arial"
+            for attribute in ("ascii", "hAnsi", "eastAsia", "cs")
+        ):
+            errors.append(f"{style_name}: família deve ser Arial em todos os scripts.")
+        elif any(
+            style_fonts.get(qn(f"w:{attribute}")) is not None
+            for attribute in ("asciiTheme", "hAnsiTheme", "eastAsiaTheme", "cstheme")
+        ):
+            errors.append(f"{style_name}: fonte não pode depender de atributos de tema.")
     for paragraph in headings:
         if paragraph.text != paragraph.text.upper():
             errors.append(f"Título fora de caixa alta: {paragraph.text}")
@@ -954,8 +1038,9 @@ def audit(input_path: Path, pdf_path: Path | None = None) -> list[str]:
         numbering = doc.part.numbering_part.element
         if not numbering_definition_is_facens(numbering, heading_num_id):
             errors.append(
-                "Lista dos títulos não possui três níveis decimais em Arial "
-                "vinculados a Heading 1, Heading 2 e Heading 3."
+                "Lista dos títulos não possui três níveis decimais com Arial, "
+                "peso, tamanho e cor explícitos e sem fontes de tema, vinculados "
+                "a Heading 1, Heading 2 e Heading 3."
             )
         for style_name, level in HEADING_STYLES.items():
             style_p_pr = doc.styles[style_name]._element.pPr
