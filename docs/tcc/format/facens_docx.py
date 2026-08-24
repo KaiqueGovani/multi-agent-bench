@@ -437,6 +437,7 @@ def numbering_definition_is_facens(numbering, num_id: str) -> bool:
         num_fmt = lvl.find(qn("w:numFmt"))
         lvl_text = lvl.find(qn("w:lvlText"))
         p_style = lvl.find(qn("w:pStyle"))
+        number_fonts = lvl.find(f"./{qn('w:rPr')}/{qn('w:rFonts')}")
         if (
             num_fmt is None
             or num_fmt.get(qn("w:val")) != "decimal"
@@ -444,6 +445,11 @@ def numbering_definition_is_facens(numbering, num_id: str) -> bool:
             or lvl_text.get(qn("w:val")) != expected_texts[level]
             or p_style is None
             or p_style.get(qn("w:val")) != f"Heading{level + 1}"
+            or number_fonts is None
+            or any(
+                number_fonts.get(qn(f"w:{attribute}")) != "Arial"
+                for attribute in ("ascii", "hAnsi", "eastAsia", "cs")
+            )
         ):
             return False
     return True
@@ -493,10 +499,17 @@ def create_numbering_definition(doc: Document) -> int:
         ind.set(qn("w:left"), "0")
         ind.set(qn("w:hanging"), "0")
         p_pr.extend([tabs, ind])
+        r_pr = OxmlElement("w:rPr")
+        number_fonts = OxmlElement("w:rFonts")
+        for attribute in ("ascii", "hAnsi", "eastAsia", "cs"):
+            number_fonts.set(qn(f"w:{attribute}"), "Arial")
+        r_pr.append(number_fonts)
         # A ordem segue CT_Lvl. O Word pode descartar vínculos de estilo que
         # apareçam fora da sequência OOXML, fazendo a lista parecer um bullet
         # ou deixando os níveis inferiores sem numeração na interface.
-        lvl.extend([start, fmt, p_style, suffix, text, justification, p_pr])
+        # O rPr define somente a família do marcador. Tamanho e negrito
+        # continuam herdados do estilo do título correspondente.
+        lvl.extend([start, fmt, p_style, suffix, text, justification, p_pr, r_pr])
         abstract.append(lvl)
     numbering.append(abstract)
 
@@ -941,8 +954,8 @@ def audit(input_path: Path, pdf_path: Path | None = None) -> list[str]:
         numbering = doc.part.numbering_part.element
         if not numbering_definition_is_facens(numbering, heading_num_id):
             errors.append(
-                "Lista dos títulos não possui três níveis decimais vinculados "
-                "a Heading 1, Heading 2 e Heading 3."
+                "Lista dos títulos não possui três níveis decimais em Arial "
+                "vinculados a Heading 1, Heading 2 e Heading 3."
             )
         for style_name, level in HEADING_STYLES.items():
             style_p_pr = doc.styles[style_name]._element.pPr

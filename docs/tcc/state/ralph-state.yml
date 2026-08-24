@@ -70,7 +70,7 @@ constraints:
 
 audit:
   date: "2026-08-23"
-  status: "facens_decimal_heading_numbering_pipeline_hardened"
+  status: "facens_decimal_heading_numbering_arial_marker_pipeline_hardened"
   open_questions:
     active: 4
     answered: 0
@@ -120,7 +120,7 @@ audit:
     manuscript_progress: "subsection_2.4.4_expanded_and_synchronized"
     method_progress: "pilot_repetitions_and_paired_inference_proposed_pending_OQ-003"
     references_progress: "five_new_sources_verified_and_related_works_abnt_matrix_reconciled"
-    format_progress: "facens_pipeline_toc_and_decimal_heading_numbering_verified"
+    format_progress: "facens_pipeline_toc_and_decimal_heading_numbering_with_arial_markers_verified"
     primary_next_action: "integrate_R042_into_architecture_comparison_with_docx_sync"
   method:
     experimental_protocol: "pilot_and_paired_inference_proposal_documented"
@@ -150,7 +150,8 @@ audit:
     toc: "static_with_internal_links_pdf_verified_pages_and_automatic_tab_leaders"
     chapter_numbering: "single_decimal_multilevel_list_heading1_heading2_heading3_same_num_id"
     heading_style_numbering_links: "heading1_ilvl0_heading2_ilvl1_heading3_ilvl2_shared_num_id"
-    numbering_regression_audit: "rejects_bullets_missing_numpr_multiple_numids_and_manual_numbers"
+    numbering_marker_font: "arial_ascii_hansi_eastasia_cs_inherits_heading_size_and_weight"
+    numbering_regression_audit: "rejects_bullets_non_arial_markers_missing_numpr_multiple_numids_and_manual_numbers"
     references: "alphabetical_single_spacing_bold_title_element_et_al_italic"
     visual_validation_pages: 38
     automated_audit: passed
@@ -168,5 +169,5 @@ audit:
     - "Número de repetições e plano inferencial dependem da decisão humana na OQ-003."
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
 
-last_run: "2026-08-23-04"
+last_run: "2026-08-23-05"
 next_recommended_action: "Confirmar com orientador e instituição os requisitos de autorização, consentimento e avaliação ética; preparar armazenamento privado, anonimização, retenção e descarte; depois executar a amostra exploratória e responder a OQ-004 somente com padrões agregados."

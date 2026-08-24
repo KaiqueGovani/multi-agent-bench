@@ -39,7 +39,7 @@ O caminho de `render_docx.py` pode variar no ambiente. Quando isso ocorrer, use 
 - estilos hierárquicos de capítulos e subseções;
 - nível 1 em Arial 14, negrito e caixa alta; nível 2 em Arial 12, negrito e caixa alta; níveis 3 ou superiores em Arial 12 e caixa alta;
 - títulos em preto absoluto, com remoção de `themeColor`, `themeTint` e `themeShade` do OOXML;
-- numeração multinível decimal única (`1`, `1.1`, `1.1.1`), com os estilos `Heading 1`, `Heading 2` e `Heading 3` vinculados aos níveis correspondentes do mesmo `numId` e reinício coerente entre capítulos;
+- numeração multinível decimal única (`1`, `1.1`, `1.1.1`), com os marcadores em Arial e os estilos `Heading 1`, `Heading 2` e `Heading 3` vinculados aos níveis correspondentes do mesmo `numId`, herdando tamanho e negrito do respectivo título e mantendo reinício coerente entre capítulos;
 - capítulos de primeiro nível iniciando em nova página;
 - uma linha e meia antes e depois dos títulos, sem intervalo duplicado entre títulos consecutivos;
 - corpo em Arial 12, justificado, espaçamento 1,5 e recuo de primeira linha;
@@ -56,4 +56,4 @@ Atualizadores de campos do Word não estão disponíveis de forma confiável em 
 
 O preenchimento pontilhado, porém, não é estático nem digitado: cada entrada contém um tab stop alinhado à direita com líder `dot` e um caractere de tabulação real entre o título e a página. Isso deixa a coluna de páginas alinhada pela largura útil da página e permite ao Word recalcular visualmente o pontilhado quando o layout mudar. Sequências manuais de `.` são proibidas e reprovadas pelo comando `audit`.
 
-O DOCX só está pronto para commit quando `audit` encerrar com `OK` e todas as páginas renderizadas tiverem sido inspecionadas visualmente. A auditoria reprova listas de título do tipo `bullet`, níveis não decimais, estilos sem vínculo numérico, níveis associados a `numId` diferentes e numeração digitada manualmente.
+O DOCX só está pronto para commit quando `audit` encerrar com `OK` e todas as páginas renderizadas tiverem sido inspecionadas visualmente. A auditoria reprova listas de título do tipo `bullet`, níveis não decimais, marcadores numéricos fora de Arial, estilos sem vínculo numérico, níveis associados a `numId` diferentes e numeração digitada manualmente.
