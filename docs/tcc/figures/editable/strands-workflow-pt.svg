@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L12,6 L0,12 z" fill="#222222"/>
+    </marker>
+    <style>
+      .title { font: 700 46px Arial, sans-serif; fill: #111111; }
+      .subtitle { font: 400 27px Arial, sans-serif; fill: #3f3f3f; }
+      .label { font: 700 28px Arial, sans-serif; fill: #111111; text-anchor: middle; dominant-baseline: middle; }
+      .small { font: 400 23px Arial, sans-serif; fill: #222222; text-anchor: middle; dominant-baseline: middle; }
+      .node { fill: #ffffff; stroke: #222222; stroke-width: 4; }
+      .step2 { fill: #e8eef7; }
+      .edge { fill: none; stroke: #222222; stroke-width: 5; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1600" height="900" fill="#ffffff"/>
+  <text class="title" x="800" y="78" text-anchor="middle">WORKFLOW ESTRUTURADO</text>
+  <text class="subtitle" x="800" y="122" text-anchor="middle">Execução previsível por etapas e dependências explícitas</text>
+
+  <rect class="node" x="75" y="330" width="250" height="170" rx="20"/>
+  <text class="label" x="200" y="397">ENTRADA</text>
+  <text class="small" x="200" y="445">tarefa recebida</text>
+
+  <rect class="node step2" x="440" y="330" width="250" height="170" rx="20"/>
+  <text class="label" x="565" y="397">AGENTE 1</text>
+  <text class="small" x="565" y="445">pesquisa</text>
+
+  <rect class="node" x="805" y="330" width="250" height="170" rx="20"/>
+  <text class="label" x="930" y="397">AGENTE 2</text>
+  <text class="small" x="930" y="445">análise</text>
+
+  <rect class="node step2" x="1170" y="330" width="250" height="170" rx="20"/>
+  <text class="label" x="1295" y="397">AGENTE 3</text>
+  <text class="small" x="1295" y="445">relatório</text>
+
+  <path class="edge" d="M325 415 H410"/>
+  <path class="edge" d="M690 415 H775"/>
+  <path class="edge" d="M1055 415 H1140"/>
+
+  <text class="subtitle" x="800" y="655" text-anchor="middle">A saída de cada etapa alimenta a próxima, conforme uma sequência definida.</text>
+  <text class="subtitle" x="800" y="700" text-anchor="middle">O fluxo facilita rastreabilidade, mas limita desvios dinâmicos.</text>
+</svg>

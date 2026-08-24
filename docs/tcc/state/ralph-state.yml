@@ -71,7 +71,7 @@ constraints:
 
 audit:
   date: "2026-08-24"
-  status: "initial_figure_research_corpus_created"
+  status: "figure_research_corpus_expanded_with_official_and_academic_sources"
   open_questions:
     active: 4
     answered: 0
@@ -87,20 +87,17 @@ audit:
     conclusion: closed
     placeholders_verified: true
   references:
-    total: 46
-    candidate: 14
+    total: 48
+    candidate: 16
     verified: 6
     cited: 10
     watch: 7
     reject: 9
     latest_discovery:
-      date: "2026-08-19"
+      date: "2026-08-24"
       ids:
-        - "R042"
-        - "R043"
-        - "R044"
-        - "R045"
-        - "R046"
+        - "R047"
+        - "R048"
     latest_verification:
       date: "2026-08-21"
       ids:
@@ -124,20 +121,26 @@ audit:
       outcome: "stale_needs_correction_markers_closed_after_docx_abnt_verification"
   figures:
     cited_references_audited: 10
-    rights_verified_candidates: 3
+    rights_verified_candidates: 8
     candidate_ids:
       - "IMG-C001"
       - "IMG-C002"
       - "IMG-C003"
+      - "IMG-C004"
+      - "IMG-C005"
+      - "IMG-C006"
+      - "IMG-C007"
+      - "IMG-C008"
     licenses:
       - "CC BY 4.0"
+      - "Apache-2.0"
     corpus: "docs/tcc/figures"
     inventory: "docs/tcc/figures/inventory.csv"
-    latest_research: "docs/tcc/figures/research-2026-08-24.md"
+    latest_research: "docs/tcc/figures/research-2026-08-24-02.md"
     manuscript_insertions: 0
     docx_insertions: 0
     original_diagrams_pending:
-      - "comparacao_entre_orquestracao_workflow_e_swarm"
+      - "unificacao_de_IMG-C004_IMG-C005_IMG-C006_em_comparacao_do_MAB"
       - "arquitetura_logica_do_MAB"
       - "fluxo_experimental_apos_congelamento_do_protocolo"
   weekly_summary:
@@ -195,5 +198,5 @@ audit:
     - "Número de repetições e plano inferencial dependem da decisão humana na OQ-003."
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
 
-last_run: "2026-08-24-03"
-next_recommended_action: "Criar um diagrama autoral em português que compare orquestração centralizada, workflow estruturado e swarm; validar legibilidade e precisão conceitual antes de inserir qualquer figura no manuscrito ou no DOCX."
+last_run: "2026-08-24-04"
+next_recommended_action: "Unificar IMG-C004, IMG-C005 e IMG-C006 em uma figura autoral tripla aplicada ao mesmo atendimento farmacêutico; validar precisão conceitual e legibilidade antes de inserir em 2.4.4 e regenerar a lista de figuras do DOCX."

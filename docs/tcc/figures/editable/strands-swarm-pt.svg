@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L12,6 L0,12 z" fill="#222222"/>
+    </marker>
+    <style>
+      .title { font: 700 46px Arial, sans-serif; fill: #111111; }
+      .subtitle { font: 400 27px Arial, sans-serif; fill: #3f3f3f; }
+      .label { font: 700 28px Arial, sans-serif; fill: #111111; text-anchor: middle; dominant-baseline: middle; }
+      .small { font: 400 22px Arial, sans-serif; fill: #222222; text-anchor: middle; dominant-baseline: middle; }
+      .node { fill: #ffffff; stroke: #222222; stroke-width: 4; }
+      .accent { fill: #e8eef7; }
+      .edge { fill: none; stroke: #222222; stroke-width: 3.5; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1600" height="900" fill="#ffffff"/>
+  <text class="title" x="800" y="78" text-anchor="middle">SWARM DESCENTRALIZADO</text>
+  <text class="subtitle" x="800" y="122" text-anchor="middle">Colaboração entre pares com transferência dinâmica de responsabilidade</text>
+
+  <path class="edge" d="M680 286 L505 365"/>
+  <path class="edge" d="M920 286 L1095 365"/>
+  <path class="edge" d="M505 475 L680 570"/>
+  <path class="edge" d="M1095 475 L920 570"/>
+  <path class="edge" d="M570 415 H1030"/>
+  <path class="edge" d="M800 330 V535"/>
+  <path class="edge" d="M1030 445 H570"/>
+  <path class="edge" d="M800 535 V330"/>
+
+  <rect class="node accent" x="665" y="190" width="270" height="140" rx="70"/>
+  <text class="label" x="800" y="245">AGENTE A</text>
+  <text class="small" x="800" y="286">pesquisador</text>
+  <rect class="node" x="300" y="345" width="270" height="140" rx="70"/>
+  <text class="label" x="435" y="400">AGENTE B</text>
+  <text class="small" x="435" y="441">revisor</text>
+  <rect class="node" x="1030" y="345" width="270" height="140" rx="70"/>
+  <text class="label" x="1165" y="400">AGENTE C</text>
+  <text class="small" x="1165" y="441">arquiteto</text>
+  <rect class="node accent" x="665" y="535" width="270" height="140" rx="70"/>
+  <text class="label" x="800" y="590">AGENTE D</text>
+  <text class="small" x="800" y="631">executor</text>
+
+  <text class="subtitle" x="800" y="790" text-anchor="middle">Os agentes podem encaminhar tarefas diretamente uns aos outros.</text>
+</svg>
