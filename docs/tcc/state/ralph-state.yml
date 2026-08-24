@@ -18,6 +18,7 @@ artifacts:
   branch_policy: "commits_diretos_sem_pull_request"
   evidence_gates: "docs/tcc/state/evidence-gates.yml"
   open_questions: "docs/tcc/open-questions/questions.yml"
+  figure_corpus: "docs/tcc/figures"
 
 current_objective: "Preparar a caracterização exploratória das conversas, consolidar as decisões humanas pendentes e então congelar o protocolo experimental."
 
@@ -70,7 +71,7 @@ constraints:
 
 audit:
   date: "2026-08-24"
-  status: "r042_integrated_into_architecture_comparison"
+  status: "initial_figure_research_corpus_created"
   open_questions:
     active: 4
     answered: 0
@@ -121,6 +122,24 @@ audit:
         - "R040"
         - "R041"
       outcome: "stale_needs_correction_markers_closed_after_docx_abnt_verification"
+  figures:
+    cited_references_audited: 10
+    rights_verified_candidates: 3
+    candidate_ids:
+      - "IMG-C001"
+      - "IMG-C002"
+      - "IMG-C003"
+    licenses:
+      - "CC BY 4.0"
+    corpus: "docs/tcc/figures"
+    inventory: "docs/tcc/figures/inventory.csv"
+    latest_research: "docs/tcc/figures/research-2026-08-24.md"
+    manuscript_insertions: 0
+    docx_insertions: 0
+    original_diagrams_pending:
+      - "comparacao_entre_orquestracao_workflow_e_swarm"
+      - "arquitetura_logica_do_MAB"
+      - "fluxo_experimental_apos_congelamento_do_protocolo"
   weekly_summary:
     period: "2026-08-17_to_2026-08-23"
     manuscript_progress: "subsection_2.4.4_expanded_with_R042_and_synchronized"
@@ -176,5 +195,5 @@ audit:
     - "Número de repetições e plano inferencial dependem da decisão humana na OQ-003."
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
 
-last_run: "2026-08-24-02"
-next_recommended_action: "Confirmar com orientador e instituição os requisitos de autorização, consentimento e avaliação ética; preparar armazenamento privado, anonimização, retenção e descarte; depois executar a amostra exploratória e responder a OQ-004 somente com padrões agregados."
+last_run: "2026-08-24-03"
+next_recommended_action: "Criar um diagrama autoral em português que compare orquestração centralizada, workflow estruturado e swarm; validar legibilidade e precisão conceitual antes de inserir qualquer figura no manuscrito ou no DOCX."
