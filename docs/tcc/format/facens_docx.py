@@ -86,6 +86,7 @@ REFERENCE_EMPHASIS = {
     "PICCIALLI": "Expert Systems with Applications",
     "SALESFORCE.": "AI Customer Service Agents",
     "STANFORD HAI.": "AI Index Report 2025",
+    "WANG": "Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)",
     "WHO EUROPE.": "Advancing the role of pharmacists to meet changing patient and health system needs",
     "YU": "2025 8th International Conference on Artificial Intelligence and Big Data (ICAIBD)",
     "ZENDESK.": "About AI agents",

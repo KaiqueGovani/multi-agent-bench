@@ -70,7 +70,7 @@ constraints:
 
 audit:
   date: "2026-08-24"
-  status: "facens_heading_numbers_explicit_arial_without_theme_fonts"
+  status: "r042_integrated_into_architecture_comparison"
   open_questions:
     active: 4
     answered: 0
@@ -88,8 +88,8 @@ audit:
   references:
     total: 46
     candidate: 14
-    verified: 7
-    cited: 9
+    verified: 6
+    cited: 10
     watch: 7
     reject: 9
     latest_discovery:
@@ -109,6 +109,12 @@ audit:
         - "R045"
         - "R046"
       outcome: "five_primary_metadata_records_verified; no_manuscript_citation_added"
+    latest_integration:
+      date: "2026-08-24"
+      ids:
+        - "R042"
+      target: "2.4.4 Comparação entre arquiteturas"
+      outcome: "cited_in_manuscript_and_added_to_docx_abnt_references"
     matrix_docx_reconciliation:
       date: "2026-08-22"
       ids:
@@ -117,11 +123,11 @@ audit:
       outcome: "stale_needs_correction_markers_closed_after_docx_abnt_verification"
   weekly_summary:
     period: "2026-08-17_to_2026-08-23"
-    manuscript_progress: "subsection_2.4.4_expanded_and_synchronized"
+    manuscript_progress: "subsection_2.4.4_expanded_with_R042_and_synchronized"
     method_progress: "pilot_repetitions_and_paired_inference_proposed_pending_OQ-003"
     references_progress: "five_new_sources_verified_and_related_works_abnt_matrix_reconciled"
     format_progress: "facens_pipeline_toc_and_explicit_arial_heading_numbers_without_theme_fonts_verified"
-    primary_next_action: "integrate_R042_into_architecture_comparison_with_docx_sync"
+    primary_next_action: "confirm_data_governance_before_private_exploratory_collection"
   method:
     experimental_protocol: "pilot_and_paired_inference_proposal_documented"
     repetition_policy: "TBD-OQ-003"
@@ -133,7 +139,7 @@ audit:
     exploratory_sample_target: "approximately_20_histories"
   manuscript:
     latest_refinement: "2.4.4 Comparação entre arquiteturas"
-    latest_refinement_words: 625
+    latest_refinement_words: 697
     substantial_drafts:
       - "01 Introdução"
       - "02 Fundamentação Teórica"
@@ -170,5 +176,5 @@ audit:
     - "Número de repetições e plano inferencial dependem da decisão humana na OQ-003."
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
 
-last_run: "2026-08-24-01"
+last_run: "2026-08-24-02"
 next_recommended_action: "Confirmar com orientador e instituição os requisitos de autorização, consentimento e avaliação ética; preparar armazenamento privado, anonimização, retenção e descarte; depois executar a amostra exploratória e responder a OQ-004 somente com padrões agregados."
