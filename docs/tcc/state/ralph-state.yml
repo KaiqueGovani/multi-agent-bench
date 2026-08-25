@@ -70,8 +70,8 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
-  date: "2026-08-24"
-  status: "figure_research_corpus_expanded_with_official_and_academic_sources"
+  date: "2026-08-25"
+  status: "authorial_architecture_comparison_figure_created"
   open_questions:
     active: 4
     answered: 0
@@ -121,7 +121,7 @@ audit:
       outcome: "stale_needs_correction_markers_closed_after_docx_abnt_verification"
   figures:
     cited_references_audited: 10
-    rights_verified_candidates: 8
+    rights_verified_candidates: 9
     candidate_ids:
       - "IMG-C001"
       - "IMG-C002"
@@ -131,18 +131,25 @@ audit:
       - "IMG-C006"
       - "IMG-C007"
       - "IMG-C008"
+      - "IMG-C009"
     licenses:
       - "CC BY 4.0"
       - "Apache-2.0"
+      - "elaboracao_propria"
     corpus: "docs/tcc/figures"
     inventory: "docs/tcc/figures/inventory.csv"
     latest_research: "docs/tcc/figures/research-2026-08-24-02.md"
+    latest_design: "docs/tcc/figures/design-2026-08-25.md"
     manuscript_insertions: 0
     docx_insertions: 0
     original_diagrams_pending:
-      - "unificacao_de_IMG-C004_IMG-C005_IMG-C006_em_comparacao_do_MAB"
       - "arquitetura_logica_do_MAB"
       - "fluxo_experimental_apos_congelamento_do_protocolo"
+    original_diagrams_created:
+      - id: "IMG-C009"
+        subject: "comparacao_entre_orquestracao_workflow_e_swarm"
+        status: "candidate_pending_editorial_review"
+        target: "2.4.4 Comparação entre arquiteturas"
   weekly_summary:
     period: "2026-08-17_to_2026-08-23"
     manuscript_progress: "subsection_2.4.4_expanded_with_R042_and_synchronized"
@@ -198,5 +205,5 @@ audit:
     - "Número de repetições e plano inferencial dependem da decisão humana na OQ-003."
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
 
-last_run: "2026-08-24-04"
-next_recommended_action: "Unificar IMG-C004, IMG-C005 e IMG-C006 em uma figura autoral tripla aplicada ao mesmo atendimento farmacêutico; validar precisão conceitual e legibilidade antes de inserir em 2.4.4 e regenerar a lista de figuras do DOCX."
+last_run: "2026-08-25"
+next_recommended_action: "Revisar conceitualmente IMG-C009; após aprovação editorial, inserir a figura em 2.4.4, atualizar o DOCX pelo pipeline completo e gerar automaticamente a lista de figuras."
