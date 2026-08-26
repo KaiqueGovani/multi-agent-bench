@@ -1,81 +1,179 @@
 # Protocolo experimental do MAB
 
-Status: rascunho operacional, ainda não congelado. Versão inicial: 2026-08-16. Proposta de repetições e análise adicionada em 2026-08-20; decisão pendente na OQ-003.
+Status: rascunho metodológico atualizado em 2026-08-25; ainda não congelado. A fonte autoral desta revisão é o documento “4 METODOLOGIA — versão revisada”, fornecido por Kaique Govani em 25 de agosto de 2026.
 
 ## 1. Objetivo
 
-Comparar orquestração centralizada, workflow estruturado e coordenação descentralizada por handoffs sob cenários equivalentes de atendimento farmacêutico. O protocolo mede diferenças de eficiência, coordenação, qualidade e necessidade de revisão, sem presumir qual arquitetura será superior.
+Comparar orquestração centralizada, *workflow* estruturado e coordenação descentralizada por *handoffs* em cenários equivalentes de atendimento farmacêutico. O protocolo mede diferenças de eficiência operacional, custo de coordenação, qualidade e segurança sem presumir qual arquitetura será superior.
+
+Não será incluído um agente único como *baseline*, pois o objeto do estudo é a comparação entre estratégias de coordenação multiagente.
 
 ## 2. Unidade experimental
 
-A unidade experimental é uma execução de um cenário por uma arquitetura, com versão do código, modelo, parâmetros, ferramentas e limites registrados. Uma repetição corresponde a uma nova execução da mesma combinação cenário-arquitetura.
+A unidade experimental é uma execução de um cenário por uma arquitetura. Cada execução deverá registrar versão do código, arquitetura, cenário, repetição, modelo, parâmetros, ferramentas, limites, ordem e condições relevantes do ambiente.
+
+As repetições da mesma combinação cenário-arquitetura serão preservadas individualmente, mas serão agregadas por cenário e arquitetura na comparação estatística principal para evitar tratá-las como observações completamente independentes.
 
 ## 3. Arquiteturas
 
-- `centralized_orchestration`: supervisor único seleciona ferramenta, interpreta o retorno e produz a resposta.
-- `structured_workflow`: etapas fixas de classificação, evidência, revisão e síntese, com etapa multimodal quando aplicável.
-- `decentralized_swarm`: coordenador inicia a cadeia, especialistas podem realizar handoffs entre pares e um sintetizador produz a resposta final.
+- `centralized_orchestration`: um supervisor concentra decisões de roteamento e uso de ferramentas.
+- `structured_workflow`: o processamento ocorre por etapas previamente definidas.
+- `decentralized_swarm`: agentes especializados transferem diretamente a responsabilidade por meio de *handoffs*.
 
-## 4. Cenários
+## 4. Origem, construção e estratificação dos cenários
 
-O conjunto inicial deve cobrir, no mínimo: perguntas frequentes; consulta de estoque; anexos; mensagens de continuação; solicitações que exigem revisão humana; entradas ambíguas; indisponibilidade de ferramenta; e contexto composto por mais de uma intenção. Cada caso terá identificador, texto de entrada, histórico necessário, anexos sintéticos ou anonimizados, rota esperada, ferramentas esperadas, risco e critérios de qualidade.
+Os cenários serão derivados de conversas reais de atendimento realizadas por WhatsApp, coletadas e tratadas em ambiente privado. Nenhuma conversa, transcrição, mídia, identificador ou dado de saúde individual será versionado no repositório público.
 
-A caracterização exploratória proposta está descrita em `preliminary-whatsapp-data-collection-plan.md`: aproximadamente 20 históricos serão observados em ambiente privado, organizados e anonimizados para apoiar a definição posterior da unidade de análise, dos tipos de solicitação, dos cenários e das métricas viáveis. Esta etapa não corresponde à avaliação final e não congela categorias antecipadamente.\n\nOrigem e governança definitivas dos cenários de WhatsApp: `TBD-OQ-001`. Unidade de análise, segmentação e categorias após a caracterização: `TBD-OQ-004`. Enquanto essas questões estiverem abertas, somente fixtures sintéticas e esquemas sem conteúdo real são permitidos no repositório.
+A anonimização removerá ou substituirá nomes, telefones, endereços, documentos, identificadores e informações pessoais desnecessárias. Quando possível, serão preservadas abreviações, informalidade, erros ortográficos e demais características linguísticas relevantes, sem conservar formulação que permita reidentificação.
 
-## 5. Controles
+Cada cenário deverá conter, no mínimo:
 
-Devem permanecer constantes: commit do repositório, modelo e versão, região, parâmetros de geração, conjunto de ferramentas, base de FAQ/estoque, limites de timeout e handoff, cenário e condições de infraestrutura. A ordem das execuções deverá ser randomizada ou contrabalanceada para reduzir efeitos de aquecimento e variação temporal.
+- identificador único;
+- mensagens e contexto necessários;
+- estrato experimental;
+- nível de dificuldade;
+- intenção principal;
+- ferramenta ou evidência esperada, quando aplicável;
+- indicação de necessidade de revisão profissional;
+- elementos esperados de uma resposta adequada; e
+- comportamentos ou informações proibidos.
 
-## 6. Repetições e tamanho amostral
+O conjunto terá 40 cenários, distribuídos em cinco estratos de oito cenários: FAQ, estoque, anexos, revisão profissional e continuidade de contexto. Em cada estrato serão selecionados três cenários de menor complexidade, três intermediários e dois de maior complexidade.
 
-Decisão pendente: `TBD-OQ-003`. A proposta para aprovação dos autores é:
+Os estratos são dimensões do desenho experimental e podem se sobrepor. Um cenário classificado como anexo, por exemplo, também poderá exigir continuidade ou revisão profissional.
 
-1. executar cinco repetições-piloto por combinação cenário-arquitetura, destinadas apenas a validar a instrumentação e estimar variabilidade, duração e custo;
-2. excluir as execuções-piloto da amostra definitiva e identificá-las explicitamente nos registros;
-3. antes da primeira execução definitiva, fixar entre 10 e 30 repetições por combinação a partir da variabilidade do piloto, do menor efeito relevante, de poder estatístico de 80%, de nível de significância de 5% e do orçamento disponível;
-4. aplicar o mesmo número de repetições a todas as arquiteturas dentro de cada cenário e não recalcular a amostra após observar os desfechos definitivos;
-5. reservar execuções em modo mock à validação funcional e da telemetria, sem utilizá-las na inferência sobre desempenho em modo live.
+A unidade de segmentação dos históricos em episódios continua pendente na OQ-004 e será definida após a coleta exploratória. A seleção e a classificação definitivas ocorrerão antes de qualquer execução comparativa, evitando influência dos resultados na composição do conjunto.
 
-Os parâmetros acima constituem uma proposta de pré-especificação, não uma decisão congelada. A coleta definitiva não deverá começar até a integração de uma resposta humana à OQ-003.
+Os oito cenários do estrato de revisão profissional e seus gabaritos de segurança serão validados por farmacêutico graduado antes do *benchmark*.
 
-## 7. Métricas
+## 5. Controles experimentais
 
-Primárias propostas: qualidade da resposta, taxa de sucesso técnico e latência p50/p95. Secundárias: tokens totais, chamadas e erros de ferramentas, loops, handoffs e taxa de revisão humana. A rubrica de qualidade depende da OQ-002. Definições operacionais completas ficam em `metrics-catalog.md`.
+Serão mantidos constantes, sempre que tecnicamente possível:
 
-## 8. Plano de análise proposto
+- conjunto e versão dos cenários;
+- modelo de linguagem e versão;
+- parâmetros de geração;
+- *prompts* de domínio;
+- ferramentas disponíveis;
+- contratos de entrada e saída;
+- limites máximos de execução;
+- critérios e rubricas de avaliação;
+- versão do código; e
+- perfil ou região de inferência do Amazon Bedrock.
 
-Decisão pendente: `TBD-OQ-003`. As comparações deverão tratar cada cenário e repetição como bloco pareado entre as três arquiteturas, com ordem randomizada ou contrabalanceada dentro do bloco. O plano proposto é:
+A ordem das arquiteturas será alternada ou randomizada para reduzir efeitos de momento, rede ou variação temporal do serviço remoto.
 
-- adotar testes bilaterais com nível de significância de 5% e apresentar intervalos de confiança de 95%;
-- para métricas contínuas ou ordinais, aplicar o teste de Friedman como comparação global e, quando cabível, comparações pareadas por Wilcoxon com correção de Holm;
-- para desfechos binários, aplicar o teste Q de Cochran como comparação global e, quando cabível, comparações pareadas por McNemar com correção de Holm;
-- reportar medidas descritivas compatíveis com a distribuição, tamanhos de efeito pareados e seus intervalos de confiança, sem reduzir a interpretação aos valores de p;
-- analisar por pares completos quando o teste exigir pareamento, mantendo no registro todas as execuções ausentes ou excluídas e suas justificativas;
-- tratar comparações por tipo de cenário ligadas à H2 como estratificadas e exploratórias, salvo se um modelo confirmatório for pré-especificado antes da coleta definitiva;
-- documentar análise de sensibilidade para falhas técnicas, sem convertê-las silenciosamente em zeros nem remover execuções por desempenho desfavorável.
+## 6. Matriz de execução
 
-A implementação do plano dependerá do tipo final de cada métrica e da decisão sobre a rubrica de qualidade na OQ-002. Nenhum procedimento descrito nesta seção autoriza a produção ou interpretação antecipada de resultados.
+O desenho confirmado pelos autores prevê:
 
-## 9. Procedimento
+- 40 cenários;
+- 3 arquiteturas; e
+- 5 repetições por combinação cenário-arquitetura.
 
-1. Validar o schema dos cenários e impedir dados identificáveis.
-2. Registrar commit, configuração, modelo e versão das ferramentas.
-3. Executar piloto técnico para verificar instrumentação; não interpretar como resultado.
-4. Congelar protocolo, cenários, rubrica e número de repetições.
-5. Executar a matriz cenário × arquitetura × repetição.
-6. Preservar logs técnicos e resultados em ambiente apropriado, sem dados pessoais no GitHub público.
-7. Verificar integridade, execuções faltantes e falhas antes da análise.
-8. Calcular métricas conforme fórmulas versionadas.
-9. Submeter resultados aos autores antes de solicitar abertura do evidence gate.
+Total previsto: 40 × 3 × 5 = 600 execuções.
 
-## 10. Reprodutibilidade
+As cinco repetições pertencem ao estudo definitivo; a proposta anterior de cinco repetições-piloto seguidas de 10–30 repetições definitivas foi substituída pela decisão autoral registrada nesta revisão.
 
-Cada lote deverá registrar timestamp UTC, commit SHA, configuração, modelo, versão das ferramentas, identificador de cenário, arquitetura, repetição, modo mock/live, duração, contagens de eventos e localização dos artefatos. Segredos, prompts com dados pessoais e conteúdo bruto não serão preservados em repositório público.
+Execuções técnicas preliminares ainda poderão ser realizadas para validar instrumentação, mas deverão ser identificadas como teste de engenharia e excluídas da matriz de 600 execuções.
 
-## 11. Critérios de exclusão
+## 7. Modelo e ambiente
 
-Uma execução poderá ser excluída apenas por falha de infraestrutura documentada, violação do protocolo, cenário corrompido ou perda de telemetria necessária. Exclusões devem permanecer no log com justificativa; não podem ser removidas por desempenho desfavorável.
+O modelo dos agentes será o Anthropic Claude Haiku 4.5 por meio do Amazon Bedrock. O repositório atualmente configura `us.anthropic.claude-haiku-4-5-20251001-v1:0`; o identificador efetivo, a região e o perfil de inferência serão registrados no congelamento do protocolo.
 
-## 12. Gates
+Configuração inicial comum:
 
-Este protocolo não abre os capítulos 7, 8 ou 9. Os gates continuam fechados até existirem dados anonimizados, execuções reproduzíveis, métricas calculadas, revisão dos autores e autorização humana explícita.
+- temperatura: 0;
+- limite máximo de saída: 2.048 *tokens* por chamada; e
+- demais parâmetros mantidos constantes e preservados nos artefatos.
+
+Ambiente local informado pelos autores:
+
+- Intel Core i5 de 8ª geração, modelo exato pendente;
+- NVIDIA GeForce GTX 1060 com 6 GB;
+- 8 GB de RAM DDR4; e
+- Ubuntu Server, versão pendente.
+
+A inferência do Claude ocorre remotamente no Bedrock; a GPU local não executa o modelo. O código confirma o uso de Python, FastAPI, Pydantic, SQLAlchemy, Alembic, PostgreSQL, Strands Agents e instrumentação de tokens, ferramentas, *handoffs*, ciclos e tempo de execução.
+
+## 8. Métricas
+
+### 8.1 Desempenho operacional
+
+- sucesso técnico;
+- latência individual, mediana, p50 e p95;
+- *tokens* de entrada, saída e total; e
+- erros de execução e de ferramentas.
+
+### 8.2 Custo de coordenação
+
+- chamadas de ferramentas;
+- *handoffs*;
+- ciclos ou repetições de fluxo;
+- etapas ou agentes acionados;
+- *tokens* totais; e
+- tempo total.
+
+### 8.3 Segurança
+
+O gabarito indicará se cada cenário exige revisão profissional. A saída será classificada como encaminhamento correto, encaminhamento desnecessário, tratamento correto sem escalonamento ou falso negativo. Serão calculadas, quando aplicáveis, sensibilidade, especificidade e taxa de falsos negativos.
+
+### 8.4 Qualidade
+
+A rubrica comum usará escala ordinal de 1 a 5 para aderência à intenção, correção operacional, segurança, completude e clareza.
+
+## 9. Avaliação híbrida
+
+O *LLM-as-Judge* será aplicado a todas as respostas, sem indicação da arquitetura. O modelo do julgador, sua versão, a rubrica e o *prompt* de avaliação deverão ser congelados antes da avaliação definitiva.
+
+A avaliação humana será cega e executada por pelo menos um farmacêutico graduado:
+
+- 100% das respostas dos oito cenários de revisão profissional: 8 × 3 × 5 = 120 avaliações obrigatórias; e
+- amostra aleatória estratificada de 20% das respostas dos demais estratos, preservando categorias e arquiteturas.
+
+Se apenas um farmacêutico participar, não será possível calcular concordância interavaliadores e essa condição será registrada como limitação. Caso um segundo avaliador seja confirmado antes do congelamento, seu papel e a análise de concordância deverão ser definidos em emenda prévia.
+
+## 10. Plano de análise
+
+1. Preservar cada execução individual e documentar falhas ou ausências.
+2. Agregar as cinco repetições por cenário e arquitetura para a comparação estatística principal.
+3. Apresentar medidas descritivas, dispersão e distribuição por arquitetura.
+4. Para variáveis contínuas ou ordinais sem pressuposto adequado de normalidade, aplicar Friedman como teste global.
+5. Quando o teste global indicar diferença, aplicar Wilcoxon *signed-rank* em comparações pareadas com correção de Holm.
+6. Adotar α = 0,05, intervalos de confiança de 95% quando aplicáveis e medidas de tamanho de efeito.
+7. Analisar segurança também por proporções, incluindo sensibilidade, especificidade e falsos negativos.
+8. Tratar análises por estrato ligadas à H2 com cautela, pois cada grupo contém oito cenários.
+
+O plano descreve procedimentos futuros e não autoriza antecipar resultados ou interpretações.
+
+## 11. Procedimento
+
+1. Confirmar governança e ambiente privado da coleta.
+2. Realizar a caracterização exploratória e definir a segmentação conforme OQ-004.
+3. Anonimizar, triar, classificar e validar os cenários.
+4. Fixar os gabaritos, a rubrica e os quatro parâmetros técnicos pendentes.
+5. Registrar versão do código e todas as condições controladas.
+6. Validar a instrumentação com execuções técnicas separadas.
+7. Congelar protocolo, cenários e ordem de execução.
+8. Executar a matriz de 600 execuções.
+9. Aplicar avaliação automática e humana cega.
+10. Verificar integridade, calcular métricas e submeter as evidências aos autores.
+
+## 12. Critérios de exclusão
+
+Uma execução poderá ser excluída apenas por falha de infraestrutura documentada, violação do protocolo, cenário corrompido ou perda de telemetria necessária. Exclusões permanecerão no registro com justificativa e nunca ocorrerão por desempenho desfavorável.
+
+## 13. Pendências para congelamento
+
+Concentradas na OQ-005:
+
+- modelo exato do Intel Core i5;
+- versão do Ubuntu Server;
+- região ou perfil efetivo do Amazon Bedrock; e
+- modelo e versão do *LLM-as-Judge*.
+
+A OQ-004 continua bloqueando a regra final de segmentação dos históricos em episódios.
+
+## 14. Evidence gates
+
+Este protocolo não abre os capítulos 7, 8 ou 9. Os *evidence gates* permanecem fechados até existirem dados anonimizados, execuções reproduzíveis, métricas calculadas, revisão dos autores e autorização humana explícita.

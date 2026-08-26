@@ -20,7 +20,7 @@ artifacts:
   open_questions: "docs/tcc/open-questions/questions.yml"
   figure_corpus: "docs/tcc/figures"
 
-current_objective: "Preparar a caracterização exploratória das conversas, consolidar as decisões humanas pendentes e então congelar o protocolo experimental."
+current_objective: "Executar a caracterização exploratória em ambiente privado, definir a segmentação dos episódios, registrar os parâmetros técnicos pendentes e então congelar o protocolo experimental."
 
 batch_execution:
   date: "2026-08-16"
@@ -40,23 +40,14 @@ next_actions:
     action: "Após a caracterização exploratória, responder a OQ-004 com unidade de análise, segmentação, categorias agregadas e implicações metodológicas."
     status: blocked_by_exploratory_collection
   - priority: 3
-    action: "Responder e integrar a OQ-001 sobre a estratégia definitiva de dados do WhatsApp."
+    action: "Responder a OQ-005 com modelo exato do processador, versão do Ubuntu Server, região/perfil do Amazon Bedrock e modelo do LLM-as-Judge."
     status: waiting_human
   - priority: 4
-    action: "Responder e integrar a OQ-002 sobre a avaliação de qualidade das respostas."
-    status: waiting_human
+    action: "Montar e revisar o catálogo de 40 cenários após a definição da unidade de análise e da segmentação."
+    status: blocked_by_OQ-004
   - priority: 5
-    action: "Responder e integrar a OQ-003 sobre repetições e plano inferencial; então congelar essa parte do protocolo com os autores."
-    status: waiting_human
-  - priority: 6
-    action: "Montar o catálogo definitivo de cenários após as decisões sobre fonte dos dados, unidade de análise e segmentação."
-    status: blocked_by_OQ-001_and_OQ-004
-  - priority: 7
-    action: "Criar a versão tabular e versionável do quadro de trabalhos correlatos e reconciliar citações com a lista ABNT."
-    status: completed_2026-08-17
-  - priority: 8
-    action: "Continuar o refinamento textual dos capítulos 1 a 6 e sincronizar o DOCX."
-    status: in_progress_latest_2.4.4_2026-08-18
+    action: "Congelar a rubrica, o prompt do LLM-as-Judge e os parâmetros técnicos após OQ-004 e OQ-005."
+    status: blocked_by_OQ-004_and_OQ-005
 constraints:
   - "Sem resultados experimentais antes de execução e validação."
   - "Capítulos 7, 8 e 9 permanecem com placeholders enquanto seus evidence gates estiverem fechados."
@@ -71,16 +62,13 @@ constraints:
 
 audit:
   date: "2026-08-25"
-  status: "authorial_architecture_comparison_figure_created"
+  status: "revised_methodology_and_four_authorial_figures_integrated"
   open_questions:
-    active: 4
-    answered: 0
-    partial_context_received: 3
+    active: 2
+    integrated: 3
     blocking:
-      - "OQ-001"
-      - "OQ-002"
-      - "OQ-003"
       - "OQ-004"
+      - "OQ-005"
   evidence_gates:
     results: closed
     discussion: closed
@@ -132,6 +120,10 @@ audit:
       - "IMG-C007"
       - "IMG-C008"
       - "IMG-C009"
+      - "IMG-C010"
+      - "IMG-C011"
+      - "IMG-C012"
+      - "IMG-C013"
     licenses:
       - "CC BY 4.0"
       - "Apache-2.0"
@@ -139,9 +131,15 @@ audit:
     corpus: "docs/tcc/figures"
     inventory: "docs/tcc/figures/inventory.csv"
     latest_research: "docs/tcc/figures/research-2026-08-24-02.md"
-    latest_design: "docs/tcc/figures/design-2026-08-25.md"
-    manuscript_insertions: 0
-    docx_insertions: 0
+    latest_design: "four_authorial_methodology_diagrams_integrated_2026-08-25"
+    manuscript_insertions: 4
+    docx_insertions: 4
+    approved_inserted_ids:
+      - "IMG-C010"
+      - "IMG-C011"
+      - "IMG-C012"
+      - "IMG-C013"
+    list_of_figures: "automatic_with_real_page_numbers_and_dot_leaders"
     original_diagrams_pending:
       - "arquitetura_logica_do_MAB"
       - "fluxo_experimental_apos_congelamento_do_protocolo"
@@ -158,17 +156,20 @@ audit:
     format_progress: "facens_pipeline_toc_and_explicit_arial_heading_numbers_without_theme_fonts_verified"
     primary_next_action: "confirm_data_governance_before_private_exploratory_collection"
   method:
-    experimental_protocol: "pilot_and_paired_inference_proposal_documented"
-    repetition_policy: "TBD-OQ-003"
-    inferential_plan: "proposed_not_frozen"
+    experimental_protocol: "revised_design_documented_not_frozen"
+    scenario_design: "forty_scenarios_five_strata_eight_per_stratum"
+    architectures: 3
+    repetition_policy: "five_definitive_repetitions_per_scenario_architecture"
+    planned_total_executions: 600
+    inferential_plan: "friedman_then_pairwise_wilcoxon_signed_rank_with_holm_alpha_0_05"
+    hybrid_evaluation: "llm_as_judge_plus_stratified_pharmacist_review"
     definitive_collection_authorized: false
-    human_evaluators: "one_or_two_pharmacists_pending_confirmation"
+    human_evaluators: "one_or_two_pharmacists_available_final_count_pending"
     whatsapp_data_collection: "preliminary_plan_for_about_20_histories_in_private_environment_governance_pending"
     exploratory_unit_definition: "TBD-OQ-004"
     exploratory_sample_target: "approximately_20_histories"
   manuscript:
-    latest_refinement: "2.4.4 Comparação entre arquiteturas"
-    latest_refinement_words: 697
+    latest_refinement: "04 Metodologia revisada, seções 4.1 a 4.12"
     substantial_drafts:
       - "01 Introdução"
       - "02 Fundamentação Teórica"
@@ -189,7 +190,7 @@ audit:
     numbering_marker_typography: "explicit_h1_14pt_bold_h2_12pt_bold_h3_12pt_regular_black"
     numbering_regression_audit: "rejects_bullets_non_arial_or_theme_based_markers_missing_numpr_multiple_numids_and_manual_numbers"
     references: "alphabetical_single_spacing_bold_title_element_et_al_italic"
-    visual_validation_pages: 38
+    visual_validation_pages: 51
     automated_audit: passed
     typography: "body_arial12_h1_arial14_bold_upper_h2_arial12_bold_upper_h3plus_arial12_upper"
     toc_dot_leaders: "automatic_word_tab_stop_right_aligned"
@@ -198,12 +199,15 @@ audit:
     heading_spacing: "one_and_half_line_before_and_after_without_double_gap"
     foreign_terms: "isolated_terms_italic_with_abstract_and_reference_exceptions"
     reference_emphasis: "bold_title_or_container_per_facens_examples"
+    figures: "four_inline_figures_with_embedded_svg_png_fallback_alt_text_seq_captions_and_sources"
+    list_of_figures: "automatic_real_page_numbers_right_tabs_and_dot_leaders"
   risks:
     - "A coleta exploratória de aproximadamente 20 históricos foi planejada, mas autorização, consentimento ou avaliação ética aplicável, minimização, ambiente privado, anonimização e retenção ainda dependem de confirmação antes da execução."
     - "A unidade de análise, segmentação e categorias só poderão ser definidas após a caracterização exploratória e dependem da OQ-004."
-    - "Há previsão de um ou dois farmacêuticos avaliadores, porém quantidade final, rubrica e desenho de avaliação ainda dependem da OQ-002."
-    - "Número de repetições e plano inferencial dependem da decisão humana na OQ-003."
+    - "A quantidade final entre um ou dois farmacêuticos ainda deve ser registrada no congelamento do protocolo."
+    - "Modelo exato do processador, versão do Ubuntu Server, região/perfil efetivo do Bedrock e modelo do LLM-as-Judge dependem da OQ-005."
+    - "Os diagramas horizontais das etapas e da construção dos cenários estão corretos e legíveis, mas podem receber refinamento editorial de escala no fechamento do documento."
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
 
 last_run: "2026-08-25"
-next_recommended_action: "Revisar conceitualmente IMG-C009; após aprovação editorial, inserir a figura em 2.4.4, atualizar o DOCX pelo pipeline completo e gerar automaticamente a lista de figuras."
+next_recommended_action: "Responder a OQ-005 e, após a coleta exploratória privada, responder a OQ-004; em seguida congelar o protocolo, a rubrica e o prompt do LLM-as-Judge."

@@ -45,6 +45,18 @@ Consolidação baseada no modelo Word e nos manuais técnicos fornecidos pelos a
 - incluir `REFERÊNCIAS` sem número de seção;
 - o pipeline de `README.md` deve reconstruir o sumário e conferir as páginas contra o PDF renderizado.
 
+## Figuras e lista de figuras
+
+- usar, preferencialmente, SVG para diagramas autorais, com PNG de alta resolução como *fallback*;
+- inserir a figura de forma `inline`, centralizada e sem texto flutuante;
+- manter a figura, sua legenda e a nota de fonte juntas sempre que couberem na página;
+- legenda em Arial 10, centralizada, com numeração automática por campo `SEQ Figura` e travessão antes do título;
+- nota de fonte em Arial 10, centralizada, imediatamente após a legenda;
+- gerar a `LISTA DE FIGURAS` automaticamente a partir das legendas, nunca por transcrição manual;
+- formatar as entradas da lista em Arial 12, espaço 1,5, tab stop à direita e líder pontilhado automático;
+- conferir os números de página na segunda passagem do pipeline e reprovar pontos ou páginas digitados manualmente;
+- preservar texto alternativo descritivo em cada desenho incorporado.
+
 ## Paginação
 
 - contar as folhas a partir da folha de rosto conforme a estrutura institucional;

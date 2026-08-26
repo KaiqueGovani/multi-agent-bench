@@ -12,6 +12,8 @@ Este diretório reúne candidatos visuais pesquisados para o TCC e os registros 
 - `original/`: reservado para diagramas autorais do TCC, preferencialmente em formato vetorial e com uma fonte editável.
 - `approved/`: reservado para as versões finais aprovadas e prontas para o DOCX.
 
+As figuras metodológicas aprovadas ficam em `approved/methodology/`. Cada figura mantém o SVG como fonte principal e um PNG de alta resolução como *fallback* de compatibilidade e visualização.
+
 ## Regras do acervo
 
 1. Não salvar no repositório uma figura com direitos de reutilização incertos. Nesse caso, registrar apenas a referência e a recomendação de criar um diagrama autoral.
@@ -22,6 +24,8 @@ Este diretório reúne candidatos visuais pesquisados para o TCC e os registros 
 6. Gráficos de resultados não podem ser preparados nem inseridos enquanto os *evidence gates* de resultados, discussão e conclusão permanecerem fechados.
 7. A lista de figuras deverá ser gerada automaticamente a partir das legendas do Word. Não manter lista manual nem números de página digitados.
 8. Imagens de páginas corporativas sem licença de reutilização explícita servem apenas como referência conceitual para um redesenho próprio; captura de tela não substitui autorização.
+9. Figuras inseridas no DOCX devem ser `inline`, centralizadas, acompanhadas de legenda numerada automaticamente e nota de fonte. O DOCX deve embutir o SVG e conservar o PNG como *fallback* para renderizadores que não suportem SVG.
+10. O pipeline Facens deve reconstruir a lista de figuras a partir das legendas e calcular as páginas na segunda passagem, com tabulação à direita e líder pontilhado automático; números e pontos digitados manualmente são proibidos.
 
 ## Fluxo de promoção
 

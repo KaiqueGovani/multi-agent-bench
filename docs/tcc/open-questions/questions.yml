@@ -1,6 +1,6 @@
 policy:
   id_format: "OQ-NNN"
-  next_id: "OQ-005"
+  next_id: "OQ-006"
   max_new_per_run: 1
   max_active: 5
   issue_title_prefix: "[TCC][Open Question]"
@@ -9,7 +9,7 @@ policy:
 
 questions:
   - id: "OQ-001"
-    status: open
+    status: integrated
     created_at: "2026-08-16"
     created_by: "setup_manual_run"
     priority: high
@@ -24,18 +24,24 @@ questions:
     issue_url: "https://github.com/KaiqueGovani/multi-agent-bench/issues/4"
     related_plan: "docs/tcc/method/preliminary-whatsapp-data-collection-plan.md"
     partial_context:
-      status: "received_not_conclusive"
-      summary: "Foi proposto coletar aproximadamente 20 históricos pelo WhatsApp Web para caracterização exploratória, anonimização e brainstorming, sem categorias ou métricas rígidas definidas antecipadamente. A estratégia final, os requisitos de autorização, o ambiente privado, a transformação e a retenção ainda precisam ser confirmados."
+      status: "superseded_by_conclusive_response"
+      summary: "O plano exploratório de aproximadamente 20 históricos permanece como etapa privada de caracterização, sem conteúdo bruto no repositório."
       provided_by: "Kaique Govani"
       provided_at: "2026-08-23"
-    response_summary: null
-    answered_by: null
-    answered_at: null
-    integrated_files: []
-    integrated_at: null
+    response_summary: "Estratégia A definida: os cenários serão derivados de conversas reais de WhatsApp, tratadas em ambiente privado, anonimizadas, triadas, classificadas e transformadas em cenários com gabaritos; requisitos institucionais aplicáveis de autorização, consentimento, retenção e descarte continuam sendo pré-condições da coleta."
+    answered_by: "Kaique Govani"
+    answered_at: "2026-08-25"
+    response_source: "4 METODOLOGIA — versão revisada.pdf"
+    integrated_files:
+      - "docs/tcc/manuscript/04-metodologia.md"
+      - "docs/tcc/method/experimental-protocol.md"
+      - "docs/tcc/method/preliminary-whatsapp-data-collection-plan.md"
+      - "docs/tcc/method/scenario-data-schema.md"
+      - "TCC/TCC_MAB_Facens_Ralph_10x.docx"
+    integrated_at: "2026-08-25"
 
   - id: "OQ-002"
-    status: open
+    status: integrated
     created_at: "2026-08-16"
     created_by: "ralph_batch_iteration_04"
     priority: high
@@ -48,18 +54,23 @@ questions:
     issue_number: 5
     issue_url: "https://github.com/KaiqueGovani/multi-agent-bench/issues/5"
     partial_context:
-      status: "received_not_conclusive"
-      summary: "Há previsão de um ou dois avaliadores humanos, ainda sem número confirmado; serão farmacêuticos que normalmente realizam o atendimento aos clientes. O método final de avaliação ainda não foi escolhido."
+      status: "superseded_by_conclusive_response"
+      summary: "Foi informada disponibilidade provável de um ou dois farmacêuticos avaliadores."
       provided_by: "Kaique Govani"
       provided_at: "2026-08-23"
-    response_summary: null
-    answered_by: null
-    answered_at: null
-    integrated_files: []
-    integrated_at: null
+    response_summary: "Alternativa C definida: LLM-as-Judge em todas as respostas, avaliação humana cega de 100% das respostas do estrato de revisão profissional e amostra estratificada de 20% das demais; o protocolo assume pelo menos um farmacêutico e registrará a ausência de concordância interavaliadores se somente um participar. O modelo do julgador será congelado na OQ-005."
+    answered_by: "Kaique Govani"
+    answered_at: "2026-08-25"
+    response_source: "4 METODOLOGIA — versão revisada.pdf"
+    integrated_files:
+      - "docs/tcc/manuscript/04-metodologia.md"
+      - "docs/tcc/method/experimental-protocol.md"
+      - "docs/tcc/method/metrics-catalog.md"
+      - "TCC/TCC_MAB_Facens_Ralph_10x.docx"
+    integrated_at: "2026-08-25"
 
   - id: "OQ-003"
-    status: open
+    status: integrated
     created_at: "2026-08-20"
     created_by: "ralph_daily_run_2026-08-20-01"
     priority: high
@@ -72,15 +83,19 @@ questions:
     issue_number: 6
     issue_url: "https://github.com/KaiqueGovani/multi-agent-bench/issues/6"
     partial_context:
-      status: "received_not_conclusive"
-      summary: "A decisão sobre repetições e plano inferencial foi adiada até a coleta das conversas e a análise dos padrões; os parâmetros propostos ainda não foram autorizados."
+      status: "superseded_by_conclusive_response"
+      summary: "A decisão havia sido adiada até a revisão metodológica."
       provided_by: "Kaique Govani"
       provided_at: "2026-08-23"
-    response_summary: null
-    answered_by: null
-    answered_at: null
-    integrated_files: []
-    integrated_at: null
+    response_summary: "Foram fixadas cinco repetições definitivas para cada combinação de 40 cenários e três arquiteturas, totalizando 600 execuções. A análise principal agregará repetições por cenário e arquitetura; para métricas contínuas ou ordinais sem pressuposto de normalidade, usará Friedman, seguido de Wilcoxon signed-rank com correção de Holm, α de 5% e tamanhos de efeito quando aplicáveis."
+    answered_by: "Kaique Govani"
+    answered_at: "2026-08-25"
+    response_source: "4 METODOLOGIA — versão revisada.pdf"
+    integrated_files:
+      - "docs/tcc/manuscript/04-metodologia.md"
+      - "docs/tcc/method/experimental-protocol.md"
+      - "TCC/TCC_MAB_Facens_Ralph_10x.docx"
+    integrated_at: "2026-08-25"
 
   - id: "OQ-004"
     status: open
@@ -99,6 +114,28 @@ questions:
     issue_url: "https://github.com/KaiqueGovani/multi-agent-bench/issues/7"
     related_plan: "docs/tcc/method/preliminary-whatsapp-data-collection-plan.md"
     follow_up_trigger: "Após coletar e analisar exploratoriamente aproximadamente 20 históricos."
+    response_summary: null
+    answered_by: null
+    answered_at: null
+    integrated_files: []
+    integrated_at: null
+
+  - id: "OQ-005"
+    status: open
+    created_at: "2026-08-25"
+    created_by: "human_methodology_revision_follow_up"
+    priority: high
+    blocking: true
+    target_sections:
+      - "4.5 Delineamento Experimental"
+      - "4.6 Ambiente e Ferramentas de Execução"
+      - "4.9 Avaliação Híbrida da Qualidade das Respostas"
+      - "4.12 Reprodutibilidade do Experimento"
+      - "docs/tcc/method/experimental-protocol.md"
+    question: "Quais valores exatos serão congelados para processador, Ubuntu Server, Bedrock e LLM-as-Judge?"
+    recommendation: "Registrar inventário do ambiente imediatamente antes da coleta; preservar apenas região e identificadores não sensíveis do Bedrock; preferir julgador distinto do modelo avaliado, com versão, temperatura e prompt fixados."
+    issue_number: 8
+    issue_url: "https://github.com/KaiqueGovani/multi-agent-bench/issues/8"
     response_summary: null
     answered_by: null
     answered_at: null

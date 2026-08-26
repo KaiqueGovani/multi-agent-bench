@@ -29,3 +29,6 @@
 27. Títulos numerados devem manter uma linha e meia de separação antes e depois; títulos consecutivos não podem somar dois intervalos no mesmo ponto.
 28. Palavras e expressões estrangeiras isoladas no texto em português devem ficar em itálico. O `ABSTRACT` e os elementos bibliográficos seguem suas regras próprias e não recebem itálico indiscriminado.
 29. Referências seguem a NBR 6023:2018 e o padrão exemplificado no manual Facens: Arial 12, alinhamento à esquerda, espaço simples, uma linha simples entre entradas, ordem alfabética e título/veículo em negrito de forma uniforme.
+30. Ao inserir figuras, use somente itens aprovados e registrados em `figures/inventory.csv`. Prefira SVG autoral ou reutilização licenciada, mantenha PNG de alta resolução como compatibilidade, insira o desenho `inline` e preserve texto alternativo.
+31. Figuras devem usar legenda automática `SEQ Figura`, nota de fonte e bookmark. A `LISTA DE FIGURAS` deve ser reconstruída automaticamente a partir das legendas na segunda passagem, com páginas reais, tab stop à direita e líder pontilhado; números, páginas e pontos digitados manualmente são proibidos.
+32. Após alteração de figuras, audite a quantidade de objetos, legendas e entradas da lista, confirme SVG incorporado ao OOXML e inspecione visualmente legibilidade, escala, quebra de página e proximidade entre figura, legenda e fonte.

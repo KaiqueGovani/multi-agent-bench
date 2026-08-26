@@ -39,6 +39,8 @@ from docx.shared import Cm, Pt, RGBColor
 
 HEADING_STYLES = {"Heading 1": 1, "Heading 2": 2, "Heading 3": 3}
 TOC_STYLES = {1: "Facens TOC 1", 2: "Facens TOC 2", 3: "Facens TOC 3"}
+FIGURE_LIST_STYLE = "Facens Figure List"
+SVG_NS = "http://schemas.microsoft.com/office/drawing/2016/SVG/main"
 PAGE_WIDTH_CM = 21.0
 PAGE_HEIGHT_CM = 29.7
 LEFT_MARGIN_CM = 3.0
@@ -96,6 +98,15 @@ REFERENCE_EMPHASIS = {
 @dataclass(frozen=True)
 class TocEntry:
     level: int
+    title: str
+    display: str
+    bookmark: str
+    page: int | None = None
+
+
+@dataclass(frozen=True)
+class FigureEntry:
+    number: int
     title: str
     display: str
     bookmark: str
@@ -202,7 +213,14 @@ def configure_styles(doc: Document) -> None:
         fmt.keep_together = True
         fmt.page_break_before = new_page
 
-    for style_name in ["Front Matter Heading", "Reference Entry", *TOC_STYLES.values()]:
+    for style_name in [
+        "Front Matter Heading",
+        "Reference Entry",
+        "Figure Caption",
+        "Figure Source",
+        FIGURE_LIST_STYLE,
+        *TOC_STYLES.values(),
+    ]:
         if style_name not in styles:
             styles.add_style(style_name, WD_STYLE_TYPE.PARAGRAPH)
 
@@ -225,6 +243,42 @@ def configure_styles(doc: Document) -> None:
     reference.paragraph_format.space_after = Pt(12)
     reference.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
     reference.paragraph_format.keep_together = True
+
+    caption = styles["Figure Caption"]
+    set_style_font(caption, 10)
+    caption.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    caption.paragraph_format.first_line_indent = Cm(0)
+    caption.paragraph_format.space_before = Pt(6)
+    caption.paragraph_format.space_after = Pt(0)
+    caption.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
+    caption.paragraph_format.keep_together = True
+    caption.paragraph_format.keep_with_next = True
+
+    source = styles["Figure Source"]
+    set_style_font(source, 10)
+    source.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    source.paragraph_format.first_line_indent = Cm(0)
+    source.paragraph_format.space_before = Pt(0)
+    source.paragraph_format.space_after = Pt(12)
+    source.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
+    source.paragraph_format.keep_together = True
+
+    figure_list = styles[FIGURE_LIST_STYLE]
+    set_style_font(figure_list, 12)
+    figure_list.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    figure_list.paragraph_format.first_line_indent = Cm(0)
+    figure_list.paragraph_format.left_indent = Cm(0)
+    figure_list.paragraph_format.right_indent = Cm(0)
+    figure_list.paragraph_format.space_before = Pt(0)
+    figure_list.paragraph_format.space_after = Pt(0)
+    figure_list.paragraph_format.line_spacing_rule = WD_LINE_SPACING.ONE_POINT_FIVE
+    figure_list.paragraph_format.keep_together = True
+    figure_list.paragraph_format.tab_stops.clear_all()
+    figure_list.paragraph_format.tab_stops.add_tab_stop(
+        Cm(TOC_RIGHT_TAB_CM),
+        WD_TAB_ALIGNMENT.RIGHT,
+        WD_TAB_LEADER.DOTS,
+    )
 
     for level, style_name in TOC_STYLES.items():
         style = styles[style_name]
@@ -285,6 +339,12 @@ def enforce_document_typography(doc: Document) -> None:
             level = next(level for level, name in TOC_STYLES.items() if name == style_name)
             for run in paragraph.runs:
                 set_run_typography(run, 12, bold=(level == 1), caps=False)
+        elif style_name == FIGURE_LIST_STYLE:
+            for run in paragraph.runs:
+                set_run_typography(run, 12, bold=False, caps=False)
+        elif style_name in {"Figure Caption", "Figure Source"}:
+            for run in paragraph.runs:
+                set_run_typography(run, 10, bold=False, caps=False)
         elif style_name == "Reference Entry" or body_started:
             for run in paragraph.runs:
                 set_run_typography(run, 12)
@@ -898,7 +958,76 @@ def rebuild_toc(doc: Document, entries: list[TocEntry]) -> None:
         boundary.addprevious(paragraph._p)
 
 
-def page_map_from_pdf(pdf_path: Path, entries: list[TocEntry]) -> dict[str, int]:
+def paragraph_bookmark(paragraph, prefix: str) -> str | None:
+    for bookmark in paragraph._p.findall(".//" + qn("w:bookmarkStart")):
+        name = bookmark.get(qn("w:name"), "")
+        if name.startswith(prefix):
+            return name
+    return None
+
+
+def collect_figure_entries(doc: Document) -> list[FigureEntry]:
+    entries = []
+    fallback_bookmark_id = 4000
+    pattern = re.compile(r"^Figura\s+(\d+)\s*[–-]\s*(.+)$", re.IGNORECASE)
+    for paragraph in doc.paragraphs:
+        if paragraph.style.name != "Figure Caption":
+            continue
+        text = re.sub(r"\s+", " ", paragraph.text).strip()
+        match = pattern.match(text)
+        if not match:
+            raise ValueError(f"Legenda de figura fora do padrão: {text}")
+        number = int(match.group(1))
+        title = match.group(2).strip()
+        bookmark = paragraph_bookmark(paragraph, "_TCC_F_")
+        if bookmark is None:
+            bookmark = f"_TCC_F_{fallback_bookmark_id:04d}"
+            add_bookmark(paragraph, bookmark, fallback_bookmark_id)
+            fallback_bookmark_id += 1
+        entries.append(FigureEntry(number, title, f"Figura {number} – {title}", bookmark))
+    if [entry.number for entry in entries] != list(range(1, len(entries) + 1)):
+        raise ValueError("Numeração das figuras não é sequencial a partir de 1.")
+    return entries
+
+
+def rebuild_figure_list(doc: Document, entries: list[FigureEntry]) -> None:
+    toc_heading = next(
+        (p for p in doc.paragraphs if normalized(p.text) == "SUMÁRIO"), None
+    )
+    if toc_heading is None:
+        raise ValueError("Título SUMÁRIO não encontrado para posicionar LISTA DE FIGURAS.")
+    figure_heading = next(
+        (p for p in doc.paragraphs if normalized(p.text) == "LISTA DE FIGURAS"), None
+    )
+    if figure_heading is None:
+        figure_heading = doc.add_paragraph("LISTA DE FIGURAS", style="Front Matter Heading")
+        toc_heading._p.addprevious(figure_heading._p)
+    figure_heading.style = "Front Matter Heading"
+    figure_heading.paragraph_format.page_break_before = True
+
+    cursor = figure_heading._p.getnext()
+    while cursor is not None and cursor is not toc_heading._p:
+        following = cursor.getnext()
+        cursor.getparent().remove(cursor)
+        cursor = following
+
+    for entry in entries:
+        paragraph = doc.add_paragraph(style=FIGURE_LIST_STYLE)
+        paragraph.paragraph_format.tab_stops.clear_all()
+        paragraph.paragraph_format.tab_stops.add_tab_stop(
+            Cm(TOC_RIGHT_TAB_CM),
+            WD_TAB_ALIGNMENT.RIGHT,
+            WD_TAB_LEADER.DOTS,
+        )
+        add_internal_hyperlink(paragraph, entry.display, entry.bookmark)
+        page_text = str(entry.page) if entry.page is not None else "—"
+        separator = paragraph.add_run("\t")
+        set_run_typography(separator, 12, bold=False, caps=False)
+        add_internal_hyperlink(paragraph, page_text, entry.bookmark)
+        toc_heading._p.addprevious(paragraph._p)
+
+
+def page_map_from_pdf(pdf_path: Path, entries) -> dict[str, int]:
     pages = []
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
@@ -923,6 +1052,8 @@ def prepare(input_path: Path, output_path: Path) -> None:
     configure_heading_spacing(doc)
     configure_references(doc)
     entries = collect_toc_entries(doc)
+    figure_entries = collect_figure_entries(doc)
+    rebuild_figure_list(doc, figure_entries)
     rebuild_toc(doc, entries)
     enforce_document_typography(doc)
     italicize_foreign_terms(doc)
@@ -939,11 +1070,24 @@ def prepare(input_path: Path, output_path: Path) -> None:
 def finalize_toc(input_path: Path, pdf_path: Path, output_path: Path) -> None:
     doc = Document(input_path)
     entries = collect_toc_entries(doc)
+    figure_entries = collect_figure_entries(doc)
     page_map = page_map_from_pdf(pdf_path, entries)
+    figure_page_map = page_map_from_pdf(pdf_path, figure_entries)
     final_entries = [
         TocEntry(entry.level, entry.title, entry.display, entry.bookmark, page_map[entry.bookmark])
         for entry in entries
     ]
+    final_figure_entries = [
+        FigureEntry(
+            entry.number,
+            entry.title,
+            entry.display,
+            entry.bookmark,
+            figure_page_map[entry.bookmark],
+        )
+        for entry in figure_entries
+    ]
+    rebuild_figure_list(doc, final_figure_entries)
     rebuild_toc(doc, final_entries)
     enforce_document_typography(doc)
     configure_heading_spacing(doc)
@@ -1095,6 +1239,53 @@ def audit(input_path: Path, pdf_path: Path | None = None) -> list[str]:
                 f"Entrada do sumário sem separador de tabulação único: {paragraph.text}"
             )
 
+    try:
+        figure_entries = collect_figure_entries(doc)
+    except ValueError as exc:
+        figure_entries = []
+        errors.append(str(exc))
+    figure_list_paragraphs = [
+        p for p in doc.paragraphs if p.style.name == FIGURE_LIST_STYLE
+    ]
+    if len(figure_list_paragraphs) != len(figure_entries):
+        errors.append(
+            "Lista de figuras incompleta: "
+            f"{len(figure_list_paragraphs)} entradas para {len(figure_entries)} figuras."
+        )
+    if figure_entries and not any(
+        normalized(p.text) == "LISTA DE FIGURAS" for p in doc.paragraphs
+    ):
+        errors.append("Título LISTA DE FIGURAS ausente.")
+    for paragraph in figure_list_paragraphs:
+        if paragraph.text.rstrip().endswith("—") or re.search(r"\.{4,}", paragraph.text):
+            errors.append(f"Entrada provisória ou líder literal na lista de figuras: {paragraph.text}")
+        p_pr = paragraph._p.pPr
+        tabs = p_pr.find(qn("w:tabs")) if p_pr is not None else None
+        right_dot_tabs = [] if tabs is None else [
+            tab for tab in tabs.findall(qn("w:tab"))
+            if tab.get(qn("w:val")) == "right"
+            and tab.get(qn("w:leader")) == "dot"
+        ]
+        if len(right_dot_tabs) != 1:
+            errors.append(
+                f"Lista de figuras sem tabulador direito automático: {paragraph.text}"
+            )
+        content_tabs = paragraph._p.findall(".//" + qn("w:r") + "/" + qn("w:tab"))
+        if len(content_tabs) != 1:
+            errors.append(
+                f"Lista de figuras sem separador de tabulação único: {paragraph.text}"
+            )
+
+    if figure_entries:
+        if len(doc.inline_shapes) < len(figure_entries):
+            errors.append("Nem todas as figuras estão inseridas como objetos inline.")
+        svg_blips = doc.element.body.findall(".//{" + SVG_NS + "}svgBlip")
+        if len(svg_blips) < len(figure_entries):
+            errors.append("Nem todas as figuras possuem SVG vetorial no OOXML.")
+        for paragraph in [p for p in doc.paragraphs if p.style.name == "Figure Caption"]:
+            if paragraph.paragraph_format.alignment != WD_ALIGN_PARAGRAPH.CENTER:
+                errors.append(f"Legenda de figura não centralizada: {paragraph.text}")
+
     for paragraph in headings:
         for run in paragraph.runs:
             r_pr = run._r.rPr
@@ -1212,6 +1403,24 @@ def audit(input_path: Path, pdf_path: Path | None = None) -> list[str]:
                         f"Página divergente no sumário: {entry.display} "
                         f"({toc_pages.get(entry.bookmark)} != {page_map[entry.bookmark]})"
                     )
+        if figure_entries:
+            try:
+                figure_page_map = page_map_from_pdf(pdf_path, figure_entries)
+            except ValueError as exc:
+                errors.append(str(exc))
+            else:
+                listed_pages = {}
+                for paragraph, entry in zip(figure_list_paragraphs, figure_entries):
+                    match = re.search(r"(\d+)\s*$", paragraph.text)
+                    if match:
+                        listed_pages[entry.bookmark] = int(match.group(1))
+                for entry in figure_entries:
+                    if listed_pages.get(entry.bookmark) != figure_page_map[entry.bookmark]:
+                        errors.append(
+                            f"Página divergente na lista de figuras: {entry.display} "
+                            f"({listed_pages.get(entry.bookmark)} != "
+                            f"{figure_page_map[entry.bookmark]})"
+                        )
     return errors
 
 
