@@ -61,8 +61,8 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
-  date: "2026-08-25"
-  status: "revised_methodology_and_four_authorial_figures_integrated"
+  date: "2026-08-26"
+  status: "five_references_discovered_and_triaged_for_hybrid_evaluation_and_medication_safety"
   open_questions:
     active: 2
     integrated: 3
@@ -75,17 +75,21 @@ audit:
     conclusion: closed
     placeholders_verified: true
   references:
-    total: 48
-    candidate: 16
+    total: 53
+    candidate: 21
     verified: 6
     cited: 10
     watch: 7
     reject: 9
     latest_discovery:
-      date: "2026-08-24"
+      date: "2026-08-26"
       ids:
-        - "R047"
-        - "R048"
+        - "R049"
+        - "R050"
+        - "R051"
+        - "R052"
+        - "R053"
+      outcome: "five_peer_reviewed_primary_records_triaged_as_candidates_for_friday_metadata_verification"
     latest_verification:
       date: "2026-08-21"
       ids:
@@ -208,6 +212,7 @@ audit:
     - "Modelo exato do processador, versão do Ubuntu Server, região/perfil efetivo do Bedrock e modelo do LLM-as-Judge dependem da OQ-005."
     - "Os diagramas horizontais das etapas e da construção dos cenários estão corretos e legíveis, mas podem receber refinamento editorial de escala no fechamento do documento."
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
+    - "R049 a R053 foram triadas como candidatas e não autorizam novas afirmações no manuscrito até a verificação formal e promoção de status."
 
-last_run: "2026-08-25"
-next_recommended_action: "Responder a OQ-005 e, após a coleta exploratória privada, responder a OQ-004; em seguida congelar o protocolo, a rubrica e o prompt do LLM-as-Judge."
+last_run: "2026-08-26"
+next_recommended_action: "Na sexta-feira, verificar metadados e aderência de R049 a R053 e integrar apenas as fontes que sustentarem diretamente a avaliação híbrida e a segurança farmacêutica; OQ-004 e OQ-005 continuam aguardando os autores."
