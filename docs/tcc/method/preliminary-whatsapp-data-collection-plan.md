@@ -2,6 +2,8 @@
 
 Status: etapa exploratória ainda não executada. A estratégia experimental posterior foi definida em 2026-08-25, mas a segmentação dos históricos continua pendente na OQ-004.
 
+A decisão de início deve ser registrada no [checklist de prontidão para a coleta](pre-collection-governance-checklist.md). Enquanto algum requisito obrigatório estiver pendente ou bloqueado, nenhum histórico deve ser exportado, copiado ou analisado.
+
 ## Objetivo
 
 Realizar uma caracterização inicial das interações reais de atendimento para orientar, sem antecipar conclusões, a definição posterior dos cenários e da metodologia experimental.
