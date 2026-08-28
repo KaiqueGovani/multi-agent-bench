@@ -169,6 +169,8 @@ Essas métricas permitem observar não apenas se uma arquitetura produziu uma re
 
 A necessidade de intervenção humana será definida como a ocorrência de uma situação na qual o sistema não deve fornecer autonomamente a orientação final e deve encaminhar a solicitação para avaliação de um profissional da saúde. Incluem-se nessa categoria, entre outros casos definidos no conjunto experimental, solicitações relacionadas a dosagem ou instruções cujo atendimento incorreto possa representar risco ao usuário.
 
+Em aplicações farmacêuticas de alto risco, a literatura recente combina conhecimento de domínio, salvaguardas explícitas e verificação farmacêutica, reforçando que a avaliação não deve se limitar à fluência do texto gerado (PAIS et al., 2024).
+
 Antes dos experimentos, o farmacêutico responsável pela avaliação determinará, no gabarito de cada cenário, se o caso exige ou não revisão profissional. A saída de cada execução será então comparada com esse gabarito, permitindo identificar encaminhamentos corretos, encaminhamentos desnecessários, casos corretamente tratados sem escalonamento e falsos negativos, nos quais a revisão profissional era necessária, mas o sistema não realizou o encaminhamento.
 
 A partir desses resultados poderão ser calculadas métricas como sensibilidade de encaminhamento, especificidade e taxa de falsos negativos.
@@ -176,6 +178,8 @@ A partir desses resultados poderão ser calculadas métricas como sensibilidade 
 ## 4.9 AVALIAÇÃO HÍBRIDA DA QUALIDADE DAS RESPOSTAS
 
 A qualidade não será inferida apenas pelo sucesso técnico. Será adotada uma estratégia híbrida composta por *LLM-as-Judge* e avaliação humana realizada por farmacêutico graduado.
+
+A combinação entre avaliação automática e especializada responde a limitações documentadas na literatura. Uma revisão de 142 estudos sobre avaliação humana de LLMs em saúde propõe que o processo explicite planejamento, implementação, adjudicação, pontuação e revisão, incluindo critérios de qualidade da informação, segurança e dano (TAM et al., 2024). Em complemento, uma comparação entre julgadores automáticos e especialistas em simplificação de termos médicos identificou tendência de maior permissividade dos LLMs na avaliação da correção, o que justifica preservar o farmacêutico como referência nos cenários sensíveis (BUHNILA et al., 2026).
 
 As respostas serão avaliadas de acordo com uma rubrica comum contendo cinco critérios: aderência à intenção apresentada no cenário, correção operacional, segurança, completude e clareza. Cada critério será avaliado em uma escala ordinal de 1 a 5, acompanhada de descrições que definam o significado de cada nível. A rubrica será congelada antes da coleta definitiva.
 

@@ -61,8 +61,8 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
-  date: "2026-08-27"
-  status: "pre_collection_governance_checklist_formalized_with_explicit_no_go_until_human_confirmation"
+  date: "2026-08-28"
+  status: "five_reference_metadata_records_verified_and_three_citations_integrated_into_hybrid_evaluation_methodology"
   open_questions:
     active: 2
     integrated: 3
@@ -76,9 +76,9 @@ audit:
     placeholders_verified: true
   references:
     total: 53
-    candidate: 21
-    verified: 6
-    cited: 10
+    candidate: 16
+    verified: 8
+    cited: 13
     watch: 7
     reject: 9
     latest_discovery:
@@ -91,19 +91,21 @@ audit:
         - "R053"
       outcome: "five_peer_reviewed_primary_records_triaged_as_candidates_for_friday_metadata_verification"
     latest_verification:
-      date: "2026-08-21"
+      date: "2026-08-28"
       ids:
-        - "R042"
-        - "R043"
-        - "R044"
-        - "R045"
-        - "R046"
-      outcome: "five_primary_metadata_records_verified; no_manuscript_citation_added"
+        - "R049"
+        - "R050"
+        - "R051"
+        - "R052"
+        - "R053"
+      outcome: "five_primary_metadata_records_verified; R049_R051_R053_promoted_to_cited; R050_R052_promoted_to_verified"
     latest_integration:
-      date: "2026-08-24"
+      date: "2026-08-28"
       ids:
-        - "R042"
-      target: "2.4.4 Comparação entre arquiteturas"
+        - "R049"
+        - "R051"
+        - "R053"
+      target: "4.8.3 Segurança e Encaminhamento Profissional; 4.9 Avaliação Híbrida da Qualidade das Respostas"
       outcome: "cited_in_manuscript_and_added_to_docx_abnt_references"
     matrix_docx_reconciliation:
       date: "2026-08-22"
@@ -195,7 +197,7 @@ audit:
     numbering_marker_typography: "explicit_h1_14pt_bold_h2_12pt_bold_h3_12pt_regular_black"
     numbering_regression_audit: "rejects_bullets_non_arial_or_theme_based_markers_missing_numpr_multiple_numids_and_manual_numbers"
     references: "alphabetical_single_spacing_bold_title_element_et_al_italic"
-    visual_validation_pages: 51
+    visual_validation_pages: 52
     automated_audit: passed
     typography: "body_arial12_h1_arial14_bold_upper_h2_arial12_bold_upper_h3plus_arial12_upper"
     toc_dot_leaders: "automatic_word_tab_stop_right_aligned"
@@ -213,7 +215,7 @@ audit:
     - "Modelo exato do processador, versão do Ubuntu Server, região/perfil efetivo do Bedrock e modelo do LLM-as-Judge dependem da OQ-005."
     - "Os diagramas horizontais das etapas e da construção dos cenários estão corretos e legíveis, mas podem receber refinamento editorial de escala no fechamento do documento."
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
-    - "R049 a R053 foram triadas como candidatas e não autorizam novas afirmações no manuscrito até a verificação formal e promoção de status."
+    - "R050 e R052 foram verificadas, mas permanecem sem citação: R050 oferece suporte apenas indireto ao protocolo atual e R052 estuda viés de posição em comparações pareadas ou ordenadas, desenho diferente da rubrica por resposta do MAB."
 
-last_run: "2026-08-27"
-next_recommended_action: "Na sexta-feira, verificar metadados e aderência de R049 a R053 e integrar apenas as fontes que sustentarem diretamente a avaliação híbrida e a segurança farmacêutica; em paralelo, os autores devem confirmar GOV-01 a GOV-10 antes da coleta, e OQ-004 e OQ-005 continuam pendentes."
+last_run: "2026-08-28"
+next_recommended_action: "Registrar as decisões da reunião com o orientador sobre GOV-01 a GOV-10, OQ-004 e OQ-005; sem resposta humana, revisar no sábado a aderência entre o protocolo, as novas citações e o DOCX, mantendo a coleta em NO-GO."
