@@ -61,8 +61,8 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
-  date: "2026-08-28"
-  status: "five_reference_metadata_records_verified_and_three_citations_integrated_into_hybrid_evaluation_methodology"
+  date: "2026-08-29"
+  status: "chapter_6_semantic_evaluation_status_reconciled_with_integrated_OQ_002_and_current_harness"
   open_questions:
     active: 2
     integrated: 3
@@ -176,7 +176,7 @@ audit:
     exploratory_unit_definition: "TBD-OQ-004"
     exploratory_sample_target: "approximately_20_histories"
   manuscript:
-    latest_refinement: "04 Metodologia revisada, seções 4.1 a 4.12"
+    latest_refinement: "06.4 Integração com Ferramentas reconciliada com a metodologia definida e o estado verificável do harness"
     substantial_drafts:
       - "01 Introdução"
       - "02 Fundamentação Teórica"
@@ -197,7 +197,7 @@ audit:
     numbering_marker_typography: "explicit_h1_14pt_bold_h2_12pt_bold_h3_12pt_regular_black"
     numbering_regression_audit: "rejects_bullets_non_arial_or_theme_based_markers_missing_numpr_multiple_numids_and_manual_numbers"
     references: "alphabetical_single_spacing_bold_title_element_et_al_italic"
-    visual_validation_pages: 52
+    visual_validation_pages: 53
     automated_audit: passed
     typography: "body_arial12_h1_arial14_bold_upper_h2_arial12_bold_upper_h3plus_arial12_upper"
     toc_dot_leaders: "automatic_word_tab_stop_right_aligned"
@@ -213,9 +213,10 @@ audit:
     - "A unidade de análise, segmentação e categorias só poderão ser definidas após a caracterização exploratória e dependem da OQ-004."
     - "A quantidade final entre um ou dois farmacêuticos ainda deve ser registrada no congelamento do protocolo."
     - "Modelo exato do processador, versão do Ubuntu Server, região/perfil efetivo do Bedrock e modelo do LLM-as-Judge dependem da OQ-005."
+    - "A avaliação semântica está definida no protocolo, mas ainda não está implementada no harness atual; sua aplicação depende do congelamento do julgador, da rubrica e do prompt conforme a OQ-005."
     - "Os diagramas horizontais das etapas e da construção dos cenários estão corretos e legíveis, mas podem receber refinamento editorial de escala no fechamento do documento."
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
     - "R050 e R052 foram verificadas, mas permanecem sem citação: R050 oferece suporte apenas indireto ao protocolo atual e R052 estuda viés de posição em comparações pareadas ou ordenadas, desenho diferente da rubrica por resposta do MAB."
 
-last_run: "2026-08-28"
-next_recommended_action: "Registrar as decisões da reunião com o orientador sobre GOV-01 a GOV-10, OQ-004 e OQ-005; sem resposta humana, revisar no sábado a aderência entre o protocolo, as novas citações e o DOCX, mantendo a coleta em NO-GO."
+last_run: "2026-08-29"
+next_recommended_action: "Registrar as decisões da reunião com o orientador sobre GOV-01 a GOV-10, OQ-004 e OQ-005; manter a coleta em NO-GO até confirmação explícita dos controles de governança."
