@@ -37,11 +37,11 @@ next_actions:
     action: "Confirmar com o orientador e a instituição os itens GOV-01 a GOV-10 do checklist de prontidão; somente após decisão GO executar, em ambiente privado, a coleta exploratória de aproximadamente 20 históricos."
     status: waiting_human_confirmation
   - priority: 2
-    action: "Após a caracterização exploratória, responder a OQ-004 com unidade de análise, segmentação, categorias agregadas e implicações metodológicas."
-    status: blocked_by_exploratory_collection
-  - priority: 3
     action: "Responder a OQ-005 com modelo exato do processador, versão do Ubuntu Server, região/perfil do Amazon Bedrock e modelo do LLM-as-Judge."
     status: waiting_human
+  - priority: 3
+    action: "Após a caracterização exploratória, responder a OQ-004 com unidade de análise, segmentação, categorias agregadas e implicações metodológicas."
+    status: blocked_by_exploratory_collection
   - priority: 4
     action: "Montar e revisar o catálogo de 40 cenários após a definição da unidade de análise e da segmentação."
     status: blocked_by_OQ-004
@@ -61,8 +61,8 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
-  date: "2026-08-29"
-  status: "chapter_6_semantic_evaluation_status_reconciled_with_integrated_OQ_002_and_current_harness"
+  date: "2026-08-30"
+  status: "weekly_audit_completed_with_backlog_reprioritized_around_governance_and_protocol_freeze"
   open_questions:
     active: 2
     integrated: 3
@@ -155,12 +155,14 @@ audit:
         status: "candidate_pending_editorial_review"
         target: "2.4.4 Comparação entre arquiteturas"
   weekly_summary:
-    period: "2026-08-17_to_2026-08-23"
-    manuscript_progress: "subsection_2.4.4_expanded_with_R042_and_synchronized"
-    method_progress: "pilot_repetitions_and_paired_inference_proposed_pending_OQ-003"
-    references_progress: "five_new_sources_verified_and_related_works_abnt_matrix_reconciled"
-    format_progress: "facens_pipeline_toc_and_explicit_arial_heading_numbers_without_theme_fonts_verified"
-    primary_next_action: "confirm_data_governance_before_private_exploratory_collection"
+    period: "2026-08-24_to_2026-08-30"
+    manuscript_progress: "chapter_4_revised_with_hybrid_evaluation_and_four_methodology_figures; chapter_6_reconciled_with_current_harness"
+    method_progress: "forty_scenarios_three_architectures_five_repetitions_and_hybrid_evaluation_documented; governance_checklist_GOV_01_to_GOV_10_formalized"
+    references_progress: "R049_to_R053_discovered_and_verified; R049_R051_R053_integrated_as_citations"
+    figures_progress: "four_authorial_methodology_diagrams_inserted_with_automatic_list_of_figures"
+    format_progress: "docx_53_pages_audited_with_automatic_right_aligned_dot_leaders_and_protected_chapters_verified"
+    blockers: "current_decision_NO_GO; OQ_005_waiting_human; OQ_004_blocked_until_authorized_exploratory_collection"
+    primary_next_action: "confirm_GOV_01_to_GOV_10_and_answer_OQ_005_before_protocol_freeze"
   method:
     experimental_protocol: "revised_design_documented_not_frozen"
     scenario_design: "forty_scenarios_five_strata_eight_per_stratum"
@@ -218,5 +220,5 @@ audit:
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
     - "R050 e R052 foram verificadas, mas permanecem sem citação: R050 oferece suporte apenas indireto ao protocolo atual e R052 estuda viés de posição em comparações pareadas ou ordenadas, desenho diferente da rubrica por resposta do MAB."
 
-last_run: "2026-08-29"
-next_recommended_action: "Registrar as decisões da reunião com o orientador sobre GOV-01 a GOV-10, OQ-004 e OQ-005; manter a coleta em NO-GO até confirmação explícita dos controles de governança."
+last_run: "2026-08-30"
+next_recommended_action: "Registrar as decisões da reunião com o orientador sobre GOV-01 a GOV-10 e responder a OQ-005; somente depois de uma decisão GO realizar a coleta exploratória privada que permitirá responder a OQ-004."
