@@ -62,7 +62,7 @@ constraints:
 
 audit:
   date: "2026-08-30"
-  status: "weekly_audit_completed_with_backlog_reprioritized_around_governance_and_protocol_freeze"
+  status: "chapter_2_reordered_and_chapter_3_rebuilt_with_stronger_correlates"
   open_questions:
     active: 2
     integrated: 3
@@ -75,38 +75,38 @@ audit:
     conclusion: closed
     placeholders_verified: true
   references:
-    total: 53
+    total: 56
     candidate: 16
-    verified: 8
-    cited: 13
+    verified: 9
+    cited: 15
     watch: 7
     reject: 9
     latest_discovery:
-      date: "2026-08-26"
+      date: "2026-08-30"
       ids:
-        - "R049"
-        - "R050"
-        - "R051"
-        - "R052"
-        - "R053"
-      outcome: "five_peer_reviewed_primary_records_triaged_as_candidates_for_friday_metadata_verification"
+        - "R054"
+        - "R055"
+        - "R056"
+      outcome: "three_peer_reviewed_primary_records_selected_for_direct_alignment_with_healthcare_multiagent_coordination_and_medication_guidance"
     latest_verification:
-      date: "2026-08-28"
+      date: "2026-08-30"
       ids:
-        - "R049"
-        - "R050"
-        - "R051"
-        - "R052"
-        - "R053"
-      outcome: "five_primary_metadata_records_verified; R049_R051_R053_promoted_to_cited; R050_R052_promoted_to_verified"
+        - "R054"
+        - "R055"
+        - "R056"
+      outcome: "metadata_and_scope_verified_in_ACL_Anthology_and_ACM_Digital_Library"
     latest_integration:
-      date: "2026-08-28"
+      date: "2026-08-30"
       ids:
-        - "R049"
+        - "R038"
+        - "R039"
+        - "R042"
         - "R051"
-        - "R053"
-      target: "4.8.3 Segurança e Encaminhamento Profissional; 4.9 Avaliação Híbrida da Qualidade das Respostas"
-      outcome: "cited_in_manuscript_and_added_to_docx_abnt_references"
+        - "R054"
+        - "R055"
+        - "R056"
+      target: "3.1 Sistemas de Atendimento Automatizado; 3.2 Sistemas Multiagentes Aplicados; 3.3 Análise dos Trabalhos Correlatos; 3.4 Lacunas e Oportunidades"
+      outcome: "chapter_3_rewritten_with_versioned_comparison_table_and_ABNT_references_in_DOCX"
     matrix_docx_reconciliation:
       date: "2026-08-22"
       ids:
@@ -153,14 +153,14 @@ audit:
       - id: "IMG-C009"
         subject: "comparacao_entre_orquestracao_workflow_e_swarm"
         status: "candidate_pending_editorial_review"
-        target: "2.4.4 Comparação entre arquiteturas"
+        target: "2.5.4 Características e diferenças entre as arquiteturas"
   weekly_summary:
     period: "2026-08-24_to_2026-08-30"
     manuscript_progress: "chapter_4_revised_with_hybrid_evaluation_and_four_methodology_figures; chapter_6_reconciled_with_current_harness"
     method_progress: "forty_scenarios_three_architectures_five_repetitions_and_hybrid_evaluation_documented; governance_checklist_GOV_01_to_GOV_10_formalized"
-    references_progress: "R049_to_R053_discovered_and_verified; R049_R051_R053_integrated_as_citations"
+    references_progress: "R054_to_R056_discovered_verified_and_integrated; chapter_3_reference_set_recentered_on_direct_pharmacy_healthcare_and_coordination_studies"
     figures_progress: "four_authorial_methodology_diagrams_inserted_with_automatic_list_of_figures"
-    format_progress: "docx_53_pages_audited_with_automatic_right_aligned_dot_leaders_and_protected_chapters_verified"
+    format_progress: "docx_52_pages_audited_with_automatic_right_aligned_dot_leaders_versioned_related_works_table_and_protected_chapters_verified"
     blockers: "current_decision_NO_GO; OQ_005_waiting_human; OQ_004_blocked_until_authorized_exploratory_collection"
     primary_next_action: "confirm_GOV_01_to_GOV_10_and_answer_OQ_005_before_protocol_freeze"
   method:
@@ -178,7 +178,7 @@ audit:
     exploratory_unit_definition: "TBD-OQ-004"
     exploratory_sample_target: "approximately_20_histories"
   manuscript:
-    latest_refinement: "06.4 Integração com Ferramentas reconciliada com a metodologia definida e o estado verificável do harness"
+    latest_refinement: "Capítulo 2 reorganizado para iniciar pelo domínio farmacêutico; capítulo 3 reescrito com sete correlatos fortes, quadro analítico e três lacunas explícitas"
     substantial_drafts:
       - "01 Introdução"
       - "02 Fundamentação Teórica"
@@ -199,7 +199,7 @@ audit:
     numbering_marker_typography: "explicit_h1_14pt_bold_h2_12pt_bold_h3_12pt_regular_black"
     numbering_regression_audit: "rejects_bullets_non_arial_or_theme_based_markers_missing_numpr_multiple_numids_and_manual_numbers"
     references: "alphabetical_single_spacing_bold_title_element_et_al_italic"
-    visual_validation_pages: 53
+    visual_validation_pages: 52
     automated_audit: passed
     typography: "body_arial12_h1_arial14_bold_upper_h2_arial12_bold_upper_h3plus_arial12_upper"
     toc_dot_leaders: "automatic_word_tab_stop_right_aligned"
