@@ -1,6 +1,6 @@
 # 4 METODOLOGIA
 
-Este capítulo apresenta os procedimentos metodológicos empregados no desenvolvimento e na avaliação do MAB (*multi-agent benchmark*). A metodologia foi definida de modo a permitir a comparação controlada entre três arquiteturas de coordenação de sistemas multiagentes — orquestração centralizada, *workflow* estruturado e coordenação descentralizada por *handoffs* — aplicadas ao mesmo contexto de atendimento farmacêutico.
+Este capítulo apresenta os procedimentos metodológicos empregados na comparação de três arquiteturas de coordenação de sistemas multiagentes — orquestração centralizada, *workflow* estruturado e coordenação descentralizada por *handoffs*. O MAB (*multi-agent benchmark*) é o instrumento experimental utilizado para implementar as condições e submetê-las ao mesmo estudo de caso de atendimento em farmácias.
 
 O delineamento busca isolar, tanto quanto possível, o efeito da arquitetura de coordenação sobre o comportamento do sistema. Para isso, as arquiteturas serão submetidas aos mesmos cenários, utilizarão o mesmo modelo de linguagem, as mesmas ferramentas de domínio e os mesmos limites operacionais. As evidências produzidas serão analisadas por meio de métricas de eficiência, coordenação, qualidade e segurança.
 
@@ -16,9 +16,9 @@ Quanto aos procedimentos, o trabalho combina revisão bibliográfica estruturada
 
 ## 4.2 OBJETO E CONTEXTO DA PESQUISA
 
-O objeto experimental desta pesquisa é o MAB, plataforma desenvolvida para executar cenários padronizados de atendimento utilizando diferentes arquiteturas multiagentes e registrar os eventos decorrentes de cada execução.
+O objeto de análise desta pesquisa é a arquitetura de coordenação: a forma como controle, contexto e responsabilidade são distribuídos entre agentes baseados em modelos de linguagem. O MAB é a plataforma experimental desenvolvida para executar cenários padronizados sob diferentes condições arquiteturais e registrar os eventos decorrentes de cada execução.
 
-O domínio de aplicação escolhido é o atendimento em farmácias. Esse contexto reúne demandas de diferentes naturezas, como perguntas frequentes, consultas de disponibilidade de produtos, interpretação inicial de anexos, continuidade de conversas e situações em que o sistema deve reconhecer a necessidade de encaminhamento para um profissional da saúde.
+O atendimento em farmácias foi escolhido como estudo de caso instrumental. Esse contexto reúne demandas de diferentes naturezas, como perguntas frequentes, consultas de disponibilidade de produtos, interpretação inicial de anexos, continuidade de conversas e situações em que o sistema deve reconhecer a necessidade de encaminhamento para um profissional da saúde. A comparação permanece delimitada por esse recorte, e qualquer transferência de conclusões para outros domínios deverá considerar as evidências e as ameaças à validade externa.
 
 O protótipo não tem como finalidade substituir o farmacêutico nem executar diagnóstico, prescrição ou tomada de decisão clínica de forma autônoma. Solicitações que envolvam, por exemplo, definição de dosagem, interpretação potencialmente arriscada sobre uso de medicamentos ou outras orientações que exijam julgamento profissional devem resultar em encaminhamento para revisão humana.
 
@@ -132,7 +132,7 @@ Para reduzir interferências do ambiente local nas medições, os testes definit
 
 ## 4.7 PROBLEMA DE PESQUISA E HIPÓTESES
 
-A pergunta de pesquisa é: como a escolha entre orquestração centralizada, *workflow* estruturado e coordenação descentralizada por *handoffs* influencia a eficiência operacional, a qualidade das respostas e o custo de coordenação de um sistema de atendimento farmacêutico, quando as demais condições são mantidas constantes?
+A pergunta de pesquisa é: como a escolha entre orquestração centralizada, *workflow* estruturado e coordenação descentralizada por *handoffs* influencia a eficiência operacional, a qualidade das respostas e o custo de coordenação de um sistema multiagente baseado em modelos de linguagem, quando as demais condições são mantidas constantes em um estudo de caso de atendimento em farmácias?
 
 Para orientar a comparação, são estabelecidas as seguintes hipóteses:
 

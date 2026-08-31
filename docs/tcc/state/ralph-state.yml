@@ -1,5 +1,5 @@
 project:
-  title: "Sistema multiagente para atendimento inteligente em farmácias: uma análise comparativa de arquiteturas de coordenação"
+  title: "Comparação de arquiteturas de coordenação em sistemas multiagentes baseados em modelos de linguagem: um estudo de caso no atendimento em farmácias"
   repository: "KaiqueGovani/multi-agent-bench"
   stage: "preparacao_e_inicio_dos_testes"
   prototype_status: "implementado"
@@ -61,8 +61,8 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
-  date: "2026-08-30"
-  status: "chapter_2_reordered_and_chapter_3_rebuilt_with_stronger_correlates"
+  date: "2026-08-31"
+  status: "title_and_scope_reframed_architecture_centered_chapter_3_rebuilt"
   open_questions:
     active: 2
     integrated: 3
@@ -75,38 +75,39 @@ audit:
     conclusion: closed
     placeholders_verified: true
   references:
-    total: 56
+    total: 58
     candidate: 16
-    verified: 9
-    cited: 15
+    verified: 10
+    cited: 16
     watch: 7
     reject: 9
     latest_discovery:
-      date: "2026-08-30"
+      date: "2026-08-31"
       ids:
-        - "R054"
-        - "R055"
-        - "R056"
-      outcome: "three_peer_reviewed_primary_records_selected_for_direct_alignment_with_healthcare_multiagent_coordination_and_medication_guidance"
+        - "R057"
+        - "R058"
+      outcome: "two_primary_peer_reviewed_records_selected_for_direct_alignment_with_architecture_benchmarking_and_joint_topology_optimization"
     latest_verification:
-      date: "2026-08-30"
+      date: "2026-08-31"
       ids:
-        - "R054"
-        - "R055"
-        - "R056"
-      outcome: "metadata_and_scope_verified_in_ACL_Anthology_and_ACM_Digital_Library"
+        - "R044"
+        - "R057"
+        - "R058"
+      outcome: "metadata_and_scope_verified_in_primary_ACL_Anthology_and_ICLR_proceedings"
     latest_integration:
-      date: "2026-08-30"
+      date: "2026-08-31"
       ids:
         - "R038"
         - "R039"
+        - "R041"
         - "R042"
+        - "R044"
         - "R051"
-        - "R054"
         - "R055"
-        - "R056"
+        - "R057"
+        - "R058"
       target: "3.1 Sistemas de Atendimento Automatizado; 3.2 Sistemas Multiagentes Aplicados; 3.3 Análise dos Trabalhos Correlatos; 3.4 Lacunas e Oportunidades"
-      outcome: "chapter_3_rewritten_with_versioned_comparison_table_and_ABNT_references_in_DOCX"
+      outcome: "chapter_3_rewritten_to_prioritize_architecture_comparison_with_pharmacy_as_an_instrumental_case_study"
     matrix_docx_reconciliation:
       date: "2026-08-22"
       ids:
@@ -178,7 +179,7 @@ audit:
     exploratory_unit_definition: "TBD-OQ-004"
     exploratory_sample_target: "approximately_20_histories"
   manuscript:
-    latest_refinement: "Capítulo 2 reorganizado para iniciar pelo domínio farmacêutico; capítulo 3 reescrito com sete correlatos fortes, quadro analítico e três lacunas explícitas"
+    latest_refinement: "Título, introdução, metodologia e capítulo 3 reposicionados: a comparação de arquiteturas é o objeto científico e o atendimento farmacêutico é o estudo de caso instrumental"
     substantial_drafts:
       - "01 Introdução"
       - "02 Fundamentação Teórica"
@@ -199,7 +200,7 @@ audit:
     numbering_marker_typography: "explicit_h1_14pt_bold_h2_12pt_bold_h3_12pt_regular_black"
     numbering_regression_audit: "rejects_bullets_non_arial_or_theme_based_markers_missing_numpr_multiple_numids_and_manual_numbers"
     references: "alphabetical_single_spacing_bold_title_element_et_al_italic"
-    visual_validation_pages: 52
+    visual_validation_pages: 55
     automated_audit: passed
     typography: "body_arial12_h1_arial14_bold_upper_h2_arial12_bold_upper_h3plus_arial12_upper"
     toc_dot_leaders: "automatic_word_tab_stop_right_aligned"
@@ -219,6 +220,7 @@ audit:
     - "Os diagramas horizontais das etapas e da construção dos cenários estão corretos e legíveis, mas podem receber refinamento editorial de escala no fechamento do documento."
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
     - "R050 e R052 foram verificadas, mas permanecem sem citação: R050 oferece suporte apenas indireto ao protocolo atual e R052 estuda viés de posição em comparações pareadas ou ordenadas, desenho diferente da rubrica por resposta do MAB."
+    - "A validade externa da comparação deverá ser discutida com cautela: o protocolo usa um único estudo de caso farmacêutico e não sustenta, por si só, generalização para todos os domínios de aplicação."
 
-last_run: "2026-08-30"
-next_recommended_action: "Registrar as decisões da reunião com o orientador sobre GOV-01 a GOV-10 e responder a OQ-005; somente depois de uma decisão GO realizar a coleta exploratória privada que permitirá responder a OQ-004."
+last_run: "2026-08-31"
+next_recommended_action: "Validar o novo título com a orientadora e registrar as decisões sobre GOV-01 a GOV-10 e OQ-005; somente depois de uma decisão GO realizar a coleta exploratória privada que permitirá responder a OQ-004."

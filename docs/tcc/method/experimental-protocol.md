@@ -4,7 +4,7 @@ Status: rascunho metodológico atualizado em 2026-08-25; ainda não congelado. A
 
 ## 1. Objetivo
 
-Comparar orquestração centralizada, *workflow* estruturado e coordenação descentralizada por *handoffs* em cenários equivalentes de atendimento farmacêutico. O protocolo mede diferenças de eficiência operacional, custo de coordenação, qualidade e segurança sem presumir qual arquitetura será superior.
+Comparar orquestração centralizada, *workflow* estruturado e coordenação descentralizada por *handoffs* sob condições equivalentes, utilizando o atendimento em farmácias como estudo de caso instrumental. O protocolo mede diferenças de eficiência operacional, custo de coordenação, qualidade e segurança sem presumir qual arquitetura será superior.
 
 Não será incluído um agente único como *baseline*, pois o objeto do estudo é a comparação entre estratégias de coordenação multiagente.
 
