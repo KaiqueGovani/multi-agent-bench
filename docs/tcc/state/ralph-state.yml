@@ -62,7 +62,7 @@ constraints:
 
 audit:
   date: "2026-08-31"
-  status: "architecture_centered_title_shortened_and_docx_revalidated"
+  status: "visual_insertion_map_completed_and_cited_reference_figures_audited"
   open_questions:
     active: 2
     integrated: 3
@@ -115,8 +115,8 @@ audit:
         - "R041"
       outcome: "stale_needs_correction_markers_closed_after_docx_abnt_verification"
   figures:
-    cited_references_audited: 10
-    rights_verified_candidates: 9
+    cited_references_audited: 16
+    rights_verified_candidates: 14
     candidate_ids:
       - "IMG-C001"
       - "IMG-C002"
@@ -131,13 +131,26 @@ audit:
       - "IMG-C011"
       - "IMG-C012"
       - "IMG-C013"
+      - "IMG-C014"
+      - "IMG-C015"
+      - "IMG-C016"
+      - "IMG-C017"
+      - "IMG-C018"
     licenses:
       - "CC BY 4.0"
       - "Apache-2.0"
       - "elaboracao_propria"
     corpus: "docs/tcc/figures"
     inventory: "docs/tcc/figures/inventory.csv"
-    latest_research: "docs/tcc/figures/research-2026-08-24-02.md"
+    latest_research: "docs/tcc/figures/research-2026-08-31.md"
+    latest_research_scope: "visual_audit_of_55_page_docx_14_insertion_points_and_all_16_cited_references"
+    latest_candidate_additions:
+      - "IMG-C014"
+      - "IMG-C015"
+      - "IMG-C016"
+      - "IMG-C017"
+      - "IMG-C018"
+    recommended_first_creation_round: "six_to_eight_figures_centered_on_agents_coordination_related_works_and_MAB_architecture"
     latest_design: "four_authorial_methodology_diagrams_integrated_2026-08-25"
     manuscript_insertions: 4
     docx_insertions: 4
@@ -222,6 +235,8 @@ audit:
     - "R050 e R052 foram verificadas, mas permanecem sem citação: R050 oferece suporte apenas indireto ao protocolo atual e R052 estuda viés de posição em comparações pareadas ou ordenadas, desenho diferente da rubrica por resposta do MAB."
     - "A validade externa da comparação deverá ser discutida com cautela: o protocolo usa um único estudo de caso farmacêutico e não sustenta, por si só, generalização para todos os domínios de aplicação."
     - "O mapa versionado do formatador ainda não contém as regras de destaque bibliográfico de R044, R057 e R058; nesta execução, as regras verificadas foram fornecidas ao auditor somente em memória, sem alteração de código."
+    - "Os novos arquivos IMG-C014 a IMG-C018 são candidatos licenciados e não estão aprovados para inserção; reproduções densas ou em inglês devem ser adaptadas ou redesenhadas antes do DOCX."
+    - "Figuras de R033, R034, R041, R044 e R058 permaneceram apenas como referências conceituais porque não foi confirmada licença pública suficiente para armazenamento e adaptação."
 
-last_run: "2026-08-31"
-next_recommended_action: "Registrar as decisões da orientadora sobre GOV-01 a GOV-10 e OQ-005; somente depois de uma decisão GO realizar a coleta exploratória privada que permitirá responder a OQ-004."
+last_run: "2026-08-31-03"
+next_recommended_action: "Redesenhar IMG-C009 como comparação arquitetural neutra e submetê-la à aprovação antes da inserção em 2.5.4; em paralelo editorial futuro, registrar as decisões da orientadora sobre GOV-01 a GOV-10 e OQ-005."
