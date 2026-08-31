@@ -1,5 +1,5 @@
 project:
-  title: "Comparação de arquiteturas de coordenação em sistemas multiagentes baseados em modelos de linguagem: um estudo de caso no atendimento em farmácias"
+  title: "Comparação experimental de arquiteturas de coordenação em sistemas multiagentes baseados em LLMs"
   repository: "KaiqueGovani/multi-agent-bench"
   stage: "preparacao_e_inicio_dos_testes"
   prototype_status: "implementado"
@@ -62,7 +62,7 @@ constraints:
 
 audit:
   date: "2026-08-31"
-  status: "title_and_scope_reframed_architecture_centered_chapter_3_rebuilt"
+  status: "architecture_centered_title_shortened_and_docx_revalidated"
   open_questions:
     active: 2
     integrated: 3
@@ -179,7 +179,7 @@ audit:
     exploratory_unit_definition: "TBD-OQ-004"
     exploratory_sample_target: "approximately_20_histories"
   manuscript:
-    latest_refinement: "Título, introdução, metodologia e capítulo 3 reposicionados: a comparação de arquiteturas é o objeto científico e o atendimento farmacêutico é o estudo de caso instrumental"
+    latest_refinement: "Título reduzido para enfatizar a comparação experimental de arquiteturas; o atendimento farmacêutico permanece descrito como estudo de caso instrumental"
     substantial_drafts:
       - "01 Introdução"
       - "02 Fundamentação Teórica"
@@ -221,6 +221,7 @@ audit:
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
     - "R050 e R052 foram verificadas, mas permanecem sem citação: R050 oferece suporte apenas indireto ao protocolo atual e R052 estuda viés de posição em comparações pareadas ou ordenadas, desenho diferente da rubrica por resposta do MAB."
     - "A validade externa da comparação deverá ser discutida com cautela: o protocolo usa um único estudo de caso farmacêutico e não sustenta, por si só, generalização para todos os domínios de aplicação."
+    - "O mapa versionado do formatador ainda não contém as regras de destaque bibliográfico de R044, R057 e R058; nesta execução, as regras verificadas foram fornecidas ao auditor somente em memória, sem alteração de código."
 
 last_run: "2026-08-31"
-next_recommended_action: "Validar o novo título com a orientadora e registrar as decisões sobre GOV-01 a GOV-10 e OQ-005; somente depois de uma decisão GO realizar a coleta exploratória privada que permitirá responder a OQ-004."
+next_recommended_action: "Registrar as decisões da orientadora sobre GOV-01 a GOV-10 e OQ-005; somente depois de uma decisão GO realizar a coleta exploratória privada que permitirá responder a OQ-004."

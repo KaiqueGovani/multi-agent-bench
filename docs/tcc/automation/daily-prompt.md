@@ -1,6 +1,6 @@
 # Prompt da tarefa diária — Ralph loop do TCC
 
-Trabalhe no TCC “Comparação de arquiteturas de coordenação em sistemas multiagentes baseados em modelos de linguagem: um estudo de caso no atendimento em farmácias”. Use o repositório `KaiqueGovani/multi-agent-bench` como fonte técnica e a versão Word `TCC_Base_MAB_Facens.docx` como artefato de apresentação.
+Trabalhe no TCC “Comparação experimental de arquiteturas de coordenação em sistemas multiagentes baseados em LLMs”. Use o repositório `KaiqueGovani/multi-agent-bench` como fonte técnica e a versão Word `TCC_Base_MAB_Facens.docx` como artefato de apresentação.
 
 ## Objetivo de cada execução
 

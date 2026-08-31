@@ -1,4 +1,4 @@
-# TCC — comparação de arquiteturas de coordenação em sistemas multiagentes baseados em modelos de linguagem
+# TCC — comparação experimental de arquiteturas de coordenação em sistemas multiagentes baseados em LLMs
 
 Esta pasta é a fonte versionada do TCC. O documento Word é a apresentação oficial para leitura e entrega; os arquivos Markdown, o registro de referências e o estado do ciclo são a base operacional do Ralph loop.
 
