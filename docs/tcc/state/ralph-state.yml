@@ -61,8 +61,8 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
-  date: "2026-08-31"
-  status: "visual_insertion_map_completed_and_cited_reference_figures_audited"
+  date: "2026-09-01"
+  status: "chapter_2_multiagent_foundations_strengthened_and_docx_revalidated"
   open_questions:
     active: 2
     integrated: 3
@@ -108,6 +108,17 @@ audit:
         - "R058"
       target: "3.1 Sistemas de Atendimento Automatizado; 3.2 Sistemas Multiagentes Aplicados; 3.3 Análise dos Trabalhos Correlatos; 3.4 Lacunas e Oportunidades"
       outcome: "chapter_3_rewritten_to_prioritize_architecture_comparison_with_pharmacy_as_an_instrumental_case_study"
+    latest_theoretical_integration:
+      date: "2026-09-01"
+      ids:
+        - "R004"
+        - "R032"
+        - "R033"
+        - "R042"
+        - "R044"
+        - "R057"
+      target: "2.4 Sistemas Multiagentes"
+      outcome: "section_rewritten_in_711_words_to_separate_agents_architecture_topology_communication_coordination_and_observability"
     matrix_docx_reconciliation:
       date: "2026-08-22"
       ids:
@@ -192,7 +203,7 @@ audit:
     exploratory_unit_definition: "TBD-OQ-004"
     exploratory_sample_target: "approximately_20_histories"
   manuscript:
-    latest_refinement: "Título reduzido para enfatizar a comparação experimental de arquiteturas; o atendimento farmacêutico permanece descrito como estudo de caso instrumental"
+    latest_refinement: "Seção 2.4 ampliada para fundamentar agentes, arquitetura, topologia, comunicação, coordenação e observabilidade; a farmácia permanece como estudo de caso instrumental"
     substantial_drafts:
       - "01 Introdução"
       - "02 Fundamentação Teórica"
@@ -213,7 +224,7 @@ audit:
     numbering_marker_typography: "explicit_h1_14pt_bold_h2_12pt_bold_h3_12pt_regular_black"
     numbering_regression_audit: "rejects_bullets_non_arial_or_theme_based_markers_missing_numpr_multiple_numids_and_manual_numbers"
     references: "alphabetical_single_spacing_bold_title_element_et_al_italic"
-    visual_validation_pages: 55
+    visual_validation_pages: 57
     automated_audit: passed
     typography: "body_arial12_h1_arial14_bold_upper_h2_arial12_bold_upper_h3plus_arial12_upper"
     toc_dot_leaders: "automatic_word_tab_stop_right_aligned"
@@ -237,6 +248,7 @@ audit:
     - "O mapa versionado do formatador ainda não contém as regras de destaque bibliográfico de R044, R057 e R058; nesta execução, as regras verificadas foram fornecidas ao auditor somente em memória, sem alteração de código."
     - "Os novos arquivos IMG-C014 a IMG-C018 são candidatos licenciados e não estão aprovados para inserção; reproduções densas ou em inglês devem ser adaptadas ou redesenhadas antes do DOCX."
     - "Figuras de R033, R034, R041, R044 e R058 permaneceram apenas como referências conceituais porque não foi confirmada licença pública suficiente para armazenamento e adaptação."
+    - "O sincronizador versionado de Markdown para DOCX está delimitado ao Capítulo 4; alterações em outros capítulos exigem substituição cirúrgica validada ou futura generalização do utilitário fora do escopo documental."
 
-last_run: "2026-08-31-03"
-next_recommended_action: "Redesenhar IMG-C009 como comparação arquitetural neutra e submetê-la à aprovação antes da inserção em 2.5.4; em paralelo editorial futuro, registrar as decisões da orientadora sobre GOV-01 a GOV-10 e OQ-005."
+last_run: "2026-09-01"
+next_recommended_action: "Na próxima rodada bibliográfica, descobrir e triar até cinco referências diretamente ligadas à comparação controlada de arquiteturas multiagentes; manter IMG-C009 pendente de redesenho e aprovação antes da inserção."

@@ -46,15 +46,31 @@ Ferramentas conectam o agente a funções determinísticas ou serviços externos
 
 ### 2.4.1 Definição e características
 
-Um sistema multiagente é composto por múltiplas unidades capazes de perceber informações, tomar decisões e atuar de maneira coordenada. Em sistemas baseados em LLMs, os agentes podem ser diferenciados por instruções, funções e ferramentas. A especialização permite decompor uma solicitação em responsabilidades menores, mas introduz custos de comunicação, sincronização e controle. Assim, adicionar agentes não implica automaticamente melhorar o desempenho.
+Um sistema multiagente é formado por unidades computacionais que percebem informações, tomam decisões e atuam em um ambiente compartilhado, preservando algum grau de autonomia local. O comportamento global resulta da capacidade de cada agente e das regras que distribuem responsabilidades, informações e autoridade. Isso diferencia um sistema multiagente de uma aplicação que apenas realiza chamadas independentes a modelos: a colaboração exige uma estrutura comum de objetivos, comunicação e coordenação.
+
+Nos sistemas baseados em *Large Language Models*, os agentes podem ser diferenciados por instruções, papéis, ferramentas, fontes de conhecimento e permissões. Um agente pode classificar a solicitação, outro recuperar evidências e um terceiro sintetizar a resposta. Li et al. (2024) descrevem elementos como perfil, percepção, ação, interação e evolução, evidenciando que o modelo é somente parte de uma organização mais ampla. A especialização facilita a decomposição, mas cria dependências: cada transferência exige preservar contexto e interpretar corretamente a saída anterior.
+
+A quantidade de agentes, portanto, não mede sozinha a capacidade do sistema. Configurações com os mesmos agentes e modelos podem divergir por topologia, participação e compartilhamento de contexto. Qian et al. (2025) representam a colaboração por grafos acíclicos direcionados; Zhu et al. (2025) organizam protocolos em estrela, árvore, cadeia e grafo. Esses trabalhos sustentam uma distinção central: agentes são as unidades participantes; a arquitetura de coordenação define como elas formam um sistema.
 
 ### 2.4.2 Arquitetura de sistemas multiagentes
 
-A arquitetura define quais agentes existem, quem inicia a execução, como o estado é compartilhado e quem produz a resposta final. Revisões recentes destacam que sistemas multiagentes podem variar quanto à autonomia, topologia de comunicação, distribuição das decisões e mecanismos de supervisão (LI et al., 2024; PICCIALLI et al., 2025). Essas escolhas influenciam rastreabilidade, robustez e custo computacional, além de determinar quais eventos podem ser observados durante um atendimento.
+A arquitetura abrange a composição dos agentes e as relações que regulam sua atuação. Ela define quem inicia a execução, quais componentes acionam ferramentas, como o estado é mantido, quem autoriza transferências, quando o fluxo termina e qual unidade produz a resposta final. Portanto, não deve ser descrita apenas como um diagrama de módulos: ela contém decisões que condicionam o percurso de cada tarefa.
+
+Revisões recentes mostram variações de topologia, autoridade, memória e controle (LI et al., 2024; PICCIALLI et al., 2025). Em uma organização hierárquica, um supervisor seleciona especialistas e consolida saídas. Em uma estrutura sequencial, o controle está incorporado à ordem das etapas. Em uma rede descentralizada, os agentes escolhem para qual par transferir a tarefa. Cada forma determina caminhos, pontos de falha e evidências diferentes para auditoria.
+
+A topologia torna parte dessas diferenças observável. Uma estrela concentra comunicação em um nó; uma cadeia impõe ordem linear; uma árvore distribui subtarefas por níveis; e um grafo permite relações mais flexíveis (QIAN et al., 2025; ZHU et al., 2025). Contudo, grafos semelhantes podem adotar regras diferentes para participação, contexto, repetição e encerramento. A análise precisa combinar a forma da rede com os mecanismos de execução.
+
+Em comparações experimentais, componentes alheios à variável arquitetural devem permanecer equivalentes. Modelo, ferramentas, cenários e critérios de avaliação precisam ser controlados para relacionar diferenças observadas à coordenação. No MAB, uma base funcional comum sustenta orquestração centralizada, *workflow* estruturado e *swarm* descentralizado. A farmácia fornece tarefas concretas, enquanto a arquitetura determina como os agentes organizam o trabalho.
 
 ### 2.4.3 Comunicação e coordenação entre agentes
 
-A comunicação pode ocorrer por mensagens diretas, estado compartilhado, handoffs ou por um controlador que intermedeia as decisões. Ela é necessária para distribuir subtarefas, mas também pode propagar erros ou ampliar divergências. Hammond et al. (2025) organizam riscos multiagentes em categorias que incluem descoordenação, conflito e cooperação indesejada. Embora o MAB opere com agentes que compartilham um objetivo, o risco de descoordenação permanece relevante quando uma rota incorreta, uma evidência insuficiente ou uma transferência excessiva altera o atendimento.
+A comunicação corresponde ao intercâmbio de solicitações, resultados, evidências e informações de controle. Ela pode ocorrer por mensagens diretas, estado compartilhado, chamadas mediadas ou *handoffs*, nos quais um agente transfere a continuidade para outro. Metadados como origem, destino, ferramenta, motivo da transferência e estado permitem reconstruir não apenas a resposta, mas o processo que a produziu.
+
+Coordenação transforma essas interações em um fluxo coerente: estabelece participantes, autoridade sobre o próximo passo, resolução de conflitos e encerramento. Wang et al. (2025) organizam estratégias colaborativas em governança, participação, interação e gestão do histórico. Assim, coordenar não é apenas enviar mensagens, mas selecionar participantes e preservar o contexto necessário às decisões subsequentes.
+
+O compartilhamento produz benefícios e custos. Evidências podem evitar trabalho duplicado, enquanto contexto incorreto pode propagar decisões inadequadas. Transferências excessivas elevam mensagens, tokens e latência. Hammond et al. (2025) incluem descoordenação, conflito e cooperação indesejada entre os riscos multiagentes. Mesmo com objetivo comum, podem ocorrer rotas incorretas, repetição, ciclos ou consolidação de evidência insuficiente.
+
+Por isso, observabilidade e limites operacionais integram a coordenação. Identificadores, mensagens, ferramentas, transições, contagem de *handoffs* e condições de *timeout* permitem verificar o comportamento. A telemetria não elimina erros semânticos, mas torna comparáveis custos e caminhos. A seção seguinte distingue orquestração centralizada, *workflow* estruturado e *swarm* descentralizado sem pressupor superioridade antes das evidências experimentais.
 
 ## 2.5 ARQUITETURAS DE COORDENAÇÃO
 
