@@ -91,6 +91,7 @@ REFERENCE_EMPHASIS = {
     "PAIS": "Nature Medicine",
     "PANDEY": "Proceedings of the 23rd Workshop on Biomedical Natural Language Processing",
     "PICCIALLI": "Expert Systems with Applications",
+    "QIAN": "International Conference on Learning Representations 2025",
     "SALESFORCE.": "AI Customer Service Agents",
     "STANFORD HAI.": "AI Index Report 2025",
     "TAM": "npj Digital Medicine",
@@ -98,6 +99,8 @@ REFERENCE_EMPHASIS = {
     "WHO EUROPE.": "Advancing the role of pharmacists to meet changing patient and health system needs",
     "YU": "2025 8th International Conference on Artificial Intelligence and Big Data (ICAIBD)",
     "ZENDESK.": "About AI agents",
+    "ZHOU": "International Conference on Learning Representations 2026",
+    "ZHU": "Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)",
 }
 
 
