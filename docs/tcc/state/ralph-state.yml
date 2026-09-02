@@ -62,7 +62,7 @@ constraints:
 
 audit:
   date: "2026-09-02"
-  status: "five_architecture_coordination_references_discovered_and_triaged"
+  status: "fourteen_authorial_svg_candidates_generated_and_visually_validated"
   open_questions:
     active: 2
     integrated: 3
@@ -150,6 +150,20 @@ audit:
       - "IMG-C016"
       - "IMG-C017"
       - "IMG-C018"
+      - "IMG-C019"
+      - "IMG-C020"
+      - "IMG-C021"
+      - "IMG-C022"
+      - "IMG-C023"
+      - "IMG-C024"
+      - "IMG-C025"
+      - "IMG-C026"
+      - "IMG-C027"
+      - "IMG-C028"
+      - "IMG-C029"
+      - "IMG-C030"
+      - "IMG-C031"
+      - "IMG-C032"
     licenses:
       - "CC BY 4.0"
       - "Apache-2.0"
@@ -159,12 +173,31 @@ audit:
     latest_research: "docs/tcc/figures/research-2026-08-31.md"
     latest_research_scope: "visual_audit_of_55_page_docx_14_insertion_points_and_all_16_cited_references"
     latest_candidate_additions:
-      - "IMG-C014"
-      - "IMG-C015"
-      - "IMG-C016"
-      - "IMG-C017"
-      - "IMG-C018"
-    recommended_first_creation_round: "six_to_eight_figures_centered_on_agents_coordination_related_works_and_MAB_architecture"
+      - "IMG-C019"
+      - "IMG-C020"
+      - "IMG-C021"
+      - "IMG-C022"
+      - "IMG-C023"
+      - "IMG-C024"
+      - "IMG-C025"
+      - "IMG-C026"
+      - "IMG-C027"
+      - "IMG-C028"
+      - "IMG-C029"
+      - "IMG-C030"
+      - "IMG-C031"
+      - "IMG-C032"
+    latest_authorial_batch:
+      date: "2026-09-02"
+      path: "docs/tcc/figures/original/insertion-map-2026-09-02"
+      count: 14
+      format: "SVG_1600x1000"
+      language: "pt-BR"
+      status: "candidate_pending_editorial_review"
+      validation: "valid_XML_rendered_with_Inkscape_and_visually_reviewed_in_color_and_grayscale"
+      inserted_in_manuscript: false
+      inserted_in_docx: false
+    recommended_first_creation_round: "completed_as_fourteen_authorial_svg_candidates; editorial_selection_pending"
     latest_design: "four_authorial_methodology_diagrams_integrated_2026-08-25"
     manuscript_insertions: 4
     docx_insertions: 4
@@ -250,8 +283,10 @@ audit:
     - "A validade externa da comparação deverá ser discutida com cautela: o protocolo usa um único estudo de caso farmacêutico e não sustenta, por si só, generalização para todos os domínios de aplicação."
     - "O mapa versionado do formatador ainda não contém as regras de destaque bibliográfico de R044, R057 e R058; nesta execução, as regras verificadas foram fornecidas ao auditor somente em memória, sem alteração de código."
     - "Os novos arquivos IMG-C014 a IMG-C018 são candidatos licenciados e não estão aprovados para inserção; reproduções densas ou em inglês devem ser adaptadas ou redesenhadas antes do DOCX."
+    - "Os diagramas autorais IMG-C019 a IMG-C032 foram validados visualmente, mas continuam candidatos; a seleção editorial e a inserção no manuscrito e no DOCX ainda não foram realizadas."
+    - "IMG-C031 representa a cadeia de proveniência planejada e permanece condicionada ao congelamento dos parâmetros técnicos da OQ-005."
     - "Figuras de R033, R034, R041, R044 e R058 permaneceram apenas como referências conceituais porque não foi confirmada licença pública suficiente para armazenamento e adaptação."
     - "O sincronizador versionado de Markdown para DOCX está delimitado ao Capítulo 4; alterações em outros capítulos exigem substituição cirúrgica validada ou futura generalização do utilitário fora do escopo documental."
 
-last_run: "2026-09-01"
-next_recommended_action: "Na próxima rodada bibliográfica, descobrir e triar até cinco referências diretamente ligadas à comparação controlada de arquiteturas multiagentes; manter IMG-C009 pendente de redesenho e aprovação antes da inserção."
+last_run: "2026-09-02-02"
+next_recommended_action: "Revisar editorialmente os 14 diagramas autorais, aprovar apenas os que acrescentem valor ao texto e então inserir o primeiro subconjunto no manuscrito e no DOCX com PNG de compatibilidade e lista de figuras automática."

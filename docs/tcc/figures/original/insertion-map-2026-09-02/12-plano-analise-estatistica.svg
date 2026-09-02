@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
+<title id="title">Plano de análise estatística</title>
+<desc id="desc">Fluxo planejado de agregação, teste de Friedman, comparações de Wilcoxon com Holm e tamanho de efeito.</desc>
+<defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#536B7A"/>
+              </marker>
+              <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#2F80ED"/>
+              </marker>
+              <style>
+                text { font-family: Arial, Helvetica, sans-serif; }
+                .title { font-size: 38px; font-weight: 700; fill: #183B56; }
+                .subtitle { font-size: 20px; fill: #5F7280; }
+                .label { font-size: 22px; font-weight: 700; }
+                .body { font-size: 18px; }
+                .small { font-size: 15px; }
+                .tiny { font-size: 13px; }
+              </style>
+            </defs>
+<rect width="1600" height="1000" fill="#FFFFFF"/>
+<rect x="58" y="42" width="10" height="52" rx="5" fill="#2F80ED"/>
+<text x="88" y="78" class="title">Plano de análise estatística</text>
+<text x="88" y="112" class="subtitle">As repetições são preservadas, agregadas por cenário e comparadas de forma pareada.</text>
+<rect x="65" y="250" width="260" height="290" rx="18" fill="#FFFFFF" stroke="#2F80ED" stroke-width="2"/>
+<rect x="65" y="250" width="260" height="58" rx="18" fill="#EAF3FF"/>
+<rect x="65" y="290" width="260" height="18" fill="#EAF3FF"/>
+<text x="85" y="287" font-size="20" font-weight="700" fill="#183B56" text-anchor="start" font-style="normal">
+<tspan x="85" dy="0">ENTRADAS</tspan>
+</text>
+<text x="87" y="332" font-size="18" font-weight="400" fill="#243746" text-anchor="start" font-style="normal">
+<tspan x="87" dy="0">40 cenários</tspan>
+<tspan x="87" dy="27">3 arquiteturas</tspan>
+<tspan x="87" dy="27">5 repetições</tspan>
+<tspan x="87" dy="27">600 execuções</tspan>
+</text>
+<line x1="325" y1="395" x2="400" y2="395" stroke="#536B7A" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="410" y="250" width="280" height="290" rx="18" fill="#FFFFFF" stroke="#218C74" stroke-width="2"/>
+<rect x="410" y="250" width="280" height="58" rx="18" fill="#E9F7F3"/>
+<rect x="410" y="290" width="280" height="18" fill="#E9F7F3"/>
+<text x="430" y="287" font-size="20" font-weight="700" fill="#183B56" text-anchor="start" font-style="normal">
+<tspan x="430" dy="0">AGREGAÇÃO</tspan>
+</text>
+<text x="432" y="332" font-size="17" font-weight="400" fill="#243746" text-anchor="start" font-style="normal">
+<tspan x="432" dy="0">preservar cada execução</tspan>
+<tspan x="432" dy="27">agregar repetições</tspan>
+<tspan x="432" dy="27">por cenário e arquitetura</tspan>
+<tspan x="432" dy="27">unidade pareada: cenário</tspan>
+</text>
+<line x1="690" y1="395" x2="765" y2="395" stroke="#536B7A" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="775" y="250" width="260" height="290" rx="18" fill="#FFFFFF" stroke="#7B61A8" stroke-width="2"/>
+<rect x="775" y="250" width="260" height="58" rx="18" fill="#F4EFFB"/>
+<rect x="775" y="290" width="260" height="18" fill="#F4EFFB"/>
+<text x="795" y="287" font-size="20" font-weight="700" fill="#183B56" text-anchor="start" font-style="normal">
+<tspan x="795" dy="0">TESTE GLOBAL</tspan>
+</text>
+<text x="797" y="332" font-size="18" font-weight="400" fill="#243746" text-anchor="start" font-style="normal">
+<tspan x="797" dy="0">Friedman</tspan>
+<tspan x="797" dy="27">variáveis contínuas</tspan>
+<tspan x="797" dy="27">ou ordinais</tspan>
+<tspan x="797" dy="27">α = 0,05</tspan>
+</text>
+<line x1="1035" y1="395" x2="1110" y2="395" stroke="#536B7A" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow)"/>
+<polygon points="1230,245 1360,395 1230,545 1100,395" fill="#FFF4E5" stroke="#D97706" stroke-width="3"/>
+<text x="1230" y="375" font-size="18" font-weight="700" fill="#243746" text-anchor="middle" font-style="normal">
+<tspan x="1230" dy="0">diferença global</tspan>
+<tspan x="1230" dy="27">significativa?</tspan>
+</text>
+<line x1="1230" y1="545" x2="1230" y2="625" stroke="#2E7D32" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="1245" y="590" font-size="16" font-weight="700" fill="#2E7D32" text-anchor="start" font-style="normal">
+<tspan x="1245" dy="0">sim</tspan>
+</text>
+<rect x="1040" y="635" width="380" height="220" rx="18" fill="#FFFFFF" stroke="#2E7D32" stroke-width="2"/>
+<rect x="1040" y="635" width="380" height="58" rx="18" fill="#ECF7EC"/>
+<rect x="1040" y="675" width="380" height="18" fill="#ECF7EC"/>
+<text x="1060" y="672" font-size="19" font-weight="700" fill="#183B56" text-anchor="start" font-style="normal">
+<tspan x="1060" dy="0">COMPARAÇÕES PAREADAS</tspan>
+</text>
+<text x="1062" y="717" font-size="17" font-weight="400" fill="#243746" text-anchor="start" font-style="normal">
+<tspan x="1062" dy="0">Wilcoxon (postos sinalizados)</tspan>
+<tspan x="1062" dy="27">correção de Holm</tspan>
+<tspan x="1062" dy="27">tamanhos de efeito</tspan>
+<tspan x="1062" dy="27">intervalos quando aplicáveis</tspan>
+</text>
+<line x1="1360" y1="395" x2="1490" y2="395" stroke="#5F7280" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="1405" y="375" font-size="16" font-weight="700" fill="#5F7280" text-anchor="start" font-style="normal">
+<tspan x="1405" dy="0">não</tspan>
+</text>
+<rect x="1415" y="430" width="120" height="52" rx="26.0" fill="#EEF2F4" stroke="#5F7280" stroke-width="2"/>
+<text x="1475.0" y="461.44" font-size="16" font-weight="700" fill="#5F7280" text-anchor="middle" font-style="normal">
+<tspan x="1475.0" dy="0">Reportar</tspan>
+</text>
+<rect x="80" y="635" width="780" height="170" rx="20" fill="#EEF2F4" stroke="#183B56" stroke-width="2"/>
+<text x="110" y="680" font-size="19" font-weight="700" fill="#183B56" text-anchor="start" font-style="normal">
+<tspan x="110" dy="0">ANÁLISES COMPLEMENTARES PLANEJADAS</tspan>
+</text>
+<text x="110" y="720" font-size="17" font-weight="400" fill="#243746" text-anchor="start" font-style="normal">
+<tspan x="110" dy="0">• medidas descritivas e dispersão</tspan>
+<tspan x="110" dy="31">• proporções de segurança</tspan>
+<tspan x="110" dy="31">• estratos interpretados com cautela (8 cenários por grupo)</tspan>
+</text>
+<line x1="58" y1="944" x2="1542" y2="944" stroke="#D6E0E5" stroke-width="1" stroke-linecap="round"/>
+<text x="58" y="972" font-size="14" font-weight="400" fill="#5F7280" text-anchor="start" font-style="normal">
+<tspan x="58" dy="0">Elaboração própria (2026) — candidato para revisão editorial.</tspan>
+</text>
+</svg>

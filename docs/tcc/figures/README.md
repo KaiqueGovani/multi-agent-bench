@@ -11,6 +11,7 @@ Este diretório reúne candidatos visuais pesquisados para o TCC e os registros 
 - `candidates/`: cópias ou recortes de figuras cuja reutilização foi autorizada pela licença da fonte e cuja proveniência foi registrada.
 - `editable/`: fontes vetoriais editáveis de adaptações e diagramas candidatos.
 - `original/`: reservado para diagramas autorais do TCC, preferencialmente em formato vetorial e com uma fonte editável.
+- `original/insertion-map-2026-09-02/`: 14 diagramas autorais em SVG derivados do mapa de inserções; candidatos validados visualmente e ainda não aprovados para o DOCX.
 - `approved/`: reservado para as versões finais aprovadas e prontas para o DOCX.
 
 As figuras metodológicas aprovadas ficam em `approved/methodology/`. Cada figura mantém o SVG como fonte principal e um PNG de alta resolução como *fallback* de compatibilidade e visualização.

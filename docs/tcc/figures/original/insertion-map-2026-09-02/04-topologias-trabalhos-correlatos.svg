@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
+<title id="title">Topologias presentes nos trabalhos correlatos</title>
+<desc id="desc">Painel com topologias em estrela, cadeia, árvore e grafo ou malha e estudos associados.</desc>
+<defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#536B7A"/>
+              </marker>
+              <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#2F80ED"/>
+              </marker>
+              <style>
+                text { font-family: Arial, Helvetica, sans-serif; }
+                .title { font-size: 38px; font-weight: 700; fill: #183B56; }
+                .subtitle { font-size: 20px; fill: #5F7280; }
+                .label { font-size: 22px; font-weight: 700; }
+                .body { font-size: 18px; }
+                .small { font-size: 15px; }
+                .tiny { font-size: 13px; }
+              </style>
+            </defs>
+<rect width="1600" height="1000" fill="#FFFFFF"/>
+<rect x="58" y="42" width="10" height="52" rx="5" fill="#2F80ED"/>
+<text x="88" y="78" class="title">Topologias presentes nos trabalhos correlatos</text>
+<text x="88" y="112" class="subtitle">A forma das conexões torna visível como autoridade e mensagens circulam.</text>
+<rect x="55" y="185" width="320" height="525" rx="18" fill="#FFFFFF" stroke="#2F80ED" stroke-width="2"/>
+<rect x="55" y="185" width="320" height="58" rx="18" fill="#EAF3FF"/>
+<rect x="55" y="225" width="320" height="18" fill="#EAF3FF"/>
+<text x="75" y="222" font-size="20" font-weight="700" fill="#183B56" text-anchor="start" font-style="normal">
+<tspan x="75" dy="0">ESTRELA</tspan>
+</text>
+<line x1="215" y1="380" x2="125" y2="320" stroke="#2F80ED" stroke-width="2" stroke-linecap="round"/>
+<line x1="215" y1="380" x2="305" y2="320" stroke="#2F80ED" stroke-width="2" stroke-linecap="round"/>
+<line x1="215" y1="380" x2="125" y2="450" stroke="#2F80ED" stroke-width="2" stroke-linecap="round"/>
+<line x1="215" y1="380" x2="305" y2="450" stroke="#2F80ED" stroke-width="2" stroke-linecap="round"/>
+<circle cx="215" cy="380" r="31" fill="#EAF3FF" stroke="#2F80ED" stroke-width="3"/>
+<text x="215" y="386" font-size="16" font-weight="700" fill="#243746" text-anchor="middle" font-style="normal">
+<tspan x="215" dy="0">S</tspan>
+</text>
+<circle cx="125" cy="320" r="24" fill="#FFFFFF" stroke="#2F80ED" stroke-width="3"/>
+<text x="125" y="326" font-size="16" font-weight="700" fill="#243746" text-anchor="middle" font-style="normal">
+<tspan x="125" dy="0">A</tspan>
+</text>
+<circle cx="305" cy="320" r="24" fill="#FFFFFF" stroke="#2F80ED" stroke-width="3"/>
+<text x="305" y="326" font-size="16" font-weight="700" fill="#243746" text-anchor="middle" font-style="normal">
+<tspan x="305" dy="0">A</tspan>
+</text>
+<circle cx="125" cy="450" r="24" fill="#FFFFFF" stroke="#2F80ED" stroke-width="3"/>
+<text x="125" y="456" font-size="16" font-weight="700" fill="#243746" text-anchor="middle" font-style="normal">
+<tspan x="125" dy="0">A</tspan>
+</text>
+<circle cx="305" cy="450" r="24" fill="#FFFFFF" stroke="#2F80ED" stroke-width="3"/>
+<text x="305" y="456" font-size="16" font-weight="700" fill="#243746" text-anchor="middle" font-style="normal">
+<tspan x="305" dy="0">A</tspan>
+</text>
+<line x1="80" y1="515" x2="350" y2="515" stroke="#D6E0E5" stroke-width="1" stroke-linecap="round"/>
+<text x="80" y="555" font-size="15" font-weight="400" fill="#243746" text-anchor="start" font-style="normal">
+<tspan x="80" dy="0">Zhu et al. (2025)</tspan>
+<tspan x="80" dy="28">Kim et al. (2026): centralizada</tspan>
+</text>
+<text x="215" y="675" font-size="16" font-weight="700" fill="#2F80ED" text-anchor="middle" font-style="normal">
+<tspan x="215" dy="0">um nó concentra</tspan>
+<tspan x="215" dy="24">as conexões</tspan>
+</text>
+<rect x="445" y="185" width="320" height="525" rx="18" fill="#FFFFFF" stroke="#218C74" stroke-width="2"/>
+<rect x="445" y="185" width="320" height="58" rx="18" fill="#E9F7F3"/>
+<rect x="445" y="225" width="320" height="18" fill="#E9F7F3"/>
+<text x="465" y="222" font-size="20" font-weight="700" fill="#183B56" text-anchor="start" font-style="normal">
+<tspan x="465" dy="0">CADEIA</tspan>
+</text>
+<line x1="505" y1="385" x2="535" y2="385" stroke="#218C74" stroke-width="2" stroke-linecap="round" marker-end="url(#arrow)"/>
+<line x1="585" y1="385" x2="615" y2="385" stroke="#218C74" stroke-width="2" stroke-linecap="round" marker-end="url(#arrow)"/>
+<line x1="665" y1="385" x2="695" y2="385" stroke="#218C74" stroke-width="2" stroke-linecap="round" marker-end="url(#arrow)"/>
+<circle cx="480" cy="385" r="25" fill="#FFFFFF" stroke="#218C74" stroke-width="3"/>
+<text x="480" y="391" font-size="16" font-weight="700" fill="#243746" text-anchor="middle" font-style="normal">
+<tspan x="480" dy="0">1</tspan>
+</text>
+<circle cx="560" cy="385" r="25" fill="#FFFFFF" stroke="#218C74" stroke-width="3"/>
+<text x="560" y="391" font-size="16" font-weight="700" fill="#243746" text-anchor="middle" font-style="normal">
+<tspan x="560" dy="0">2</tspan>
+</text>
+<circle cx="640" cy="385" r="25" fill="#FFFFFF" stroke="#218C74" stroke-width="3"/>
+<text x="640" y="391" font-size="16" font-weight="700" fill="#243746" text-anchor="middle" font-style="normal">
+<tspan x="640" dy="0">3</tspan>
+</text>
+<circle cx="720" cy="385" r="25" fill="#FFFFFF" stroke="#218C74" stroke-width="3"/>
+<text x="720" y="391" font-size="16" font-weight="700" fill="#243746" text-anchor="middle" font-style="normal">
+<tspan x="720" dy="0">4</tspan>
+</text>
+<line x1="470" y1="515" x2="740" y2="515" stroke="#D6E0E5" stroke-width="1" stroke-linecap="round"/>
+<text x="470" y="555" font-size="15" font-weight="400" fill="#243746" text-anchor="start" font-style="normal">
+<tspan x="470" dy="0">Zhu et al. (2025)</tspan>
+<tspan x="470" dy="28">fluxos sequenciais</tspan>
+</text>
+<text x="605" y="675" font-size="16" font-weight="700" fill="#218C74" text-anchor="middle" font-style="normal">
+<tspan x="605" dy="0">etapas em ordem</tspan>
+<tspan x="605" dy="24">predefinida</tspan>
+</text>
+<rect x="835" y="185" width="320" height="525" rx="18" fill="#FFFFFF" stroke="#D97706" stroke-width="2"/>
+<rect x="835" y="185" width="320" height="58" rx="18" fill="#FFF4E5"/>
+<rect x="835" y="225" width="320" height="18" fill="#FFF4E5"/>
+<text x="855" y="222" font-size="20" font-weight="700" fill="#183B56" text-anchor="start" font-style="normal">
+<tspan x="855" dy="0">ÁRVORE</tspan>
+</text>
+<line x1="995" y1="332" x2="920" y2="358" stroke="#D97706" stroke-width="2" stroke-linecap="round"/>
+<line x1="995" y1="332" x2="1070" y2="358" stroke="#D97706" stroke-width="2" stroke-linecap="round"/>
+<line x1="920" y1="402" x2="880" y2="433" stroke="#D97706" stroke-width="2" stroke-linecap="round"/>
+<line x1="920" y1="402" x2="960" y2="433" stroke="#D97706" stroke-width="2" stroke-linecap="round"/>
+<line x1="1070" y1="402" x2="1030" y2="433" stroke="#D97706" stroke-width="2" stroke-linecap="round"/>
+<line x1="1070" y1="402" x2="1110" y2="433" stroke="#D97706" stroke-width="2" stroke-linecap="round"/>
+<circle cx="995" cy="310" r="22" fill="#FFFFFF" stroke="#D97706" stroke-width="3"/>
+<circle cx="920" cy="380" r="22" fill="#FFFFFF" stroke="#D97706" stroke-width="3"/>
+<circle cx="1070" cy="380" r="22" fill="#FFFFFF" stroke="#D97706" stroke-width="3"/>
+<circle cx="880" cy="455" r="22" fill="#FFFFFF" stroke="#D97706" stroke-width="3"/>
+<circle cx="960" cy="455" r="22" fill="#FFFFFF" stroke="#D97706" stroke-width="3"/>
+<circle cx="1030" cy="455" r="22" fill="#FFFFFF" stroke="#D97706" stroke-width="3"/>
+<circle cx="1110" cy="455" r="22" fill="#FFFFFF" stroke="#D97706" stroke-width="3"/>
+<line x1="860" y1="515" x2="1130" y2="515" stroke="#D6E0E5" stroke-width="1" stroke-linecap="round"/>
+<text x="860" y="555" font-size="15" font-weight="400" fill="#243746" text-anchor="start" font-style="normal">
+<tspan x="860" dy="0">Zhu et al. (2025)</tspan>
+<tspan x="860" dy="28">delegação hierárquica</tspan>
+</text>
+<text x="995" y="675" font-size="16" font-weight="700" fill="#D97706" text-anchor="middle" font-style="normal">
+<tspan x="995" dy="0">delegação por</tspan>
+<tspan x="995" dy="24">níveis</tspan>
+</text>
+<rect x="1225" y="185" width="320" height="525" rx="18" fill="#FFFFFF" stroke="#7B61A8" stroke-width="2"/>
+<rect x="1225" y="185" width="320" height="58" rx="18" fill="#F4EFFB"/>
+<rect x="1225" y="225" width="320" height="18" fill="#F4EFFB"/>
+<text x="1245" y="222" font-size="20" font-weight="700" fill="#183B56" text-anchor="start" font-style="normal">
+<tspan x="1245" dy="0">GRAFO / MALHA</tspan>
+</text>
+<line x1="1280" y1="335" x2="1385" y2="310" stroke="#7B61A8" stroke-width="2" stroke-linecap="round"/>
+<line x1="1385" y1="310" x2="1495" y2="355" stroke="#7B61A8" stroke-width="2" stroke-linecap="round"/>
+<line x1="1495" y1="355" x2="1430" y2="450" stroke="#7B61A8" stroke-width="2" stroke-linecap="round"/>
+<line x1="1430" y1="450" x2="1305" y2="445" stroke="#7B61A8" stroke-width="2" stroke-linecap="round"/>
+<line x1="1305" y1="445" x2="1280" y2="335" stroke="#7B61A8" stroke-width="2" stroke-linecap="round"/>
+<line x1="1280" y1="335" x2="1430" y2="450" stroke="#7B61A8" stroke-width="2" stroke-linecap="round"/>
+<line x1="1385" y1="310" x2="1430" y2="450" stroke="#7B61A8" stroke-width="2" stroke-linecap="round"/>
+<line x1="1385" y1="310" x2="1305" y2="445" stroke="#7B61A8" stroke-width="2" stroke-linecap="round"/>
+<circle cx="1280" cy="335" r="23" fill="#FFFFFF" stroke="#7B61A8" stroke-width="3"/>
+<circle cx="1385" cy="310" r="23" fill="#FFFFFF" stroke="#7B61A8" stroke-width="3"/>
+<circle cx="1495" cy="355" r="23" fill="#FFFFFF" stroke="#7B61A8" stroke-width="3"/>
+<circle cx="1305" cy="445" r="23" fill="#FFFFFF" stroke="#7B61A8" stroke-width="3"/>
+<circle cx="1430" cy="450" r="23" fill="#FFFFFF" stroke="#7B61A8" stroke-width="3"/>
+<line x1="1250" y1="515" x2="1520" y2="515" stroke="#D6E0E5" stroke-width="1" stroke-linecap="round"/>
+<text x="1250" y="555" font-size="15" font-weight="400" fill="#243746" text-anchor="start" font-style="normal">
+<tspan x="1250" dy="0">Qian et al. (2025)</tspan>
+<tspan x="1250" dy="28">Zhu e Zhou et al. (2025/2026)</tspan>
+</text>
+<text x="1385" y="675" font-size="16" font-weight="700" fill="#7B61A8" text-anchor="middle" font-style="normal">
+<tspan x="1385" dy="0">pares possuem</tspan>
+<tspan x="1385" dy="24">conexões flexíveis</tspan>
+</text>
+<rect x="200" y="760" width="1200" height="130" rx="20" fill="#EEF2F4" stroke="#183B56" stroke-width="2"/>
+<text x="800" y="800" font-size="19" font-weight="700" fill="#183B56" text-anchor="middle" font-style="normal">
+<tspan x="800" dy="0">RECORTE DO PRESENTE TRABALHO</tspan>
+</text>
+<text x="800" y="842" font-size="18" font-weight="400" fill="#243746" text-anchor="middle" font-style="normal">
+<tspan x="800" dy="0">orquestração centralizada  •  fluxo estruturado  •  coordenação descentralizada</tspan>
+<tspan x="800" dy="31">mesma base tecnológica e mesmas tarefas; a coordenação é a variável experimental</tspan>
+</text>
+<line x1="58" y1="944" x2="1542" y2="944" stroke="#D6E0E5" stroke-width="1" stroke-linecap="round"/>
+<text x="58" y="972" font-size="14" font-weight="400" fill="#5F7280" text-anchor="start" font-style="normal">
+<tspan x="58" dy="0">Elaboração própria (2026) — candidato para revisão editorial.</tspan>
+</text>
+</svg>

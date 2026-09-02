@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
+<title id="title">Componentes e relações de um sistema multiagente</title>
+<desc id="desc">Mapa dos agentes, ambiente, estado, ferramentas, comunicação e coordenação.</desc>
+<defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#536B7A"/>
+              </marker>
+              <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#2F80ED"/>
+              </marker>
+              <style>
+                text { font-family: Arial, Helvetica, sans-serif; }
+                .title { font-size: 38px; font-weight: 700; fill: #183B56; }
+                .subtitle { font-size: 20px; fill: #5F7280; }
+                .label { font-size: 22px; font-weight: 700; }
+                .body { font-size: 18px; }
+                .small { font-size: 15px; }
+                .tiny { font-size: 13px; }
+              </style>
+            </defs>
+<rect width="1600" height="1000" fill="#FFFFFF"/>
+<rect x="58" y="42" width="10" height="52" rx="5" fill="#2F80ED"/>
+<text x="88" y="78" class="title">Componentes e relações de um sistema multiagente</text>
+<text x="88" y="112" class="subtitle">O comportamento global surge dos agentes e das regras que organizam sua interação.</text>
+<circle cx="800" cy="505" r="145" fill="#EAF3FF" stroke="#2F80ED" stroke-width="4"/>
+<text x="800" y="480" font-size="27" font-weight="700" fill="#183B56" text-anchor="middle" font-style="normal">
+<tspan x="800" dy="0">SISTEMA</tspan>
+<tspan x="800" dy="38">MULTIAGENTE</tspan>
+</text>
+<rect x="105" y="205" width="350" height="150" rx="18" fill="#FFFFFF" stroke="#2F80ED" stroke-width="2"/>
+<rect x="105" y="205" width="350" height="58" rx="18" fill="#EAF3FF"/>
+<rect x="105" y="245" width="350" height="18" fill="#EAF3FF"/>
+<text x="125" y="242" font-size="22" font-weight="700" fill="#183B56" text-anchor="start" font-style="normal">
+<tspan x="125" dy="0">Agentes</tspan>
+</text>
+<text x="127" y="287" font-size="17" font-weight="400" fill="#243746" text-anchor="start" font-style="normal">
+<tspan x="127" dy="0">papéis e capacidades</tspan>
+<tspan x="127" dy="27">autonomia local</tspan>
+</text>
+<line x1="410.0" y1="336.25" x2="560.8" y2="401.5" stroke="#536B7A" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="625" y="175" width="350" height="150" rx="18" fill="#FFFFFF" stroke="#218C74" stroke-width="2"/>
+<rect x="625" y="175" width="350" height="58" rx="18" fill="#E9F7F3"/>
+<rect x="625" y="215" width="350" height="18" fill="#E9F7F3"/>
+<text x="645" y="212" font-size="22" font-weight="700" fill="#183B56" text-anchor="start" font-style="normal">
+<tspan x="645" dy="0">Ambiente</tspan>
+</text>
+<text x="647" y="257" font-size="17" font-weight="400" fill="#243746" text-anchor="start" font-style="normal">
+<tspan x="647" dy="0">tarefas, usuários e dados</tspan>
+<tspan x="647" dy="27">condições externas</tspan>
+</text>
+<line x1="800.0" y1="313.75" x2="800.0" y2="387.70000000000005" stroke="#536B7A" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="1145" y="205" width="350" height="150" rx="18" fill="#FFFFFF" stroke="#7B61A8" stroke-width="2"/>
+<rect x="1145" y="205" width="350" height="58" rx="18" fill="#F4EFFB"/>
+<rect x="1145" y="245" width="350" height="18" fill="#F4EFFB"/>
+<text x="1165" y="242" font-size="22" font-weight="700" fill="#183B56" text-anchor="start" font-style="normal">
+<tspan x="1165" dy="0">Ferramentas</tspan>
+</text>
+<text x="1167" y="287" font-size="17" font-weight="400" fill="#243746" text-anchor="start" font-style="normal">
+<tspan x="1167" dy="0">ações verificáveis</tspan>
+<tspan x="1167" dy="27">serviços e funções</tspan>
+</text>
+<line x1="1190.0" y1="336.25" x2="1039.2" y2="401.5" stroke="#536B7A" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="105" y="670" width="350" height="150" rx="18" fill="#FFFFFF" stroke="#D97706" stroke-width="2"/>
+<rect x="105" y="670" width="350" height="58" rx="18" fill="#FFF4E5"/>
+<rect x="105" y="710" width="350" height="18" fill="#FFF4E5"/>
+<text x="125" y="707" font-size="22" font-weight="700" fill="#183B56" text-anchor="start" font-style="normal">
+<tspan x="125" dy="0">Comunicação</tspan>
+</text>
+<text x="127" y="752" font-size="17" font-weight="400" fill="#243746" text-anchor="start" font-style="normal">
+<tspan x="127" dy="0">mensagens e transferências</tspan>
+<tspan x="127" dy="27">origem, destino e contexto</tspan>
+</text>
+<line x1="410.0" y1="685.0" x2="560.8" y2="615.4" stroke="#536B7A" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="625" y="700" width="350" height="150" rx="18" fill="#FFFFFF" stroke="#218C74" stroke-width="2"/>
+<rect x="625" y="700" width="350" height="58" rx="18" fill="#E9F7F3"/>
+<rect x="625" y="740" width="350" height="18" fill="#E9F7F3"/>
+<text x="645" y="737" font-size="22" font-weight="700" fill="#183B56" text-anchor="start" font-style="normal">
+<tspan x="645" dy="0">Estado compartilhado</tspan>
+</text>
+<text x="647" y="782" font-size="17" font-weight="400" fill="#243746" text-anchor="start" font-style="normal">
+<tspan x="647" dy="0">histórico e evidências</tspan>
+<tspan x="647" dy="27">progresso da tarefa</tspan>
+</text>
+<line x1="800.0" y1="707.5" x2="800.0" y2="629.2" stroke="#536B7A" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="1145" y="670" width="350" height="150" rx="18" fill="#FFFFFF" stroke="#C84B4B" stroke-width="2"/>
+<rect x="1145" y="670" width="350" height="58" rx="18" fill="#FDEEEE"/>
+<rect x="1145" y="710" width="350" height="18" fill="#FDEEEE"/>
+<text x="1165" y="707" font-size="22" font-weight="700" fill="#183B56" text-anchor="start" font-style="normal">
+<tspan x="1165" dy="0">Coordenação</tspan>
+</text>
+<text x="1167" y="752" font-size="17" font-weight="400" fill="#243746" text-anchor="start" font-style="normal">
+<tspan x="1167" dy="0">autoridade e participação</tspan>
+<tspan x="1167" dy="27">ordem, parada e conflitos</tspan>
+</text>
+<line x1="1190.0" y1="685.0" x2="1039.2" y2="615.4" stroke="#536B7A" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="560" y="900" width="480" height="38" rx="19.0" fill="#EEF2F4" stroke="#183B56" stroke-width="2"/>
+<text x="800.0" y="924.44" font-size="16" font-weight="700" fill="#183B56" text-anchor="middle" font-style="normal">
+<tspan x="800.0" dy="0">Arquitetura = composição + relações + regras</tspan>
+</text>
+<line x1="58" y1="944" x2="1542" y2="944" stroke="#D6E0E5" stroke-width="1" stroke-linecap="round"/>
+<text x="58" y="972" font-size="14" font-weight="400" fill="#5F7280" text-anchor="start" font-style="normal">
+<tspan x="58" dy="0">Elaboração própria (2026) — candidato para revisão editorial.</tspan>
+</text>
+</svg>
