@@ -1,6 +1,6 @@
 # Protocolo experimental do MAB
 
-Status: rascunho metodológico atualizado em 2026-08-25; ainda não congelado. A fonte autoral desta revisão é o documento “4 METODOLOGIA — versão revisada”, fornecido por Kaique Govani em 25 de agosto de 2026.
+Status: rascunho metodológico atualizado em 2026-09-03; ainda não congelado. A fonte autoral da revisão de base é o documento “4 METODOLOGIA — versão revisada”, fornecido por Kaique Govani em 25 de agosto de 2026. O procedimento de ordenação foi formalizado em 3 de setembro de 2026 para substituir a indicação anterior, não reproduzível, de alternância ou randomização.
 
 ## 1. Objetivo
 
@@ -61,7 +61,23 @@ Serão mantidos constantes, sempre que tecnicamente possível:
 - versão do código; e
 - perfil ou região de inferência do Amazon Bedrock.
 
-A ordem das arquiteturas será alternada ou randomizada para reduzir efeitos de momento, rede ou variação temporal do serviço remoto.
+### 5.1 Ordem, contrabalanceamento e execução sequencial
+
+Cada combinação entre cenário e repetição formará um bloco com três execuções consecutivas, uma para cada arquitetura. Os 40 blocos de cada estrato receberão as seis permutações possíveis entre `centralized_orchestration`, `structured_workflow` e `decentralized_swarm` da forma mais equilibrada matematicamente possível: cada permutação ocorrerá seis ou sete vezes, e cada arquitetura ocupará cada posição 13 ou 14 vezes por estrato.
+
+A atribuição das permutações e o embaralhamento da sequência completa dos 200 blocos serão realizados antes da coleta definitiva por uma rotina pseudoaleatória com semente fixa. O arquivo `execution-order.csv` deverá registrar, no mínimo:
+
+- `block_id`;
+- `scenario_id`;
+- `stratum`;
+- `repetition`;
+- `position`;
+- `architecture`; e
+- `randomization_seed`.
+
+A semente, a versão da rotina geradora e o resumo SHA-256 do arquivo serão incluídos no congelamento do protocolo. As 600 unidades experimentais serão executadas sequencialmente, sem sobreposição entre chamadas, para evitar que concorrência local ou compartilhamento intencional de largura de banda alterem as medições.
+
+Leitura do código em 3 de setembro de 2026 confirmou que o executor atual serializa as unidades, mas percorre cenários e arquiteturas na ordem fixa fornecida pelo carregador. A geração e o cumprimento do cronograma contrabalanceado são, portanto, requisitos pendentes da preparação experimental, e não uma capacidade já implementada no *harness*.
 
 ## 6. Matriz de execução
 
@@ -76,6 +92,8 @@ Total previsto: 40 × 3 × 5 = 600 execuções.
 As cinco repetições pertencem ao estudo definitivo; a proposta anterior de cinco repetições-piloto seguidas de 10–30 repetições definitivas foi substituída pela decisão autoral registrada nesta revisão.
 
 Execuções técnicas preliminares ainda poderão ser realizadas para validar instrumentação, mas deverão ser identificadas como teste de engenharia e excluídas da matriz de 600 execuções.
+
+Antes da matriz definitiva será realizada uma verificação técnica de aquecimento e conectividade, também excluída das 600 execuções. Depois do início da matriz não serão alterados modelo, parâmetros, *prompts*, ferramentas, limites ou versão do código. Em caso de interrupção entre blocos, a execução será retomada pelo próximo bloco previsto. Se a interrupção ocorrer dentro de um bloco, as tentativas já iniciadas serão preservadas como excluídas por infraestrutura e o bloco completo será reexecutado ao final, com a mesma permutação e identificadores vinculados aos registros originais.
 
 ## 7. Modelo e ambiente
 
@@ -154,14 +172,14 @@ O plano descreve procedimentos futuros e não autoriza antecipar resultados ou i
 4. Fixar os gabaritos, a rubrica e os quatro parâmetros técnicos pendentes.
 5. Registrar versão do código e todas as condições controladas.
 6. Validar a instrumentação com execuções técnicas separadas.
-7. Congelar protocolo, cenários e ordem de execução.
+7. Gerar `execution-order.csv`, registrar semente e SHA-256 e congelar protocolo, cenários e ordem de execução.
 8. Executar a matriz de 600 execuções.
 9. Aplicar avaliação automática e humana cega.
 10. Verificar integridade, calcular métricas e submeter as evidências aos autores.
 
 ## 12. Critérios de exclusão
 
-Uma execução poderá ser excluída apenas por falha de infraestrutura documentada, violação do protocolo, cenário corrompido ou perda de telemetria necessária. Exclusões permanecerão no registro com justificativa e nunca ocorrerão por desempenho desfavorável.
+Uma execução poderá ser excluída apenas por falha de infraestrutura externa documentada, violação do protocolo, cenário corrompido ou perda de telemetria necessária. *Timeouts*, erros de ferramenta e falhas do fluxo produzidos sob as condições normais constituem resultados técnicos e não serão automaticamente excluídos ou repetidos. Quando uma substituição for autorizada, o registro original será preservado, a justificativa será documentada e a nova execução receberá identificador próprio ligado à unidade substituída. Nenhuma repetição ocorrerá por baixa qualidade, conteúdo desfavorável ou desempenho inferior.
 
 ## 13. Pendências para congelamento
 

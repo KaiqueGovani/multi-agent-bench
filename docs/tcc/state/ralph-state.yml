@@ -61,8 +61,8 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
-  date: "2026-09-02"
-  status: "fourteen_authorial_svg_candidates_generated_and_visually_validated"
+  date: "2026-09-03"
+  status: "execution_order_randomization_and_failure_handling_protocol_formalized"
   open_questions:
     active: 2
     integrated: 3
@@ -230,6 +230,17 @@ audit:
     architectures: 3
     repetition_policy: "five_definitive_repetitions_per_scenario_architecture"
     planned_total_executions: 600
+    execution_order:
+      design: "constrained_block_randomization"
+      blocks: 200
+      units_per_block: 3
+      permutations: 6
+      balance_per_stratum: "each_permutation_6_or_7_times_and_each_architecture_in_each_position_13_or_14_times"
+      concurrency: "sequential_no_overlapping_experimental_units"
+      seed: "to_be_generated_and_frozen_before_definitive_collection"
+      schedule_artifact: "execution-order.csv_pending_scenario_freeze"
+      schedule_integrity: "record_generator_version_seed_and_SHA-256"
+      current_harness: "serial_execution_with_fixed_loader_order; constrained_schedule_not_implemented"
     inferential_plan: "friedman_then_pairwise_wilcoxon_signed_rank_with_holm_alpha_0_05"
     hybrid_evaluation: "llm_as_judge_plus_stratified_pharmacist_review"
     definitive_collection_authorized: false
@@ -239,7 +250,7 @@ audit:
     exploratory_unit_definition: "TBD-OQ-004"
     exploratory_sample_target: "approximately_20_histories"
   manuscript:
-    latest_refinement: "Seção 2.4 ampliada para fundamentar agentes, arquitetura, topologia, comunicação, coordenação e observabilidade; a farmácia permanece como estudo de caso instrumental"
+    latest_refinement: "Seção 4.5 passou a definir randomização em blocos, contrabalanceamento das seis ordens, execução sequencial, preservação do cronograma e tratamento rastreável de falhas"
     substantial_drafts:
       - "01 Introdução"
       - "02 Fundamentação Teórica"
@@ -277,6 +288,7 @@ audit:
     - "A quantidade final entre um ou dois farmacêuticos ainda deve ser registrada no congelamento do protocolo."
     - "Modelo exato do processador, versão do Ubuntu Server, região/perfil efetivo do Bedrock e modelo do LLM-as-Judge dependem da OQ-005."
     - "A avaliação semântica está definida no protocolo, mas ainda não está implementada no harness atual; sua aplicação depende do congelamento do julgador, da rubrica e do prompt conforme a OQ-005."
+    - "O executor atual é sequencial, mas percorre cenários e arquiteturas na ordem fixa do carregador; o cronograma contrabalanceado e sua aplicação permanecem requisitos de preparação antes das 600 execuções definitivas."
     - "Os diagramas horizontais das etapas e da construção dos cenários estão corretos e legíveis, mas podem receber refinamento editorial de escala no fechamento do documento."
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
     - "R050 e R052 foram verificadas, mas permanecem sem citação: R050 oferece suporte apenas indireto ao protocolo atual e R052 estuda viés de posição em comparações pareadas ou ordenadas, desenho diferente da rubrica por resposta do MAB."
@@ -288,5 +300,5 @@ audit:
     - "Figuras de R033, R034, R041, R044 e R058 permaneceram apenas como referências conceituais porque não foi confirmada licença pública suficiente para armazenamento e adaptação."
     - "O sincronizador versionado de Markdown para DOCX está delimitado ao Capítulo 4; alterações em outros capítulos exigem substituição cirúrgica validada ou futura generalização do utilitário fora do escopo documental."
 
-last_run: "2026-09-02-02"
-next_recommended_action: "Revisar editorialmente os 14 diagramas autorais, aprovar apenas os que acrescentem valor ao texto e então inserir o primeiro subconjunto no manuscrito e no DOCX com PNG de compatibilidade e lista de figuras automática."
+last_run: "2026-09-03"
+next_recommended_action: "Na rodada de sexta-feira, verificar formalmente R059 a R063 nas fontes primárias e integrar somente as referências que sustentem afirmações específicas sobre topologia, seleção dinâmica e custo de coordenação."

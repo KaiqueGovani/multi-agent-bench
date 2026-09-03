@@ -102,7 +102,9 @@ As demais condições serão mantidas constantes sempre que tecnicamente possív
 
 O experimento utilizará 40 cenários. Cada cenário será executado cinco vezes em cada uma das três arquiteturas, resultando em 600 execuções: 40 cenários × 3 arquiteturas × 5 repetições. A utilização de repetições busca capturar a variabilidade inerente à execução de modelos de linguagem e reduzir a dependência de uma única resposta observada.
 
-A ordem de execução das arquiteturas será alternada ou randomizada ao longo do *benchmark* para reduzir possíveis efeitos associados ao momento da chamada, às condições de rede ou ao serviço remoto de inferência.
+Para reduzir efeitos associados ao momento da chamada, às condições de rede e à variação temporal do serviço remoto, a ordem será definida por randomização em blocos. Cada combinação entre cenário e repetição constituirá um bloco com três execuções consecutivas, uma por arquitetura. Nos 40 blocos de cada estrato, as seis permutações possíveis entre centralizada, *workflow* e *swarm* serão distribuídas da forma mais equilibrada possível, com diferença máxima de uma ocorrência entre permutações e entre as posições ocupadas por cada arquitetura. A atribuição das permutações aos blocos e o embaralhamento da sequência dos 200 blocos serão realizados por uma rotina pseudoaleatória com semente fixa antes da coleta definitiva.
+
+O cronograma resultante será preservado em arquivo tabular contendo identificador do bloco, cenário, estrato, repetição, posição e arquitetura, acompanhado da semente e do resumo criptográfico SHA-256. As execuções serão realizadas sequencialmente, sem concorrência entre unidades experimentais. Erros e *timeouts* ocorridos sob as condições normais do protocolo serão mantidos como resultados técnicos; somente falhas externas enquadradas nos critérios de exclusão poderão gerar execução substituta, sempre com preservação e vínculo ao registro original.
 
 O modelo utilizado pelos agentes será o Anthropic Claude Haiku 4.5, acessado pelo Amazon Bedrock. A configuração atualmente verificada no repositório utiliza o identificador `us.anthropic.claude-haiku-4-5-20251001-v1:0`; o identificador efetivo, a região e o perfil de inferência serão confirmados no congelamento do protocolo e permanecerão constantes durante o experimento.
 
@@ -214,7 +216,7 @@ A análise final relacionará os resultados obtidos com a pergunta de pesquisa, 
 
 A primeira limitação do experimento está relacionada ao uso de um único modelo de linguagem. Os resultados observados com o Claude Haiku 4.5 não permitirão concluir automaticamente que as mesmas diferenças ocorreriam com modelos de outras famílias ou capacidades.
 
-Outra condição relevante é a utilização do Amazon Bedrock para inferência. Embora o *benchmark* seja executado localmente, parte da latência depende de comunicação de rede e da infraestrutura do serviço remoto, elementos que não são integralmente controlados pelos autores. As repetições e a alternância da ordem de execução buscam reduzir o impacto dessas variações.
+Outra condição relevante é a utilização do Amazon Bedrock para inferência. Embora o *benchmark* seja executado localmente, parte da latência depende de comunicação de rede e da infraestrutura do serviço remoto, elementos que não são integralmente controlados pelos autores. As repetições, a randomização em blocos e o equilíbrio das posições ocupadas por cada arquitetura buscam reduzir o impacto dessas variações.
 
 Os cenários serão derivados de conversas reais de um contexto específico de atendimento. Mesmo com diversidade de categorias e níveis de dificuldade, o conjunto não representará necessariamente toda a variedade de situações possíveis em outras farmácias ou canais de atendimento.
 
@@ -237,7 +239,7 @@ Antes do início da coleta definitiva, será produzida uma versão congelada do 
 - cenários anonimizados;
 - gabaritos de avaliação;
 - rubrica do *LLM-as-Judge* e da avaliação humana;
-- ordem das execuções;
+- cronograma e ordem das execuções, incluindo semente de randomização e resumo SHA-256;
 - configuração completa do ambiente local; e
 - resultados brutos de cada *run*.
 
