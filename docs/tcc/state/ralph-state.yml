@@ -61,8 +61,8 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
-  date: "2026-09-03"
-  status: "execution_order_randomization_and_failure_handling_protocol_formalized"
+  date: "2026-09-04"
+  status: "adaptive_architecture_references_verified_and_integrated_in_chapter_3"
   open_questions:
     active: 2
     integrated: 3
@@ -76,9 +76,9 @@ audit:
     placeholders_verified: true
   references:
     total: 63
-    candidate: 21
+    candidate: 16
     verified: 10
-    cited: 16
+    cited: 21
     watch: 7
     reject: 9
     latest_discovery:
@@ -91,26 +91,24 @@ audit:
         - "R063"
       outcome: "five_peer_reviewed_candidates_triaged_for_graph_topology_dynamic_team_selection_communication_pruning_agent_elimination_and_multi_agent_routing"
     latest_verification:
-      date: "2026-08-31"
+      date: "2026-09-04"
       ids:
-        - "R044"
-        - "R057"
-        - "R058"
-      outcome: "metadata_and_scope_verified_in_primary_ACL_Anthology_and_ICLR_proceedings"
+        - "R059"
+        - "R060"
+        - "R061"
+        - "R062"
+        - "R063"
+      outcome: "metadata_and_scope_verified_in_primary_PMLR_OpenReview_ICLR_and_ACL_sources"
     latest_integration:
-      date: "2026-08-31"
+      date: "2026-09-04"
       ids:
-        - "R038"
-        - "R039"
-        - "R041"
-        - "R042"
-        - "R044"
-        - "R051"
-        - "R055"
-        - "R057"
-        - "R058"
-      target: "3.1 Sistemas de Atendimento Automatizado; 3.2 Sistemas Multiagentes Aplicados; 3.3 Análise dos Trabalhos Correlatos; 3.4 Lacunas e Oportunidades"
-      outcome: "chapter_3_rewritten_to_prioritize_architecture_comparison_with_pharmacy_as_an_instrumental_case_study"
+        - "R059"
+        - "R060"
+        - "R061"
+        - "R062"
+        - "R063"
+      target: "3.2 Sistemas Multiagentes Aplicados; 3.3 Análise dos Trabalhos Correlatos; 3.4 Lacunas e Oportunidades"
+      outcome: "adaptive_graph_team_selection_pruning_elimination_and_routing_branch_integrated_and_contrasted_with_fixed_architecture_controlled_comparison"
     latest_theoretical_integration:
       date: "2026-09-01"
       ids:
@@ -271,7 +269,7 @@ audit:
     numbering_marker_typography: "explicit_h1_14pt_bold_h2_12pt_bold_h3_12pt_regular_black"
     numbering_regression_audit: "rejects_bullets_non_arial_or_theme_based_markers_missing_numpr_multiple_numids_and_manual_numbers"
     references: "alphabetical_single_spacing_bold_title_element_et_al_italic"
-    visual_validation_pages: 57
+    visual_validation_pages: 58
     automated_audit: passed
     typography: "body_arial12_h1_arial14_bold_upper_h2_arial12_bold_upper_h3plus_arial12_upper"
     toc_dot_leaders: "automatic_word_tab_stop_right_aligned"
@@ -293,12 +291,12 @@ audit:
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
     - "R050 e R052 foram verificadas, mas permanecem sem citação: R050 oferece suporte apenas indireto ao protocolo atual e R052 estuda viés de posição em comparações pareadas ou ordenadas, desenho diferente da rubrica por resposta do MAB."
     - "A validade externa da comparação deverá ser discutida com cautela: o protocolo usa um único estudo de caso farmacêutico e não sustenta, por si só, generalização para todos os domínios de aplicação."
-    - "O mapa versionado do formatador ainda não contém as regras de destaque bibliográfico de R044, R057 e R058; nesta execução, as regras verificadas foram fornecidas ao auditor somente em memória, sem alteração de código."
+    - "O mapa versionado do formatador ainda não contém regras específicas de destaque bibliográfico para R044, R057-R063; nesta execução, as regras necessárias para R059-R063 foram fornecidas ao pipeline e ao auditor somente em memória, sem alteração de código."
     - "Os novos arquivos IMG-C014 a IMG-C018 são candidatos licenciados e não estão aprovados para inserção; reproduções densas ou em inglês devem ser adaptadas ou redesenhadas antes do DOCX."
     - "Os diagramas autorais IMG-C019 a IMG-C032 foram validados visualmente, mas continuam candidatos; a seleção editorial e a inserção no manuscrito e no DOCX ainda não foram realizadas."
     - "IMG-C031 representa a cadeia de proveniência planejada e permanece condicionada ao congelamento dos parâmetros técnicos da OQ-005."
     - "Figuras de R033, R034, R041, R044 e R058 permaneceram apenas como referências conceituais porque não foi confirmada licença pública suficiente para armazenamento e adaptação."
     - "O sincronizador versionado de Markdown para DOCX está delimitado ao Capítulo 4; alterações em outros capítulos exigem substituição cirúrgica validada ou futura generalização do utilitário fora do escopo documental."
 
-last_run: "2026-09-03"
-next_recommended_action: "Na rodada de sexta-feira, verificar formalmente R059 a R063 nas fontes primárias e integrar somente as referências que sustentem afirmações específicas sobre topologia, seleção dinâmica e custo de coordenação."
+last_run: "2026-09-04"
+next_recommended_action: "Auditar a rastreabilidade entre as citações do capítulo 3, a matriz de trabalhos correlatos e a lista de referências; em seguida, priorizar a substituição de fontes comerciais ainda usadas na fundamentação por literatura acadêmica ou primária mais forte."
