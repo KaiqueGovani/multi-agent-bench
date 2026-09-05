@@ -61,8 +61,8 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
-  date: "2026-09-04"
-  status: "adaptive_architecture_references_verified_and_integrated_in_chapter_3"
+  date: "2026-09-05"
+  status: "chapter_3_citation_registry_matrix_and_docx_traceability_verified"
   open_questions:
     active: 2
     integrated: 3
@@ -126,6 +126,16 @@ audit:
         - "R040"
         - "R041"
       outcome: "stale_needs_correction_markers_closed_after_docx_abnt_verification"
+    chapter_3_traceability:
+      date: "2026-09-05"
+      external_works: 14
+      matrix_rows: 15
+      registry_missing: 0
+      matrix_missing: 0
+      docx_bibliography_missing: 0
+      ambiguous_author_year_labels: "resolved_H_Wang_and_Z_Wang"
+      artifact: "docs/tcc/references/audits/chapter-3-traceability-2026-09-05.md"
+      outcome: "passed"
   figures:
     cited_references_audited: 16
     rights_verified_candidates: 14
@@ -298,5 +308,5 @@ audit:
     - "Figuras de R033, R034, R041, R044 e R058 permaneceram apenas como referências conceituais porque não foi confirmada licença pública suficiente para armazenamento e adaptação."
     - "O sincronizador versionado de Markdown para DOCX está delimitado ao Capítulo 4; alterações em outros capítulos exigem substituição cirúrgica validada ou futura generalização do utilitário fora do escopo documental."
 
-last_run: "2026-09-04"
-next_recommended_action: "Auditar a rastreabilidade entre as citações do capítulo 3, a matriz de trabalhos correlatos e a lista de referências; em seguida, priorizar a substituição de fontes comerciais ainda usadas na fundamentação por literatura acadêmica ou primária mais forte."
+last_run: "2026-09-05"
+next_recommended_action: "Na consolidação semanal, registrar o progresso de 31 de agosto a 6 de setembro; em seguida, priorizar a substituição das fontes comerciais remanescentes na fundamentação por literatura acadêmica ou documentação primária mais forte."
