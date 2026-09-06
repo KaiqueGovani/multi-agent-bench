@@ -61,8 +61,8 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
-  date: "2026-09-05"
-  status: "chapter_3_citation_registry_matrix_and_docx_traceability_verified"
+  date: "2026-09-06"
+  status: "weekly_audit_2026_08_31_to_2026_09_06_consolidated"
   open_questions:
     active: 2
     integrated: 3
@@ -224,14 +224,16 @@ audit:
         status: "candidate_pending_editorial_review"
         target: "2.5.4 Características e diferenças entre as arquiteturas"
   weekly_summary:
-    period: "2026-08-24_to_2026-08-30"
-    manuscript_progress: "chapter_4_revised_with_hybrid_evaluation_and_four_methodology_figures; chapter_6_reconciled_with_current_harness"
-    method_progress: "forty_scenarios_three_architectures_five_repetitions_and_hybrid_evaluation_documented; governance_checklist_GOV_01_to_GOV_10_formalized"
-    references_progress: "R054_to_R056_discovered_verified_and_integrated; chapter_3_reference_set_recentered_on_direct_pharmacy_healthcare_and_coordination_studies"
-    figures_progress: "four_authorial_methodology_diagrams_inserted_with_automatic_list_of_figures"
-    format_progress: "docx_52_pages_audited_with_automatic_right_aligned_dot_leaders_versioned_related_works_table_and_protected_chapters_verified"
+    period: "2026-08-31_to_2026-09-06"
+    artifact: "docs/tcc/state/weekly/2026-08-31-to-2026-09-06.md"
+    manuscript_progress: "research_object_recentered_on_controlled_architecture_comparison; title_shortened; section_2_4_strengthened; chapter_3_rebuilt_and_traced"
+    method_progress: "six_hundred_runs_organized_in_two_hundred_blocks_with_constrained_randomization_counterbalancing_and_failure_rules"
+    references_progress: "R059_to_R063_discovered_verified_and_integrated; chapter_3_fourteen_external_works_fully_traced_across_text_registry_matrix_and_docx"
+    figures_progress: "fourteen_insertion_points_mapped; five_CC_BY_candidates_preserved; fourteen_authorial_SVG_candidates_created_and_visually_validated_pending_editorial_selection"
+    format_progress: "docx_58_pages_latest_audit_passed_with_automatic_right_aligned_dot_leaders_and_protected_chapters_verified"
     blockers: "current_decision_NO_GO; OQ_005_waiting_human; OQ_004_blocked_until_authorized_exploratory_collection"
     primary_next_action: "confirm_GOV_01_to_GOV_10_and_answer_OQ_005_before_protocol_freeze"
+    next_agent_action: "audit_chapter_2_source_strength_and_replace_weak_commercial_or_secondary_sources_in_one_bounded_subsection"
   method:
     experimental_protocol: "revised_design_documented_not_frozen"
     scenario_design: "forty_scenarios_five_strata_eight_per_stratum"
@@ -308,5 +310,5 @@ audit:
     - "Figuras de R033, R034, R041, R044 e R058 permaneceram apenas como referências conceituais porque não foi confirmada licença pública suficiente para armazenamento e adaptação."
     - "O sincronizador versionado de Markdown para DOCX está delimitado ao Capítulo 4; alterações em outros capítulos exigem substituição cirúrgica validada ou futura generalização do utilitário fora do escopo documental."
 
-last_run: "2026-09-05"
-next_recommended_action: "Na consolidação semanal, registrar o progresso de 31 de agosto a 6 de setembro; em seguida, priorizar a substituição das fontes comerciais remanescentes na fundamentação por literatura acadêmica ou documentação primária mais forte."
+last_run: "2026-09-06"
+next_recommended_action: "Auditar a força das fontes usadas no Capítulo 2 e substituir, em uma subseção delimitada, eventuais fontes comerciais ou secundárias por literatura acadêmica ou documentação primária mais forte; manter a coleta em NO-GO até GOV-01 a GOV-10 e aguardar a resposta da OQ-005."
