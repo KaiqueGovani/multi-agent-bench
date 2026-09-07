@@ -17,7 +17,7 @@ Consolidação baseada no modelo Word e nos manuais técnicos fornecidos pelos a
 - usar marcadores automáticos do Word nos itens de enumerações sem ordem obrigatória;
 - gravar explicitamente o vínculo de cada item à lista de marcadores; não depender apenas do nome do estilo;
 - usar marcador em Arial 12, texto em Arial 12 e espaçamento 1,5;
-- manter recuo esquerdo de 1,27 cm e recuo pendente de 0,635 cm, alinhando as linhas de continuação ao texto do item;
+- manter o texto dos itens a 1,905 cm da margem do corpo e o marcador a 1,27 cm, com recuo pendente de 0,635 cm; alinhar as linhas de continuação ao texto do item;
 - não simular listas digitando bullets, hifens ou quebras de linha dentro de um único parágrafo;
 - listas do corpo são independentes da lista decimal usada nos títulos dos capítulos.
 
