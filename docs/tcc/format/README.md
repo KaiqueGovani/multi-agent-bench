@@ -73,3 +73,21 @@ O manuscrito associa cada figura a um comentário estruturado `FIGURE`, seguido 
 As legendas usam o estilo `Figure Caption` e o campo `SEQ Figura`; a nota de fonte usa `Figure Source`. O formatador coleta essas legendas, cria a `LISTA DE FIGURAS` e recalcula as páginas a partir do PDF da primeira passagem. Não digite números de figura, páginas ou sequências de pontos na lista.
 
 Ao adicionar ou remover uma figura, sempre execute novamente as duas passagens. A auditoria deve confirmar: objeto inline, SVG incorporado, legenda sequencial, quantidade idêntica de legendas e entradas, tab stop direito com líder `dot` e páginas coerentes com o PDF.
+
+
+## Ajuste autoral — listas e posição dos títulos das figuras
+
+Em 7 de setembro de 2026, o autor confirmou a ordem obrigatória: título/legenda
+com campo `SEQ Figura` **acima** da imagem, desenho inline no meio e nota de
+fonte **abaixo** da imagem. A ordem deve ser conferida no OOXML e no PDF.
+
+As enumerações do corpo devem usar bullets automáticos e recuo pendente,
+com vínculo explícito ao `numId` em cada item. A lista decimal dos títulos
+permanece separada e não deve receber bullets.
+
+Os utilitários versionados podem preservar pressupostos anteriores ou depender
+dos estilos internos do Word. Após preparar o DOCX, aplique esses ajustes
+editoriais antes da primeira renderização e valide-os novamente após a segunda
+passagem. A auditoria geral deve ser complementada pela contagem dos itens e
+pela verificação da sequência título–imagem–fonte. Nesta correção, os ajustes
+foram aplicados ao documento sem alterar o código dos utilitários.

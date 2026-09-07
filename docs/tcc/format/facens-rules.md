@@ -12,6 +12,15 @@ Consolidação baseada no modelo Word e nos manuais técnicos fornecidos pelos a
 - recuo de primeira linha de 1,25 cm;
 - sem espaço adicional antes ou depois dos parágrafos corridos.
 
+## Listas no corpo do texto
+
+- usar marcadores automáticos do Word nos itens de enumerações sem ordem obrigatória;
+- gravar explicitamente o vínculo de cada item à lista de marcadores; não depender apenas do nome do estilo;
+- usar marcador em Arial 12, texto em Arial 12 e espaçamento 1,5;
+- manter recuo esquerdo de 1,27 cm e recuo pendente de 0,635 cm, alinhando as linhas de continuação ao texto do item;
+- não simular listas digitando bullets, hifens ou quebras de linha dentro de um único parágrafo;
+- listas do corpo são independentes da lista decimal usada nos títulos dos capítulos.
+
 ## Seções numeradas
 
 - usar numeração progressiva decimal, sem ponto depois do último número;
@@ -49,9 +58,9 @@ Consolidação baseada no modelo Word e nos manuais técnicos fornecidos pelos a
 
 - usar, preferencialmente, SVG para diagramas autorais, com PNG de alta resolução como *fallback*;
 - inserir a figura de forma `inline`, centralizada e sem texto flutuante;
-- manter a figura, sua legenda e a nota de fonte juntas sempre que couberem na página;
-- legenda em Arial 10, centralizada, com numeração automática por campo `SEQ Figura` e travessão antes do título;
-- nota de fonte em Arial 10, centralizada, imediatamente após a legenda;
+- manter a ordem título da figura, imagem e fonte; os três elementos devem permanecer juntos sempre que couberem na página;
+- título/legenda imediatamente acima da imagem, em Arial 10, centralizado, com numeração automática por campo `SEQ Figura` e travessão antes do título;
+- nota de fonte em Arial 10, centralizada, imediatamente abaixo da imagem;
 - gerar a `LISTA DE FIGURAS` automaticamente a partir das legendas, nunca por transcrição manual;
 - formatar as entradas da lista em Arial 12, espaço 1,5, tab stop à direita e líder pontilhado automático;
 - conferir os números de página na segunda passagem do pipeline e reprovar pontos ou páginas digitados manualmente;

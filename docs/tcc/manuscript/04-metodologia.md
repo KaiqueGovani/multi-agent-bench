@@ -50,11 +50,11 @@ O conteúdo anonimizado será então transformado em cenários experimentais est
 
 Os cenários serão organizados em cinco estratos funcionais, com oito cenários em cada grupo:
 
-1. FAQ, destinado a avaliar solicitações de informação recorrente e predominantemente operacional;
-2. estoque, destinado a avaliar situações que exigem consulta de disponibilidade ou uso de ferramenta específica;
-3. anexos, destinado a avaliar solicitações que incluem imagem ou outro documento associado;
-4. revisão profissional, destinado a avaliar a capacidade de reconhecer situações nas quais a resposta autônoma é inadequada e deve ocorrer encaminhamento ao farmacêutico; e
-5. continuidade de contexto, destinado a avaliar conversas nas quais a interpretação da mensagem depende de uma ou mais interações anteriores.
+- FAQ, destinado a avaliar solicitações de informação recorrente e predominantemente operacional;
+- estoque, destinado a avaliar situações que exigem consulta de disponibilidade ou uso de ferramenta específica;
+- anexos, destinado a avaliar solicitações que incluem imagem ou outro documento associado;
+- revisão profissional, destinado a avaliar a capacidade de reconhecer situações nas quais a resposta autônoma é inadequada e deve ocorrer encaminhamento ao farmacêutico; e
+- continuidade de contexto, destinado a avaliar conversas nas quais a interpretação da mensagem depende de uma ou mais interações anteriores.
 
 A divisão em estratos é empregada para garantir diversidade no conjunto experimental e não significa que essas características sejam mutuamente exclusivas. Um cenário com anexo, por exemplo, também pode exigir continuidade de contexto ou revisão profissional.
 

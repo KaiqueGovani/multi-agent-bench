@@ -62,7 +62,7 @@ constraints:
 
 audit:
   date: "2026-09-07"
-  status: "chapter_2_and_fourteen_svg_review_completed"
+  status: "list_bullets_and_figure_caption_placement_corrected"
   open_questions:
     active: 2
     integrated: 3
@@ -276,6 +276,9 @@ audit:
     references: "alphabetical_single_spacing_bold_title_element_et_al_italic"
     visual_validation_pages: 58
     automated_audit: passed
+    body_list_items_with_explicit_bullets: 51
+    figure_caption_placement: "title_above_image_source_below_image"
+    latest_format_review: "2026-09-07"
     typography: "body_arial12_h1_arial14_bold_upper_h2_arial12_bold_upper_h3plus_arial12_upper"
     toc_dot_leaders: "automatic_word_tab_stop_right_aligned"
     heading_color: "absolute_black_without_theme_color"
@@ -304,6 +307,7 @@ audit:
     - "O sincronizador versionado de Markdown para DOCX está delimitado ao Capítulo 4; alterações em outros capítulos exigem substituição cirúrgica validada ou futura generalização do utilitário fora do escopo documental."
 
 last_run: "2026-09-07"
+last_run_record: "docs/tcc/state/runs/2026-09-07-02.md"
 next_recommended_action: "Receber o feedback da orientadora sobre o Capítulo 2 revisado e a distinção entre configurações completas e topologias isoladas; manter a coleta em NO-GO até GOV-01 a GOV-10 e aguardar a resposta da OQ-005."
 manual_review:
   date: "2026-09-07"
