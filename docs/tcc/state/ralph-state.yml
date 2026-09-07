@@ -62,7 +62,13 @@ constraints:
 
 audit:
   date: "2026-09-07"
-  status: "list_bullets_and_figure_caption_placement_corrected"
+  status: "daily_editorial_instructions_aligned_with_author_approved_format"
+  editorial_instructions:
+    date: "2026-09-07"
+    artifact: "docs/tcc/automation/daily-prompt.md"
+    outcome: "canonical_docx_path_corrected; heading_bullet_ban_scoped; body_indents_and_caption_order_explicit; supplemental_validation_required"
+    manuscript_changed: false
+    docx_changed: false
   open_questions:
     active: 2
     integrated: 3
@@ -309,7 +315,7 @@ audit:
     - "O sincronizador versionado de Markdown para DOCX está delimitado ao Capítulo 4; alterações em outros capítulos exigem substituição cirúrgica validada ou futura generalização do utilitário fora do escopo documental."
 
 last_run: "2026-09-07"
-last_run_record: "docs/tcc/state/runs/2026-09-07-03.md"
+last_run_record: "docs/tcc/state/runs/2026-09-07-04.md"
 next_recommended_action: "Receber o feedback da orientadora sobre o Capítulo 2 revisado e a distinção entre configurações completas e topologias isoladas; manter a coleta em NO-GO até GOV-01 a GOV-10 e aguardar a resposta da OQ-005."
 manual_review:
   date: "2026-09-07"
