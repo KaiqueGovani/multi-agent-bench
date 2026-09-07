@@ -22,6 +22,13 @@ O workflow estruturado implementa um pipeline com agentes diferentes para classi
 
 O swarm descentralizado utiliza uma ferramenta de handoff. Um coordenador delega a solicitação para especialistas de FAQ, estoque ou anexos; esses especialistas podem transferir a tarefa a outro par quando precisam de informação complementar. Um limite configurável impede transferências indefinidas. Um sintetizador é acionado quando o retorno do coordenador não constitui uma resposta final adequada. Cada transferência incrementa contadores de handoff e loop.
 
+A figura seguinte distingue a base funcional comum das configurações de coordenação. Modelo, cenários e critérios de avaliação são controles previstos no protocolo. A distribuição de funções e o número de agentes também diferem entre as configurações, o que limita a atribuição de diferenças exclusivamente à topologia.
+
+<!-- FIGURE: IMG-C026 | caption: Base funcional e configurações comparadas no MAB. -->
+![Base funcional e configurações comparadas no MAB.](../figures/original/insertion-map-2026-09-02/08-componentes-comuns-variaveis.svg)
+
+Fonte: elaboração própria (2026), a partir da implementação do MAB.
+
 ## 6.4 INTEGRAÇÃO COM FERRAMENTAS
 
 A API cria e acompanha runs, despacha a execução ao runtime e persiste o desfecho. Eventos técnicos descrevem nós, mensagens, ferramentas e handoffs, permitindo alimentar a timeline da interface e os relatórios comparativos. O benchmark existente executa os mesmos cenários contra as três arquiteturas e agrega sucesso, latência p50/p95, tokens, chamadas de ferramenta, erros, loops, handoffs e revisão humana.

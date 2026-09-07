@@ -1,0 +1,268 @@
+[
+  {
+    "id": "IMG-C019",
+    "svg": "01-comparacao-arquiteturas.svg",
+    "svg_sha256": "ff9109653e77874509c9c30d923bf41c3b30f23fa210ee7f856002358fd094f3",
+    "svg_size": [
+      1200,
+      710
+    ],
+    "png": "01-comparacao-arquiteturas.png",
+    "png_sha256": "d78dd215ef76665d76ef33006c057c05ccc60e5826be7e1f2df12aa326ec4dc8",
+    "png_size": [
+      1800,
+      1065
+    ],
+    "decision": "approved_and_inserted_after_authorized_editorial_review",
+    "section": "2.5.4",
+    "correction": "Controle central, etapas e delegação entre pares separados; setas alinhadas; diagrama explicitamente conceitual.",
+    "reason": "Inserida: contribuição visual distinta e diretamente ligada ao texto."
+  },
+  {
+    "id": "IMG-C020",
+    "svg": "02-anatomia-agente-llm.svg",
+    "svg_sha256": "13a114ba2f15d50ad031a85d3acdfcb24d0e2712f12254fe3f6b696d0f97a5f7",
+    "svg_size": [
+      1200,
+      680
+    ],
+    "png": "02-anatomia-agente-llm.png",
+    "png_sha256": "9c9ab8aee54e5a08a121d41e6179e938c588e58944d0846154e6bea4fa261899",
+    "png_size": [
+      1800,
+      1020
+    ],
+    "decision": "approved_and_inserted_after_authorized_editorial_review",
+    "section": "2.3.2",
+    "correction": "Ciclo modelo–ferramenta–retorno redesenhado; execução atribuída à aplicação; removidos rótulos abstratos.",
+    "reason": "Inserida: contribuição visual distinta e diretamente ligada ao texto."
+  },
+  {
+    "id": "IMG-C021",
+    "svg": "03-componentes-sistema-multiagente.svg",
+    "svg_sha256": "2c85872149f879c8921695fb75f659790b9f8193eca89256f349e18df8d1ed9c",
+    "svg_size": [
+      1200,
+      650
+    ],
+    "png": "03-componentes-sistema-multiagente.png",
+    "png_sha256": "3f10d50d6307e762aca0bb73792f949dae2b013edb8af903a7f615e8640504ff",
+    "png_size": [
+      1800,
+      975
+    ],
+    "decision": "reviewed_not_selected_see_review_2026_09_07",
+    "section": "2.4.2/2.4.3",
+    "correction": "Mensagens e recursos ligados aos agentes; removidos cruzamentos entre setas e texto.",
+    "reason": "Não inserida: sobreposição com ciclo do agente e topologias."
+  },
+  {
+    "id": "IMG-C022",
+    "svg": "04-topologias-trabalhos-correlatos.svg",
+    "svg_sha256": "0f40a42254550669b2cdc55636d5ba171952cc7e79fd9fcf578870c1e68a98dc",
+    "svg_size": [
+      1200,
+      430
+    ],
+    "png": "04-topologias-trabalhos-correlatos.png",
+    "png_sha256": "61d8424214d38d3773752def1e79d8868674ca9ab2bb532e128d04d4813b5d0e",
+    "png_size": [
+      1800,
+      645
+    ],
+    "decision": "approved_and_inserted_after_authorized_editorial_review",
+    "section": "2.4.2",
+    "correction": "Estrela, cadeia, árvore e rede desenhadas com conexões completas; removidas atribuições imprecisas a estudos específicos.",
+    "reason": "Inserida: contribuição visual distinta e diretamente ligada ao texto."
+  },
+  {
+    "id": "IMG-C023",
+    "svg": "05-matriz-lacunas-pesquisa.svg",
+    "svg_sha256": "87455d903fd54c38bdf58d02bd44a6b5bc92dd4e3916e865762d11cc73969738",
+    "svg_size": [
+      1200,
+      600
+    ],
+    "png": "05-matriz-lacunas-pesquisa.png",
+    "png_sha256": "c129002e19d7d5e79491c0d1fde6d8683c0bd47a772025d3823d3b1dfcae3eb5",
+    "png_size": [
+      1800,
+      900
+    ],
+    "decision": "reviewed_not_selected_see_review_2026_09_07",
+    "section": "3.3/3.4",
+    "correction": "Removida matriz de cobertura sem critérios verificáveis; substituída por perguntas de leitura dos estudos.",
+    "reason": "Não inserida: quadro de leitura não substitui a matriz fundamentada do Capítulo 3."
+  },
+  {
+    "id": "IMG-C024",
+    "svg": "06-arquitetura-logica-mab.svg",
+    "svg_sha256": "02d5f648058b402d4c849569acdc4c035d0fd120e95f23c0a2f893e0afd4ce81",
+    "svg_size": [
+      1200,
+      710
+    ],
+    "png": "06-arquitetura-logica-mab.png",
+    "png_sha256": "119df9c89997a0714dd99d0c7dea36eb906539d3ab9f9e975ce0d72b5cbd95b5",
+    "png_size": [
+      1800,
+      1065
+    ],
+    "decision": "approved_and_inserted_after_authorized_editorial_review",
+    "section": "5.2",
+    "correction": "Relações de API, banco, anexos e execução corrigidas; três arquiteturas apresentadas como alternativas.",
+    "reason": "Inserida: contribuição visual distinta e diretamente ligada ao texto."
+  },
+  {
+    "id": "IMG-C025",
+    "svg": "07-fluxo-execucao-observavel.svg",
+    "svg_sha256": "033c05a05946a3137566ea4ec332560c819ad0deb6609852378e3dd7729b285e",
+    "svg_size": [
+      1200,
+      810
+    ],
+    "png": "07-fluxo-execucao-observavel.png",
+    "png_sha256": "3863534ba73b4a79c43fc4e0416a5a1d42a443e8c54bc9a2507adf4d0aa860b7",
+    "png_size": [
+      1800,
+      1215
+    ],
+    "decision": "reviewed_not_selected_see_review_2026_09_07",
+    "section": "5.4/6.4",
+    "correction": "Sequência reduzida a quatro participantes; chamadas e retornos ancorados nas linhas correspondentes.",
+    "reason": "Não inserida: fluxo já descrito em 5.4 e parcialmente coberto pela figura de serviços."
+  },
+  {
+    "id": "IMG-C026",
+    "svg": "08-componentes-comuns-variaveis.svg",
+    "svg_sha256": "290f43419c30de9b58d576245aba62a5c43ed2c0a51f102dbdb26886ed3cc968",
+    "svg_size": [
+      1200,
+      650
+    ],
+    "png": "08-componentes-comuns-variaveis.png",
+    "png_sha256": "af23898962a0475f495f68fe327a68e7401eeed1691bddd94c33425cb1712034",
+    "png_size": [
+      1800,
+      975
+    ],
+    "decision": "approved_and_inserted_after_authorized_editorial_review",
+    "section": "6.3",
+    "correction": "Corrigida a falsa equivalência de agentes: centralizada possui um agente; divisão de funções varia nas demais.",
+    "reason": "Inserida: contribuição visual distinta e diretamente ligada ao texto."
+  },
+  {
+    "id": "IMG-C027",
+    "svg": "09-fronteiras-atendimento-farmaceutico.svg",
+    "svg_sha256": "933054b59b37666f0d084c5daed96f7da7fa3ca333a98236aa0a8264c9672d9c",
+    "svg_size": [
+      1200,
+      640
+    ],
+    "png": "09-fronteiras-atendimento-farmaceutico.png",
+    "png_sha256": "3e2ef2ad622c5c52f1637618c45b0038f9d0dacec7eb8d23fc55a95ff006afea",
+    "png_size": [
+      1800,
+      960
+    ],
+    "decision": "reviewed_not_selected_see_review_2026_09_07",
+    "section": "2.1.1/2.1.2/2.1.3",
+    "correction": "Encaminhamento ramificado; uma consulta operacional não segue obrigatoriamente para o farmacêutico.",
+    "reason": "Não inserida: escopo farmacêutico suficientemente explicado em 2.1."
+  },
+  {
+    "id": "IMG-C028",
+    "svg": "10-escada-conceitual-ia-agentes.svg",
+    "svg_sha256": "2976e2b9fa6a0d832508b1a49d32b155c30e49c179d17149202d0c76e405521b",
+    "svg_size": [
+      1200,
+      500
+    ],
+    "png": "10-escada-conceitual-ia-agentes.png",
+    "png_sha256": "82252084997cf214f0bcbdf4e128bb901122df553d15202acaffba4242e268dc",
+    "png_size": [
+      1800,
+      750
+    ],
+    "decision": "reviewed_not_selected_see_review_2026_09_07",
+    "section": "2.2/2.3",
+    "correction": "Removida a escada que sugeria evolução obrigatória; termos apresentados como componentes distintos.",
+    "reason": "Não inserida: definições já desenvolvidas em 2.2–2.4."
+  },
+  {
+    "id": "IMG-C029",
+    "svg": "11-arvore-metricas-avaliacao.svg",
+    "svg_sha256": "865e5aa01fd93008c4d71757e16230806620fc974400adaf2a140b8e3dffede1",
+    "svg_size": [
+      1200,
+      570
+    ],
+    "png": "11-arvore-metricas-avaliacao.png",
+    "png_sha256": "b6c5e5ccdfc55882a8ef6186af797729ee9e58b9fef4444fe54aa3f768b1f518",
+    "png_size": [
+      1800,
+      855
+    ],
+    "decision": "reviewed_not_selected_see_review_2026_09_07",
+    "section": "4.8",
+    "correction": "Conectores ligados às quatro dimensões; textos divididos para caber nos quadros.",
+    "reason": "Não inserida: evitar duplicação da figura de avaliação híbrida existente."
+  },
+  {
+    "id": "IMG-C030",
+    "svg": "12-plano-analise-estatistica.svg",
+    "svg_sha256": "a02b55e9a4ad04cae34527c0a9f42f9f4ed50d8fd641d1686cc2093a7664bca9",
+    "svg_size": [
+      1200,
+      860
+    ],
+    "png": "12-plano-analise-estatistica.png",
+    "png_sha256": "acb2ad865ba14a26a9d6625d041104a48215366a69ed79910676da9b5a9079dd",
+    "png_size": [
+      1800,
+      1290
+    ],
+    "decision": "reviewed_not_selected_see_review_2026_09_07",
+    "section": "4.10",
+    "correction": "Explicitadas as saídas sim/não do teste global; mantido o caráter de procedimento planejado.",
+    "reason": "Não inserida: aguardar revisão do protocolo estatístico e evitar ampliar o conjunto metodológico nesta revisão."
+  },
+  {
+    "id": "IMG-C031",
+    "svg": "13-cadeia-proveniencia-experimento.svg",
+    "svg_sha256": "5e005a68b8b781f29434fc599ea4a1a0262115873f650ffaa0a0057c66bd6c89",
+    "svg_size": [
+      1200,
+      640
+    ],
+    "png": "13-cadeia-proveniencia-experimento.png",
+    "png_sha256": "38a68747a279c58c302e1431cd94c3057fed91ed79926152040002f7edb5982d",
+    "png_size": [
+      1800,
+      960
+    ],
+    "decision": "reviewed_not_selected_see_review_2026_09_07",
+    "section": "4.12",
+    "correction": "Separados cenário, configuração, cronograma, eventos e avaliação; desenho permanece um plano.",
+    "reason": "Não inserida: parâmetros e protocolo ainda não congelados (OQ-004/OQ-005)."
+  },
+  {
+    "id": "IMG-C032",
+    "svg": "14-pilha-tecnologias-observabilidade.svg",
+    "svg_sha256": "a6d9f54b0bd957ab66676232ffa6ec7b03d8928bb14aaa28a1c8a6dbbc2d6681",
+    "svg_size": [
+      1200,
+      680
+    ],
+    "png": "14-pilha-tecnologias-observabilidade.png",
+    "png_sha256": "37d8f55d54da7cbebacb93b66b29cd6c5dd7eef451b47edeba4a20b8ab257c12",
+    "png_size": [
+      1800,
+      1020
+    ],
+    "decision": "reviewed_not_selected_see_review_2026_09_07",
+    "section": "6.1/6.4",
+    "correction": "Reduzidas as camadas e os rótulos; sinais de observabilidade separados das tecnologias.",
+    "reason": "Não inserida: sobreposição com a figura de serviços e o texto de 6.1."
+  }
+]

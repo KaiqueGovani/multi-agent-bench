@@ -28,7 +28,7 @@ A comparação será restrita às três arquiteturas implementadas no MAB:
 - *workflow* estruturado, no qual o processamento ocorre por meio de etapas previamente definidas; e
 - coordenação descentralizada por *handoffs*, denominada *swarm* no protótipo, na qual agentes especializados podem transferir diretamente a responsabilidade pela tarefa.
 
-Não será utilizado um agente único como *baseline*, pois o objeto desta pesquisa é especificamente a comparação entre diferentes estratégias de coordenação multiagente.
+Não será incluída uma quarta condição de referência (*baseline*). A condição centralizada já utiliza um único agente com ferramentas; as demais distribuem funções entre agentes.
 
 ## 4.3 ORIGEM DOS DADOS E CONSTRUÇÃO DOS CENÁRIOS
 

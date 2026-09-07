@@ -12,6 +12,13 @@ A solução é organizada em três camadas. A camada de interação recebe mensa
 
 Todas as estratégias recebem o mesmo objeto de requisição, que inclui a mensagem atual, histórico recente, anexos e metadados. O contexto de execução concentra emissão de eventos, contagem de tokens, chamadas de ferramentas, loops, handoffs e tempo decorrido. Essa interface comum é essencial para a validade interna da comparação, pois reduz diferenças que não pertencem à arquitetura avaliada.
 
+A figura seguinte sintetiza as relações entre os serviços. As três arquiteturas são alternativas de execução selecionadas para cada solicitação; os ramos não indicam processamento simultâneo.
+
+<!-- FIGURE: IMG-C024 | caption: Organização dos serviços do MAB. -->
+![Organização dos serviços do MAB.](../figures/original/insertion-map-2026-09-02/06-arquitetura-logica-mab.svg)
+
+Fonte: elaboração própria (2026), a partir da implementação do MAB.
+
 ## 5.3 COMPONENTES DO SISTEMA
 
 O supervisor da arquitetura centralizada classifica a mensagem, escolhe entre FAQ, estoque e análise de anexos e compõe a resposta. No workflow, agentes especializados executam estágios ordenados de classificação, coleta de evidência, revisão e síntese. No swarm, um coordenador inicia a delegação; especialistas de FAQ, estoque e anexos podem realizar handoffs entre pares; e um sintetizador produz a saída final quando necessário.

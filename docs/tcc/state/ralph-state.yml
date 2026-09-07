@@ -61,8 +61,8 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
-  date: "2026-09-06"
-  status: "weekly_audit_2026_08_31_to_2026_09_06_consolidated"
+  date: "2026-09-07"
+  status: "chapter_2_and_fourteen_svg_review_completed"
   open_questions:
     active: 2
     integrated: 3
@@ -75,10 +75,10 @@ audit:
     conclusion: closed
     placeholders_verified: true
   references:
-    total: 63
+    total: 67
     candidate: 16
     verified: 10
-    cited: 21
+    cited: 25
     watch: 7
     reject: 9
     latest_discovery:
@@ -110,16 +110,11 @@ audit:
       target: "3.2 Sistemas Multiagentes Aplicados; 3.3 Análise dos Trabalhos Correlatos; 3.4 Lacunas e Oportunidades"
       outcome: "adaptive_graph_team_selection_pruning_elimination_and_routing_branch_integrated_and_contrasted_with_fixed_architecture_controlled_comparison"
     latest_theoretical_integration:
-      date: "2026-09-01"
-      ids:
-        - "R004"
-        - "R032"
-        - "R033"
-        - "R042"
-        - "R044"
-        - "R057"
-      target: "2.4 Sistemas Multiagentes"
-      outcome: "section_rewritten_in_711_words_to_separate_agents_architecture_topology_communication_coordination_and_observability"
+      date: "2026-09-07"
+      ids: ["R064", "R065", "R066", "R067"]
+      target: "Capítulo 2 integral"
+      outcome: "four_primary_academic_references_verified_and_cited; prose_and_structure_revised"
+      verification: "docs/tcc/references/verification-2026-09-07.md"
     matrix_docx_reconciliation:
       date: "2026-08-22"
       ids:
@@ -149,23 +144,14 @@ audit:
       - "IMG-C007"
       - "IMG-C008"
       - "IMG-C009"
-      - "IMG-C010"
-      - "IMG-C011"
-      - "IMG-C012"
-      - "IMG-C013"
       - "IMG-C014"
       - "IMG-C015"
       - "IMG-C016"
       - "IMG-C017"
       - "IMG-C018"
-      - "IMG-C019"
-      - "IMG-C020"
       - "IMG-C021"
-      - "IMG-C022"
       - "IMG-C023"
-      - "IMG-C024"
       - "IMG-C025"
-      - "IMG-C026"
       - "IMG-C027"
       - "IMG-C028"
       - "IMG-C029"
@@ -199,24 +185,31 @@ audit:
       date: "2026-09-02"
       path: "docs/tcc/figures/original/insertion-map-2026-09-02"
       count: 14
-      format: "SVG_1600x1000"
+      format: "SVG_1200px_width_variable_height_with_1800px_PNG_previews"
       language: "pt-BR"
-      status: "candidate_pending_editorial_review"
-      validation: "valid_XML_rendered_with_Inkscape_and_visually_reviewed_in_color_and_grayscale"
-      inserted_in_manuscript: false
-      inserted_in_docx: false
-    recommended_first_creation_round: "completed_as_fourteen_authorial_svg_candidates; editorial_selection_pending"
-    latest_design: "four_authorial_methodology_diagrams_integrated_2026-08-25"
-    manuscript_insertions: 4
-    docx_insertions: 4
+      status: "fourteen_reviewed_five_selected_nine_retained"
+      review_date: "2026-09-07"
+      validation: "all_fourteen_revised_rendered_as_PNG_and_individually_visually_inspected"
+      inserted_in_manuscript: true
+      selected_count: 5
+      retained_count: 9
+      inserted_in_docx: true
+    recommended_first_creation_round: "completed_fourteen_reviewed_five_inserted_nine_retained"
+    latest_design: "fourteen_revised_five_added_to_chapters_2_5_6_on_2026_09_07"
+    manuscript_insertions: 9
+    docx_insertions: 9
     approved_inserted_ids:
       - "IMG-C010"
       - "IMG-C011"
       - "IMG-C012"
       - "IMG-C013"
+      - "IMG-C019"
+      - "IMG-C020"
+      - "IMG-C022"
+      - "IMG-C024"
+      - "IMG-C026"
     list_of_figures: "automatic_with_real_page_numbers_and_dot_leaders"
     original_diagrams_pending:
-      - "arquitetura_logica_do_MAB"
       - "fluxo_experimental_apos_congelamento_do_protocolo"
     original_diagrams_created:
       - id: "IMG-C009"
@@ -260,7 +253,7 @@ audit:
     exploratory_unit_definition: "TBD-OQ-004"
     exploratory_sample_target: "approximately_20_histories"
   manuscript:
-    latest_refinement: "Seção 4.5 passou a definir randomização em blocos, contrabalanceamento das seis ordens, execução sequencial, preservação do cronograma e tratamento rastreável de falhas"
+    latest_refinement: "Capítulo 2 integralmente revisado; cinco figuras inseridas nos capítulos 2, 5 e 6; seção 4.2 corrigida para reconhecer a configuração centralizada com agente único"
     substantial_drafts:
       - "01 Introdução"
       - "02 Fundamentação Teórica"
@@ -290,7 +283,7 @@ audit:
     heading_spacing: "one_and_half_line_before_and_after_without_double_gap"
     foreign_terms: "isolated_terms_italic_with_abstract_and_reference_exceptions"
     reference_emphasis: "bold_title_or_container_per_facens_examples"
-    figures: "four_inline_figures_with_embedded_svg_png_fallback_alt_text_seq_captions_and_sources"
+    figures: "nine_inline_figures_with_embedded_svg_png_fallback_alt_text_seq_captions_and_sources"
     list_of_figures: "automatic_real_page_numbers_right_tabs_and_dot_leaders"
   risks:
     - "A coleta exploratória de aproximadamente 20 históricos foi planejada, mas os itens GOV-01 a GOV-10 do checklist de prontidão permanecem pendentes; o status é NO-GO até confirmação humana de autorização, consentimento ou avaliação ética aplicável, minimização, ambiente privado, anonimização, retenção e descarte."
@@ -303,12 +296,18 @@ audit:
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
     - "R050 e R052 foram verificadas, mas permanecem sem citação: R050 oferece suporte apenas indireto ao protocolo atual e R052 estuda viés de posição em comparações pareadas ou ordenadas, desenho diferente da rubrica por resposta do MAB."
     - "A validade externa da comparação deverá ser discutida com cautela: o protocolo usa um único estudo de caso farmacêutico e não sustenta, por si só, generalização para todos os domínios de aplicação."
-    - "O mapa versionado do formatador ainda não contém regras específicas de destaque bibliográfico para R044, R057-R063; nesta execução, as regras necessárias para R059-R063 foram fornecidas ao pipeline e ao auditor somente em memória, sem alteração de código."
+    - "O mapa versionado do formatador ainda não contém regras específicas de destaque bibliográfico para R044, R057-R067; nesta revisão, as regras necessárias, incluindo R064-R067, foram fornecidas ao pipeline e ao auditor somente em memória, sem alteração de código."
     - "Os novos arquivos IMG-C014 a IMG-C018 são candidatos licenciados e não estão aprovados para inserção; reproduções densas ou em inglês devem ser adaptadas ou redesenhadas antes do DOCX."
-    - "Os diagramas autorais IMG-C019 a IMG-C032 foram validados visualmente, mas continuam candidatos; a seleção editorial e a inserção no manuscrito e no DOCX ainda não foram realizadas."
+    - "Os 14 diagramas IMG-C019 a IMG-C032 foram revisados. IMG-C019, C020, C022, C024 e C026 foram inseridos; os demais nove permanecem no acervo com justificativa editorial."
     - "IMG-C031 representa a cadeia de proveniência planejada e permanece condicionada ao congelamento dos parâmetros técnicos da OQ-005."
     - "Figuras de R033, R034, R041, R044 e R058 permaneceram apenas como referências conceituais porque não foi confirmada licença pública suficiente para armazenamento e adaptação."
     - "O sincronizador versionado de Markdown para DOCX está delimitado ao Capítulo 4; alterações em outros capítulos exigem substituição cirúrgica validada ou futura generalização do utilitário fora do escopo documental."
 
-last_run: "2026-09-06"
-next_recommended_action: "Auditar a força das fontes usadas no Capítulo 2 e substituir, em uma subseção delimitada, eventuais fontes comerciais ou secundárias por literatura acadêmica ou documentação primária mais forte; manter a coleta em NO-GO até GOV-01 a GOV-10 e aguardar a resposta da OQ-005."
+last_run: "2026-09-07"
+next_recommended_action: "Receber o feedback da orientadora sobre o Capítulo 2 revisado e a distinção entre configurações completas e topologias isoladas; manter a coleta em NO-GO até GOV-01 a GOV-10 e aguardar a resposta da OQ-005."
+manual_review:
+  date: "2026-09-07"
+  authority: "user_requested_full_chapter_2_and_fourteen_svg_review_with_editorial_selection"
+  report: "docs/tcc/reviews/chapter-2-and-svg-2026-09-07.md"
+  source_code_changed: false
+  architecture_comparison_limit: "centralized_has_one_agent_with_tools; workflow_and_swarm_have_multiple_agents"

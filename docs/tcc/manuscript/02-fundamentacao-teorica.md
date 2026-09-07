@@ -1,103 +1,118 @@
 # 2 FUNDAMENTAÇÃO TEÓRICA
 
+Este capítulo apresenta os conceitos necessários para comparar arquiteturas de coordenação em sistemas baseados em modelos de linguagem. O atendimento em farmácias delimita o estudo de caso. Em seguida, são discutidos os sistemas conversacionais, o funcionamento dos agentes e as formas de organizar sua execução.
+
 ## 2.1 ATENDIMENTO EM FARMÁCIAS
 
-### 2.1.1 Estrutura do atendimento farmacêutico
+O atendimento em farmácias reúne atividades comerciais, administrativas e de orientação em saúde. A atuação do farmacêutico vai além da dispensação de medicamentos e inclui o apoio ao uso seguro desses produtos, conforme o contexto dos serviços prestados (WHO EUROPE, 2024). Para a automação, essa diversidade exige distinguir solicitações que podem ser resolvidas por consulta a informações de situações que dependem de avaliação profissional.
 
-O atendimento em farmácias reúne demandas administrativas, comerciais e de orientação em saúde. Perguntas sobre horário, entrega e disponibilidade podem ser tratadas por rotinas operacionais; solicitações clínicas ou ambíguas devem ser encaminhadas ao farmacêutico. Essa diversidade permite testar roteamento, uso de ferramentas, manutenção de contexto e revisão humana sem atribuir ao sistema uma autonomia clínica que ele não possui.
+Uma pergunta sobre horário de funcionamento pode ser respondida a partir de informação institucional. Uma consulta de disponibilidade exige acesso a uma fonte de estoque. Já uma dúvida sobre dose ou interação entre medicamentos envolve uma decisão de saúde. Neste trabalho, essas situações ilustram diferentes necessidades de informação e encaminhamento; não constituem categorias observadas em conversas reais, cuja caracterização ainda está prevista na metodologia.
 
-### 2.1.2 Desafios operacionais
+O estudo de Pais et al. (2024), sobre identificação de erros em instruções de medicamentos em farmácias digitais, mostra a pertinência de avaliar modelos em tarefas farmacêuticas específicas. Seu escopo, porém, não equivale à validação de um atendente autônomo para qualquer solicitação de saúde. Para o estudo de caso do MAB, a automação foi delimitada a funções operacionais e ao encaminhamento para revisão profissional. Essa delimitação permite investigar a coordenação sem assumir capacidade de diagnóstico ou prescrição.
 
-Entre os desafios do domínio estão volume variável de solicitações, linguagem informal, anexos, continuidade entre mensagens e necessidade de distinguir dúvidas operacionais de situações sensíveis. A qualidade do sistema depende tanto da resposta final quanto da capacidade de reconhecer quando não deve responder autonomamente.
-
-### 2.1.3 Oportunidades de automação
-
-A automação é mais apropriada em tarefas repetitivas, verificáveis e de baixo risco, como localização de informação institucional ou consulta a dados estruturados. O valor do sistema multiagente está em organizar essas funções e preservar uma rota de supervisão. O objetivo experimental, portanto, é medir como a estratégia de coordenação altera eficiência, observabilidade e qualidade operacional, sem avaliar aconselhamento clínico ou substituir profissionais.
+A farmácia oferece, portanto, um contexto para tarefas com diferentes fontes de informação e graus de sensibilidade. O objeto da comparação continua sendo a organização computacional dessas tarefas. A eventual aplicação das conclusões a outros setores dependerá de estudos adicionais.
 
 ## 2.2 INTELIGÊNCIA ARTIFICIAL NO ATENDIMENTO
 
-### 2.2.1 Conceitos de inteligência artificial
+No atendimento, o processamento de linguagem natural permite associar mensagens a intenções, recuperar informações e produzir respostas. A revisão de Adamopoulou e Moussiades (2020) descreve sistemas conversacionais em diferentes áreas e distingue suas finalidades e formas de construção. Essa variedade é relevante porque a presença de uma interface de conversa não determina como o sistema obtém a resposta.
 
-A inteligência artificial compreende métodos computacionais capazes de executar tarefas que exigem percepção, inferência, aprendizagem, planejamento ou produção de linguagem. No escopo deste trabalho, o interesse não está em reproduzir toda a amplitude do campo, mas em compreender sistemas que recebem uma solicitação em linguagem natural, selecionam ações, consultam fontes externas e produzem uma resposta. Essa delimitação diferencia o protótipo de um chatbot baseado apenas em respostas pré-programadas: o comportamento depende do contexto, das ferramentas disponíveis e da estratégia de coordenação definida para os agentes.
+Um *chatbot* pode operar por regras, recuperar uma resposta de uma base ou utilizar um modelo generativo. Também pode oferecer acesso a funções executadas por um ou mais agentes. Assim, interface conversacional, modelo de linguagem e agente designam componentes diferentes. A escolha entre essas soluções depende das ações necessárias, das fontes disponíveis e dos limites impostos ao atendimento.
 
-### 2.2.2 IA aplicada ao atendimento ao cliente
+Neste estudo, a qualidade do atendimento automatizado inclui a adequação à solicitação, a correção das informações e o encaminhamento quando a resposta depende de avaliação humana. O tempo de resposta e o consumo de recursos compõem outra dimensão. Esses critérios precisam ser examinados em conjunto: uma resposta fluente pode conter informação incorreta, e uma execução tecnicamente concluída pode não atender à necessidade do usuário. A avaliação de Pais et al. (2024) reforça a importância de critérios próprios da tarefa, sobretudo quando o conteúdo envolve medicamentos.
 
-Em operações de atendimento, a IA pode apoiar classificação de intenção, recuperação de informações, encaminhamento de demandas, composição de respostas e identificação de casos que exigem intervenção humana. A utilidade prática, entretanto, não deve ser avaliada somente pela fluência do texto. Um sistema de atendimento também precisa responder dentro de limites de tempo, acionar a ferramenta correta, preservar o contexto da conversa e encaminhar situações sensíveis. Por isso, o presente trabalho combina medidas de eficiência operacional com critérios de qualidade e segurança.
+## 2.3 MODELOS DE LINGUAGEM E AGENTES INTELIGENTES
 
-### 2.2.3 Uso de IA em saúde e farmácias
+### 2.3.1 Modelos de linguagem de grande porte
 
-O uso de IA em saúde exige cautela adicional porque uma resposta inadequada pode afetar decisões individuais. O protótipo desenvolvido não realiza diagnóstico nem prescrição e não deve fornecer dosagens específicas. Seu domínio é o atendimento operacional de farmácia, incluindo perguntas frequentes, consulta de disponibilidade de produtos, processamento inicial de anexos e direcionamento para revisão profissional quando necessário. Essa fronteira funcional é coerente com a ampliação do papel das farmácias comunitárias, que passaram a oferecer serviços para além da dispensação de medicamentos, mantendo o farmacêutico como profissional responsável por orientações clínicas e uso seguro de medicamentos (WHO EUROPE, 2024).
+Modelos de linguagem de grande porte, conhecidos pela sigla LLM, de *Large Language Model*, aprendem regularidades em grandes coleções de texto. Em um modelo autorregressivo, a geração ocorre pela previsão do próximo *token* a partir dos anteriores. Um *token* é uma unidade de representação textual que pode corresponder a uma palavra, parte dela ou sinal de pontuação. Brown et al. (2020) demonstram o uso de instruções e exemplos no próprio contexto de entrada para orientar tarefas sem atualizar os parâmetros do modelo a cada solicitação.
 
-## 2.3 LARGE LANGUAGE MODELS E AGENTES INTELIGENTES
+A arquitetura *Transformer*, apresentada por Vaswani et al. (2017), utiliza mecanismos de atenção para relacionar elementos da sequência. Esse fundamento ajuda a compreender por que o contexto fornecido ao modelo influencia a resposta: diferentes partes da entrada participam do cálculo das representações usadas na geração.
 
-### 2.3.1 Conceito de LLM
+Os parâmetros aprendidos durante o treinamento são distintos do contexto fornecido na execução. Histórico de conversa, instruções e resultados de consultas podem ser incluídos nesse contexto sem representar novo treinamento. O acesso a informações atuais, como disponibilidade de produtos, exige uma fonte externa ao conhecimento aprendido. Por isso, a geração de texto precisa ser integrada às funções do sistema de atendimento.
 
-Large Language Models (LLMs) são modelos treinados em grandes coleções de texto para estimar e gerar sequências linguísticas. Quando empregados isoladamente, podem interpretar instruções e produzir respostas, mas não garantem, por si só, acesso a dados atualizados, execução de ações ou observância de regras de negócio. Essas capacidades adicionais dependem da arquitetura que envolve o modelo.
+### 2.3.2 Agentes baseados em LLM
 
-### 2.3.2 Uso de LLM em agentes
+Um agente baseado em LLM combina o modelo com instruções, informações sobre a tarefa e meios de agir no ambiente. Ele utiliza as informações recebidas para selecionar uma ação, observar seu resultado e decidir como continuar. A revisão de Li et al. (2024) descreve componentes como perfil, percepção, ação e interação, situando o modelo dentro de uma estrutura de execução mais ampla.
 
-Um agente baseado em LLM associa o modelo a um objetivo, um conjunto de instruções, estado de execução e mecanismos de ação. O agente pode selecionar ferramentas, interpretar seus retornos e decidir como prosseguir. Li et al. (2024) organizam sistemas desse tipo em componentes como perfil, percepção, ação individual, interação e evolução. Essa visão é útil para separar a capacidade linguística do modelo das responsabilidades arquiteturais necessárias para operar um sistema completo.
+Yao et al. (2023) apresentam o método ReAct, que intercala raciocínio textual, ações e observações do ambiente. O interesse desse método para a fundamentação está no ciclo de execução: uma consulta externa pode fornecer informação para a decisão seguinte, em vez de toda a resposta depender apenas da entrada inicial. Isso não significa que todo agente deva reproduzir exatamente esse método.
 
-### 2.3.3 Ferramentas e integração
+A figura a seguir representa uma forma simplificada desse ciclo. A aplicação executa a chamada de ferramenta solicitada pelo modelo, incorpora o retorno ao contexto e pode realizar uma nova consulta ao LLM. O ciclo termina quando há uma resposta ou quando uma condição de encerramento é atingida. Limites de tempo e de chamadas são controles da aplicação, não garantias fornecidas pela linguagem do modelo.
 
-Ferramentas conectam o agente a funções determinísticas ou serviços externos. No MAB, elas representam operações como consulta de perguntas frequentes, busca de estoque e análise inicial de anexos. A ferramenta devolve evidência estruturada; o agente decide quando acioná-la e como incorporar seu retorno. Essa separação melhora a observabilidade, pois chamadas, erros, tempo de execução e transições entre agentes podem ser registrados independentemente do texto final.
+<!-- FIGURE: IMG-C020 | caption: Ciclo de execução de um agente com ferramentas. -->
+![Entrada de contexto no LLM, seleção de ação, execução de ferramenta, retorno da observação e produção de resposta.](../figures/original/insertion-map-2026-09-02/02-anatomia-agente-llm.svg)
+
+Fonte: elaboração própria (2026), com base em Yao et al. (2023).
+
+### 2.3.3 Ferramentas, contexto e limites de execução
+
+Uma ferramenta é uma função que a aplicação disponibiliza ao agente, como consulta a uma base, cálculo ou acesso a um serviço. Sua descrição informa a finalidade e os argumentos esperados. O modelo pode solicitar a chamada, mas a execução ocorre no programa que o envolve. O retorno deve ser distinguido do texto gerado pelo LLM: pode conter um valor encontrado, ausência de dados ou erro de execução.
+
+Por exemplo, em uma consulta de estoque, o sistema precisa identificar o produto, executar a busca e interpretar o retorno antes de compor a resposta. Se o produto não for localizado, isso deve permanecer explícito. A conexão a ferramentas amplia as ações possíveis, mas também acrescenta falhas de integração e exige tratamento de argumentos, permissões e erros. Esses controles pertencem ao projeto do sistema.
+
+O contexto de execução registra as informações necessárias para continuar a tarefa. Ele não precisa conter todo o histórico disponível, nem implica memória permanente. A seleção do que cada agente recebe torna-se especialmente importante quando vários agentes participam da mesma solicitação, como discutido a seguir.
 
 ## 2.4 SISTEMAS MULTIAGENTES
 
-### 2.4.1 Definição e características
+### 2.4.1 Agentes e divisão de responsabilidades
 
-Um sistema multiagente é formado por unidades computacionais que percebem informações, tomam decisões e atuam em um ambiente compartilhado, preservando algum grau de autonomia local. O comportamento global resulta da capacidade de cada agente e das regras que distribuem responsabilidades, informações e autoridade. Isso diferencia um sistema multiagente de uma aplicação que apenas realiza chamadas independentes a modelos: a colaboração exige uma estrutura comum de objetivos, comunicação e coordenação.
+Um sistema multiagente reúne agentes que interagem em um ambiente. Eles podem cooperar, competir ou combinar essas relações. Neste trabalho, o recorte é cooperativo: diferentes agentes participam da resolução de uma solicitação. A especialização pode ser definida por instruções, ferramentas e informações acessíveis, mesmo quando os participantes utilizam o mesmo modelo de linguagem (LI et al., 2024).
 
-Nos sistemas baseados em *Large Language Models*, os agentes podem ser diferenciados por instruções, papéis, ferramentas, fontes de conhecimento e permissões. Um agente pode classificar a solicitação, outro recuperar evidências e um terceiro sintetizar a resposta. Li et al. (2024) descrevem elementos como perfil, percepção, ação, interação e evolução, evidenciando que o modelo é somente parte de uma organização mais ampla. A especialização facilita a decomposição, mas cria dependências: cada transferência exige preservar contexto e interpretar corretamente a saída anterior.
+Separar responsabilidades permite distribuir tarefas, como recuperar informação, revisar uma resposta e produzir sua versão final. Contudo, essa divisão cria dependências: um agente precisa receber dados suficientes e interpretar corretamente o trabalho anterior. A revisão de Li et al. (2024) trata a interação como componente próprio do sistema, o que justifica analisar a colaboração além das capacidades individuais.
 
-A quantidade de agentes, portanto, não mede sozinha a capacidade do sistema. Configurações com os mesmos agentes e modelos podem divergir por topologia, participação e compartilhamento de contexto. Qian et al. (2025) representam a colaboração por grafos acíclicos direcionados; Zhu et al. (2025) organizam protocolos em estrela, árvore, cadeia e grafo. Esses trabalhos sustentam uma distinção central: agentes são as unidades participantes; a arquitetura de coordenação define como elas formam um sistema.
+A participação de mais agentes não garante melhor desempenho. Kim et al. (2026) investigam condições em que a capacidade do modelo e as características da tarefa alteram os benefícios da colaboração. Para este TCC, essa evidência fundamenta a necessidade de avaliar o custo da divisão de trabalho, em vez de considerar a quantidade de agentes como medida de qualidade.
 
-### 2.4.2 Arquitetura de sistemas multiagentes
+### 2.4.2 Topologia e distribuição de controle
 
-A arquitetura abrange a composição dos agentes e as relações que regulam sua atuação. Ela define quem inicia a execução, quais componentes acionam ferramentas, como o estado é mantido, quem autoriza transferências, quando o fluxo termina e qual unidade produz a resposta final. Portanto, não deve ser descrita apenas como um diagrama de módulos: ela contém decisões que condicionam o percurso de cada tarefa.
+A topologia descreve as conexões possíveis entre os participantes. Na estrela, os demais nós se ligam a um centro; na cadeia, as conexões formam uma sequência; na árvore, os nós se organizam em ramificações. Outras redes permitem conexões adicionais entre pares. Zhu et al. (2025) incluem essas formas em sua avaliação de protocolos multiagentes. A figura seguinte apresenta apenas exemplos conceituais das conexões.
 
-Revisões recentes mostram variações de topologia, autoridade, memória e controle (LI et al., 2024; PICCIALLI et al., 2025). Em uma organização hierárquica, um supervisor seleciona especialistas e consolida saídas. Em uma estrutura sequencial, o controle está incorporado à ordem das etapas. Em uma rede descentralizada, os agentes escolhem para qual par transferir a tarefa. Cada forma determina caminhos, pontos de falha e evidências diferentes para auditoria.
+<!-- FIGURE: IMG-C022 | caption: Exemplos de topologias de comunicação entre agentes. -->
+![Quatro redes com nós e conexões: estrela, cadeia, árvore e rede com conexões adicionais entre pares.](../figures/original/insertion-map-2026-09-02/04-topologias-trabalhos-correlatos.svg)
 
-A topologia torna parte dessas diferenças observável. Uma estrela concentra comunicação em um nó; uma cadeia impõe ordem linear; uma árvore distribui subtarefas por níveis; e um grafo permite relações mais flexíveis (QIAN et al., 2025; ZHU et al., 2025). Contudo, grafos semelhantes podem adotar regras diferentes para participação, contexto, repetição e encerramento. A análise precisa combinar a forma da rede com os mecanismos de execução.
+Fonte: elaboração própria (2026), com base em Zhu et al. (2025).
 
-Em comparações experimentais, componentes alheios à variável arquitetural devem permanecer equivalentes. Modelo, ferramentas, cenários e critérios de avaliação precisam ser controlados para relacionar diferenças observadas à coordenação. No MAB, uma base funcional comum sustenta orquestração centralizada, *workflow* estruturado e *swarm* descentralizado. A farmácia fornece tarefas concretas, enquanto a arquitetura determina como os agentes organizam o trabalho.
+A topologia, isoladamente, não informa quem decide a próxima ação, qual conteúdo é transmitido ou quando a tarefa termina. H. Wang et al. (2025) distinguem organização da autoridade, controle de participação, dinâmica das interações e gestão do histórico. Essas dimensões ajudam a descrever as regras de execução que um desenho de conexões não revela.
 
-### 2.4.3 Comunicação e coordenação entre agentes
+Também é necessário separar estrutura permitida de percurso executado. Uma rede pode admitir várias conexões, embora uma solicitação utilize apenas parte delas. Zhuge et al. (2024) representam agentes e fluxos de informação por grafos computacionais, mostrando que a conectividade pode ser objeto de projeto e otimização. Nesta pesquisa, o interesse está em comparar configurações previamente definidas e observar os percursos que elas produzem.
 
-A comunicação corresponde ao intercâmbio de solicitações, resultados, evidências e informações de controle. Ela pode ocorrer por mensagens diretas, estado compartilhado, chamadas mediadas ou *handoffs*, nos quais um agente transfere a continuidade para outro. Metadados como origem, destino, ferramenta, motivo da transferência e estado permitem reconstruir não apenas a resposta, mas o processo que a produziu.
+### 2.4.3 Comunicação, coordenação e observabilidade
 
-Coordenação transforma essas interações em um fluxo coerente: estabelece participantes, autoridade sobre o próximo passo, resolução de conflitos e encerramento. Wang et al. (2025) organizam estratégias colaborativas em governança, participação, interação e gestão do histórico. Assim, coordenar não é apenas enviar mensagens, mas selecionar participantes e preservar o contexto necessário às decisões subsequentes.
+Comunicação é a troca de informações entre agentes. Coordenação é o conjunto de regras que organiza sua atuação: quem participa, quem recebe a tarefa, como se combinam as respostas e quais condições encerram a execução. Uma transferência de tarefa, ou *handoff*, envolve a passagem da continuidade do processamento; uma mensagem, por sua vez, pode apenas fornecer informação a outro participante.
 
-O compartilhamento produz benefícios e custos. Evidências podem evitar trabalho duplicado, enquanto contexto incorreto pode propagar decisões inadequadas. Transferências excessivas elevam mensagens, tokens e latência. Hammond et al. (2025) incluem descoordenação, conflito e cooperação indesejada entre os riscos multiagentes. Mesmo com objetivo comum, podem ocorrer rotas incorretas, repetição, ciclos ou consolidação de evidência insuficiente.
+O conteúdo compartilhado pode incluir a solicitação, resultados de ferramentas e partes do histórico. Enviar informação insuficiente pode comprometer a decisão seguinte; repetir todo o contexto em cada interação pode aumentar o consumo de *tokens*. H. Wang et al. (2025) incluem a gestão do histórico entre os mecanismos que relacionam qualidade e eficiência da colaboração.
 
-Por isso, observabilidade e limites operacionais integram a coordenação. Identificadores, mensagens, ferramentas, transições, contagem de *handoffs* e condições de *timeout* permitem verificar o comportamento. A telemetria não elimina erros semânticos, mas torna comparáveis custos e caminhos. A seção seguinte distingue orquestração centralizada, *workflow* estruturado e *swarm* descentralizado sem pressupor superioridade antes das evidências experimentais.
+As interações também podem propagar erros ou produzir conflitos. Hammond et al. (2025), em relatório técnico disponibilizado como *preprint*, sistematizam riscos de descoordenação, conflito e cooperação indesejada. Essa classificação não demonstra que todos esses riscos ocorram no MAB; ela fornece uma base para examinar falhas que surgem da interação entre agentes.
+
+A observabilidade permite reconstruir a execução a partir de registros de chamadas, retornos, transferências, erros e tempos. Esses registros ajudam a localizar onde o processamento falhou, mas não comprovam que o conteúdo da resposta esteja correto. Por isso, a avaliação precisa relacionar o percurso técnico com critérios de qualidade da tarefa.
 
 ## 2.5 ARQUITETURAS DE COORDENAÇÃO
 
 ### 2.5.1 Orquestração centralizada
 
-Na orquestração centralizada, um supervisor concentra as decisões de classificação, seleção de ferramentas ou agentes e composição da resposta. A principal vantagem é a existência de um ponto claro de controle, que simplifica a aplicação de políticas e a reconstrução do fluxo. Como contrapartida, o supervisor pode se tornar gargalo e ponto único de falha. No MAB, a arquitetura centralizada utiliza um agente supervisor que escolhe entre ferramentas de FAQ, estoque e anexos e produz a resposta final.
+Na orquestração centralizada, um controlador concentra as decisões sobre o encaminhamento das tarefas e a composição da resposta. Ele pode acionar outros agentes ou utilizar ferramentas diretamente. A característica que define a centralização é a autoridade sobre o fluxo, e não a existência obrigatória de vários especialistas. A dimensão de organização da autoridade discutida por H. Wang et al. (2025) sustenta essa distinção.
 
-### 2.5.2 Workflow estruturado
+Um ponto de decisão explícito facilita identificar a origem do encaminhamento e aplicar regras comuns. Ao mesmo tempo, uma escolha incorreta do controlador pode comprometer as etapas seguintes. O efeito sobre latência e custo depende das chamadas realizadas; não decorre automaticamente do rótulo “centralizado”.
 
-O workflow organiza a execução em etapas previamente definidas. No protótipo, o fluxo inclui classificação, coleta de evidência, análise multimodal quando aplicável, revisão e síntese. Cada etapa possui responsabilidade explícita e ordem estável. A previsibilidade facilita testes e auditoria, mas reduz a flexibilidade para alterar o caminho durante a execução. A revisão de Yu et al. (2025) mostra que workflows de agentes combinam planejamento, execução e controle em estruturas que variam de sequências fixas a fluxos adaptativos.
+### 2.5.2 Fluxo estruturado (workflow)
 
-### 2.5.3 Sistemas descentralizados (swarm)
+Um *workflow* organiza o processamento por etapas e transições definidas na aplicação. Cada etapa pode utilizar um agente, uma ferramenta ou uma regra determinística. A passagem entre etapas pode ser sequencial ou condicional. Assim, um fluxo estruturado não precisa executar sempre o mesmo caminho, mas suas alternativas são estabelecidas no projeto. Yu et al. (2025) revisam diferentes formas de organização de fluxos de agentes.
 
-Em uma organização descentralizada, os agentes podem transferir a tarefa diretamente entre pares. O MAB implementa essa estratégia por meio de handoffs: um coordenador inicia a cadeia, especialistas podem delegar a outros especialistas e um sintetizador produz a resposta final. O mecanismo aumenta a autonomia local, porém exige limites de handoff e telemetria para evitar ciclos, custo excessivo ou perda de contexto.
+A explicitação das transições favorece a identificação da etapa responsável por uma saída e permite definir pontos de validação. A limitação está na cobertura das rotas previstas: solicitações que exigem outra sequência podem depender de uma nova regra. A execução de etapas desnecessárias também pode acrescentar tempo e chamadas ao modelo.
 
-### 2.5.4 Características e diferenças entre as arquiteturas
+### 2.5.3 Coordenação descentralizada (swarm)
 
-A comparação entre arquiteturas de coordenação não pode ser reduzida à quantidade de agentes empregados. Duas soluções com o mesmo número de agentes podem distribuir autoridade, estado e comunicação de maneiras distintas. Para analisá-las, é necessário observar pelo menos quatro dimensões: onde as decisões são concentradas; como o caminho de execução é definido; de que forma o contexto circula entre os agentes; e quais mecanismos permitem reconstruir ou interromper o fluxo. As taxonomias de Li et al. (2024) e Piccialli et al. (2025) mostram que interação, autonomia e organização são componentes próprios da arquitetura, e não apenas características do modelo de linguagem utilizado.
+Na coordenação descentralizada, agentes podem decidir a continuidade do trabalho e transferir tarefas entre pares. O termo *swarm* é utilizado neste estudo para essa forma de delegação. A existência de um agente que inicia a solicitação não elimina a descentralização das decisões posteriores. Também não implica que todos os agentes estejam conectados entre si ou executem em paralelo.
 
-Wang et al. (2025) operacionalizam essa análise em quatro dimensões complementares: governança dos agentes, controle de participação, dinâmica de interação e gestão do histórico de diálogo. Em dois cenários dependentes de contexto, os autores relacionam essas escolhas tanto à acurácia da tarefa quanto à eficiência computacional. O estudo reforça que a comparação deve observar os mecanismos concretos de colaboração e circulação do contexto, e não somente o rótulo estrutural atribuído ao sistema.
+Essa organização permite solicitar outra competência durante a execução, mas exige regras para identificar o destinatário, transmitir contexto e encerrar transferências. Em termos conceituais, topologia e autonomia precisam ser analisadas separadamente, como indicam as dimensões de interação de Li et al. (2024). A ausência de um supervisor em cada etapa não dispensa controle de erros nem acompanhamento do fluxo.
 
-Na orquestração centralizada, a autoridade de roteamento permanece em um supervisor. Esse componente recebe a solicitação, seleciona especialistas ou ferramentas e pode consolidar a resposta. A concentração favorece a aplicação uniforme de políticas e oferece um ponto explícito para registrar decisões. Em contrapartida, a execução fica condicionada à capacidade do supervisor de interpretar corretamente cada etapa. Um erro de classificação pode direcionar todo o fluxo para uma rota inadequada, enquanto o acúmulo de decisões em um único componente pode ampliar latência e dependência operacional. Assim, centralização significa maior controle global, mas também maior concentração de responsabilidade.
+### 2.5.4 Síntese da comparação
 
-No workflow estruturado, parte do controle deixa de estar exclusivamente em um agente e passa a ser representada pela própria sequência de etapas. O fluxo pode definir antecipadamente operações de classificação, obtenção de evidências, revisão e síntese, incluindo condições para desvio ou encerramento. Yu et al. (2025) descrevem workflows de agentes como combinações de planejamento, execução e controle que podem variar entre sequências fixas e estruturas adaptativas. A explicitação das transições favorece repetibilidade e auditoria, pois torna possível identificar em qual etapa ocorreu uma falha. Entretanto, um caminho rígido pode executar operações desnecessárias ou responder de forma limitada a solicitações que não se ajustem às rotas previstas.
+A figura a seguir resume onde o controle é exercido nas três organizações. Os desenhos são esquemas conceituais: representam possibilidades de coordenação, e não medições ou a sequência exata de uma execução do MAB.
 
-Em sistemas descentralizados, a decisão de continuidade pode ser transferida entre os próprios agentes. Em vez de consultar um supervisor a cada passo, um especialista avalia o contexto recebido e realiza um handoff quando identifica outra competência necessária. Balaprakash et al. (2025) apresentam o SWARM como uma proposta de distribuição das funções tradicionalmente centralizadas de gestão de workflows, motivada por problemas de resiliência e escalabilidade. Essa autonomia local pode reduzir a dependência de um único controlador, mas exige regras para preservar contexto, limitar transferências e impedir ciclos. Também pode aumentar a comunicação e a repetição de trabalho quando mais de um agente interpreta a mesma solicitação.
+<!-- FIGURE: IMG-C019 | caption: Distribuição de controle nas três arquiteturas de coordenação. -->
+![Supervisor central ligado a agentes, etapas ordenadas por regras e transferências entre agentes sem supervisor em cada passo.](../figures/original/insertion-map-2026-09-02/01-comparacao-arquiteturas.svg)
 
-Esses benefícios e custos dependem do tipo de tarefa e da capacidade dos modelos envolvidos. Kim et al. (2026) compararam configurações de agente único, independentes, centralizadas, descentralizadas e híbridas em diferentes benchmarks. Os autores observaram que os ganhos da colaboração não são uniformes: tarefas decomponíveis podem se beneficiar da divisão de trabalho, enquanto tarefas que dependem de uma sequência rígida ou de coordenação intensa podem sofrer com o custo adicional de comunicação. O estudo também indica que modelos mais capazes podem reduzir a vantagem relativa da colaboração, pois parte do trabalho distribuído pode ser resolvida por um único agente sem os mesmos custos de coordenação.
+Fonte: elaboração própria (2026), com base em Li et al. (2024), Yu et al. (2025) e H. Wang et al. (2025).
 
-Portanto, não existe fundamento para declarar previamente uma arquitetura como superior em qualquer contexto. Uma comparação controlada precisa manter constantes os elementos que não constituem o objeto do estudo, como cenários, ferramentas disponíveis, modelo de linguagem e critérios de avaliação. Em seguida, deve observar consequências mensuráveis da coordenação, como rota percorrida, quantidade de handoffs, chamadas de ferramentas, consumo de tokens, latência, ocorrência de erros e qualidade da resposta. Essa relação entre desenho arquitetural e eventos observáveis sustenta a comparação proposta pelo MAB, sem antecipar resultados: orquestração, workflow e swarm representam formas distintas de distribuir controle, e sua adequação ao atendimento farmacêutico deve ser determinada pelas evidências do experimento.
+As três organizações diferem principalmente pela autoridade sobre o próximo passo e pela definição das transições. Entretanto, o custo depende do percurso realmente executado, das chamadas ao modelo e do contexto transmitido. A comparação deve considerar essas decisões em conjunto com a qualidade das respostas, conforme a análise dos mecanismos de colaboração de H. Wang et al. (2025).
+
+No MAB, a configuração centralizada utiliza um único agente com ferramentas; o fluxo estruturado e o *swarm* distribuem responsabilidades entre agentes, conforme descrito no Capítulo 6. Portanto, o experimento compara configurações completas de coordenação com funções de domínio comuns, e não apenas topologias com igual número de agentes. Essa diferença deve ser considerada na interpretação dos resultados, sem atribuir todo efeito exclusivamente ao formato das conexões. O capítulo seguinte apresenta os trabalhos que orientam esse recorte comparativo.
