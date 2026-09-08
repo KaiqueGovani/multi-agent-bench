@@ -61,8 +61,8 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
-  date: "2026-09-07"
-  status: "daily_editorial_instructions_aligned_with_author_approved_format"
+  date: "2026-09-08"
+  status: "chapter_2_sections_2_1_and_2_2_strengthened_with_verified_pharmacy_AI_evidence"
   editorial_instructions:
     date: "2026-09-07"
     artifact: "docs/tcc/automation/daily-prompt.md"
@@ -83,8 +83,8 @@ audit:
   references:
     total: 67
     candidate: 16
-    verified: 10
-    cited: 25
+    verified: 8
+    cited: 27
     watch: 7
     reject: 9
     latest_discovery:
@@ -116,11 +116,11 @@ audit:
       target: "3.2 Sistemas Multiagentes Aplicados; 3.3 Análise dos Trabalhos Correlatos; 3.4 Lacunas e Oportunidades"
       outcome: "adaptive_graph_team_selection_pruning_elimination_and_routing_branch_integrated_and_contrasted_with_fixed_architecture_controlled_comparison"
     latest_theoretical_integration:
-      date: "2026-09-07"
-      ids: ["R064", "R065", "R066", "R067"]
-      target: "Capítulo 2 integral"
-      outcome: "four_primary_academic_references_verified_and_cited; prose_and_structure_revised"
-      verification: "docs/tcc/references/verification-2026-09-07.md"
+      date: "2026-09-08"
+      ids: ["R040", "R050"]
+      target: "2.1 Atendimento em Farmácias; 2.2 Inteligência Artificial no Atendimento"
+      outcome: "pharmacy_AI_scope_and_medication_harm_evidence_integrated_with_pharmacy_preserved_as_instrumental_case_study"
+      verification: "docs/tcc/references/verification-2026-09-08.md"
     matrix_docx_reconciliation:
       date: "2026-08-22"
       ids:
@@ -259,7 +259,7 @@ audit:
     exploratory_unit_definition: "TBD-OQ-004"
     exploratory_sample_target: "approximately_20_histories"
   manuscript:
-    latest_refinement: "Capítulo 2 integralmente revisado; cinco figuras inseridas nos capítulos 2, 5 e 6; seção 4.2 corrigida para reconhecer a configuração centralizada com agente único"
+    latest_refinement: "Seções 2.1 e 2.2 refinadas com distinção entre tarefas operacionais e profissionais, evidências acadêmicas sobre IA em farmácia e delimitação da farmácia como estudo de caso instrumental"
     substantial_drafts:
       - "01 Introdução"
       - "02 Fundamentação Teórica"
@@ -280,13 +280,13 @@ audit:
     numbering_marker_typography: "explicit_h1_14pt_bold_h2_12pt_bold_h3_12pt_regular_black"
     numbering_regression_audit: "rejects_bullets_non_arial_or_theme_based_markers_missing_numpr_multiple_numids_and_manual_numbers"
     references: "alphabetical_single_spacing_bold_title_element_et_al_italic"
-    visual_validation_pages: 58
+    visual_validation_pages: 59
     automated_audit: passed
     body_list_items_with_explicit_bullets: 51
     body_list_text_indent_cm: 1.905
     body_list_marker_indent_cm: 1.27
     figure_caption_placement: "title_above_image_source_below_image"
-    latest_format_review: "2026-09-07"
+    latest_format_review: "2026-09-08"
     typography: "body_arial12_h1_arial14_bold_upper_h2_arial12_bold_upper_h3plus_arial12_upper"
     toc_dot_leaders: "automatic_word_tab_stop_right_aligned"
     heading_color: "absolute_black_without_theme_color"
@@ -305,7 +305,7 @@ audit:
     - "O executor atual é sequencial, mas percorre cenários e arquiteturas na ordem fixa do carregador; o cronograma contrabalanceado e sua aplicação permanecem requisitos de preparação antes das 600 execuções definitivas."
     - "Os diagramas horizontais das etapas e da construção dos cenários estão corretos e legíveis, mas podem receber refinamento editorial de escala no fechamento do documento."
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
-    - "R050 e R052 foram verificadas, mas permanecem sem citação: R050 oferece suporte apenas indireto ao protocolo atual e R052 estuda viés de posição em comparações pareadas ou ordenadas, desenho diferente da rubrica por resposta do MAB."
+    - "R052 foi verificada, mas permanece sem citação porque estuda viés de posição em comparações pareadas ou ordenadas, desenho diferente da rubrica por resposta do MAB."
     - "A validade externa da comparação deverá ser discutida com cautela: o protocolo usa um único estudo de caso farmacêutico e não sustenta, por si só, generalização para todos os domínios de aplicação."
     - "O mapa versionado do formatador ainda não contém regras específicas de destaque bibliográfico para R044, R057-R067; nesta revisão, as regras necessárias, incluindo R064-R067, foram fornecidas ao pipeline e ao auditor somente em memória, sem alteração de código."
     - "Os novos arquivos IMG-C014 a IMG-C018 são candidatos licenciados e não estão aprovados para inserção; reproduções densas ou em inglês devem ser adaptadas ou redesenhadas antes do DOCX."
@@ -314,8 +314,8 @@ audit:
     - "Figuras de R033, R034, R041, R044 e R058 permaneceram apenas como referências conceituais porque não foi confirmada licença pública suficiente para armazenamento e adaptação."
     - "O sincronizador versionado de Markdown para DOCX está delimitado ao Capítulo 4; alterações em outros capítulos exigem substituição cirúrgica validada ou futura generalização do utilitário fora do escopo documental."
 
-last_run: "2026-09-07"
-last_run_record: "docs/tcc/state/runs/2026-09-07-04.md"
+last_run: "2026-09-08"
+last_run_record: "docs/tcc/state/runs/2026-09-08.md"
 next_recommended_action: "Receber o feedback da orientadora sobre o Capítulo 2 revisado e a distinção entre configurações completas e topologias isoladas; manter a coleta em NO-GO até GOV-01 a GOV-10 e aguardar a resposta da OQ-005."
 manual_review:
   date: "2026-09-07"
