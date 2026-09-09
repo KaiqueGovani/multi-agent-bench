@@ -50,6 +50,7 @@ O caminho de `render_docx.py` pode variar no ambiente. Quando isso ocorrer, use 
 - corpo em Arial 12, justificado, espaçamento 1,5 e recuo de primeira linha;
 - palavras e expressões estrangeiras isoladas em itálico, com preservação das exceções bibliográficas;
 - sumário estático reproduzível, com links internos, tabulação automática à direita com líder pontilhado do Word e páginas conferidas no PDF;
+- caixa de frase para títulos de nível 3 ou superior somente no sumário, preservando siglas e nomes próprios;
 - figuras metodológicas inline, com PNG de compatibilidade e SVG vetorial incorporado ao OOXML;
 - legendas numeradas por campo `SEQ Figura`, notas de fonte e lista de figuras reconstruída automaticamente a partir das legendas;
 - lista de figuras com links internos, páginas conferidas na segunda passagem, tabulação à direita e líder pontilhado automático;
@@ -71,6 +72,8 @@ O DOCX só está pronto para commit quando `audit` encerrar com `OK` e todas as 
 O manuscrito associa cada figura a um comentário estruturado `FIGURE`, seguido do caminho SVG. O sincronizador exige também um PNG homônimo. A inserção usa o PNG como imagem-base e acrescenta o SVG pelo elemento `asvg:svgBlip`, preservando nitidez no Word sem perder compatibilidade com o LibreOffice.
 
 As legendas usam o estilo `Figure Caption` e o campo `SEQ Figura`; a nota de fonte usa `Figure Source`. O formatador coleta essas legendas, cria a `LISTA DE FIGURAS` e recalcula as páginas a partir do PDF da primeira passagem. Não digite números de figura, páginas ou sequências de pontos na lista.
+
+O texto deve introduzir cada figura por seu número, usar os mesmos termos do desenho na explicação e continuar após a nota de fonte; não encerre uma subseção imediatamente depois da figura.
 
 Ao adicionar ou remover uma figura, sempre execute novamente as duas passagens. A auditoria deve confirmar: objeto inline, SVG incorporado, legenda sequencial, quantidade idêntica de legendas e entradas, tab stop direito com líder `dot` e páginas coerentes com o PDF.
 

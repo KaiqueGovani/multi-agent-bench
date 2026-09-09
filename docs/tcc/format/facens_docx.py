@@ -69,6 +69,7 @@ FOREIGN_TERM_RE = re.compile(
 # negrito nos exemplos; em artigos, o destaque recai no título do periódico.
 REFERENCE_EMPHASIS = {
     "ADA HEALTH.": "Health. Powered by Ada",
+    "ADAMOPOULOU": "Artificial Intelligence Applications and Innovations",
     "ALVAREZ,": "Exploratory Research in Clinical and Social Pharmacy",
     "AMAZON.": "Pharmacy AI Assistant FAQs",
     "AMAZON SCIENCE.": "The life of a prescription at Amazon Pharmacy",
@@ -76,17 +77,20 @@ REFERENCE_EMPHASIS = {
     "BALAPRAKASH": "International Journal of High Performance Computing Applications",
     "BUHNILA": "BioNLP 2026",
     "BUESING": "Where is customer care in 2024?",
+    "BROWN": "Advances in Neural Information Processing Systems",
+    "CEMRI": "Advances in Neural Information Processing Systems",
     "DOU": "ACM Transactions on Management Information Systems",
     "FIP.": "An artificial intelligence toolkit for pharmacy: an introduction and resource guide for pharmacists",
-    "HAMMOND": "Multi-Agent Risks from Advanced AI",
     "HATZIMANOLIS": "Research in Social and Administrative Pharmacy",
     "INFERMEDICA.": "Symptom Checker",
     "INTERCOM.": "Fin AI Agent explained",
     "JAGATAP": "Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies",
     "KIM": "Nature Machine Intelligence",
-    "LI": "Vicinagearth",
+    "LI,": "Vicinagearth",
+    "LIU": "FIRST CONFERENCE ON LANGUAGE MODELING",
     "LU": "Findings of the Association for Computational Linguistics: EMNLP 2024",
     "MCKINSEY & COMPANY.": "The state of AI in early 2024: gen AI adoption spikes and starts to generate value",
+    "ONG": "npj Digital Medicine",
     "PGEU.": "Position paper on artificial intelligence",
     "PAIS": "Nature Medicine",
     "PANDEY": "Proceedings of the 23rd Workshop on Biomedical Natural Language Processing",
@@ -95,12 +99,17 @@ REFERENCE_EMPHASIS = {
     "SALESFORCE.": "AI Customer Service Agents",
     "STANFORD HAI.": "AI Index Report 2025",
     "TAM": "npj Digital Medicine",
+    "VASWANI": "Advances in Neural Information Processing Systems",
     "WANG": "Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)",
     "WHO EUROPE.": "Advancing the role of pharmacists to meet changing patient and health system needs",
-    "YU": "2025 8th International Conference on Artificial Intelligence and Big Data (ICAIBD)",
+    "YAO": "International Conference on Learning Representations",
+    "YU,": "2025 8th International Conference on Artificial Intelligence and Big Data (ICAIBD)",
+    "YUE": "Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)",
     "ZENDESK.": "About AI agents",
     "ZHOU": "International Conference on Learning Representations 2026",
-    "ZHU": "Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)",
+    "ZHANG": "International Conference on Learning Representations 2025",
+    "ZHU,": "Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)",
+    "ZHUGE": "Proceedings [...]",
 }
 
 
@@ -124,6 +133,34 @@ class FigureEntry:
 
 def normalized(text: str) -> str:
     return re.sub(r"\s+", " ", text.replace("\u00a0", " ").strip()).upper()
+
+
+def toc_sentence_case(title: str) -> str:
+    """Aplica caixa de frase apenas à exibição de títulos de nível 3 no sumário."""
+    value = title.lower()
+    protected = {
+        "llm": "LLM",
+        "llms": "LLMs",
+        "ia": "IA",
+        "mab": "MAB",
+        "api": "API",
+        "apis": "APIs",
+        "http": "HTTP",
+        "json": "JSON",
+        "csv": "CSV",
+        "docx": "DOCX",
+        "whatsapp": "WhatsApp",
+        "fastapi": "FastAPI",
+        "transformer": "Transformer",
+        "react": "ReAct",
+    }
+    for lower, canonical in protected.items():
+        value = re.sub(rf"\b{re.escape(lower)}\b", canonical, value, flags=re.IGNORECASE)
+    first_letter = re.search(r"[A-Za-zÀ-ÖØ-öø-ÿ]", value)
+    if first_letter:
+        index = first_letter.start()
+        value = value[:index] + value[index].upper() + value[index + 1 :]
+    return value
 
 
 def iter_table_paragraphs(table):
@@ -889,7 +926,10 @@ def collect_toc_entries(doc: Document) -> list[TocEntry]:
             title = re.sub(r"\s+", " ", paragraph.text.replace("\u00a0", " ").strip())
             bookmark = f"_TCC_H_{bookmark_id:04d}"
             add_bookmark(paragraph, bookmark, bookmark_id)
-            entries.append(TocEntry(level, title, f"{number} {title}", bookmark))
+            display_title = toc_sentence_case(title) if level >= 3 else title
+            entries.append(
+                TocEntry(level, title, f"{number} {display_title}", bookmark)
+            )
             bookmark_id += 1
             continue
         if normalized(paragraph.text) == "REFERÊNCIAS":
@@ -1247,6 +1287,13 @@ def audit(input_path: Path, pdf_path: Path | None = None) -> list[str]:
             errors.append(
                 f"Entrada do sumário sem separador de tabulação único: {paragraph.text}"
             )
+        if paragraph.style.name == TOC_STYLES[3]:
+            title_with_page = paragraph.text.split("\t", 1)[0]
+            title_only = re.sub(r"^\d+(?:\.\d+){2}\s+", "", title_with_page)
+            if title_only != toc_sentence_case(title_only):
+                errors.append(
+                    f"Título de nível 3 fora da caixa de frase no sumário: {title_only}"
+                )
 
     try:
         figure_entries = collect_figure_entries(doc)
@@ -1294,6 +1341,24 @@ def audit(input_path: Path, pdf_path: Path | None = None) -> list[str]:
         for paragraph in [p for p in doc.paragraphs if p.style.name == "Figure Caption"]:
             if paragraph.paragraph_format.alignment != WD_ALIGN_PARAGRAPH.CENTER:
                 errors.append(f"Legenda de figura não centralizada: {paragraph.text}")
+            image_paragraph = paragraph._p.getnext()
+            source_paragraph = (
+                image_paragraph.getnext() if image_paragraph is not None else None
+            )
+            if image_paragraph is None or not image_paragraph.findall(
+                ".//" + qn("w:drawing")
+            ):
+                errors.append(
+                    f"Imagem não aparece imediatamente após a legenda: {paragraph.text}"
+                )
+            if (
+                source_paragraph is None
+                or source_paragraph.tag != qn("w:p")
+                or not "".join(source_paragraph.itertext()).strip().startswith("Fonte:")
+            ):
+                errors.append(
+                    f"Fonte não aparece imediatamente após a imagem: {paragraph.text}"
+                )
 
     for paragraph in headings:
         for run in paragraph.runs:

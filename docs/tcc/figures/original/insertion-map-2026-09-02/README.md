@@ -1,12 +1,12 @@
 # Diagramas autorais — revisão de 7 de setembro de 2026
 
-Os 14 SVGs foram redesenhados com texto editável em português, fundo branco, contraste e setas simples. Cada SVG possui PNG homônimo de 1800 pixels de largura. Os nomes e IDs históricos foram preservados para rastreabilidade; o conteúdo de 05 e 10 foi reformulado.
+Os 14 SVGs iniciais foram redesenhados com texto editável em português, fundo branco, contraste e setas simples. Cada SVG possui PNG homônimo de 1800 pixels de largura. Os nomes e IDs históricos foram preservados para rastreabilidade; o conteúdo de 05 e 10 foi reformulado. Em 9 de setembro de 2026, foi acrescentado o SVG 15 a pedido da orientadora, para explicar o fluxo básico do *Transformer*.
 
-A solicitação dos autores autorizou a revisão editorial e a inserção das figuras selecionadas. Foram escolhidas cinco: 01, 02, 04, 06 e 08. As outras nove permanecem no acervo, sem inserção.
+A solicitação dos autores autorizou a revisão editorial e a inserção das figuras selecionadas. Foram escolhidas seis: 01, 02, 04, 06, 08 e 15. As outras nove permanecem no acervo, sem inserção.
 
 | Arquivo | Seção | Decisão |
 |---|---|---|
-| `01-comparacao-arquiteturas.svg` | 2.5.4 | Inserida: contribuição visual distinta e diretamente ligada ao texto. |
+| `01-comparacao-arquiteturas.svg` | 2.5 | Inserida: contribuição visual distinta e diretamente ligada ao texto; setas e rótulos revistos após parecer da orientadora. |
 | `02-anatomia-agente-llm.svg` | 2.3.2 | Inserida: contribuição visual distinta e diretamente ligada ao texto. |
 | `03-componentes-sistema-multiagente.svg` | 2.4.2/2.4.3 | Não inserida: sobreposição com ciclo do agente e topologias. |
 | `04-topologias-trabalhos-correlatos.svg` | 2.4.2 | Inserida: contribuição visual distinta e diretamente ligada ao texto. |
@@ -20,6 +20,7 @@ A solicitação dos autores autorizou a revisão editorial e a inserção das fi
 | `12-plano-analise-estatistica.svg` | 4.10 | Não inserida: aguardar revisão do protocolo estatístico e evitar ampliar o conjunto metodológico nesta revisão. |
 | `13-cadeia-proveniencia-experimento.svg` | 4.12 | Não inserida: parâmetros e protocolo ainda não congelados (OQ-004/OQ-005). |
 | `14-pilha-tecnologias-observabilidade.svg` | 6.1/6.4 | Não inserida: sobreposição com a figura de serviços e o texto de 6.1. |
+| `15-fluxo-transformer.svg` | 2.3.1 | Inserida: síntese conceitual solicitada pela orientadora para apoiar a explicação do *Transformer*. |
 
 As figuras 01–04 são esquemas conceituais, sem resultados. A figura 08 distingue controles previstos de diferenças efetivas na configuração dos agentes. A figura 13 representa rastreabilidade planejada, sem indicar protocolo congelado. Nenhuma figura libera coleta ou abre os gates dos capítulos 7–9.
 

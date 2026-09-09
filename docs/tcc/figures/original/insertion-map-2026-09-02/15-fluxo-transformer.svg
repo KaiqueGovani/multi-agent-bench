@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">Fluxo simplificado de processamento em um modelo Transformer</title>
+  <desc id="desc">O texto de entrada é tokenizado, convertido em vetores com posição, processado por blocos Transformer e usado para prever o próximo token.</desc>
+  <defs>
+    <marker id="seta" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#334155"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="360" fill="#ffffff"/>
+  <rect x="20" y="20" width="1160" height="320" rx="5" fill="none" stroke="#c1c8d0" stroke-width="2"/>
+  <g font-family="Arial, Helvetica, sans-serif" fill="#17212b">
+    <rect x="55" y="120" width="180" height="100" rx="5" fill="#f4f6f8" stroke="#334155" stroke-width="2"/>
+    <text x="145" y="161" font-size="25" text-anchor="middle">
+      <tspan x="145" dy="0">Texto de</tspan>
+      <tspan x="145" dy="34">entrada</tspan>
+    </text>
+    <line x1="235" y1="170" x2="280" y2="170" stroke="#334155" stroke-width="2.5" marker-end="url(#seta)"/>
+    <rect x="280" y="120" width="180" height="100" rx="5" fill="#f4f6f8" stroke="#334155" stroke-width="2"/>
+    <text x="370" y="179" font-size="25" text-anchor="middle">Tokenização</text>
+    <line x1="460" y1="170" x2="505" y2="170" stroke="#334155" stroke-width="2.5" marker-end="url(#seta)"/>
+    <rect x="505" y="120" width="180" height="100" rx="5" fill="#f4f6f8" stroke="#334155" stroke-width="2"/>
+    <text x="595" y="161" font-size="25" text-anchor="middle">
+      <tspan x="595" dy="0">Vetores e</tspan>
+      <tspan x="595" dy="34">posição</tspan>
+    </text>
+    <line x1="685" y1="170" x2="730" y2="170" stroke="#334155" stroke-width="2.5" marker-end="url(#seta)"/>
+    <rect x="730" y="100" width="245" height="140" rx="5" fill="#e9eff5" stroke="#334155" stroke-width="2"/>
+    <text x="852.5" y="143" font-size="25" font-weight="700" text-anchor="middle">
+      <tspan x="852.5" dy="0">Blocos Transformer</tspan>
+      <tspan x="852.5" dy="35" font-weight="400">atenção e</tspan>
+      <tspan x="852.5" dy="33" font-weight="400">transformação</tspan>
+    </text>
+    <line x1="975" y1="170" x2="1020" y2="170" stroke="#334155" stroke-width="2.5" marker-end="url(#seta)"/>
+    <rect x="1020" y="120" width="130" height="100" rx="5" fill="#f4f6f8" stroke="#334155" stroke-width="2"/>
+    <text x="1085" y="161" font-size="24" text-anchor="middle">
+      <tspan x="1085" dy="0">Próximo</tspan>
+      <tspan x="1085" dy="34">token</tspan>
+    </text>
+  </g>
+</svg>

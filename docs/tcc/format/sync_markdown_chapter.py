@@ -204,12 +204,42 @@ def parse_blocks(markdown_path: Path):
         yield block
 
 
-def sync(input_docx: Path, markdown: Path, output_docx: Path) -> None:
+def renumber_figure_field_results(doc: Document) -> None:
+    """Atualiza os resultados visíveis dos campos SEQ sem remover os campos."""
+    number = 0
+    for paragraph in doc.paragraphs:
+        if paragraph.style.name != "Figure Caption":
+            continue
+        number += 1
+        after_separator = False
+        for run in paragraph._p.findall(qn("w:r")):
+            fld = run.find(qn("w:fldChar"))
+            if fld is not None:
+                field_type = fld.get(qn("w:fldCharType"))
+                if field_type == "separate":
+                    after_separator = True
+                    continue
+                if field_type == "end":
+                    break
+            if after_separator:
+                text = run.find(qn("w:t"))
+                if text is not None:
+                    text.text = str(number)
+                    break
+
+
+def sync(
+    input_docx: Path,
+    markdown: Path,
+    output_docx: Path,
+    start_title: str,
+    end_title: str,
+) -> None:
     doc = Document(input_docx)
     for style_name in ("Figure Caption", "Figure Source"):
         if style_name not in doc.styles:
             doc.styles.add_style(style_name, WD_STYLE_TYPE.PARAGRAPH)
-    boundary = remove_chapter_range(doc, "METODOLOGIA", "MODELAGEM DA SOLUÇÃO")
+    boundary = remove_chapter_range(doc, start_title, end_title)
     figure_count = sum(1 for p in doc.paragraphs if p.style.name == "Figure Caption")
     bookmark_id = 3000 + figure_count
 
@@ -240,6 +270,19 @@ def sync(input_docx: Path, markdown: Path, output_docx: Path) -> None:
             if not svg_path.exists() or not png_path.exists():
                 raise FileNotFoundError(f"Figura incompleta: {svg_path} / {png_path}")
 
+            figure_count += 1
+            caption = doc.add_paragraph(style="Figure Caption")
+            caption.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            caption.paragraph_format.first_line_indent = Cm(0)
+            caption.paragraph_format.keep_with_next = True
+            add_seq_field(caption, "Figura", figure_count)
+            caption.add_run(" – ")
+            add_inline_runs(caption, info["caption"])
+            bookmark = "_TCC_F_" + re.sub(r"[^A-Za-z0-9_]", "_", info["id"])
+            add_bookmark(caption, bookmark, bookmark_id)
+            bookmark_id += 1
+            move_before(caption, boundary)
+
             figure = doc.add_paragraph()
             figure.alignment = WD_ALIGN_PARAGRAPH.CENTER
             figure.paragraph_format.first_line_indent = Cm(0)
@@ -254,22 +297,10 @@ def sync(input_docx: Path, markdown: Path, output_docx: Path) -> None:
                 doc_pr.set("name", info["id"])
                 doc_pr.set("descr", info["caption"])
             move_before(figure, boundary)
-
-            figure_count += 1
-            caption = doc.add_paragraph(style="Figure Caption")
-            caption.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            caption.paragraph_format.first_line_indent = Cm(0)
-            caption.paragraph_format.keep_with_next = True
-            add_seq_field(caption, "Figura", figure_count)
-            caption.add_run(" – ")
-            add_inline_runs(caption, info["caption"])
-            bookmark = "_TCC_F_" + re.sub(r"[^A-Za-z0-9_]", "_", info["id"])
-            add_bookmark(caption, bookmark, bookmark_id)
-            bookmark_id += 1
-            move_before(caption, boundary)
         else:
             raise AssertionError(block)
 
+    renumber_figure_field_results(doc)
     output_docx.parent.mkdir(parents=True, exist_ok=True)
     doc.save(output_docx)
 
@@ -279,8 +310,16 @@ def main() -> int:
     parser.add_argument("input_docx", type=Path)
     parser.add_argument("markdown", type=Path)
     parser.add_argument("output_docx", type=Path)
+    parser.add_argument("--start-title", default="METODOLOGIA")
+    parser.add_argument("--end-title", default="MODELAGEM DA SOLUÇÃO")
     args = parser.parse_args()
-    sync(args.input_docx, args.markdown, args.output_docx)
+    sync(
+        args.input_docx,
+        args.markdown,
+        args.output_docx,
+        args.start_title,
+        args.end_title,
+    )
     return 0
 
 

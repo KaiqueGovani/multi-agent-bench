@@ -53,6 +53,7 @@ Consolidação baseada no modelo Word e nos manuais técnicos fornecidos pelos a
 - refletir exatamente a hierarquia e a grafia dos títulos;
 - incluir `REFERÊNCIAS` sem número de seção;
 - o pipeline de `README.md` deve reconstruir o sumário e conferir as páginas contra o PDF renderizado.
+- no sumário apenas, títulos de nível 3 ou superior devem usar caixa de frase: primeira letra em maiúscula, demais palavras em minúsculas, com preservação de siglas e nomes próprios; os títulos no corpo não são alterados por essa regra.
 
 ## Figuras e lista de figuras
 
