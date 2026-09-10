@@ -138,21 +138,32 @@ A pergunta de pesquisa é: como a escolha entre orquestração centralizada, *wo
 
 Para orientar a comparação, são estabelecidas as seguintes hipóteses:
 
-- H0: não existe diferença estatisticamente detectável entre as arquiteturas nas métricas primárias definidas no protocolo.
-- H1: pelo menos uma arquitetura apresenta diferença estatisticamente detectável em uma ou mais métricas primárias.
-- H2: o efeito da arquitetura varia em função das características do cenário, especialmente em situações que envolvem ferramentas, anexos, continuidade de contexto ou necessidade de revisão humana.
+- H0: sob as mesmas condições experimentais, as arquiteturas não apresentam diferenças estatisticamente detectáveis nas métricas pré-especificadas de eficiência, custo de coordenação e qualidade da resposta.
+- H1: sob as mesmas condições experimentais, pelo menos uma arquitetura apresenta diferença estatisticamente detectável em uma ou mais dessas métricas.
+- H2: a direção ou a magnitude das diferenças entre arquiteturas varia conforme o estrato do cenário, especialmente quando a tarefa envolve ferramentas, anexos, continuidade de contexto ou revisão profissional.
 
-As hipóteses e o protocolo experimental deverão ser congelados antes da coleta definitiva dos resultados. Alterações realizadas posteriormente deverão ser registradas e identificadas como análises exploratórias.
+H0 e H1 serão avaliadas separadamente para cada métrica, usando como unidade de comparação o resumo das cinco repetições de cada cenário em cada arquitetura. Não será calculada uma pontuação única para declarar uma arquitetura vencedora. Latência, consumo total de *tokens* e cada critério da rubrica de qualidade serão interpretados em seus próprios termos. Sucesso técnico e segurança também serão apresentados separadamente, pois uma redução de custo ou tempo não compensa uma execução malsucedida ou um encaminhamento inadequado.
+
+H2 terá caráter exploratório. Cada estrato contém apenas oito cenários, número insuficiente para sustentar conclusões isoladas com a mesma força da análise principal. Por isso, a análise por estrato dará prioridade à direção, à magnitude e à consistência dos efeitos, sem transformar diferenças pontuais em conclusões gerais.
+
+As hipóteses, as métricas e as regras de análise deverão ser congeladas antes da coleta definitiva. Alterações posteriores serão registradas e identificadas como análises exploratórias.
 
 ## 4.8 MÉTRICAS DE AVALIAÇÃO
 
-A comparação será realizada a partir de três dimensões principais: desempenho operacional, custo de coordenação e qualidade e segurança da resposta.
+A comparação será organizada em quatro eixos complementares:
+
+- confiabilidade e eficiência operacional, observadas pelo sucesso técnico, pelos erros e pela latência;
+- custo de coordenação, observado pelo consumo de *tokens* e pelos eventos internos necessários para concluir a tarefa;
+- qualidade da resposta, avaliada pelos cinco critérios da rubrica comum; e
+- segurança, avaliada pela decisão de encaminhar ou não cada caso para revisão profissional.
+
+Os eixos serão reportados separadamente. Essa separação evita que uma média composta oculte compensações relevantes, como menor latência acompanhada de pior qualidade ou menor custo acompanhado de mais falsos negativos de segurança.
 
 ### 4.8.1 DESEMPENHO OPERACIONAL
 
 O sucesso técnico corresponde à proporção de execuções concluídas sem erro impeditivo. A latência corresponde ao tempo decorrido entre o início da execução e sua conclusão. Serão considerados valores individuais e estatísticas agregadas, incluindo mediana, percentil 50 (p50) e percentil 95 (p95).
 
-O consumo de *tokens* será registrado separadamente para entrada, saída e total. Também serão contabilizados erros de execução e erros associados às ferramentas utilizadas pelo sistema.
+Também serão contabilizados erros de execução e erros associados às ferramentas. Nas comparações de latência, execuções concluídas e malsucedidas serão identificadas separadamente, para evitar que uma falha encerrada rapidamente seja interpretada como ganho de eficiência.
 
 ### 4.8.2 CUSTO DE COORDENAÇÃO
 
@@ -165,7 +176,7 @@ O custo de coordenação será analisado por meio de eventos observáveis produz
 - consumo total de *tokens*; e
 - tempo total de execução.
 
-Essas métricas permitem observar não apenas se uma arquitetura produziu uma resposta, mas também o esforço necessário para produzi-la.
+O consumo de *tokens* será discriminado em entrada, saída e total. As demais contagens descrevem mecanismos diferentes de coordenação e não serão somadas em um índice único. *Handoffs*, por exemplo, são próprios da arquitetura descentralizada, enquanto etapas fixas caracterizam o *workflow*; a comparação considerará o significado de cada evento em sua arquitetura.
 
 ### 4.8.3 SEGURANÇA E ENCAMINHAMENTO PROFISSIONAL
 
@@ -200,17 +211,19 @@ Fonte: elaboração própria (2026).
 
 ## 4.10 ANÁLISE DOS RESULTADOS
 
-Os resultados serão analisados inicialmente por meio de estatística descritiva. Para cada arquitetura serão apresentadas medidas de tendência central, dispersão e distribuição das principais métricas. Para latência e consumo de *tokens*, serão priorizadas mediana, p50 e p95, além de intervalos de confiança de 95% quando aplicáveis.
+Os resultados serão analisados inicialmente por meio de estatística descritiva. Para cada arquitetura serão apresentadas medidas de tendência central, dispersão e distribuição das métricas. Para latência e consumo de *tokens*, serão priorizadas mediana, p50 e p95, além de intervalos de confiança de 95% quando aplicáveis.
 
-As cinco repetições de cada combinação entre cenário e arquitetura serão preservadas na base de dados bruta. Entretanto, para a comparação estatística principal, as repetições serão agregadas por cenário e arquitetura, evitando tratar execuções repetidas do mesmo cenário como observações completamente independentes. Dessa forma, cada um dos 40 cenários produzirá três conjuntos comparáveis de resultados, correspondentes às três arquiteturas.
+As cinco repetições de cada combinação entre cenário e arquitetura serão preservadas na base de dados bruta. Para a comparação estatística principal, será calculado um resumo por cenário e arquitetura, evitando tratar repetições do mesmo cenário como observações independentes. Será usada a mediana para latência, consumo de *tokens*, contagens de eventos e critérios ordinais de qualidade. O sucesso técnico será expresso pela proporção de repetições concluídas. Assim, cada um dos 40 cenários produzirá três observações pareadas, uma por arquitetura.
 
-Para variáveis contínuas ou ordinais nas quais não seja adequado assumir distribuição normal, será utilizado o teste de Friedman para verificar a existência de diferença global entre as três arquiteturas. Quando o teste global indicar diferença estatisticamente significativa, serão realizadas comparações pareadas por meio do teste de Wilcoxon *signed-rank*, com correção de Holm para múltiplas comparações.
+Para as métricas contínuas ou ordinais, será utilizado o teste de Friedman para verificar a existência de diferença global entre as três arquiteturas. Quando o teste global indicar diferença estatisticamente significativa, serão realizadas as três comparações pareadas por meio do teste de Wilcoxon *signed-rank*, com correção de Holm dentro da respectiva métrica.
 
 Será adotado nível de significância de 5% (α = 0,05). Os valores de significância serão acompanhados, sempre que aplicável, de medidas de tamanho de efeito, de modo que a análise não fique restrita à existência ou ausência de significância estatística.
 
-As métricas relacionadas ao encaminhamento humano também serão analisadas por proporções, incluindo sensibilidade, especificidade e taxa de falsos negativos. A hipótese H2 será investigada por meio da estratificação dos resultados segundo os cinco grupos de cenários. Como cada grupo contém apenas oito cenários, as análises inferenciais realizadas dentro de cada estrato serão interpretadas com cautela, dando maior ênfase ao tamanho e à direção dos efeitos observados.
+O sucesso técnico e os eventos de falha serão apresentados por contagens e proporções, sempre junto das métricas de desempenho das execuções concluídas. O encaminhamento profissional será analisado por sensibilidade, especificidade e taxa de falsos negativos. Essas medidas não serão incorporadas a uma pontuação composta.
 
-A análise final relacionará os resultados obtidos com a pergunta de pesquisa, buscando identificar não apenas qual arquitetura apresenta melhores valores agregados, mas também em quais tipos de atendimento cada estratégia apresenta vantagens, custos ou limitações. Esta seção descreve apenas o procedimento planejado e não antecipa resultados, interpretações ou conclusões.
+H2 será examinada pela estratificação dos resultados nos cinco grupos de cenários. Como cada grupo contém oito cenários, essa análise será exploratória e dará maior ênfase à direção, à magnitude e à consistência dos efeitos do que a testes de significância isolados.
+
+A análise final relacionará cada eixo de resultado à pergunta de pesquisa. As arquiteturas serão descritas por seus perfis de eficiência, coordenação, qualidade e segurança, sem reduzir medidas distintas a uma classificação geral. Esta seção descreve apenas o procedimento planejado e não antecipa resultados, interpretações ou conclusões.
 
 ## 4.11 LIMITAÇÕES E AMEAÇAS À VALIDADE
 

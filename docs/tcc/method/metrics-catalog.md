@@ -20,4 +20,8 @@
 
 Sucesso técnico não equivale a resposta correta. A comparação principal deverá reportar eficiência, coordenação, qualidade e segurança separadamente. Valores ausentes não serão convertidos para zero; serão identificados e tratados conforme o motivo da ausência.
 
+Para latência, *tokens*, contagens de eventos e critérios ordinais de qualidade, a unidade da comparação principal será a mediana das cinco repetições de cada cenário em cada arquitetura. Para sucesso técnico, será usada a proporção de repetições concluídas. Execuções malsucedidas serão preservadas e reportadas à parte; seu encerramento antecipado não será tratado como ganho de latência.
+
+As cinco dimensões da rubrica serão analisadas separadamente. Da mesma forma, chamadas de ferramentas, *handoffs*, ciclos e etapas acionadas não serão somados em um índice de coordenação, pois representam mecanismos diferentes e nem todos existem nas três arquiteturas.
+
 O modelo e a versão do *LLM-as-Judge*, a versão da rubrica e o *prompt* de avaliação serão congelados antes da avaliação definitiva. Todas as 120 respostas do estrato de revisão profissional serão avaliadas por farmacêutico, além de uma amostra estratificada de 20% das respostas dos demais estratos.

@@ -116,6 +116,8 @@ A inferência do Claude ocorre remotamente no Bedrock; a GPU local não executa 
 
 ## 8. Métricas
 
+As métricas serão organizadas em quatro eixos e interpretadas separadamente. Não será calculada uma pontuação composta para ordenar as arquiteturas.
+
 ### 8.1 Desempenho operacional
 
 - sucesso técnico;
@@ -140,6 +142,8 @@ O gabarito indicará se cada cenário exige revisão profissional. A saída ser�
 
 A rubrica comum usará escala ordinal de 1 a 5 para aderência à intenção, correção operacional, segurança, completude e clareza.
 
+Para a comparação principal, a mediana das cinco repetições será calculada por cenário e arquitetura para latência, *tokens*, contagens de eventos e cada critério ordinal de qualidade. O sucesso técnico será resumido pela proporção de repetições concluídas. Falhas serão reportadas separadamente e não poderão produzir uma vantagem artificial de latência por encerramento antecipado.
+
 ## 9. Avaliação híbrida
 
 O *LLM-as-Judge* será aplicado a todas as respostas, sem indicação da arquitetura. O modelo do julgador, sua versão, a rubrica e o *prompt* de avaliação deverão ser congelados antes da avaliação definitiva.
@@ -154,13 +158,15 @@ Se apenas um farmacêutico participar, não será possível calcular concordânc
 ## 10. Plano de análise
 
 1. Preservar cada execução individual e documentar falhas ou ausências.
-2. Agregar as cinco repetições por cenário e arquitetura para a comparação estatística principal.
-3. Apresentar medidas descritivas, dispersão e distribuição por arquitetura.
-4. Para variáveis contínuas ou ordinais sem pressuposto adequado de normalidade, aplicar Friedman como teste global.
-5. Quando o teste global indicar diferença, aplicar Wilcoxon *signed-rank* em comparações pareadas com correção de Holm.
+2. Calcular um resumo por cenário e arquitetura: mediana para métricas contínuas, contagens e critérios ordinais; proporção para sucesso técnico.
+3. Apresentar medidas descritivas, dispersão e distribuição por arquitetura, distinguindo execuções concluídas e malsucedidas.
+4. Aplicar Friedman como teste global para cada métrica contínua ou ordinal pré-especificada.
+5. Quando o teste global indicar diferença, aplicar Wilcoxon *signed-rank* às três comparações pareadas, com correção de Holm dentro da métrica analisada.
 6. Adotar α = 0,05, intervalos de confiança de 95% quando aplicáveis e medidas de tamanho de efeito.
-7. Analisar segurança também por proporções, incluindo sensibilidade, especificidade e falsos negativos.
-8. Tratar análises por estrato ligadas à H2 com cautela, pois cada grupo contém oito cenários.
+7. Analisar sucesso técnico e segurança por contagens e proporções, incluindo sensibilidade, especificidade e falsos negativos, sem incorporá-los a uma pontuação composta.
+8. Tratar as análises por estrato ligadas à H2 como exploratórias, pois cada grupo contém oito cenários.
+
+Latência, consumo total de *tokens* e cada critério da rubrica serão interpretados separadamente. Contagens específicas de uma topologia, como *handoffs* no *swarm* ou etapas do *workflow*, também permanecerão separadas, pois não representam operações equivalentes entre as arquiteturas.
 
 O plano descreve procedimentos futuros e não autoriza antecipar resultados ou interpretações.
 
