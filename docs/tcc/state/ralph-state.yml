@@ -63,7 +63,13 @@ constraints:
 
 audit:
   date: "2026-09-10"
-  status: "method_hypotheses_metrics_and_analysis_operationalized"
+  status: "hybrid_evaluation_rubric_drafted"
+  evaluation_rubric:
+    date: "2026-09-10"
+    version: "0.1_draft_not_frozen"
+    artifact: "docs/tcc/method/evaluation-rubric.md"
+    outcome: "five_criterion_anchors_blind_inputs_separate_referral_classification_calibration_and_disagreement_rules_documented"
+    pending: "pharmacist_review_calibration_set_and_OQ_005_judge_parameters"
   methodology_analysis_refinement:
     date: "2026-09-10"
     target: "4.7 Problema de Pesquisa e Hipóteses; 4.8 Métricas de Avaliação; 4.10 Análise dos Resultados"
@@ -260,7 +266,8 @@ audit:
       schedule_integrity: "record_generator_version_seed_and_SHA-256"
       current_harness: "serial_execution_with_fixed_loader_order; constrained_schedule_not_implemented"
     inferential_plan: "friedman_then_pairwise_wilcoxon_signed_rank_with_holm_alpha_0_05"
-    hybrid_evaluation: "llm_as_judge_plus_stratified_pharmacist_review"
+    hybrid_evaluation: "llm_as_judge_plus_stratified_pharmacist_review_with_rubric_v0_1_draft"
+    evaluation_rubric: "docs/tcc/method/evaluation-rubric.md_draft_not_frozen"
     definitive_collection_authorized: false
     human_evaluators: "one_or_two_pharmacists_available_final_count_pending"
     whatsapp_data_collection: "preliminary_plan_for_about_20_histories_in_private_environment_governance_pending"
@@ -324,8 +331,8 @@ audit:
     - "O sincronizador versionado de Markdown para DOCX está delimitado ao Capítulo 4; alterações em outros capítulos exigem substituição cirúrgica validada ou futura generalização do utilitário fora do escopo documental."
 
 last_run: "2026-09-10"
-last_run_record: "docs/tcc/state/runs/2026-09-10.md"
-next_recommended_action: "Na sexta-feira, verificar formalmente R069-R072 e integrar somente as fontes que sustentem afirmações específicas sobre custo, autoridade, coordenação emergente e roteamento; manter a coleta em NO-GO até GOV-01 a GOV-10 e aguardar OQ-005."
+last_run_record: "docs/tcc/state/runs/2026-09-10-02.md"
+next_recommended_action: "Na sexta-feira, verificar formalmente R069-R072 e integrar somente as fontes que sustentem afirmações específicas sobre custo, autoridade, coordenação emergente e roteamento; submeter a rubrica 0.1 ao farmacêutico antes do congelamento e manter a coleta em NO-GO até GOV-01 a GOV-10."
 manual_review:
   date: "2026-09-07"
   authority: "user_requested_full_chapter_2_and_fourteen_svg_review_with_editorial_selection"

@@ -140,13 +140,13 @@ O gabarito indicará se cada cenário exige revisão profissional. A saída ser�
 
 ### 8.4 Qualidade
 
-A rubrica comum usará escala ordinal de 1 a 5 para aderência à intenção, correção operacional, segurança, completude e clareza.
+A rubrica comum usará escala ordinal de 1 a 5 para aderência à intenção, correção operacional, segurança, completude e clareza. As âncoras, o material apresentado aos avaliadores e as regras de registro estão especificados no rascunho `evaluation-rubric.md`.
 
 Para a comparação principal, a mediana das cinco repetições será calculada por cenário e arquitetura para latência, *tokens*, contagens de eventos e cada critério ordinal de qualidade. O sucesso técnico será resumido pela proporção de repetições concluídas. Falhas serão reportadas separadamente e não poderão produzir uma vantagem artificial de latência por encerramento antecipado.
 
 ## 9. Avaliação híbrida
 
-O *LLM-as-Judge* será aplicado a todas as respostas, sem indicação da arquitetura. O modelo do julgador, sua versão, a rubrica e o *prompt* de avaliação deverão ser congelados antes da avaliação definitiva.
+O *LLM-as-Judge* será aplicado a todas as respostas, sem indicação da arquitetura. O modelo do julgador, sua versão, a rubrica e o *prompt* de avaliação deverão ser congelados antes da avaliação definitiva. Antes desse congelamento, o julgador e o farmacêutico aplicarão a rubrica a um conjunto de calibração separado da matriz de 600 execuções.
 
 A avaliação humana será cega e executada por pelo menos um farmacêutico graduado:
 

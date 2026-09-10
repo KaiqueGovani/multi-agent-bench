@@ -24,4 +24,4 @@ Para latência, *tokens*, contagens de eventos e critérios ordinais de qualidad
 
 As cinco dimensões da rubrica serão analisadas separadamente. Da mesma forma, chamadas de ferramentas, *handoffs*, ciclos e etapas acionadas não serão somados em um índice de coordenação, pois representam mecanismos diferentes e nem todos existem nas três arquiteturas.
 
-O modelo e a versão do *LLM-as-Judge*, a versão da rubrica e o *prompt* de avaliação serão congelados antes da avaliação definitiva. Todas as 120 respostas do estrato de revisão profissional serão avaliadas por farmacêutico, além de uma amostra estratificada de 20% das respostas dos demais estratos.
+O modelo e a versão do *LLM-as-Judge*, a versão da rubrica e o *prompt* de avaliação serão congelados antes da avaliação definitiva. O rascunho `evaluation-rubric.md` define as âncoras dos cinco critérios, mantém a classificação de encaminhamento separada das notas ordinais e estabelece o procedimento de calibração. Todas as 120 respostas do estrato de revisão profissional serão avaliadas por farmacêutico, além de uma amostra estratificada de 20% das respostas dos demais estratos.
