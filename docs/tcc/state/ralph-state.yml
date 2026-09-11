@@ -62,8 +62,8 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
-  date: "2026-09-10"
-  status: "hybrid_evaluation_rubric_drafted"
+  date: "2026-09-11"
+  status: "R069_R072_verified_R071_R072_integrated"
   evaluation_rubric:
     date: "2026-09-10"
     version: "0.1_draft_not_frozen"
@@ -104,9 +104,9 @@ audit:
     placeholders_verified: true
   references:
     total: 72
-    candidate: 20
-    verified: 9
-    cited: 27
+    candidate: 16
+    verified: 11
+    cited: 29
     watch: 7
     reject: 9
     latest_discovery:
@@ -119,16 +119,20 @@ audit:
         - "R072"
       outcome: "five_candidates_triaged_for_failure_taxonomy_coordination_load_authorization_preservation_emergent_coordination_and_distributed_routing"
     latest_verification:
-      date: "2026-09-09"
+      date: "2026-09-11"
       ids:
-        - "R068"
-      outcome: "metadata_scope_and_peer_reviewed_venue_verified_before_replacing_preprint_R004_in_chapter_2"
+        - "R069"
+        - "R070"
+        - "R071"
+        - "R072"
+      outcome: "metadata_scope_method_limits_and_publication_status_verified_in_primary_sources; R069_R070_retained_without_citation_as_preprints"
     latest_integration:
-      date: "2026-09-09"
+      date: "2026-09-11"
       ids:
-        - "R068"
-      target: "2.4.3 Comunicação, coordenação e observabilidade"
-      outcome: "peer_reviewed_failure_taxonomy_integrated_and_preprint_R004_removed_from_manuscript"
+        - "R071"
+        - "R072"
+      target: "3.2 Sistemas Multiagentes Aplicados; 3.3 Análise dos Trabalhos Correlatos"
+      outcome: "peer_reviewed_evidence_integrated_for_process_level_coordination_measurement_and_distribution_of_routing_authority_with_explicit_scope_limits"
     latest_theoretical_integration:
       date: "2026-09-08"
       ids: ["R040", "R050"]
@@ -142,15 +146,15 @@ audit:
         - "R041"
       outcome: "stale_needs_correction_markers_closed_after_docx_abnt_verification"
     chapter_3_traceability:
-      date: "2026-09-05"
-      external_works: 14
-      matrix_rows: 15
+      date: "2026-09-11"
+      external_works: 16
+      matrix_rows: 17
       registry_missing: 0
       matrix_missing: 0
       docx_bibliography_missing: 0
       ambiguous_author_year_labels: "resolved_H_Wang_and_Z_Wang"
       artifact: "docs/tcc/references/audits/chapter-3-traceability-2026-09-05.md"
-      outcome: "passed"
+      outcome: "passed_after_R071_R072_integration"
   figures:
     cited_references_audited: 16
     rights_verified_candidates: 14
@@ -275,7 +279,7 @@ audit:
     exploratory_unit_definition: "TBD-OQ-004"
     exploratory_sample_target: "approximately_20_histories"
   manuscript:
-    latest_refinement: "Seções 4.7, 4.8 e 4.10 refinadas com unidade de comparação por cenário, quatro eixos de resultado, análise métrica a métrica e H2 explicitamente exploratória"
+    latest_refinement: "Seções 3.2 e 3.3 refinadas com evidências revisadas por pares sobre coordenação emergente e distribuição da autoridade de roteamento, preservando limites de escopo"
     substantial_drafts:
       - "01 Introdução"
       - "02 Fundamentação Teórica"
@@ -296,13 +300,13 @@ audit:
     numbering_marker_typography: "explicit_h1_14pt_bold_h2_12pt_bold_h3_12pt_regular_black"
     numbering_regression_audit: "rejects_bullets_non_arial_or_theme_based_markers_missing_numpr_multiple_numids_and_manual_numbers"
     references: "alphabetical_single_spacing_bold_title_element_et_al_italic"
-    visual_validation_pages: 61
+    visual_validation_pages: 62
     automated_audit: passed
     body_list_items_with_explicit_bullets: 51
     body_list_text_indent_cm: 1.905
     body_list_marker_indent_cm: 1.27
     figure_caption_placement: "title_above_image_source_below_image"
-    latest_format_review: "2026-09-08"
+    latest_format_review: "2026-09-11"
     typography: "body_arial12_h1_arial14_bold_upper_h2_arial12_bold_upper_h3plus_arial12_upper"
     toc_dot_leaders: "automatic_word_tab_stop_right_aligned"
     heading_color: "absolute_black_without_theme_color"
@@ -323,16 +327,16 @@ audit:
     - "Metadados bibliográficos não verificados devem continuar sendo reconciliados com fontes primárias nas revisões de sexta-feira."
     - "R052 foi verificada, mas permanece sem citação porque estuda viés de posição em comparações pareadas ou ordenadas, desenho diferente da rubrica por resposta do MAB."
     - "A validade externa da comparação deverá ser discutida com cautela: o protocolo usa um único estudo de caso farmacêutico e não sustenta, por si só, generalização para todos os domínios de aplicação."
-    - "O mapa versionado do formatador ainda não contém regras específicas de destaque bibliográfico para R044, R057-R067; nesta revisão, as regras necessárias, incluindo R064-R067, foram fornecidas ao pipeline e ao auditor somente em memória, sem alteração de código."
+    - "O mapa versionado do formatador ainda não contém regras específicas de destaque bibliográfico para R044, R057-R072; nas revisões documentais, as regras necessárias, incluindo R064-R067 e R071-R072, foram fornecidas ao pipeline e ao auditor somente em memória, sem alteração de código."
     - "Os novos arquivos IMG-C014 a IMG-C018 são candidatos licenciados e não estão aprovados para inserção; reproduções densas ou em inglês devem ser adaptadas ou redesenhadas antes do DOCX."
     - "Os 14 diagramas IMG-C019 a IMG-C032 foram revisados. IMG-C019, C020, C022, C024 e C026 foram inseridos; os demais nove permanecem no acervo com justificativa editorial."
     - "IMG-C031 representa a cadeia de proveniência planejada e permanece condicionada ao congelamento dos parâmetros técnicos da OQ-005."
     - "Figuras de R033, R034, R041, R044 e R058 permaneceram apenas como referências conceituais porque não foi confirmada licença pública suficiente para armazenamento e adaptação."
     - "O sincronizador versionado de Markdown para DOCX está delimitado ao Capítulo 4; alterações em outros capítulos exigem substituição cirúrgica validada ou futura generalização do utilitário fora do escopo documental."
 
-last_run: "2026-09-10"
-last_run_record: "docs/tcc/state/runs/2026-09-10-02.md"
-next_recommended_action: "Na sexta-feira, verificar formalmente R069-R072 e integrar somente as fontes que sustentem afirmações específicas sobre custo, autoridade, coordenação emergente e roteamento; submeter a rubrica 0.1 ao farmacêutico antes do congelamento e manter a coleta em NO-GO até GOV-01 a GOV-10."
+last_run: "2026-09-11"
+last_run_record: "docs/tcc/state/runs/2026-09-11.md"
+next_recommended_action: "No sábado, auditar a rastreabilidade das novas citações do Capítulo 3 entre manuscrito, matriz, registro e DOCX; manter a coleta em NO-GO até GOV-01 a GOV-10 e aguardar OQ-004 e OQ-005."
 manual_review:
   date: "2026-09-07"
   authority: "user_requested_full_chapter_2_and_fourteen_svg_review_with_editorial_selection"
