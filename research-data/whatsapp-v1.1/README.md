@@ -35,8 +35,8 @@ Requer Git LFS e Python 3.12. A partir da raiz do repositório:
 git lfs install
 git lfs pull
 python -m pip install -r research-data/whatsapp-v1.1/requirements.txt
-python research-data/whatsapp-v1.1/restore_bundle.py --key CAMINHO_EXTERNO/TCC_CHAVE_REPOSITORIO_v1.1_NAO_COMMITAR.json --verify
-python research-data/whatsapp-v1.1/restore_bundle.py --key CAMINHO_EXTERNO/TCC_CHAVE_REPOSITORIO_v1.1_NAO_COMMITAR.json --output research-data/local/TCC_WHATSAPP_COMPLETO_v1.1.zip
+python research-data/whatsapp-v1.1/restore_bundle.py --key research-data/local/keys/TCC_CHAVE_REPOSITORIO_v1.1_NAO_COMMITAR.json --verify
+python research-data/whatsapp-v1.1/restore_bundle.py --key research-data/local/keys/TCC_CHAVE_REPOSITORIO_v1.1_NAO_COMMITAR.json --output research-data/local/TCC_WHATSAPP_COMPLETO_v1.1.zip
 ```
 
 O destino deve ser um arquivo novo. `research-data/local/` é ignorado pelo Git.
@@ -52,16 +52,20 @@ python -m unittest discover -s research-data/whatsapp-v1.1 -p test_restore_bundl
 SHA-256 do ZIP recuperado:
 `11c1671f315c80a76b8d1f22cd24713b504d5f27e5ec8205b1c50976f0981c40`.
 
-## Duas chaves, mantidas fora do repositório
+## Duas chaves, mantidas fora do histórico Git
 
 1. `TCC_CHAVE_REPOSITORIO_v1.1_NAO_COMMITAR.json`: abre a camada externa e
-   recupera o ZIP consolidado.
+   recupera o ZIP consolidado. Nesta cópia local, fica em
+   `research-data/local/keys/`, diretório ignorado pelo Git.
 2. `TCC_CHAVE_PRIVADA_v1.1_NAO_ENVIAR_AO_AGENTE.json`: abre o bloco privado
    dentro do ZIP, exclusivamente no ambiente do avaliador.
 
 O responsável guarda as duas chaves separadamente. Elas não podem ser recuperadas
-do Git. Não adicioná-las a commits, Issues, logs ou ao ambiente dos agentes.
+do Git: um novo clone não inclui as chaves. O responsável deve fornecê-las
+localmente quando necessário. Não adicioná-las a commits, Issues ou logs.
 As regras de ignore evitam inclusões acidentais, mas não são controle de acesso.
+Um agente com acesso ao checkout local pode ler arquivos ignorados; execute os
+experimentos em outro clone ou ambiente sem chaves.
 
 ## Continuação do trabalho
 
