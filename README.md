@@ -11,6 +11,13 @@
 
 ## Overview
 
+### Research dataset
+
+The audited WhatsApp dataset is available as a fully encrypted Git LFS artifact.
+See [dataset recovery and handoff instructions](research-data/whatsapp-v1.1/README.md)
+for the schema, local recovery procedure, and current experimental limitations.
+Decryption keys are held separately and are never committed.
+
 This repository hosts the **undergraduate thesis (TCC)** project focused on building a multi-agent system for intelligent pharmacy customer service. The primary research goal is to **compare coordination architectures** between agents in an experimental, observable environment.
 
 ### Current Phase: Proof of Concept

@@ -35,6 +35,15 @@ research-data/private/
 *.whatsapp-export.*
 *.chat-export.*
 
+# WhatsApp dataset: only the fully encrypted release belongs in Git LFS.
+TCC_CHAVE_*.json
+TCC_WHATSAPP_COMPLETO_*.zip
+pseudonym_key.bin
+tcc_privado.sqlite*
+candidatos_revisao.sqlite*
+avaliacao_privada/
+/research-data/local/
+
 # Test artifacts
 test-results/
 playwright-report/

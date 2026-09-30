@@ -1,0 +1,12 @@
+{
+  "version": "1.1",
+  "format": "TCCREPO1",
+  "algorithm": "AES-256-GCM",
+  "encrypted_file": "TCC_WHATSAPP_COMPLETO_v1.1.zip.tccenc",
+  "encrypted_bytes": 183115299,
+  "encrypted_sha256": "825a8083e112bcb5bf26db0674f2ebce3b743e07220e7eb75045685efda53852",
+  "original_file": "TCC_WHATSAPP_COMPLETO_v1.1.zip",
+  "original_bytes": 183115262,
+  "original_sha256": "11c1671f315c80a76b8d1f22cd24713b504d5f27e5ec8205b1c50976f0981c40",
+  "key_in_repository": false
+}

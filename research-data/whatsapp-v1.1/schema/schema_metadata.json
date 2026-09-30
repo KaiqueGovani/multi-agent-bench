@@ -1,0 +1,1543 @@
+{
+  "privado": {
+    "tables": {
+      "metadata": {
+        "rows": 10,
+        "columns": [
+          {
+            "name": "key",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "value",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": []
+      },
+      "sources": {
+        "rows": 1,
+        "columns": [
+          {
+            "name": "source_id",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "filename",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "sha256",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "imported_at",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "profile_json",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": []
+      },
+      "chats_original": {
+        "rows": 790,
+        "columns": [
+          {
+            "name": "chat_uid",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "whatsapp_id",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "group_uid",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "is_group",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "raw_json",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": []
+      },
+      "messages_original": {
+        "rows": 20965,
+        "columns": [
+          {
+            "name": "message_uid",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "chat_uid",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "whatsapp_id",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "source_id",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "timestamp_unix",
+            "type": "INTEGER",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "from_me",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "type",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "raw_json",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "raw_sha256",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "column": "source_id",
+            "target_table": "sources",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          },
+          {
+            "column": "chat_uid",
+            "target_table": "chats_original",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          }
+        ]
+      },
+      "original_fields": {
+        "rows": 83860,
+        "columns": [
+          {
+            "name": "message_uid",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "field",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 2
+          },
+          {
+            "name": "original_text",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "column": "message_uid",
+            "target_table": "messages_original",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          }
+        ]
+      },
+      "messages_redacted": {
+        "rows": 20965,
+        "columns": [
+          {
+            "name": "message_uid",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "chat_uid",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "role",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "type",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "body",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "caption",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "quoted_text",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "extra_text",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "content_class",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "redaction_count",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "residual_flags",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "review_status",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": "'pending'",
+            "pk_position": 0
+          },
+          {
+            "name": "pipeline_version",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "column": "chat_uid",
+            "target_table": "chats_original",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          },
+          {
+            "column": "message_uid",
+            "target_table": "messages_original",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          }
+        ]
+      },
+      "redaction_spans": {
+        "rows": 7651,
+        "columns": [
+          {
+            "name": "message_uid",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "field",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 2
+          },
+          {
+            "name": "ordinal",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 3
+          },
+          {
+            "name": "start",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "end",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "redacted_start",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "redacted_end",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "kind",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "detector",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "token",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "original_value",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "column": "message_uid",
+            "target_table": "messages_original",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          }
+        ]
+      },
+      "episodes": {
+        "rows": 1672,
+        "columns": [
+          {
+            "name": "episode_uid",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "chat_uid",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "group_uid",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "split",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "category_hint",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "review_status",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": "'pending'",
+            "pk_position": 0
+          },
+          {
+            "name": "start_unix",
+            "type": "INTEGER",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "end_unix",
+            "type": "INTEGER",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "message_count",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "media_count",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "is_group",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "column": "chat_uid",
+            "target_table": "chats_original",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          }
+        ]
+      },
+      "episode_messages": {
+        "rows": 20965,
+        "columns": [
+          {
+            "name": "episode_uid",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "message_uid",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "sequence",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 2
+          },
+          {
+            "name": "elapsed_seconds",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "column": "message_uid",
+            "target_table": "messages_original",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          },
+          {
+            "column": "episode_uid",
+            "target_table": "episodes",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          }
+        ]
+      },
+      "media_original": {
+        "rows": 1975,
+        "columns": [
+          {
+            "name": "media_uid",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "manifest_json",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": []
+      },
+      "message_media": {
+        "rows": 2104,
+        "columns": [
+          {
+            "name": "message_uid",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "media_uid",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 2
+          }
+        ],
+        "foreign_keys": [
+          {
+            "column": "media_uid",
+            "target_table": "media_original",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          },
+          {
+            "column": "message_uid",
+            "target_table": "messages_original",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          }
+        ]
+      },
+      "auxiliary_original": {
+        "rows": 679,
+        "columns": [
+          {
+            "name": "kind",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "ordinal",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 2
+          },
+          {
+            "name": "raw_json",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": []
+      },
+      "review_log": {
+        "rows": 8,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "episode_uid",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "decision",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "reviewer",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "note",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "reviewed_at",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "column": "episode_uid",
+            "target_table": "episodes",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          }
+        ]
+      },
+      "evaluation_cases": {
+        "rows": 892,
+        "columns": [
+          {
+            "name": "case_uid",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "episode_uid",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "cut_sequence",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "reference_message_uid",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "label_status",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": "'weak_reference_not_ground_truth'",
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "column": "reference_message_uid",
+            "target_table": "messages_original",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          },
+          {
+            "column": "episode_uid",
+            "target_table": "episodes",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          }
+        ]
+      },
+      "experiment_runs": {
+        "rows": 0,
+        "columns": [
+          {
+            "name": "run_uid",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "case_uid",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "architecture",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "model",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "seed",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "prompt_version",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "tools_version",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "dataset_sha256",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "latency_ms",
+            "type": "REAL",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "input_tokens",
+            "type": "INTEGER",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "output_tokens",
+            "type": "INTEGER",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "tool_calls",
+            "type": "INTEGER",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "handoffs",
+            "type": "INTEGER",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "resolved",
+            "type": "INTEGER",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "human_intervention",
+            "type": "INTEGER",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "cost",
+            "type": "REAL",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "redacted_output",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "created_at",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "column": "case_uid",
+            "target_table": "evaluation_cases",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          }
+        ]
+      },
+      "experiment_events": {
+        "rows": 0,
+        "columns": [
+          {
+            "name": "run_uid",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "sequence",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 2
+          },
+          {
+            "name": "agent_role",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "event_type",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "duration_ms",
+            "type": "REAL",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "payload_redacted_json",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "column": "run_uid",
+            "target_table": "experiment_runs",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          }
+        ]
+      },
+      "case_labels": {
+        "rows": 0,
+        "columns": [
+          {
+            "name": "case_uid",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "expected_intent",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "expected_tool",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "needs_professional",
+            "type": "INTEGER",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "expected_resolution",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "reviewer",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "label_version",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "column": "case_uid",
+            "target_table": "evaluation_cases",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          }
+        ]
+      }
+    },
+    "indexes": [
+      "original_chat_time",
+      "redaction_token"
+    ],
+    "triggers": [
+      "immutable_sources_update",
+      "immutable_sources_delete",
+      "immutable_chats_original_update",
+      "immutable_chats_original_delete",
+      "immutable_messages_original_update",
+      "immutable_messages_original_delete",
+      "immutable_original_fields_update",
+      "immutable_original_fields_delete",
+      "immutable_media_original_update",
+      "immutable_media_original_delete",
+      "immutable_auxiliary_original_update",
+      "immutable_auxiliary_original_delete"
+    ]
+  },
+  "agentes": {
+    "tables": {
+      "metadata": {
+        "rows": 2,
+        "columns": [
+          {
+            "name": "key",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "value",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": []
+      },
+      "conversations": {
+        "rows": 7,
+        "columns": [
+          {
+            "name": "conversation_id",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "split",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "is_group",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": []
+      },
+      "episodes": {
+        "rows": 7,
+        "columns": [
+          {
+            "name": "episode_id",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "conversation_id",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "split",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "category_hint",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "review_status",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "message_count",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "media_count",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "column": "conversation_id",
+            "target_table": "conversations",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          }
+        ]
+      },
+      "cases": {
+        "rows": 7,
+        "columns": [
+          {
+            "name": "case_id",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "episode_id",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "cut_sequence",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "column": "episode_id",
+            "target_table": "episodes",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          }
+        ]
+      },
+      "messages": {
+        "rows": 19,
+        "columns": [
+          {
+            "name": "message_id",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "episode_id",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "sequence",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "elapsed_seconds",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "role",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "type",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "body",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "caption",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "quoted_text",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "extra_text",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "content_class",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "redaction_count",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "column": "episode_id",
+            "target_table": "episodes",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          }
+        ]
+      }
+    },
+    "indexes": [
+      "message_episode"
+    ],
+    "triggers": []
+  },
+  "candidatos": {
+    "tables": {
+      "metadata": {
+        "rows": 2,
+        "columns": [
+          {
+            "name": "key",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "value",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": []
+      },
+      "conversations": {
+        "rows": 790,
+        "columns": [
+          {
+            "name": "conversation_id",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "split",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "is_group",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": []
+      },
+      "episodes": {
+        "rows": 1672,
+        "columns": [
+          {
+            "name": "episode_id",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "conversation_id",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "split",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "category_hint",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "review_status",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "message_count",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "media_count",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "column": "conversation_id",
+            "target_table": "conversations",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          }
+        ]
+      },
+      "cases": {
+        "rows": 892,
+        "columns": [
+          {
+            "name": "case_id",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "episode_id",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "cut_sequence",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "column": "episode_id",
+            "target_table": "episodes",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          }
+        ]
+      },
+      "messages": {
+        "rows": 20965,
+        "columns": [
+          {
+            "name": "message_id",
+            "type": "TEXT",
+            "not_null_explicit": false,
+            "default": null,
+            "pk_position": 1
+          },
+          {
+            "name": "episode_id",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "sequence",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "elapsed_seconds",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "role",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "type",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "body",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "caption",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "quoted_text",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "extra_text",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "content_class",
+            "type": "TEXT",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          },
+          {
+            "name": "redaction_count",
+            "type": "INTEGER",
+            "not_null_explicit": true,
+            "default": null,
+            "pk_position": 0
+          }
+        ],
+        "foreign_keys": [
+          {
+            "column": "episode_id",
+            "target_table": "episodes",
+            "target_column": "(chave primária)",
+            "on_update": "NO ACTION",
+            "on_delete": "NO ACTION"
+          }
+        ]
+      }
+    },
+    "indexes": [
+      "message_episode"
+    ],
+    "triggers": []
+  }
+}
