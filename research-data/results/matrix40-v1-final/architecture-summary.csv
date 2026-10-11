@@ -1,0 +1,4 @@
+actual_agents_median_of_case_medians,architecture,content_evaluable,content_successes,coordination_tool_calls_median_of_case_medians,domain_tool_calls_median_of_case_medians,end_to_end_latency_ms_median_of_case_medians,known_task_success_rate,model_requests_median_of_case_medians,planned,procedure_applicable,procedure_evaluable,procedure_successes,task_failures,task_successes,task_unknown,technical_successes,total_tokens_median_of_case_medians
+1.0,centralized_orchestration,200,131,0.0,0.0,4787.154270990868,0.615,1.0,200,95,95,45,77,123,0,200,1888.5
+4.0,structured_workflow,199,130,1.0,0.0,13762.508958490798,0.63,4.0,200,95,95,45,74,126,0,200,6473.5
+4.0,decentralized_swarm,200,111,3.0,1.0,14898.375270990073,0.535,4.0,200,95,95,45,93,107,0,200,7016.0

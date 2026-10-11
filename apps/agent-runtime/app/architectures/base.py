@@ -73,7 +73,11 @@ def _read_mapping_value(mapping: dict, keys: tuple[str, ...]) -> int | None:
 def _extract_strands_usage(result: Any) -> tuple[int | None, int | None, int | None]:
     """Extract token usage from Strands AgentResult.metrics.accumulated_usage."""
     metrics = getattr(result, "metrics", None)
-    usage = getattr(metrics, "accumulated_usage", None)
+    # AgentResult references lifetime metrics. On a reused agent the accumulator
+    # includes earlier invocations; add only the latest invocation's usage.
+    invocations = getattr(metrics, "agent_invocations", None)
+    usage = (getattr(invocations[-1], "usage", None) if invocations
+             else getattr(metrics, "accumulated_usage", None))
     if not isinstance(usage, dict):
         return None, None, None
 

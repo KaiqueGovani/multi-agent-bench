@@ -1,0 +1,10 @@
+{
+  "checks_passed": 3,
+  "checks": [
+    "Holm known example [0.01, 0.04, 0.03] -> [0.03, 0.06, 0.06]",
+    "Balanced rank null: Friedman statistic 0 and permutation p=1",
+    "Separated ranks in 20 paired cases: Friedman statistic 40; permutation p=0.00001"
+  ],
+  "source_sha256": "d61be37e25e408b98d5ec02f9944b8c9c6541a750a734b3560843f1b509ed3f1",
+  "no_experimental_labels_modified": true
+}

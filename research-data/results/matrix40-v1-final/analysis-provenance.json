@@ -1,0 +1,6 @@
+{
+  "version": "descriptive-analysis-v5.2",
+  "objective_check_version": "objective-evidence-v5.3",
+  "source_sha256": "07ffa56a560f23c47236bd5140e58cbd5965b4f93f347fc78d25c1bcdcf47b38",
+  "amendment": "Frozen v5 semantic instrument; v5.3 objective verification additionally requires authentic tool-contract results and frozen query aliases when generic unknown-product results are ambiguous. Final-content quality and objective procedure remain separate; missing primary/repeat evaluations remain unpaired and unknown. Historical results are not rewritten."
+}

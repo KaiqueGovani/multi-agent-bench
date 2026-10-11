@@ -1,0 +1,15 @@
+{
+  "scientific_figures_visually_checked": 5,
+  "formats": [
+    "PNG 300 dpi",
+    "SVG"
+  ],
+  "no_label_or_legend_overlap_observed": true,
+  "optional_blind_packet_checks": {
+    "same_24_response_ids": true,
+    "different_order": true,
+    "architecture_and_judge_labels_omitted": true,
+    "CSV_order_matches_packet": true,
+    "actual_human_reviews": 0
+  }
+}

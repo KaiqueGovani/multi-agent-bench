@@ -1,0 +1,29 @@
+{
+  "permutations": {
+    "centralized_orchestration / structured_workflow / decentralized_swarm": 34,
+    "decentralized_swarm / structured_workflow / centralized_orchestration": 33,
+    "decentralized_swarm / centralized_orchestration / structured_workflow": 33,
+    "structured_workflow / decentralized_swarm / centralized_orchestration": 34,
+    "centralized_orchestration / decentralized_swarm / structured_workflow": 33,
+    "structured_workflow / centralized_orchestration / decentralized_swarm": 33
+  },
+  "positions": {
+    "centralized_orchestration": {
+      "0": 67,
+      "2": 67,
+      "1": 66
+    },
+    "structured_workflow": {
+      "1": 67,
+      "2": 66,
+      "0": 67
+    },
+    "decentralized_swarm": {
+      "2": 67,
+      "0": 66,
+      "1": 67
+    }
+  },
+  "balanced_permutations": true,
+  "balanced_positions": true
+}

@@ -24,6 +24,8 @@ class Settings:
     default_review_policy_version: str = "strands-review-v1"
     runtime_max_handoffs: int = 6
     runtime_timeout_seconds: int = 45
+    llm_temperature: float = 0.0
+    llm_max_tokens: int = 1024
     chat_api_callback_timeout_seconds: int = 10
 
 
@@ -54,6 +56,8 @@ def get_settings() -> Settings:
         ),
         runtime_max_handoffs=int(os.getenv("RUNTIME_MAX_HANDOFFS", Settings.runtime_max_handoffs)),
         runtime_timeout_seconds=int(os.getenv("RUNTIME_TIMEOUT_SECONDS", Settings.runtime_timeout_seconds)),
+        llm_temperature=float(os.getenv("LLM_TEMPERATURE", Settings.llm_temperature)),
+        llm_max_tokens=int(os.getenv("LLM_MAX_TOKENS", Settings.llm_max_tokens)),
         chat_api_callback_timeout_seconds=int(
             os.getenv(
                 "CHAT_API_CALLBACK_TIMEOUT_SECONDS",

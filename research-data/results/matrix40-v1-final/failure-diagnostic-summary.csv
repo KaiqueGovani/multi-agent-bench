@@ -1,0 +1,19 @@
+applicable_attempts,architecture,candidate,candidate_fraction,interpretation,label,objective_confirmed
+200,centralized_orchestration,0,0.0,detectors incomplete; absence of flag does not establish absence of mechanism,unnecessary_repetition,0
+180,centralized_orchestration,30,0.16666666666666666,detectors incomplete; absence of flag does not establish absence of mechanism,history_loss,0
+200,centralized_orchestration,30,0.15,detectors incomplete; absence of flag does not establish absence of mechanism,task_deviation,0
+0,centralized_orchestration,0,,detectors incomplete; absence of flag does not establish absence of mechanism,agent_information_ignored,0
+200,centralized_orchestration,50,0.25,detectors incomplete; absence of flag does not establish absence of mechanism,premature_termination,0
+200,centralized_orchestration,0,0.0,detectors incomplete; absence of flag does not establish absence of mechanism,missing_or_incorrect_verification,65
+200,structured_workflow,0,0.0,detectors incomplete; absence of flag does not establish absence of mechanism,unnecessary_repetition,0
+180,structured_workflow,22,0.12222222222222222,detectors incomplete; absence of flag does not establish absence of mechanism,history_loss,0
+200,structured_workflow,22,0.11,detectors incomplete; absence of flag does not establish absence of mechanism,task_deviation,0
+200,structured_workflow,24,0.12,detectors incomplete; absence of flag does not establish absence of mechanism,agent_information_ignored,0
+200,structured_workflow,50,0.25,detectors incomplete; absence of flag does not establish absence of mechanism,premature_termination,0
+200,structured_workflow,0,0.0,detectors incomplete; absence of flag does not establish absence of mechanism,missing_or_incorrect_verification,75
+200,decentralized_swarm,5,0.025,detectors incomplete; absence of flag does not establish absence of mechanism,unnecessary_repetition,0
+180,decentralized_swarm,28,0.15555555555555556,detectors incomplete; absence of flag does not establish absence of mechanism,history_loss,0
+200,decentralized_swarm,28,0.14,detectors incomplete; absence of flag does not establish absence of mechanism,task_deviation,0
+200,decentralized_swarm,43,0.215,detectors incomplete; absence of flag does not establish absence of mechanism,agent_information_ignored,0
+200,decentralized_swarm,50,0.25,detectors incomplete; absence of flag does not establish absence of mechanism,premature_termination,0
+200,decentralized_swarm,0,0.0,detectors incomplete; absence of flag does not establish absence of mechanism,missing_or_incorrect_verification,70

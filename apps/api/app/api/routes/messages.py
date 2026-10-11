@@ -174,6 +174,8 @@ def _build_run_experiment(
             "runtimeCommitSha": extra.get("runtimeCommitSha"),
             "comparisonOnly": comparison_only,
             "requestedArchitectureMode": metadata.architecture_mode or architecture_key,
+            **({"comparisonProtocol": extra["comparisonProtocol"]}
+               if "comparisonProtocol" in extra else {}),
         }
     )
 

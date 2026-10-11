@@ -542,7 +542,7 @@ def test_unknown_architecture_mode_fails_gracefully(monkeypatch) -> None:
     result = RuntimeExecutionService().execute_run(_build_request("nonexistent_arch", "Ola"))
     assert result.final_outcome == "failed"
     assert result.human_review_required is False
-    assert any(e == ("complete", "completed") for e in emitted)
+    assert any(e == ("complete", "failed") for e in emitted)
 
 
 # ===========================================================================

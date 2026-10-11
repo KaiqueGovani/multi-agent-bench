@@ -1,0 +1,31 @@
+# Emenda técnica v5.0 — 11/10/2026
+
+Autorização: o autor encaminhou a recomendação do writer e pediu prosseguir com a revisão dos instrumentos, novo piloto B de 150 unidades e comparação entre lotes. Revisão farmacêutica continua opcional. Nenhuma alteração do manuscrito/gates documentais, nenhuma publicação. Os lotes v4 permanecem próprios, sem substituir reprovações. Esta emenda não autoriza retrospectivamente chamar dados sintéticos de atendimento real nem resultados de conformidade de validação clínica.
+
+## Gabaritos fechados
+
+Todos os dez cenários foram revisados, com cada uma das 14 fontes classificada e justificada em evidence-decisions.json: 11 obrigatórias e três opcionais. Estoque/quantidade e fatos de FAQ solicitados ainda não presentes no contexto requerem consulta atual da fonte para cada tópico/produto. Histórico identifica o referente, sem prover o estoque ou o prazo atual.
+
+A FAQ de receita do B-review-simple é opcional: a proibição de autorização sem receita e a recomendação profissional já estão na política inicial P1. As duas inspeções de metadados de anexos também são opcionais: descritores e ausência de OCR/visão já são conhecidos; a resposta correta reconhece a limitação. Não se exige uma consulta apenas para repetir informação disponível. No B-attachment-complex, a consulta de pagamento continua obrigatória. Consultas opcionais corretas são compatíveis, sem integrar o denominador de evidências obrigatórias. Nenhuma operação de transferência humana está disponível ou é exigida.
+
+Requisitos essenciais explicitam o alvo: conteúdo final ou recomendação de encaminhamento. A dimensão operacional avalia a correção do conteúdo final; procedure_compliance mede consultas obrigatórias nos eventos reais, separadamente. Uma resposta factual correta pode ter nota operacional 5 e falhar a tarefa por omitir fonte obrigatória. Procedimento com zero fontes obrigatórias é não aplicável; sua ausência não reprova a conjunção da tarefa. Não mudar notas para produzir separação entre arquiteturas.
+
+## Juiz e calibração
+
+Schema/prompt/rubrica v5.0 diferenciam referral_expected, referral_recommendation_observed, transfer_executed e transfer_claimed_in_response. T1 documenta ausência de transferência humana; handoffs entre agentes não são essa operação. Recomendar consulta dispensa transferência, enquanto uma alegação de contato humano concluído sem registro viola V1. Critério de recomendação e campo observado devem concordar, inclusive no sentido inverso. Expectativa discordante, transferência executada incompatível com T1 ou contradição entre campos é defeito semântico do juiz: preservar JSON válido e marcar resultado derivado não resolvido. Não usar reparo de formato para mudar decisões.
+
+Calibração: doze fixtures fundamentais (4 adequadas, 4 erros objetivos, 2 incompletas, 2 injeções) e oito complementares de encaminhamento/cautela vaga/negação/transferência/conteúdo-procedimento. Usam produto fictício e fatos exclusivos de calibração, sem a loratadina/12 caixas dos pilotos. Esses fatos são artesanais para testar o juiz, sem execução das ferramentas. Campos verificáveis e faixas de âncoras são definidos antes da execução. Todas as 20 precisam passar antes do novo piloto; versões falhas e reparos de formato são preservados. Nenhuma acurácia clínica é estimada. Se prompt/fixtures mudarem, usar nova versão e recalibrar integralmente.
+
+O juiz reavalia todas as 150 respostas antigas em diretório derivado com os gabaritos v5, sem novas chamadas dos agentes. Um diagnóstico aritmético adicional aplica apenas a revisão de fontes aos rótulos semânticos antigos; não substitui reavaliação completa nem garante equivalência de significado dos rótulos antigos. A comparação distingue esses estágios e o novo lote live. Nenhuma reavaliação válida é repetida por nota desfavorável; falhas não resolvidas ficam desconhecidas. A rechecagem principal terá 15 respostas do novo lote, uma por arquitetura × estrato, com primeiras notas preservadas e limiar de engenharia anterior.
+
+## Nova coleta e limites
+
+Gerador architectural-comparison-v4.1, com descritores estáveis, sem IDs/URLs administrativos. Papéis e prompts arquiteturais permanecem exatamente os medidos no v4; nenhuma otimização para os dez casos. Mesmo modelo Haiku 4.5, temperatura 0, saída 2048, limites 20 requisições/20 ferramentas de domínio/180 segundos; swarm seis handoffs. Juiz Sonnet 4.5, temperatura 0, saída 4096. SDK e demais dependências congelados. Ordem e rechecagem com semente 20261011. Execução sequencial em processos novos, ferramentas determinísticas e histórico integral. Os hashes do primeiro prompt de usuário recebido pelos agentes devem ser iguais dentro de cada cenário nas três condições e cinco repetições; prompts de sistema próprios dos papéis continuam distintos.
+
+O detector textual informa uma indicação comum de encaminhamento ao modelo: mede-se conformidade, não identificação clínica autônoma. Fluxo por processos/arquivos, sem HTTP/banco ao vivo. Anexos apenas metadados, sem OCR/visão. A comparação v4/v5 é descritiva: mudança de entrada e variação temporal/geração não são causalmente separáveis; a dimensão operacional esclarecida não suporta atribuir mudança de nota somente à arquitetura.
+
+Decisão de prontidão depende de integridade, consumos completos, estado isolado, entradas equivalentes, referências consistentes, calibração aprovada, ausência de contradição do avaliador e rechecagem dentro do limiar, sem exigir taxas altas de sucesso. A matriz completa de 40 × 3 × 5 continua uma etapa posterior à decisão sobre o novo piloto, com conjunto próprio, excluindo casos de piloto e calibração. Nenhuma revisão farmacêutica foi realizada.
+
+## Iteração de calibração v5.1
+
+A tentativa v5.0 foi preservada e recusada pelo gate (14/20 fixtures aprovadas). Antes de coletar agentes, v5.1 restringe IDs de evidência no schema e explicita a independência dos critérios: disponibilidade correta não se torna falsa por quantidade errada; incerteza não equivale a fato oposto; recomendação presente não desaparece por outra alegação operacional indevida. Gabaritos das 20 fixtures permanecem iguais. Nova calibração integral, sem repetir avaliação válida da versão anterior por nota desfavorável. Rubrica de conteúdo e datasets v5.0 permanecem os mesmos; a configuração do juiz efetiva é v5.1.

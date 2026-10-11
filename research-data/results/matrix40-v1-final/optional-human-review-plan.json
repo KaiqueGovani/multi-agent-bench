@@ -1,0 +1,7 @@
+{
+  "budget": 24,
+  "flagged_responses_total": 6,
+  "flagged_responses_not_selected": 0,
+  "human_review_performed": false,
+  "selection_bias": "targeted audit does not estimate representative error rate"
+}

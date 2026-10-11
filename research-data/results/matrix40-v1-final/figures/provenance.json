@@ -1,0 +1,27 @@
+{
+  "figure_version": "real40-figures-v1",
+  "sources": {
+    "metrics.csv": "f0e0e54e481bb35acfd6d3c37d62f2550f433f404b711c97821faee0c5ab3ba8",
+    "architecture-summary.csv": "69fc738af32c7f94f2d88ded34196a26935802d1ca9d6227a59456c02d91eb37",
+    "quality-summary.csv": "86467d65b61aed3aa6085a8c2f4226b84adac8ed15e41052854424e2241ea9fa",
+    "architecture-stratum-metrics.csv": "019757537532713092d7e3c0deb8b92ba12af06a8e52d1c696422a1fd419969d"
+  },
+  "matplotlib": "3.11.2",
+  "numpy": "2.5.4",
+  "generator_tokens_only": true,
+  "primary_unit": "scenario-specific median of five repetitions",
+  "human_review_performed": false,
+  "files": {
+    "01_sucesso_tarefa.png": "ed383c6871ec83969f538178e20f0816d934262147851ed1282b436ac957336e",
+    "01_sucesso_tarefa.svg": "6419a2ce79da38d8ffefeae4f54a6bbf4139b33e3b674f40051868d8d2dc51d2",
+    "02_conteudo_procedimento.png": "d6c4bb758ca2593098a5953952ea88e63107f1434be9c7ea806a234b9a47c64e",
+    "02_conteudo_procedimento.svg": "695af313e03e8104b98a02a9b5dae191784cf77ac5959292a3fda55a16872d72",
+    "03_latencia_tokens.png": "7d3cdd8afabd495ad4c7eb101dfd5e5e33a214a6e5a608192cdd3dd994dc0e59",
+    "03_latencia_tokens.svg": "7484a90541212dd267f3b4c262766d9578d1326c2813e1178d804ddac2be6f35",
+    "04_qualidade.png": "3510e00fa0c1d1d17488fa1450b07b0d5131735d8c8b3aa9aa84989ea047bccd",
+    "04_qualidade.svg": "b9193a8ef6ba5098c98728347d924eaedf0c77f0bd85f6c895101a16c2c01360",
+    "05_estratos.png": "3da64f0fdaff93e3ba7ba2239cb5b0511e5d2c36d62ccdf054d519a341a352f3",
+    "05_estratos.svg": "c4fcb2209e231bd482661581c965e309da6cba3c4caaf2681d7061b25a7d460a"
+  },
+  "publication_normalization": "Public CSV LF line endings; SVG trailing whitespace removed; numeric data, path geometry and PNGs unchanged; original restricted files untouched."
+}

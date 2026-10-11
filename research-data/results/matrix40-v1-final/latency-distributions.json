@@ -1,0 +1,62 @@
+{
+  "centralized_orchestration": {
+    "completed": {
+      "n": 200,
+      "p50": 4751.508708999609,
+      "p25": 4240.198531253554,
+      "p75": 5504.086520741112,
+      "p95_exploratory": 6859.323039262381,
+      "min": 3176.27716701827,
+      "max": 7962.459124973975
+    },
+    "until_failure": {
+      "n": 0,
+      "p50": null,
+      "p25": null,
+      "p75": null,
+      "p95_exploratory": null,
+      "min": null,
+      "max": null
+    }
+  },
+  "structured_workflow": {
+    "completed": {
+      "n": 200,
+      "p50": 13821.39647899021,
+      "p25": 10843.26447899366,
+      "p75": 15454.65127100033,
+      "p95_exploratory": 17790.95655626879,
+      "min": 7118.624416994862,
+      "max": 32530.267458001617
+    },
+    "until_failure": {
+      "n": 0,
+      "p50": null,
+      "p25": null,
+      "p75": null,
+      "p95_exploratory": null,
+      "min": null,
+      "max": null
+    }
+  },
+  "decentralized_swarm": {
+    "completed": {
+      "n": 200,
+      "p50": 14874.410896009067,
+      "p25": 10342.290958236845,
+      "p75": 17192.635124498338,
+      "p95_exploratory": 19414.713102109086,
+      "min": 6586.025750002591,
+      "max": 26230.8879159973
+    },
+    "until_failure": {
+      "n": 0,
+      "p50": null,
+      "p25": null,
+      "p75": null,
+      "p95_exploratory": null,
+      "min": null,
+      "max": null
+    }
+  }
+}

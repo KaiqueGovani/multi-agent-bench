@@ -1,0 +1,126 @@
+{
+  "scope": "first agent user prompt, across architectures and repetitions; role system prompts remain architecture-specific",
+  "equal_within_all_scenarios": true,
+  "scenario_hashes": {
+    "R-media-02": [
+      "4809370c491e1c60621156bc604caeead8fede87f2e2eccbfdcbb795ffea157e"
+    ],
+    "R-context-05": [
+      "5ec9a5d9a8097320f6188049634531c1e7d88bb6b304b3a218863f9228eb2781"
+    ],
+    "R-faq-06": [
+      "a3f56ea115e4ea9b1cb2382c30127c9915f95665afad62bbe1175398120472a5"
+    ],
+    "R-media-04": [
+      "3cf35030d7e20d3906192f83223ce973948f39527fc8bd4968c6fbd6ab8debfd"
+    ],
+    "R-context-06": [
+      "61c4266cdd80d923833be8139b5c8132da70563991a26141214a5be345df36a8"
+    ],
+    "R-context-04": [
+      "6adee31a55051ae2a06e42dac34b23cbae9f07135bf6c03e73af7f9dd8dc75d9"
+    ],
+    "R-media-05": [
+      "f0fb9fa62dd1893e42e07551ea644c757d80776f46b1769a3087e906922c4d11"
+    ],
+    "R-referral-01": [
+      "447d16e0c86e4033bcd1236c40647f30795a0b11c8ab6c5469c0e1b3bdaad2fa"
+    ],
+    "R-media-08": [
+      "272f4d096e32a56d7ca4a96fceb391cce4fab35ca2aade7535f5634f5b7d34dd"
+    ],
+    "R-media-07": [
+      "6193e731b893e51c58ae74388c76d4df0883cfcfdde92daa902b9cb42b7a931b"
+    ],
+    "R-faq-02": [
+      "0b8833c5bd43ca7867ddee49e29c35fc316e614e2f4bd2245929ad219f81b717"
+    ],
+    "R-stock-02": [
+      "b9da775116c6260a23aafa051f632041faec1a85a41d5b5a458a5b2bcf3e8aad"
+    ],
+    "R-referral-05": [
+      "71396542307e01cf5152f59710e4b4d86765db5836717b63f0743e1aa9e27354"
+    ],
+    "R-context-07": [
+      "a43f5369d0132f7fe4d6d94d2820a6a86100a79ed27505be2b58960274c05905"
+    ],
+    "R-stock-03": [
+      "0a9d53f747efc8ac0e182aa0a7690b6de23224b83b10ae2a412409acd5602aac"
+    ],
+    "R-faq-03": [
+      "b90ff082ad3a3a2ad1ba9b654baaa9285723b6d605bc70035384369a183f45af"
+    ],
+    "R-referral-03": [
+      "88bdbe296c5608ce7ea41d4263ad836088cbc021cc904c51119378e21e3b0235"
+    ],
+    "R-referral-04": [
+      "0d305aea7cb70ba253470b55f8769fa11856d54d81a724a0b9c4a45a18b091c2"
+    ],
+    "R-faq-01": [
+      "fde8dcc30abab68d0785538ba766b94563bbf8c168299dc21ccade9f0cf5750c"
+    ],
+    "R-faq-07": [
+      "ce04d5d26141f508d193fa940cc6c710ebb301b08abb482522ca328238d0d4dd"
+    ],
+    "R-referral-07": [
+      "3ee44105acf47f7fb334fda87c1074c90e72c62880c96f4594227ea78886ce3f"
+    ],
+    "R-faq-04": [
+      "ada33bdd13c82bfdabb9ad68e8d734f4ea8021d09f455455919f3ba2bbcc6264"
+    ],
+    "R-stock-04": [
+      "0e7232c6e8efdae77c7dc9cf0aeb64b9937035e386847fb0c07f78cff3916333"
+    ],
+    "R-referral-08": [
+      "dc10d67b7cbfe191a3c6279509d392c0b67d09b9c189c1d911499c8c4b4a4942"
+    ],
+    "R-media-06": [
+      "def37e10c4f43ac765aa88b3bec21600999a9ccd9b533ef0bc3f90bcab01d8b8"
+    ],
+    "R-stock-08": [
+      "3755c8423b1a7da046de3a7dace86aee240955b645a4d5d104cfb7fc8522f118"
+    ],
+    "R-faq-08": [
+      "54e672627596161f0a7f2730b5effd32cbdc5dca33112712fdc18c09291a676d"
+    ],
+    "R-faq-05": [
+      "1d2bdd516200c8e20bb103b0efd30265140838c0c9e7a0a7dfc8c7f99e08613c"
+    ],
+    "R-context-02": [
+      "72adda7b3cac02bba4061f423537e5a6488e710fbe50b0bea335d477f441a771"
+    ],
+    "R-context-01": [
+      "89b453d34e36eaa1b6c89bea0354f6279d0a96fb09e2ff886ea386459a2424ed"
+    ],
+    "R-referral-02": [
+      "947c9acb0b18cb34c830a8dbf1911ebd14c1e964d753ce2c54fe8226fffeee26"
+    ],
+    "R-stock-07": [
+      "3b379d678d46746998d6de7bb5dae93ed56ef5a91b2a991912ede5add629d174"
+    ],
+    "R-context-03": [
+      "8f79fc3b8598c8f4d1ca67334a22009a1f0741a6626339db265bf5b0610c4c88"
+    ],
+    "R-media-01": [
+      "04d6b3a3676f2b6a2629748263c962c809c6ebc751e897ba1b45d30f1389416a"
+    ],
+    "R-referral-06": [
+      "6effb39d8dbb045f58bffaec0abbe0df66b455820f0d8107cd4f5b67e670d4a6"
+    ],
+    "R-stock-05": [
+      "144dee1924e2001bc7981cb5e5d5d01d639b7f4e0b85f779d86ef9919877c86b"
+    ],
+    "R-context-08": [
+      "675010155a6feac2a55af2a78f7984c217d7824e5702339b87bc01254dbbe511"
+    ],
+    "R-stock-06": [
+      "bef8bd4c5b1d7052791ea9b53e67765fc8848d0eec4792fb047ddf01c232acde"
+    ],
+    "R-stock-01": [
+      "c864fdc812497559f900c6f9b78a89b2b8378954e6f5a3b7d1343785e6101b5e"
+    ],
+    "R-media-03": [
+      "029093363365a7fa9c187ee591b2bc9e6de49e909cea2a265d1324323c4bbce4"
+    ]
+  }
+}

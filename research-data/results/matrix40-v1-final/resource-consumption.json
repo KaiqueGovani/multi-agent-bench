@@ -1,0 +1,47 @@
+{
+  "export_version": "measured-resource-export-v1",
+  "agents": {
+    "requests_started": 2123,
+    "requests_completed": 2123,
+    "requests_failed": 0,
+    "requests_with_usage": 2123,
+    "cost_usd": null,
+    "known_measured_input_tokens": 2755989,
+    "known_measured_output_tokens": 420546,
+    "known_measured_total_tokens": 3176535
+  },
+  "judge": {
+    "primary": {
+      "requests_started": 600,
+      "requests_completed": 600,
+      "requests_failed": 0,
+      "requests_with_usage": 600,
+      "format_repair_requests": 0,
+      "cost_usd": null,
+      "known_measured_input_tokens": 3791753,
+      "known_measured_output_tokens": 556679,
+      "known_measured_total_tokens": 4348432
+    },
+    "recheck": {
+      "requests_started": 15,
+      "requests_completed": 15,
+      "requests_failed": 0,
+      "requests_with_usage": 15,
+      "format_repair_requests": 0,
+      "cost_usd": null,
+      "known_measured_input_tokens": 93548,
+      "known_measured_output_tokens": 12840,
+      "known_measured_total_tokens": 106388
+    }
+  },
+  "connectivity": {
+    "requests": 2,
+    "requests_with_usage": 2,
+    "known_measured_input_tokens": 54,
+    "known_measured_output_tokens": 9,
+    "known_measured_total_tokens": 63
+  },
+  "technical_calibration_new_requests": 0,
+  "technical_calibration_reused_fixtures": 20,
+  "pricing": "Unverified; monetary cost unavailable. Known measured tokens are provider usage, not a guarantee of the final bill. Missing usage is not zero."
+}

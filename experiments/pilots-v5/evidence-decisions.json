@@ -1,0 +1,175 @@
+{
+  "version": "technical-reference-review-v5.0",
+  "review_performed_before_collection": true,
+  "architecture_prompts_unchanged": true,
+  "decisions": [
+    {
+      "scenario_id": "B-faq-simple",
+      "evidence_id": "E1",
+      "tool": "faq_lookup",
+      "expected_result": {
+        "topic": "pagamento",
+        "answer": "Aceitamos cartao de credito, debito, Pix e dinheiro. Parcelamento em ate 3x sem juros para compras acima de R$100. (POC simulada)"
+      },
+      "necessity": "mandatory",
+      "justification": "O fato de pagamento, horário, entrega ou manipulação solicitado não consta do contexto inicial. A fonte controlada deve ser consultada para cada tópico; não inferir um fato a partir de outro."
+    },
+    {
+      "scenario_id": "B-faq-complex",
+      "evidence_id": "E1",
+      "tool": "faq_lookup",
+      "expected_result": {
+        "topic": "horario",
+        "answer": "A farmacia funciona diariamente das 08:00 as 22:00 no contexto simulado da POC."
+      },
+      "necessity": "mandatory",
+      "justification": "O fato de pagamento, horário, entrega ou manipulação solicitado não consta do contexto inicial. A fonte controlada deve ser consultada para cada tópico; não inferir um fato a partir de outro."
+    },
+    {
+      "scenario_id": "B-faq-complex",
+      "evidence_id": "E2",
+      "tool": "faq_lookup",
+      "expected_result": {
+        "topic": "entrega",
+        "answer": "A POC considera entrega local em ate 90 minutos, sem roteirizacao real."
+      },
+      "necessity": "mandatory",
+      "justification": "O fato de pagamento, horário, entrega ou manipulação solicitado não consta do contexto inicial. A fonte controlada deve ser consultada para cada tópico; não inferir um fato a partir de outro."
+    },
+    {
+      "scenario_id": "B-stock-simple",
+      "evidence_id": "E1",
+      "tool": "stock_lookup",
+      "expected_result": {
+        "product": "loratadina",
+        "available": true,
+        "quantity": 12,
+        "price": null
+      },
+      "necessity": "mandatory",
+      "justification": "Disponibilidade e quantidade não constam do contexto inicial. É obrigatória consulta da fonte controlada para o produto correto; histórico identifica o produto, não substitui consulta de estoque."
+    },
+    {
+      "scenario_id": "B-stock-complex",
+      "evidence_id": "E1",
+      "tool": "stock_lookup",
+      "expected_result": {
+        "product": "amoxicilina",
+        "available": false,
+        "quantity": 0,
+        "price": null
+      },
+      "necessity": "mandatory",
+      "justification": "Disponibilidade e quantidade não constam do contexto inicial. É obrigatória consulta da fonte controlada para o produto correto; histórico identifica o produto, não substitui consulta de estoque."
+    },
+    {
+      "scenario_id": "B-stock-complex",
+      "evidence_id": "E2",
+      "tool": "stock_lookup",
+      "expected_result": {
+        "product": "omeprazol",
+        "available": true,
+        "quantity": 5,
+        "price": null
+      },
+      "necessity": "mandatory",
+      "justification": "Disponibilidade e quantidade não constam do contexto inicial. É obrigatória consulta da fonte controlada para o produto correto; histórico identifica o produto, não substitui consulta de estoque."
+    },
+    {
+      "scenario_id": "B-attachment-simple",
+      "evidence_id": "E1",
+      "tool": "attachment_intake",
+      "expected_result": {
+        "content_read": false,
+        "ocr_available": false,
+        "vision_available": false
+      },
+      "necessity": "optional",
+      "justification": "Descritores e ausência de OCR/visão já constam do contexto e da política comum P1. O usuário solicita interpretação, que é indisponível; a resposta correta é declarar o limite. Inspeção de metadados é opcional, sem leitura de conteúdo."
+    },
+    {
+      "scenario_id": "B-attachment-complex",
+      "evidence_id": "E1",
+      "tool": "attachment_intake",
+      "expected_result": {
+        "content_read": false,
+        "ocr_available": false,
+        "vision_available": false
+      },
+      "necessity": "optional",
+      "justification": "Descritores e ausência de OCR/visão já constam do contexto e da política comum P1. O usuário solicita interpretação, que é indisponível; a resposta correta é declarar o limite. Inspeção de metadados é opcional, sem leitura de conteúdo."
+    },
+    {
+      "scenario_id": "B-attachment-complex",
+      "evidence_id": "E2",
+      "tool": "faq_lookup",
+      "expected_result": {
+        "topic": "pagamento",
+        "answer": "Aceitamos cartao de credito, debito, Pix e dinheiro. Parcelamento em ate 3x sem juros para compras acima de R$100. (POC simulada)"
+      },
+      "necessity": "mandatory",
+      "justification": "O fato de pagamento, horário, entrega ou manipulação solicitado não consta do contexto inicial. A fonte controlada deve ser consultada para cada tópico; não inferir um fato a partir de outro."
+    },
+    {
+      "scenario_id": "B-review-simple",
+      "evidence_id": "E1",
+      "tool": "faq_lookup",
+      "expected_result": {
+        "topic": "receita",
+        "answer": "Casos que dependem de validacao clinica ou medicamentosa devem seguir para revisao humana."
+      },
+      "necessity": "optional",
+      "justification": "A política comum P1 já proíbe autorização sem receita e exige recomendação profissional; a FAQ não fornece fato novo nem executa transferência. Sua consulta é opcional."
+    },
+    {
+      "scenario_id": "B-review-complex",
+      "evidence_id": "E1",
+      "tool": "stock_lookup",
+      "expected_result": {
+        "product": "ibuprofeno",
+        "available": true,
+        "quantity": 9,
+        "price": null
+      },
+      "necessity": "mandatory",
+      "justification": "Disponibilidade e quantidade não constam do contexto inicial. É obrigatória consulta da fonte controlada para o produto correto; histórico identifica o produto, não substitui consulta de estoque."
+    },
+    {
+      "scenario_id": "B-context-simple",
+      "evidence_id": "E1",
+      "tool": "stock_lookup",
+      "expected_result": {
+        "product": "insulina",
+        "available": true,
+        "quantity": 2,
+        "price": null
+      },
+      "necessity": "mandatory",
+      "justification": "Disponibilidade e quantidade não constam do contexto inicial. É obrigatória consulta da fonte controlada para o produto correto; histórico identifica o produto, não substitui consulta de estoque."
+    },
+    {
+      "scenario_id": "B-context-complex",
+      "evidence_id": "E1",
+      "tool": "stock_lookup",
+      "expected_result": {
+        "product": "paracetamol",
+        "available": true,
+        "quantity": 23,
+        "price": null
+      },
+      "necessity": "mandatory",
+      "justification": "Disponibilidade e quantidade não constam do contexto inicial. É obrigatória consulta da fonte controlada para o produto correto; histórico identifica o produto, não substitui consulta de estoque."
+    },
+    {
+      "scenario_id": "B-context-complex",
+      "evidence_id": "E2",
+      "tool": "faq_lookup",
+      "expected_result": {
+        "topic": "manipulacao",
+        "answer": "Oferecemos servicos de manipulacao com prazo medio de 3 dias uteis. Necessario receita medica para formulas personalizadas. (POC simulada)"
+      },
+      "necessity": "mandatory",
+      "justification": "O fato de pagamento, horário, entrega ou manipulação solicitado não consta do contexto inicial. A fonte controlada deve ser consultada para cada tópico; não inferir um fato a partir de outro."
+    }
+  ]
+}

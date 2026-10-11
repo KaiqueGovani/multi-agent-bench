@@ -1,0 +1,4 @@
+architecture,planned,primary_evaluation_missing,primary_schema_valid,task_unknown
+centralized_orchestration,200,0,200,0
+structured_workflow,200,1,199,0
+decentralized_swarm,200,0,200,0

@@ -102,3 +102,14 @@ def test_runtime_history_filters_other_architecture_outbound() -> None:
     assert dispatcher._belongs_to_runtime_history(inbound, "structured_workflow")
     assert dispatcher._belongs_to_runtime_history(workflow_outbound, "structured_workflow")
     assert not dispatcher._belongs_to_runtime_history(swarm_outbound, "structured_workflow")
+
+
+def test_research_protocol_is_preserved_in_dispatch_metadata():
+    from app.api.routes.messages import _build_run_experiment
+    from app.schemas.domain import OperationalMetadata
+    metadata = OperationalMetadata.model_validate({"architectureMode":"structured_workflow",
+        "scenarioId":"pilot-case", "comparisonProtocol":"architectural-comparison-v3"})
+    experiment = _build_run_experiment(metadata,architecture_key="structured_workflow",comparison_only=False)
+    dumped = experiment.model_dump(by_alias=True)
+    assert dumped["comparisonProtocol"] == "architectural-comparison-v3"
+    assert dumped["scenarioId"] == "pilot-case"

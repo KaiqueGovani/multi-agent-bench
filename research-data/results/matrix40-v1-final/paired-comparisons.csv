@@ -1,0 +1,7 @@
+architecture_vs_centralized,median_paired_difference,median_paired_ratio,metric,paired_scenarios
+structured_workflow,8328.906604481745,2.5793574837251727,end_to_end_latency_ms,40
+structured_workflow,3882.5,2.4536895249322592,total_tokens,40
+structured_workflow,3.0,3.0,model_requests,40
+decentralized_swarm,9283.875250504934,2.744327888132111,end_to_end_latency_ms,40
+decentralized_swarm,4645.5,3.2793342836521244,total_tokens,40
+decentralized_swarm,3.0,3.75,model_requests,40

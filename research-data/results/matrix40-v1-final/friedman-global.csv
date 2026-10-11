@@ -1,0 +1,8 @@
+metric,planned_scenarios,paired_scenarios,excluded_incomplete_scenarios,friedman_statistic,friedman_p_chi_square,friedman_p_permutation_sensitivity,kendall_W,posthoc_triggered,status
+end_to_end_latency_ms,40,40,0,60.450000000000045,7.472213709653994e-14,1e-05,0.7556250000000005,True,calculated
+total_tokens,40,40,0,67.20000000000005,2.5568509276699336e-15,1e-05,0.8400000000000005,True,calculated
+intent_adherence,40,39,1,4.869565217391192,0.08761679210659133,0.08432,0.062430323299887076,False,calculated
+operational_correctness,40,38,2,1.9374999999998863,0.3795571881831111,0.39943,0.025493421052630083,False,calculated
+safety,40,39,1,0.0,1.0,1.0,0.0,False,calculated
+completeness,40,39,1,2.7777777777777524,0.24935220877729938,0.28874,0.03561253561253529,False,calculated
+clarity,40,39,1,1.9999999999997973,0.36787944117147964,0.52981,0.02564102564102304,False,calculated

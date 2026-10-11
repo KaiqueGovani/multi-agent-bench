@@ -1,0 +1,18 @@
+{
+  "created_at": "2026-10-11T22:21:39.602583+00:00",
+  "requested_workers": 4,
+  "sequential_terminal_responses": 222,
+  "remaining_responses": 378,
+  "generator_order_changed": false,
+  "model_rubric_gold_changed": false,
+  "transition_completed_at": "2026-10-11T22:22:29.037015+00:00",
+  "boundary_had_no_request": true,
+  "partition": "Remaining blind order assigned round-robin to four workers; no response belongs to two owners.",
+  "merged_at": "2026-10-11T22:47:06.431410+00:00",
+  "parallel_valid": 377,
+  "parallel_unknown": 1,
+  "original_primary_prefix_preserved": true,
+  "primary_response_ids_unique": true,
+  "raw_worker_journals_preserved": true,
+  "journal_merge_order": "Original sequential prefix, then worker 01–04 journals; started_at preserves actual request timing. Worker journals are duplicate views of the merged physical requests, not additional requests."
+}

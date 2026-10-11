@@ -21,10 +21,10 @@ logger = logging.getLogger(__name__)
 
 
 class RuntimeExecutor:
-    def __init__(self, request: RuntimeDispatchRequest) -> None:
+    def __init__(self, request: RuntimeDispatchRequest, *, settings: Settings | None = None, callbacks=None) -> None:
         self.request = request
-        self.settings = get_settings()
-        self.callbacks = ChatApiCallbacks(request.callback)
+        self.settings = settings or get_settings()
+        self.callbacks = callbacks if callbacks is not None else ChatApiCallbacks(request.callback)
         self.started_at = time.perf_counter()
         self.trace_id = ExecutionContext.make_trace_id(request)
 
@@ -44,6 +44,12 @@ class RuntimeExecutor:
             trace_id=self.trace_id,
         )
         ctx.emit("run", "started", "running", payload={"phase": "dispatch", "architectureMode": architecture})
+        protocol = getattr(self.request.experiment, "comparisonProtocol", None)
+        if protocol is not None:
+            from app.architectures.comparison import execute_comparison, PROTOCOL_VERSION
+            if protocol != PROTOCOL_VERSION:
+                raise ValueError(f"Unknown comparison protocol: {protocol}")
+            return execute_comparison(ctx, architecture)
         try:
             executor = get_executor(architecture)
         except KeyError:
@@ -88,7 +94,8 @@ class RuntimeExecutionService:
 
             executor.callbacks.complete_run(
                 run_id=str(request.run_id),
-                status="human_review_required" if result.human_review_required else "completed",
+                status=("failed" if result.final_outcome == "failed" else
+                        "human_review_required" if result.human_review_required else "completed"),
                 trace_id=result.trace_id,
                 total_duration_ms=elapsed_ms,
                 human_review_required=result.human_review_required,
@@ -103,7 +110,7 @@ class RuntimeExecutionService:
                     tool_error_count=result.tool_error_count,
                     loop_count=result.loop_count,
                     handoff_count=result.handoff_count,
-                    stop_reason="completed",
+                    stop_reason="failed" if result.final_outcome == "failed" else "completed",
                     final_outcome=result.final_outcome,
                 ),
             )

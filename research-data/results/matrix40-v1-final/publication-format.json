@@ -1,0 +1,34 @@
+{
+  "scope": "Public derivative artifacts only",
+  "normalized_files": [
+    "RELATORIO_METODOLOGIA_RESULTADOS.md",
+    "architecture-stratum-metrics.csv",
+    "architecture-summary.csv",
+    "assessment-coverage.csv",
+    "criterion-counts.csv",
+    "critical-violation-counts.csv",
+    "execution-order.csv",
+    "failure-diagnostic-summary.csv",
+    "figures/01_sucesso_tarefa.svg",
+    "figures/02_conteudo_procedimento.svg",
+    "figures/03_latencia_tokens.svg",
+    "figures/04_qualidade.svg",
+    "figures/05_estratos.svg",
+    "friedman-global.csv",
+    "metrics.csv",
+    "paired-comparisons.csv",
+    "quality-distributions.csv",
+    "quality-summary.csv",
+    "resolution-mode-summary.csv",
+    "wilcoxon-holm-pairs.csv"
+  ],
+  "operations": [
+    "CRLF to LF",
+    "strip trailing whitespace and excess blank lines at EOF"
+  ],
+  "restricted_raw_files_changed": false,
+  "numeric_values_changed": false,
+  "PNG_files_changed": false,
+  "reason": "Reproducible checksums after Git checkout",
+  "normalizer_source_sha256": "2d87cf23058d6211b162f70ac3a8933cc230385100f6d13da5dda70e4ad44afb"
+}
