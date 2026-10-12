@@ -1,0 +1,40 @@
+{
+  "info": {
+    "title": "Multi-Agent Bench Agent Runtime",
+    "version": "0.1.0"
+  },
+  "paths": [
+    {
+      "method": "GET",
+      "route": "/health",
+      "tags": [],
+      "operation_id": "health_health_get",
+      "response_codes": [
+        "200"
+      ]
+    },
+    {
+      "method": "POST",
+      "route": "/runs",
+      "tags": [],
+      "operation_id": "create_run_runs_post",
+      "response_codes": [
+        "202",
+        "422"
+      ]
+    }
+  ],
+  "schemas": [
+    "HTTPValidationError",
+    "HealthResponse",
+    "LlmRuntimeStatus",
+    "OperationalMetadata",
+    "RunExperimentMetadata",
+    "RuntimeAttachmentDescriptor",
+    "RuntimeCallbackConfig",
+    "RuntimeDispatchRequest",
+    "RuntimeDispatchResponse",
+    "RuntimeMessageSnapshot",
+    "ValidationError"
+  ]
+}

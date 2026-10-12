@@ -1,0 +1,54 @@
+date: "2026-10-12"
+mode: "explicit_user_request"
+action: "Categorizar capturas recebidas, arquivar a seleção publicável e incorporar nove figuras ao documento revisado dos autores."
+user_instruction: "Segue envio das capturas realizadas pelo coder - categorize, salve no repositorio, depois inclua no documento as que fizerems sentido"
+authorization_context: "O autor já solicitou a escrita dos capítulos a partir das 600 execuções, revisou o documento e agora solicitou a incorporação das capturas. Esta tarefa não altera os gates da automação nem seu manuscrito histórico."
+source_word: "TCC_MAB_Revisado_2026-10-12.docx"
+output_word: "TCC_MAB_Capturas_2026-10-12.docx"
+corpus: "docs/tcc/figures/captures/2026-10-12"
+source_capture_commit: "3fa15c4140fc701edf1967f1217576cebdd106cf"
+source_experiment_manifest_sha256: "921b54f9310e3281c519e5b61100304aa3a4755a27daf0238a96c3910f4cf208"
+source_checks:
+  rows_reconciled: 600
+  hash_inventory_entries: 58
+  received_screenshots: 26
+  received_diagram_files: 2
+  public_original_files: 24
+  restricted_original_images: 4
+  publication_figures: 9
+scope:
+  prototype_code_changed: false
+  experiment_rerun: false
+  judgments_or_metrics_changed: false
+  evidence_gates_changed: false
+  new_open_questions: 0
+editorial_changes:
+  - "Descrição explícita da visualização posterior em leitura, índice SQLite separado, 600 unidades e sete detalhes demonstrativos."
+  - "Exemplos de comparação, invocações de agentes, descritores de anexos, rotas e modelos no Swagger."
+  - "Exemplos técnicos das falhas de FAQ e recomendação, com contexto individual omitido dos recortes."
+  - "Renumeração das 30 figuras, apresentação anterior, legendas SEQ, fontes e atualização automática das listas."
+  - "Ajustes de quebra de página para evitar texto isolado e fragmentação da tabela de rotas."
+publication_decision: "Preservar o ZIP original fora do repositório público; arquivar capturas técnicas e saídas geradas sem transcrição de entrada/histórico ou contexto individual de saúde; registrar os recortes e suas coordenadas."
+verification_status: "source_structure_and_all_pages_passed"
+document_checks:
+  pages_visually_reviewed: 85
+  figures: 30
+  tables: 23
+  references: 45
+  unmatched_citations: 0
+  uncited_references: 0
+  table_values_preserved: true
+  ten_result_plot_files_preserved: true
+  facens_two_pass_audit: "passed"
+repository_delivery: "public_repository_commit"
+public_publication_authorization:
+  author_response: "autorizo"
+  date: "2026-10-12"
+  scope: "24 reviewed original visual files, nine publication figures and technical inventories in KaiqueGovani/multi-agent-bench, a public repository."
+prior_public_submission_block:
+  resolution: "Resolved by explicit author authorization for public publication."
+  action: "Upload reviewed screenshot 01_painel_coleta600.png to the public repository."
+  reason: "Automatic review requires explicit authorization for public disclosure of this image, even after visual verification of aggregate-only contents."
+  unsafe_retry_or_indirect_bypass: false
+  document_delivery_completed: true
+next_action: "Authors review the delivered document and curated corpus; transactional API operational proof remains distinct from these read-only presentation captures."

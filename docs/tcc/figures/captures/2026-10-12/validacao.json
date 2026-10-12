@@ -1,0 +1,39 @@
+{
+  "hash_inventory_entries_verified": 58,
+  "presentation_rows_reconciled_with_original": 600,
+  "selected_details_in_received_package": 7,
+  "original_manifest_sha256": "921b54f9310e3281c519e5b61100304aa3a4755a27daf0238a96c3910f4cf208",
+  "archives": {
+    "received_screenshots": 26,
+    "received_diagram_files": 2,
+    "public_original_files": 24,
+    "restricted_original_images": 4,
+    "publication_figures": 9
+  },
+  "totals": {
+    "units": 600,
+    "technical_completed": 600,
+    "task_success": 356,
+    "task_failures": 244,
+    "valid_primary_judgments": 599
+  },
+  "architecture_counts": {
+    "centralized_orchestration": 200,
+    "structured_workflow": 200,
+    "decentralized_swarm": 200
+  },
+  "generation": {
+    "input_tokens": 2755989,
+    "output_tokens": 420546,
+    "model_calls": 2123
+  },
+  "openapi": {
+    "api_paths": 17,
+    "api_schemas": 43,
+    "runtime_paths": 2,
+    "runtime_schemas": 11
+  },
+  "unchanged_by_editorial_work": "Respostas, classificações, consumo, tempos, instrumento e ordem da coleta preservados; apenas leitura e composição documental.",
+  "source_capture_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+  "source_experiment_commit": "e6a638f85502566a9d93e436359e98a292861f77"
+}

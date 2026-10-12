@@ -1,0 +1,280 @@
+{
+  "info": {
+    "title": "Multi-Agent Pharmacy POC API",
+    "version": "0.1.0"
+  },
+  "paths": [
+    {
+      "method": "GET",
+      "route": "/health",
+      "tags": [
+        "health"
+      ],
+      "operation_id": "health_check_health_get",
+      "response_codes": [
+        "200"
+      ]
+    },
+    {
+      "method": "POST",
+      "route": "/conversations",
+      "tags": [
+        "conversations"
+      ],
+      "operation_id": "create_conversation_conversations_post",
+      "response_codes": [
+        "201",
+        "422"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/conversations",
+      "tags": [
+        "conversations"
+      ],
+      "operation_id": "list_conversations_conversations_get",
+      "response_codes": [
+        "200",
+        "422"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/conversations/{conversation_id}",
+      "tags": [
+        "conversations"
+      ],
+      "operation_id": "get_conversation_conversations__conversation_id__get",
+      "response_codes": [
+        "200",
+        "422"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/conversations/{conversation_id}/messages",
+      "tags": [
+        "conversations"
+      ],
+      "operation_id": "get_conversation_messages_conversations__conversation_id__messages_get",
+      "response_codes": [
+        "200",
+        "422"
+      ]
+    },
+    {
+      "method": "POST",
+      "route": "/messages",
+      "tags": [
+        "messages"
+      ],
+      "operation_id": "send_message_messages_post",
+      "response_codes": [
+        "202",
+        "422"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/runs/{run_id}",
+      "tags": [
+        "runs"
+      ],
+      "operation_id": "get_run_runs__run_id__get",
+      "response_codes": [
+        "200",
+        "422"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "route": "/runs/{run_id}",
+      "tags": [
+        "runs"
+      ],
+      "operation_id": "complete_run_runs__run_id__patch",
+      "response_codes": [
+        "200",
+        "422"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/runs/{run_id}/execution",
+      "tags": [
+        "runs"
+      ],
+      "operation_id": "get_run_execution_runs__run_id__execution_get",
+      "response_codes": [
+        "200",
+        "422"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/runs/{run_id}/comparison-context",
+      "tags": [
+        "runs"
+      ],
+      "operation_id": "get_run_comparison_context_runs__run_id__comparison_context_get",
+      "response_codes": [
+        "200",
+        "422"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/runs/{run_id}/execution/stream",
+      "tags": [
+        "runs"
+      ],
+      "operation_id": "stream_run_execution_runs__run_id__execution_stream_get",
+      "response_codes": [
+        "200",
+        "422"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/reviews",
+      "tags": [
+        "reviews"
+      ],
+      "operation_id": "list_open_reviews_reviews_get",
+      "response_codes": [
+        "200",
+        "422"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "route": "/reviews/{review_task_id}/resolve",
+      "tags": [
+        "reviews"
+      ],
+      "operation_id": "resolve_review_task_reviews__review_task_id__resolve_patch",
+      "response_codes": [
+        "200",
+        "422"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/conversations/{conversation_id}/events",
+      "tags": [
+        "events"
+      ],
+      "operation_id": "get_conversation_events_conversations__conversation_id__events_get",
+      "response_codes": [
+        "200",
+        "422"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/conversations/{conversation_id}/events/stream",
+      "tags": [
+        "events"
+      ],
+      "operation_id": "stream_conversation_events_conversations__conversation_id__events_stream_get",
+      "response_codes": [
+        "200",
+        "422"
+      ]
+    },
+    {
+      "method": "POST",
+      "route": "/integrations/ai/events",
+      "tags": [
+        "integrations"
+      ],
+      "operation_id": "ingest_ai_event_integrations_ai_events_post",
+      "response_codes": [
+        "202",
+        "422"
+      ]
+    },
+    {
+      "method": "POST",
+      "route": "/integrations/ai/run-events",
+      "tags": [
+        "integrations"
+      ],
+      "operation_id": "ingest_ai_run_event_integrations_ai_run_events_post",
+      "response_codes": [
+        "202",
+        "422"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/attachments/{attachment_id}",
+      "tags": [
+        "attachments"
+      ],
+      "operation_id": "get_attachment_attachments__attachment_id__get",
+      "response_codes": [
+        "200",
+        "422"
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/dashboard/metrics",
+      "tags": [
+        "dashboard"
+      ],
+      "operation_id": "get_dashboard_metrics_dashboard_metrics_get",
+      "response_codes": [
+        "200",
+        "422"
+      ]
+    }
+  ],
+  "schemas": [
+    "Attachment",
+    "AttachmentStatus",
+    "Body_send_message_messages_post",
+    "ChannelType",
+    "CompleteRunRequest",
+    "Conversation",
+    "ConversationDetailResponse",
+    "ConversationListResponse",
+    "ConversationStatus",
+    "ConversationSummary",
+    "CreateConversationRequest",
+    "CreateConversationResponse",
+    "DashboardConversationItem",
+    "DashboardDistributionItem",
+    "DashboardMetricsResponse",
+    "DashboardTotals",
+    "HTTPValidationError",
+    "HealthResponse",
+    "IngestProcessingEventRequest",
+    "IngestRunExecutionEventRequest",
+    "Message",
+    "MessageDirection",
+    "MessageListResponse",
+    "MessageStatus",
+    "ModelContext",
+    "OperationalMetadata",
+    "ProcessingEvent",
+    "ProcessingEventType",
+    "ProcessingStatus",
+    "ResolveReviewTaskRequest",
+    "ReviewTask",
+    "ReviewTaskListResponse",
+    "ReviewTaskStatus",
+    "Run",
+    "RunComparisonContextResponse",
+    "RunExecutionEvent",
+    "RunExecutionProjection",
+    "RunExecutionResponse",
+    "RunExperimentMetadata",
+    "RunStatus",
+    "RunSummary",
+    "SendMessageResponse",
+    "ValidationError"
+  ]
+}

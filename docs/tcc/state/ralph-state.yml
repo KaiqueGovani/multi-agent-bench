@@ -62,6 +62,31 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
+  capture_delivery_2026_10_12:
+    date: "2026-10-12"
+    mode: "explicit_user_document_task"
+    source_package: "MAB_capturas_TCC_Writter_20261012.zip"
+    corpus: "docs/tcc/figures/captures/2026-10-12"
+    original_visual_items: 28
+    public_original_files: 24
+    restricted_original_images: 4
+    publication_figures: 9
+    source_rows_reconciled: 600
+    source_hash_inventory_entries_verified: 58
+    prototype_code_changed: false
+    experiment_rerun: false
+    evaluation_changed: false
+    evidence_gates_changed: false
+    document_variant: "TCC_MAB_Capturas_2026-10-12.docx"
+    document_delivery: "separate_user_artifact"
+    verification_status: "source_structure_and_all_pages_passed"
+    document_pages: 85
+    document_figures: 30
+    document_tables: 23
+    document_references: 45
+    repository_delivery: "public_repository_commit"
+    public_publication_authorization: "Explicit author response: autorizo, on 2026-10-12."
+    document_save_completed: true
   date: "2026-09-11"
   status: "R069_R072_verified_R071_R072_integrated"
   evaluation_rubric:

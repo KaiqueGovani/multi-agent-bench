@@ -1,0 +1,45 @@
+digraph MAB {
+ graph [rankdir=TB,bgcolor="white",pad="0.35",nodesep="0.38",ranksep="0.6",fontname="Arial",fontsize=20,label="MAB — implementação e percurso experimental\nAs interfaces interativas não executaram a coleta definitiva",labelloc=t];
+ node [shape=box,style="rounded,filled",fillcolor="#f0f6f8",color="#bbd1da",fontname="Arial",fontsize=15,margin="0.18,0.12"];
+ edge [color="#57798b",fontname="Arial",fontsize=11,arrowsize=0.8];
+ subgraph cluster_platform {
+  label="Plataforma interativa implementada [A1–A5]";color="#c9dbe3";style="rounded";fontname="Arial";fontsize=17;
+  web [label="Frontend Next.js\nChat, painel e inspeção de execuções [A1]"];
+  api [label="API transacional · FastAPI\nConversas, mensagens, anexos, runs\nGET execução / comparação / SSE [A2]"];
+  pg [label="PostgreSQL\nconversations · messages · attachments\nruns · run_execution_events\nrun_execution_projections [A3]"];
+  files [label="Anexos da aplicação [A4]\nArmazenamento local\nS3 / MinIO: opção configurável",fillcolor="#fcf6e9"];
+  web -> api [label="HTTP / GET + SSE [L1]"];
+  api -> pg [label="SQLAlchemy / persistência [L2]"];
+  api -> files [label="adapter de armazenamento [L3]"];
+ }
+ subgraph cluster_runtime {
+  label="Runtime e núcleo de coordenação [A6–A9]";color="#b6d8cf";style="rounded";fontname="Arial";fontsize=17;
+  rt [label="Runtime HTTP · FastAPI [A6]\nPOST /runs (contrato documentado)"];
+  core [label="Núcleo RuntimeExecutor [A7]\nCentralizada · Workflow · Swarm\nPapéis, ferramentas e delegações registradas"];
+  sdk [label="Strands Agent + BedrockModel [A8]\nGeração: Haiku 4.5"];
+  bedrock [label="Amazon Bedrock · Converse [A8]\nGeração: Haiku · Juiz: Sonnet"];
+  tools [label="Fontes controladas de pesquisa [A9]\nFAQ · catálogo de estoque · descritores\nSem ERP real, OCR, visão ou transcrição",fillcolor="#fcf6e9"];
+  rt -> core [label="execução [L5]"];
+  core -> sdk [label="chamadas por papel [L6]"];
+  sdk -> bedrock [label="SDK / Converse [L6]"];
+  core -> tools [label="faq_lookup / stock_lookup\nattachment_intake [L7]"];
+ }
+ subgraph cluster_experiment {
+  label="Coleta definitiva: processos e arquivos [A10–A12]";color="#d1c6e3";style="rounded";fontname="Arial";fontsize=17;
+  plan [label="Plano congelado matrix40-v1-final [A10]\n40 cenários × 3 arquiteturas × 5 repetições\nEntradas curadas e ordem em arquivos",fillcolor="#f4effa"];
+  records [label="Registros originais [A11]\nresult.json · events.jsonl por unidade\nruns / responses / avaliações agregadas",fillcolor="#f4effa"];
+  judge [label="Verificador objetivo + LLM-as-Judge [A12]\n600 julgamentos principais: 599 válidos\n15 rechecagens separadas",fillcolor="#f4effa"];
+  present [label="Adaptação posterior de apresentação [A13]\nÍndice SQLite separado · somente leitura\n600 registros; 7 detalhes anonimizados",fillcolor="#fff3da"];
+  plan -> records [style=invis];
+  records -> judge [label="resposta, evidências e rubrica [L10]"];
+  records -> present [label="importação offline idempotente [L11]"];
+ }
+ api -> rt [label="despacho HTTP [L4]",constraint=false,color="#0d716c"];
+ rt -> api [label="callbacks de eventos / término [L4]",color="#0d716c",constraint=false];
+ plan -> core [label="chamada direta por processo\nsem HTTP / banco ao vivo [L8]",color="#80619d",penwidth=2,constraint=false];
+ core -> records [label="eventos e resultado em arquivos [L9]",color="#80619d",penwidth=2,constraint=false];
+ judge -> bedrock [label="boto3 / Converse [L12]",style=dashed,constraint=false];
+ present -> web [label="nova rota /research-captures\nnão participou da coleta [L13]",style=dashed,color="#b78935",constraint=false];
+ note [shape=note,fillcolor="#ffffff",color="#dbe3e6",fontsize=12,label="Cada identificador A/L remete a fontes de código no arquivo arquitetura_fontes.md.\nDiagrama de implementação, não evidência de chamadas HTTP ou persistência PostgreSQL durante a coleta.\nAs capturas foram realizadas com inferência e operações HTTP de escrita bloqueadas."];
+ present -> note [style=invis];
+}

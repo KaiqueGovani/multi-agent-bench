@@ -1,0 +1,662 @@
+{
+  "utc": "2026-10-12T03:50:03.541Z",
+  "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+  "experiment_id": "485144d5-74d2-4fef-8998-b1629d6d493a",
+  "plan": "matrix40-v1-final",
+  "cohort_source_unchanged": "see verificacao/integridade_final.json",
+  "images": [
+    {
+      "file": "figuras/01_painel_coleta600.png",
+      "sha256": "e48754a8a0459af3cb1acc50ddeeb7d2cd9df6c7311670c15e8f9550e73189ef",
+      "width": 3200,
+      "height": 2000,
+      "url": "http://127.0.0.1:3000/research-captures",
+      "utc": "2026-10-12T03:49:51.136Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "read-only-presentation-adaptation",
+      "filters": {
+        "plan": "matrix40-v1-final"
+      },
+      "units": 600
+    },
+    {
+      "file": "figuras/02_lista_execucoes.png",
+      "sha256": "dd30f1bb508a11edd7a58c502d78539825c778956d679c1469c767d4660366ae",
+      "width": 3200,
+      "height": 2000,
+      "url": "http://127.0.0.1:3000/research-captures",
+      "utc": "2026-10-12T03:49:51.411Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "read-only-presentation-adaptation",
+      "filters": {
+        "scenario": "R-stock-03",
+        "architecture": "all",
+        "repetition": "all"
+      },
+      "matching_units": 15
+    },
+    {
+      "file": "figuras/03_comparacao_mesmo_cenario.png",
+      "sha256": "0e8ceec058d78a367a89701e133a9fefbfe5424c700993374a520f2565ecdb8e",
+      "width": 3200,
+      "height": 2000,
+      "url": "http://127.0.0.1:3000/research-captures",
+      "utc": "2026-10-12T03:49:51.621Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "read-only-presentation-adaptation",
+      "filters": {
+        "scenario": "R-stock-03",
+        "repetition": 0
+      },
+      "units": [
+        {
+          "scenario_id": "R-stock-03",
+          "architecture": "centralized_orchestration",
+          "repetition": 0,
+          "unit_id": "412fe893-bd83-5ce1-9f33-efffd9c79463",
+          "attempt_id": "00a081dc-9341-481c-b98c-75f74cf5b5f0",
+          "run_id": "24aa9fbb-e402-4332-9ef6-342aac52238f",
+          "response_id": "c67365f7b2ef966867d6c3bd"
+        },
+        {
+          "scenario_id": "R-stock-03",
+          "architecture": "decentralized_swarm",
+          "repetition": 0,
+          "unit_id": "c9e81f0b-790d-5686-a4ba-fa9d3b665612",
+          "attempt_id": "fbfb8a17-c439-407b-bc32-86bf15379848",
+          "run_id": "db269b7f-b870-4562-9cc8-c1dc535dbf37",
+          "response_id": "054dd022a70fd7e5e8d4a358"
+        },
+        {
+          "scenario_id": "R-stock-03",
+          "architecture": "structured_workflow",
+          "repetition": 0,
+          "unit_id": "681b23d8-dd8f-593b-aaa2-6680f5b10977",
+          "attempt_id": "b78d5bf8-a55a-43d3-a6fc-c450ef3159a6",
+          "run_id": "06c84e6c-3811-46da-b720-df93fd07075e",
+          "response_id": "aeb3c3cc5a24a7b86312e119"
+        }
+      ]
+    },
+    {
+      "file": "figuras/03b_comparacao_respostas.png",
+      "sha256": "654547d7a59811ac66214eb6fdc0c994008edf07544904db76c98b2c1e1c85db",
+      "width": 3200,
+      "height": 2000,
+      "url": "http://127.0.0.1:3000/research-captures",
+      "utc": "2026-10-12T03:49:51.802Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "read-only-presentation-adaptation",
+      "filters": {
+        "scenario": "R-stock-03",
+        "repetition": 0
+      },
+      "presentation_crop": "scroll to the three original-response panels"
+    },
+    {
+      "file": "figuras/04_execucao_centralizada.png",
+      "sha256": "9dd4c7b571e28d418f94cd99d6a46d0a2ff34eea97ef67a989fb1623567ef1f2",
+      "width": 3200,
+      "height": 2000,
+      "url": "http://127.0.0.1:3000/research-captures",
+      "utc": "2026-10-12T03:49:52.015Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "read-only-presentation-adaptation",
+      "scenario_id": "R-stock-03",
+      "architecture": "centralized_orchestration",
+      "repetition": 0,
+      "unit_id": "412fe893-bd83-5ce1-9f33-efffd9c79463",
+      "attempt_id": "00a081dc-9341-481c-b98c-75f74cf5b5f0",
+      "run_id": "24aa9fbb-e402-4332-9ef6-342aac52238f",
+      "response_id": "c67365f7b2ef966867d6c3bd",
+      "detail_tab": "trajectory"
+    },
+    {
+      "file": "figuras/04_execucao_centralizada_retorno.png",
+      "sha256": "1dc5f227f7445add91b23d0a08bf54bbb467a69399e31aabde29a7dff3854c35",
+      "width": 3200,
+      "height": 2000,
+      "url": "http://127.0.0.1:3000/research-captures",
+      "utc": "2026-10-12T03:49:52.167Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "read-only-presentation-adaptation",
+      "scenario_id": "R-stock-03",
+      "architecture": "centralized_orchestration",
+      "repetition": 0,
+      "unit_id": "412fe893-bd83-5ce1-9f33-efffd9c79463",
+      "attempt_id": "00a081dc-9341-481c-b98c-75f74cf5b5f0",
+      "run_id": "24aa9fbb-e402-4332-9ef6-342aac52238f",
+      "response_id": "c67365f7b2ef966867d6c3bd",
+      "detail_tab": "trajectory",
+      "presentation_crop": "scroll to tool arguments, result and final response"
+    },
+    {
+      "file": "figuras/05_execucao_workflow.png",
+      "sha256": "977fe73e99a104dc764792424db9b9ba6814d19f581649c5ab66362001b5f15c",
+      "width": 3200,
+      "height": 2000,
+      "url": "http://127.0.0.1:3000/research-captures",
+      "utc": "2026-10-12T03:49:52.357Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "read-only-presentation-adaptation",
+      "scenario_id": "R-stock-03",
+      "architecture": "structured_workflow",
+      "repetition": 0,
+      "unit_id": "681b23d8-dd8f-593b-aaa2-6680f5b10977",
+      "attempt_id": "b78d5bf8-a55a-43d3-a6fc-c450ef3159a6",
+      "run_id": "06c84e6c-3811-46da-b720-df93fd07075e",
+      "response_id": "aeb3c3cc5a24a7b86312e119",
+      "detail_tab": "trajectory"
+    },
+    {
+      "file": "figuras/05_execucao_workflow_retorno.png",
+      "sha256": "d0f0b7f5103764ec1deb8051e89f2c9b4a6694442d2d832d27dc2eeed24b7f7b",
+      "width": 3200,
+      "height": 2000,
+      "url": "http://127.0.0.1:3000/research-captures",
+      "utc": "2026-10-12T03:49:52.519Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "read-only-presentation-adaptation",
+      "scenario_id": "R-stock-03",
+      "architecture": "structured_workflow",
+      "repetition": 0,
+      "unit_id": "681b23d8-dd8f-593b-aaa2-6680f5b10977",
+      "attempt_id": "b78d5bf8-a55a-43d3-a6fc-c450ef3159a6",
+      "run_id": "06c84e6c-3811-46da-b720-df93fd07075e",
+      "response_id": "aeb3c3cc5a24a7b86312e119",
+      "detail_tab": "trajectory",
+      "presentation_crop": "scroll to tool arguments, result and final response"
+    },
+    {
+      "file": "figuras/06_execucao_swarm.png",
+      "sha256": "b903712bef0e74ef031a20d35e88552ce18946d91f0be6337708e56803672da5",
+      "width": 3200,
+      "height": 2000,
+      "url": "http://127.0.0.1:3000/research-captures",
+      "utc": "2026-10-12T03:49:52.704Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "read-only-presentation-adaptation",
+      "scenario_id": "R-stock-03",
+      "architecture": "decentralized_swarm",
+      "repetition": 0,
+      "unit_id": "c9e81f0b-790d-5686-a4ba-fa9d3b665612",
+      "attempt_id": "fbfb8a17-c439-407b-bc32-86bf15379848",
+      "run_id": "db269b7f-b870-4562-9cc8-c1dc535dbf37",
+      "response_id": "054dd022a70fd7e5e8d4a358",
+      "detail_tab": "trajectory"
+    },
+    {
+      "file": "figuras/06_execucao_swarm_retorno.png",
+      "sha256": "ff46b9a91cfc51d9386510dfa411c727ad7d6926308a5fd069778a4d185d956d",
+      "width": 3200,
+      "height": 2000,
+      "url": "http://127.0.0.1:3000/research-captures",
+      "utc": "2026-10-12T03:49:52.864Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "read-only-presentation-adaptation",
+      "scenario_id": "R-stock-03",
+      "architecture": "decentralized_swarm",
+      "repetition": 0,
+      "unit_id": "c9e81f0b-790d-5686-a4ba-fa9d3b665612",
+      "attempt_id": "fbfb8a17-c439-407b-bc32-86bf15379848",
+      "run_id": "db269b7f-b870-4562-9cc8-c1dc535dbf37",
+      "response_id": "054dd022a70fd7e5e8d4a358",
+      "detail_tab": "trajectory",
+      "presentation_crop": "scroll to tool arguments, result and final response"
+    },
+    {
+      "file": "figuras/07_falha_faq.png",
+      "sha256": "596c77770a0f2a8b39aafb2b39dc12aa3f16349345504936123e049e42ec3c4e",
+      "width": 3200,
+      "height": 2000,
+      "url": "http://127.0.0.1:3000/research-captures",
+      "utc": "2026-10-12T03:49:53.059Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "read-only-presentation-adaptation",
+      "scenario_id": "R-faq-02",
+      "architecture": "structured_workflow",
+      "repetition": 0,
+      "unit_id": "8554d291-51d1-5274-9f51-1236075a0eaa",
+      "attempt_id": "fabfcf8a-b602-4a15-8be9-61c6759f2b04",
+      "run_id": "09a3e715-a89b-444c-ad0b-94b0f01ad4ae",
+      "response_id": "19d0207ca591dbd8e511845e",
+      "detail_tab": "evaluation"
+    },
+    {
+      "file": "figuras/07_falha_faq_criterios.png",
+      "sha256": "09d45b494d3684a6436346a06d75ca3bc657928f5f6dad72537c0a91e6d2e703",
+      "width": 3200,
+      "height": 2000,
+      "url": "http://127.0.0.1:3000/research-captures",
+      "utc": "2026-10-12T03:49:53.224Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "read-only-presentation-adaptation",
+      "scenario_id": "R-faq-02",
+      "architecture": "structured_workflow",
+      "repetition": 0,
+      "unit_id": "8554d291-51d1-5274-9f51-1236075a0eaa",
+      "attempt_id": "fabfcf8a-b602-4a15-8be9-61c6759f2b04",
+      "run_id": "09a3e715-a89b-444c-ad0b-94b0f01ad4ae",
+      "response_id": "19d0207ca591dbd8e511845e",
+      "detail_tab": "evaluation",
+      "presentation_crop": "scroll to full response and objective/semantic checks"
+    },
+    {
+      "file": "figuras/08_falha_recomendacao.png",
+      "sha256": "df85ebe5a70813de6bf80971ca4b3b2050a24a17a53adccd6c8e495e6e499f38",
+      "width": 3200,
+      "height": 2000,
+      "url": "http://127.0.0.1:3000/research-captures",
+      "utc": "2026-10-12T03:49:53.421Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "read-only-presentation-adaptation",
+      "scenario_id": "R-referral-08",
+      "architecture": "decentralized_swarm",
+      "repetition": 0,
+      "unit_id": "2984bee1-62e5-5005-8651-87e712e736f2",
+      "attempt_id": "11df8f5c-2ed8-42b1-be5c-4a7f2c59fe68",
+      "run_id": "a19c9a0e-9e85-4512-a3e0-9bf3f0acb7d9",
+      "response_id": "9c53501b0d20d5e576ec6735",
+      "detail_tab": "evaluation"
+    },
+    {
+      "file": "figuras/08_falha_recomendacao_criterios.png",
+      "sha256": "d4105433df02021b1a6728ce13d12654f624da9e8b006c5173b46086cc4277c7",
+      "width": 3200,
+      "height": 2000,
+      "url": "http://127.0.0.1:3000/research-captures",
+      "utc": "2026-10-12T03:49:53.597Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "read-only-presentation-adaptation",
+      "scenario_id": "R-referral-08",
+      "architecture": "decentralized_swarm",
+      "repetition": 0,
+      "unit_id": "2984bee1-62e5-5005-8651-87e712e736f2",
+      "attempt_id": "11df8f5c-2ed8-42b1-be5c-4a7f2c59fe68",
+      "run_id": "a19c9a0e-9e85-4512-a3e0-9bf3f0acb7d9",
+      "response_id": "9c53501b0d20d5e576ec6735",
+      "detail_tab": "evaluation",
+      "presentation_crop": "scroll to full response and objective/semantic checks"
+    },
+    {
+      "file": "figuras/09_contexto_e_anexos.png",
+      "sha256": "7d8d329aeb5c5c2af8d1bfcd76cfef122326b9168b820b815d6a4520a2540b80",
+      "width": 3200,
+      "height": 2000,
+      "url": "http://127.0.0.1:3000/research-captures",
+      "utc": "2026-10-12T03:49:53.791Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "read-only-presentation-adaptation",
+      "scenario_id": "R-media-07",
+      "architecture": "centralized_orchestration",
+      "repetition": 0,
+      "unit_id": "716b9c0a-e1f1-5d4d-8344-34b4dfdb27f1",
+      "attempt_id": "9b54b219-2722-485b-863d-5dd2db293530",
+      "run_id": "80725cd2-9a11-469d-a356-efb55a1df6ac",
+      "response_id": "da35bfc41d76e7e650f9fe76"
+    },
+    {
+      "file": "figuras/10_consumo_e_avaliacao.png",
+      "sha256": "5291ddcbc2f46aaf1bbc8556a21b5a60657b8d03931877016a24a0800f8ab533",
+      "width": 3200,
+      "height": 2000,
+      "url": "http://127.0.0.1:3000/research-captures",
+      "utc": "2026-10-12T03:49:53.970Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "read-only-presentation-adaptation",
+      "filters": {
+        "plan": "matrix40-v1-final"
+      },
+      "monetary_cost": "unavailable",
+      "latency_formula": "median over 40 scenario medians, each based on 5 repetitions"
+    },
+    {
+      "file": "figuras/11_swagger_api_visao.png",
+      "sha256": "6578b05afaddf10bbdea9acf6a67c35c1e36efabe10dd2a4b6cd7062277626b9",
+      "width": 3200,
+      "height": 2000,
+      "url": "http://127.0.0.1:8000/docs#/",
+      "utc": "2026-10-12T03:49:55.388Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "original-api-openapi",
+      "documentation_only": true,
+      "display": "all groups collapsed"
+    },
+    {
+      "file": "figuras/11b_swagger_rotas_api.png",
+      "sha256": "500bc1e445cc1b8f64ddede8a1871fec2ebe16e86f4dd767adcc8b4648260a5b",
+      "width": 3200,
+      "height": 2000,
+      "url": "http://127.0.0.1:8000/docs#/integrations",
+      "utc": "2026-10-12T03:49:55.569Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "original-api-openapi",
+      "documentation_only": true,
+      "tags": [
+        "runs",
+        "integrations"
+      ],
+      "presentation_crop": "unselected tag sections hidden; routes unchanged"
+    },
+    {
+      "file": "figuras/12_swagger_execucao.png",
+      "sha256": "ab928d28c14926a406d4afec824a94eb438c687f40b1facc03e0904e722b962f",
+      "width": 3200,
+      "height": 2000,
+      "url": "http://127.0.0.1:8000/docs#/runs/get_run_execution_runs__run_id__execution_get",
+      "utc": "2026-10-12T03:49:55.885Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "original-api-openapi",
+      "route": "GET /runs/{run_id}/execution",
+      "documentation_only": true,
+      "try_it_out": false
+    },
+    {
+      "file": "figuras/12b_swagger_comparacao.png",
+      "sha256": "87624c9ef7dae88e15fec413ec77dc8931cf655bfc700c8d7624e8ffe9c84e4b",
+      "width": 3200,
+      "height": 2000,
+      "url": "http://127.0.0.1:8000/docs#/runs/get_run_comparison_context_runs__run_id__comparison_context_get",
+      "utc": "2026-10-12T03:49:56.911Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "original-api-openapi",
+      "route": "GET /runs/{run_id}/comparison-context",
+      "documentation_only": true,
+      "try_it_out": false
+    },
+    {
+      "file": "figuras/13_swagger_modelos_api.png",
+      "sha256": "492cb731134de63ac81fbcbcd1fed7f03ca9439c6525c5b4093dd507800d959b",
+      "width": 2840,
+      "height": 796,
+      "url": "http://127.0.0.1:8000/docs",
+      "utc": "2026-10-12T03:49:58.353Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "original-openapi-schema",
+      "schemas": [
+        "RunExecutionResponse",
+        "RunComparisonContextResponse"
+      ],
+      "documentation_only": true,
+      "capture_region": "section.models",
+      "presentation_crop": "native screenshot of selected schema panels; other Swagger sections hidden; schema content unchanged"
+    },
+    {
+      "file": "figuras/13b_swagger_eventos_api.png",
+      "sha256": "fc91583d747d591c8378086d33906fb8de358f772ebe70b1b8238321603d6eaf",
+      "width": 2840,
+      "height": 1218,
+      "url": "http://127.0.0.1:8000/docs",
+      "utc": "2026-10-12T03:49:59.564Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "original-openapi-schema",
+      "schemas": [
+        "RunExecutionEvent"
+      ],
+      "documentation_only": true,
+      "capture_region": "section.models",
+      "presentation_crop": "native screenshot of selected schema panels; other Swagger sections hidden; schema content unchanged"
+    },
+    {
+      "file": "figuras/13c_swagger_projecao_api.png",
+      "sha256": "9950464325a8df0d6be1bdfeec662ba8dc5969a7fa37e18fb964728cc393cfc5",
+      "width": 2840,
+      "height": 1004,
+      "url": "http://127.0.0.1:8000/docs",
+      "utc": "2026-10-12T03:50:00.744Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "original-openapi-schema",
+      "schemas": [
+        "RunExecutionProjection"
+      ],
+      "documentation_only": true,
+      "capture_region": "section.models",
+      "presentation_crop": "native screenshot of selected schema panels; other Swagger sections hidden; schema content unchanged"
+    },
+    {
+      "file": "figuras/14_swagger_runtime.png",
+      "sha256": "5de12fc1c650641510a687d2c2aa002aa972e60a26b6a957ce35a95a74bd37cd",
+      "width": 3200,
+      "height": 2000,
+      "url": "http://127.0.0.1:8010/docs#/default/create_run_runs_post",
+      "utc": "2026-10-12T03:50:01.710Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "original-runtime-openapi",
+      "route": "POST /runs",
+      "documentation_only": true,
+      "operation_sent": false
+    },
+    {
+      "file": "figuras/14b_swagger_entrada_runtime.png",
+      "sha256": "4bf17f6716d271f8d24214f3b4021121e5f73bd2d1b79349056f5ed97b969a47",
+      "width": 2840,
+      "height": 948,
+      "url": "http://127.0.0.1:8010/docs",
+      "utc": "2026-10-12T03:50:02.625Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "original-openapi-schema",
+      "schemas": [
+        "RuntimeDispatchRequest"
+      ],
+      "documentation_only": true,
+      "capture_region": "section.models",
+      "presentation_crop": "native screenshot of selected schema panels; other Swagger sections hidden; schema content unchanged"
+    },
+    {
+      "file": "figuras/14c_swagger_saida_runtime.png",
+      "sha256": "067a4cfd5f3b9862e8d17318dd018d4cc8b1a5de99246809093bdffaf5ab7d85",
+      "width": 2840,
+      "height": 448,
+      "url": "http://127.0.0.1:8010/docs",
+      "utc": "2026-10-12T03:50:03.492Z",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "viewport_css": {
+        "width": 1600,
+        "height": 1000
+      },
+      "device_scale_factor": 2,
+      "zoom": 1,
+      "kind": "original-openapi-schema",
+      "schemas": [
+        "RuntimeDispatchResponse"
+      ],
+      "documentation_only": true,
+      "capture_region": "section.models",
+      "presentation_crop": "native screenshot of selected schema panels; other Swagger sections hidden; schema content unchanged"
+    },
+    {
+      "file": "figuras/15_arquitetura.png",
+      "sha256": "91756e01eb740507c36744441c0cc6fad09195238898ab36903ddba5798e7810",
+      "url": null,
+      "route": null,
+      "utc": "2026-10-12T03:36:57.033662+00:00",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "kind": "authorial-code-based-architecture-diagram",
+      "filters": null,
+      "units": null,
+      "source_reference": "arquitetura_fontes.md",
+      "width": 4621,
+      "height": 1450
+    },
+    {
+      "file": "figuras/15_arquitetura.svg",
+      "sha256": "9256ae649da76643fd13f5d7ac7798157c416aa9b7494896263097ba72bcaa6b",
+      "url": null,
+      "route": null,
+      "utc": "2026-10-12T03:36:56.532719+00:00",
+      "code_commit": "3fa15c4140fc701edf1967f1217576cebdd106cf",
+      "kind": "authorial-code-based-architecture-diagram",
+      "filters": null,
+      "units": null,
+      "source_reference": "arquitetura_fontes.md",
+      "svg_viewbox": "0.00 0.00 2079.40 652.40"
+    }
+  ],
+  "browser": "Playwright Chromium headless",
+  "browser_version": "147.0.7727.15",
+  "post_generation_adaptation": true,
+  "screenshots_unedited": true,
+  "presentation_code_files": {
+    "scripts/arquitetura.dot": "046f54f2e7685ca719d0d6b984e4a2865b7e79428e5b84b2b3367b040f12eaa3",
+    "scripts/capturar.mjs": "57930a8369681f8989cc0a302ea4334455eb8ceb434df735ff7719e5177bd64e",
+    "scripts/conferir.py": "832b7dcb05fd3583eaab83f810f0f36651e346d8b9ed3df29d138e5754069931",
+    "scripts/empacotar.py": "f6ce8d1517171cb7a49919cbff35268c37580b4060adeb4201adf997634187d5",
+    "scripts/preparar.py": "5eef12c98decad204d1002fc29924c62a6ab2e8b30d9eead15a00ebda10ee6e2",
+    "scripts/recriar_indice.py": "a3334afb44cae9c7b462f91b6667761c1043f4e6c202e29e95cc79fa1a7294cf",
+    "scripts/reproduzir.py": "c5380f255de1ea2edaf383287a5c018a20b40b1125d4a0edc1ea42df37ec97fd",
+    "scripts/research-captures-page.tsx": "6fd75b1ffd1d1b30965e9d169411b4f50bf855ccb26f1020a41d7270e730b945",
+    "scripts/runtime_documentacao.py": "d952a6ce10c15fc84395610d1479ca50cb20866061d5e7a1019ec9fc238e938d",
+    "scripts/servidor.py": "2ace599e0dcbef06a651d1108b55abf1dff91e198c841dee713a6daefa73b7d5",
+    "scripts/visualizacao.html": "f221ba78a863a86e70ae9ac052abbd1cc0907d4e1d2224b5acdb2a6e5eb67b22"
+  }
+}

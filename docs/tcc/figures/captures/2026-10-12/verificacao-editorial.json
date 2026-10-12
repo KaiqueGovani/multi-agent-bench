@@ -1,0 +1,21 @@
+{
+  "document": "TCC_MAB_Capturas_2026-10-12.docx",
+  "date": "2026-10-12",
+  "pages_visually_reviewed": 85,
+  "figures_total": 30,
+  "figures_added": 9,
+  "tables_total": 23,
+  "bibliography_entries": 45,
+  "citation_calls": 93,
+  "uncited_references": 0,
+  "unmatched_citations": 0,
+  "table_values_preserved": true,
+  "ten_result_plot_files_preserved": true,
+  "figures_mentioned_before_insertion": true,
+  "caption_image_source_order": true,
+  "native_caption_fields_bookmarks_and_inline_images": true,
+  "facens_two_pass_audit": "passed",
+  "public_archive_review": "complete_screenshots_with_historical_input_or_individual_health_context_excluded; exact_technical_crops_retained",
+  "document_delivery": "separate_author_artifact",
+  "prototype_code_or_experiment_modified": false
+}

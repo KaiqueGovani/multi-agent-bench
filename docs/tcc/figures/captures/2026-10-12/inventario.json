@@ -1,0 +1,614 @@
+{
+  "originals": [
+    {
+      "id": "IMG-MAB-CAP-01",
+      "arquivo_recebido": "01_painel_coleta600.png",
+      "categoria": "01-painel-e-indice",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/01-painel-e-indice/01_painel_coleta600.png",
+      "sha256_origem": "e48754a8a0459af3cb1acc50ddeeb7d2cd9df6c7311670c15e8f9550e73189ef",
+      "width_px": 3200,
+      "height_px": 2000,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-02",
+      "arquivo_recebido": "02_lista_execucoes.png",
+      "categoria": "01-painel-e-indice",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/01-painel-e-indice/02_lista_execucoes.png",
+      "sha256_origem": "dd30f1bb508a11edd7a58c502d78539825c778956d679c1469c767d4660366ae",
+      "width_px": 3200,
+      "height_px": 2000,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-03",
+      "arquivo_recebido": "03_comparacao_mesmo_cenario.png",
+      "categoria": "02-comparacao",
+      "status": "restricted_original",
+      "arquivo_publico": null,
+      "sha256_origem": "0e8ceec058d78a367a89701e133a9fefbfe5424c700993374a520f2565ecdb8e",
+      "width_px": 3200,
+      "height_px": 2000,
+      "decisao": "Contém mensagem de entrada e histórico transcritos; usar o recorte de comparação sem esses campos."
+    },
+    {
+      "id": "IMG-MAB-CAP-04",
+      "arquivo_recebido": "03b_comparacao_respostas.png",
+      "categoria": "02-comparacao",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/02-comparacao/03b_comparacao_respostas.png",
+      "sha256_origem": "654547d7a59811ac66214eb6fdc0c994008edf07544904db76c98b2c1e1c85db",
+      "width_px": 3200,
+      "height_px": 2000,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-05",
+      "arquivo_recebido": "04_execucao_centralizada.png",
+      "categoria": "03-trajetorias",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/03-trajetorias/04_execucao_centralizada.png",
+      "sha256_origem": "9dd4c7b571e28d418f94cd99d6a46d0a2ff34eea97ef67a989fb1623567ef1f2",
+      "width_px": 3200,
+      "height_px": 2000,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-06",
+      "arquivo_recebido": "04_execucao_centralizada_retorno.png",
+      "categoria": "03-trajetorias",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/03-trajetorias/04_execucao_centralizada_retorno.png",
+      "sha256_origem": "1dc5f227f7445add91b23d0a08bf54bbb467a69399e31aabde29a7dff3854c35",
+      "width_px": 3200,
+      "height_px": 2000,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-07",
+      "arquivo_recebido": "05_execucao_workflow.png",
+      "categoria": "03-trajetorias",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/03-trajetorias/05_execucao_workflow.png",
+      "sha256_origem": "977fe73e99a104dc764792424db9b9ba6814d19f581649c5ab66362001b5f15c",
+      "width_px": 3200,
+      "height_px": 2000,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-08",
+      "arquivo_recebido": "05_execucao_workflow_retorno.png",
+      "categoria": "03-trajetorias",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/03-trajetorias/05_execucao_workflow_retorno.png",
+      "sha256_origem": "d0f0b7f5103764ec1deb8051e89f2c9b4a6694442d2d832d27dc2eeed24b7f7b",
+      "width_px": 3200,
+      "height_px": 2000,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-09",
+      "arquivo_recebido": "06_execucao_swarm.png",
+      "categoria": "03-trajetorias",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/03-trajetorias/06_execucao_swarm.png",
+      "sha256_origem": "b903712bef0e74ef031a20d35e88552ce18946d91f0be6337708e56803672da5",
+      "width_px": 3200,
+      "height_px": 2000,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-10",
+      "arquivo_recebido": "06_execucao_swarm_retorno.png",
+      "categoria": "03-trajetorias",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/03-trajetorias/06_execucao_swarm_retorno.png",
+      "sha256_origem": "ff46b9a91cfc51d9386510dfa411c727ad7d6926308a5fd069778a4d185d956d",
+      "width_px": 3200,
+      "height_px": 2000,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-11",
+      "arquivo_recebido": "07_falha_faq.png",
+      "categoria": "04-falhas",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/04-falhas/07_falha_faq.png",
+      "sha256_origem": "596c77770a0f2a8b39aafb2b39dc12aa3f16349345504936123e049e42ec3c4e",
+      "width_px": 3200,
+      "height_px": 2000,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-12",
+      "arquivo_recebido": "07_falha_faq_criterios.png",
+      "categoria": "04-falhas",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/04-falhas/07_falha_faq_criterios.png",
+      "sha256_origem": "09d45b494d3684a6436346a06d75ca3bc657928f5f6dad72537c0a91e6d2e703",
+      "width_px": 3200,
+      "height_px": 2000,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-13",
+      "arquivo_recebido": "08_falha_recomendacao.png",
+      "categoria": "04-falhas",
+      "status": "restricted_original",
+      "arquivo_publico": null,
+      "sha256_origem": "df85ebe5a70813de6bf80971ca4b3b2050a24a17a53adccd6c8e495e6e499f38",
+      "width_px": 3200,
+      "height_px": 2000,
+      "decisao": "Contém contexto individual de medicamento, apresentação e orçamento; publicar apenas requisitos técnicos recortados."
+    },
+    {
+      "id": "IMG-MAB-CAP-14",
+      "arquivo_recebido": "08_falha_recomendacao_criterios.png",
+      "categoria": "04-falhas",
+      "status": "restricted_original",
+      "arquivo_publico": null,
+      "sha256_origem": "d4105433df02021b1a6728ce13d12654f624da9e8b006c5173b46086cc4277c7",
+      "width_px": 3200,
+      "height_px": 2000,
+      "decisao": "Contém contexto individual de medicamento, apresentação e orçamento; publicar apenas requisitos técnicos recortados."
+    },
+    {
+      "id": "IMG-MAB-CAP-15",
+      "arquivo_recebido": "09_contexto_e_anexos.png",
+      "categoria": "05-contexto-e-anexos",
+      "status": "restricted_original",
+      "arquivo_publico": null,
+      "sha256_origem": "7d8d329aeb5c5c2af8d1bfcd76cfef122326b9168b820b815d6a4520a2540b80",
+      "width_px": 3200,
+      "height_px": 2000,
+      "decisao": "Contém mensagem histórica transcrita; publicar somente o painel de descritores e limites."
+    },
+    {
+      "id": "IMG-MAB-CAP-16",
+      "arquivo_recebido": "10_consumo_e_avaliacao.png",
+      "categoria": "01-painel-e-indice",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/01-painel-e-indice/10_consumo_e_avaliacao.png",
+      "sha256_origem": "5291ddcbc2f46aaf1bbc8556a21b5a60657b8d03931877016a24a0800f8ab533",
+      "width_px": 3200,
+      "height_px": 2000,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-17",
+      "arquivo_recebido": "11_swagger_api_visao.png",
+      "categoria": "06-api",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/06-api/11_swagger_api_visao.png",
+      "sha256_origem": "6578b05afaddf10bbdea9acf6a67c35c1e36efabe10dd2a4b6cd7062277626b9",
+      "width_px": 3200,
+      "height_px": 2000,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-18",
+      "arquivo_recebido": "11b_swagger_rotas_api.png",
+      "categoria": "06-api",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/06-api/11b_swagger_rotas_api.png",
+      "sha256_origem": "500bc1e445cc1b8f64ddede8a1871fec2ebe16e86f4dd767adcc8b4648260a5b",
+      "width_px": 3200,
+      "height_px": 2000,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-19",
+      "arquivo_recebido": "12_swagger_execucao.png",
+      "categoria": "06-api",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/06-api/12_swagger_execucao.png",
+      "sha256_origem": "ab928d28c14926a406d4afec824a94eb438c687f40b1facc03e0904e722b962f",
+      "width_px": 3200,
+      "height_px": 2000,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-20",
+      "arquivo_recebido": "12b_swagger_comparacao.png",
+      "categoria": "06-api",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/06-api/12b_swagger_comparacao.png",
+      "sha256_origem": "87624c9ef7dae88e15fec413ec77dc8931cf655bfc700c8d7624e8ffe9c84e4b",
+      "width_px": 3200,
+      "height_px": 2000,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-21",
+      "arquivo_recebido": "13_swagger_modelos_api.png",
+      "categoria": "06-api",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/06-api/13_swagger_modelos_api.png",
+      "sha256_origem": "492cb731134de63ac81fbcbcd1fed7f03ca9439c6525c5b4093dd507800d959b",
+      "width_px": 2840,
+      "height_px": 796,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-22",
+      "arquivo_recebido": "13b_swagger_eventos_api.png",
+      "categoria": "06-api",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/06-api/13b_swagger_eventos_api.png",
+      "sha256_origem": "fc91583d747d591c8378086d33906fb8de358f772ebe70b1b8238321603d6eaf",
+      "width_px": 2840,
+      "height_px": 1218,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-23",
+      "arquivo_recebido": "13c_swagger_projecao_api.png",
+      "categoria": "06-api",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/06-api/13c_swagger_projecao_api.png",
+      "sha256_origem": "9950464325a8df0d6be1bdfeec662ba8dc5969a7fa37e18fb964728cc393cfc5",
+      "width_px": 2840,
+      "height_px": 1004,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-24",
+      "arquivo_recebido": "14_swagger_runtime.png",
+      "categoria": "07-runtime",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/07-runtime/14_swagger_runtime.png",
+      "sha256_origem": "5de12fc1c650641510a687d2c2aa002aa972e60a26b6a957ce35a95a74bd37cd",
+      "width_px": 3200,
+      "height_px": 2000,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-25",
+      "arquivo_recebido": "14b_swagger_entrada_runtime.png",
+      "categoria": "07-runtime",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/07-runtime/14b_swagger_entrada_runtime.png",
+      "sha256_origem": "4bf17f6716d271f8d24214f3b4021121e5f73bd2d1b79349056f5ed97b969a47",
+      "width_px": 2840,
+      "height_px": 948,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-26",
+      "arquivo_recebido": "14c_swagger_saida_runtime.png",
+      "categoria": "07-runtime",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/07-runtime/14c_swagger_saida_runtime.png",
+      "sha256_origem": "067a4cfd5f3b9862e8d17318dd018d4cc8b1a5de99246809093bdffaf5ab7d85",
+      "width_px": 2840,
+      "height_px": 448,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-27",
+      "arquivo_recebido": "15_arquitetura.png",
+      "categoria": "08-arquitetura",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/08-arquitetura/15_arquitetura.png",
+      "sha256_origem": "91756e01eb740507c36744441c0cc6fad09195238898ab36903ddba5798e7810",
+      "width_px": 4621,
+      "height_px": 1450,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    },
+    {
+      "id": "IMG-MAB-CAP-28",
+      "arquivo_recebido": "15_arquitetura.svg",
+      "categoria": "08-arquitetura",
+      "status": "approved_archive",
+      "arquivo_publico": "docs/tcc/figures/captures/2026-10-12/08-arquitetura/15_arquitetura.svg",
+      "sha256_origem": "9256ae649da76643fd13f5d7ac7798157c416aa9b7494896263097ba72bcaa6b",
+      "width_px": null,
+      "height_px": null,
+      "decisao": "Captura técnica ou saída gerada sem transcrição de entrada/histórico ou contexto individual de saúde."
+    }
+  ],
+  "publication": [
+    {
+      "id": "IMG-MAB-PUB-01",
+      "basename": "01-painel-geral",
+      "title": "Painel de apresentação da coleta definitiva",
+      "png": "docs/tcc/figures/captures/2026-10-12/publicacao/01-painel-geral.png",
+      "svg": "docs/tcc/figures/captures/2026-10-12/publicacao/01-painel-geral.svg",
+      "width_px": 1530,
+      "height_px": 874,
+      "sha256_png": "c5c857f4d423a02ce999bffecbd72072975feee7384712557a5573e67f85c28f",
+      "panels": [
+        {
+          "source": "01_painel_coleta600.png",
+          "source_sha256": "e48754a8a0459af3cb1acc50ddeeb7d2cd9df6c7311670c15e8f9550e73189ef",
+          "crop_xyxy": [
+            70,
+            385,
+            1600,
+            900
+          ],
+          "editorial_label": null
+        },
+        {
+          "source": "01_painel_coleta600.png",
+          "source_sha256": "e48754a8a0459af3cb1acc50ddeeb7d2cd9df6c7311670c15e8f9550e73189ef",
+          "crop_xyxy": [
+            1620,
+            565,
+            3120,
+            900
+          ],
+          "editorial_label": null
+        }
+      ],
+      "transformation": "Recorte sem redimensionamento dos pixels; composição vertical quando há mais de um painel; rótulos (a–c) apenas na figura de percursos.",
+      "status": "approved_for_document",
+      "raster_inside_svg": true
+    },
+    {
+      "id": "IMG-MAB-PUB-02",
+      "basename": "02-comparacao-cenario",
+      "title": "Comparação de R-stock-03 na primeira repetição",
+      "png": "docs/tcc/figures/captures/2026-10-12/publicacao/02-comparacao-cenario.png",
+      "svg": "docs/tcc/figures/captures/2026-10-12/publicacao/02-comparacao-cenario.svg",
+      "width_px": 985,
+      "height_px": 1158,
+      "sha256_png": "c522eb526d00dc6dc306b58b07e66279d31541388925c4e074d7088a006ee214",
+      "panels": [
+        {
+          "source": "03b_comparacao_respostas.png",
+          "source_sha256": "654547d7a59811ac66214eb6fdc0c994008edf07544904db76c98b2c1e1c85db",
+          "crop_xyxy": [
+            80,
+            400,
+            1065,
+            770
+          ],
+          "editorial_label": null
+        },
+        {
+          "source": "03b_comparacao_respostas.png",
+          "source_sha256": "654547d7a59811ac66214eb6fdc0c994008edf07544904db76c98b2c1e1c85db",
+          "crop_xyxy": [
+            1100,
+            400,
+            2080,
+            770
+          ],
+          "editorial_label": null
+        },
+        {
+          "source": "03b_comparacao_respostas.png",
+          "source_sha256": "654547d7a59811ac66214eb6fdc0c994008edf07544904db76c98b2c1e1c85db",
+          "crop_xyxy": [
+            2140,
+            400,
+            3120,
+            770
+          ],
+          "editorial_label": null
+        }
+      ],
+      "transformation": "Recorte sem redimensionamento dos pixels; composição vertical quando há mais de um painel; rótulos (a–c) apenas na figura de percursos.",
+      "status": "approved_for_document",
+      "raster_inside_svg": true
+    },
+    {
+      "id": "IMG-MAB-PUB-03",
+      "basename": "03-percursos-agentes",
+      "title": "Invocações registradas no mesmo cenário nas três arquiteturas",
+      "png": "docs/tcc/figures/captures/2026-10-12/publicacao/03-percursos-agentes.png",
+      "svg": "docs/tcc/figures/captures/2026-10-12/publicacao/03-percursos-agentes.svg",
+      "width_px": 1660,
+      "height_px": 1278,
+      "sha256_png": "bcbad8e2efbafc6d1244f4e88a23b8b3aa41fda4d32f8f0eebe3d970fedb7295",
+      "panels": [
+        {
+          "source": "04_execucao_centralizada.png",
+          "source_sha256": "9dd4c7b571e28d418f94cd99d6a46d0a2ff34eea97ef67a989fb1623567ef1f2",
+          "crop_xyxy": [
+            80,
+            995,
+            1740,
+            1350
+          ],
+          "editorial_label": "(a) Centralizada"
+        },
+        {
+          "source": "05_execucao_workflow.png",
+          "source_sha256": "977fe73e99a104dc764792424db9b9ba6814d19f581649c5ab66362001b5f15c",
+          "crop_xyxy": [
+            80,
+            995,
+            1740,
+            1350
+          ],
+          "editorial_label": "(b) Fluxo estruturado"
+        },
+        {
+          "source": "06_execucao_swarm.png",
+          "source_sha256": "b903712bef0e74ef031a20d35e88552ce18946d91f0be6337708e56803672da5",
+          "crop_xyxy": [
+            80,
+            995,
+            1740,
+            1350
+          ],
+          "editorial_label": "(c) Swarm"
+        }
+      ],
+      "transformation": "Recorte sem redimensionamento dos pixels; composição vertical quando há mais de um painel; rótulos (a–c) apenas na figura de percursos.",
+      "status": "approved_for_document",
+      "raster_inside_svg": true
+    },
+    {
+      "id": "IMG-MAB-PUB-04",
+      "basename": "04-descritores-anexos",
+      "title": "Descritores de anexos e limites de leitura",
+      "png": "docs/tcc/figures/captures/2026-10-12/publicacao/04-descritores-anexos.png",
+      "svg": "docs/tcc/figures/captures/2026-10-12/publicacao/04-descritores-anexos.svg",
+      "width_px": 1500,
+      "height_px": 650,
+      "sha256_png": "c9902b250a4d4f3380ca8a9969f9be1162adac83022fb2109d038720354c2128",
+      "panels": [
+        {
+          "source": "09_contexto_e_anexos.png",
+          "source_sha256": "7d8d329aeb5c5c2af8d1bfcd76cfef122326b9168b820b815d6a4520a2540b80",
+          "crop_xyxy": [
+            1620,
+            570,
+            3120,
+            1220
+          ],
+          "editorial_label": null
+        }
+      ],
+      "transformation": "Recorte sem redimensionamento dos pixels; composição vertical quando há mais de um painel; rótulos (a–c) apenas na figura de percursos.",
+      "status": "approved_for_document",
+      "raster_inside_svg": true
+    },
+    {
+      "id": "IMG-MAB-PUB-05",
+      "basename": "05-swagger-rotas-api",
+      "title": "Rotas de execução e integração na documentação da API",
+      "png": "docs/tcc/figures/captures/2026-10-12/publicacao/05-swagger-rotas-api.png",
+      "svg": "docs/tcc/figures/captures/2026-10-12/publicacao/05-swagger-rotas-api.svg",
+      "width_px": 1530,
+      "height_px": 1040,
+      "sha256_png": "6bb7e60992caceca9ab5753de428698b25c18c527f3d21e5d6c5503c00311f48",
+      "panels": [
+        {
+          "source": "11b_swagger_rotas_api.png",
+          "source_sha256": "500bc1e445cc1b8f64ddede8a1871fec2ebe16e86f4dd767adcc8b4648260a5b",
+          "crop_xyxy": [
+            170,
+            320,
+            1700,
+            1360
+          ],
+          "editorial_label": null
+        }
+      ],
+      "transformation": "Recorte sem redimensionamento dos pixels; composição vertical quando há mais de um painel; rótulos (a–c) apenas na figura de percursos.",
+      "status": "approved_for_document",
+      "raster_inside_svg": true
+    },
+    {
+      "id": "IMG-MAB-PUB-06",
+      "basename": "06-swagger-modelos-api",
+      "title": "Modelos de leitura e comparação de execuções da API",
+      "png": "docs/tcc/figures/captures/2026-10-12/publicacao/06-swagger-modelos-api.png",
+      "svg": "docs/tcc/figures/captures/2026-10-12/publicacao/06-swagger-modelos-api.svg",
+      "width_px": 1230,
+      "height_px": 685,
+      "sha256_png": "2b91523eaa63e0c229e35705158428980d66d341d8a0c813faa0ca471babf312",
+      "panels": [
+        {
+          "source": "13_swagger_modelos_api.png",
+          "source_sha256": "492cb731134de63ac81fbcbcd1fed7f03ca9439c6525c5b4093dd507800d959b",
+          "crop_xyxy": [
+            40,
+            90,
+            1270,
+            775
+          ],
+          "editorial_label": null
+        }
+      ],
+      "transformation": "Recorte sem redimensionamento dos pixels; composição vertical quando há mais de um painel; rótulos (a–c) apenas na figura de percursos.",
+      "status": "approved_for_document",
+      "raster_inside_svg": true
+    },
+    {
+      "id": "IMG-MAB-PUB-07",
+      "basename": "07-swagger-modelos-runtime",
+      "title": "Modelos de despacho e aceitação do runtime",
+      "png": "docs/tcc/figures/captures/2026-10-12/publicacao/07-swagger-modelos-runtime.png",
+      "svg": "docs/tcc/figures/captures/2026-10-12/publicacao/07-swagger-modelos-runtime.svg",
+      "width_px": 1230,
+      "height_px": 1179,
+      "sha256_png": "bcfcb44fe61d3be6b0bc18b0229949eb38956eea54ae3d750a3ba414b704ffd3",
+      "panels": [
+        {
+          "source": "14b_swagger_entrada_runtime.png",
+          "source_sha256": "4bf17f6716d271f8d24214f3b4021121e5f73bd2d1b79349056f5ed97b969a47",
+          "crop_xyxy": [
+            40,
+            90,
+            1270,
+            915
+          ],
+          "editorial_label": null
+        },
+        {
+          "source": "14c_swagger_saida_runtime.png",
+          "source_sha256": "067a4cfd5f3b9862e8d17318dd018d4cc8b1a5de99246809093bdffaf5ab7d85",
+          "crop_xyxy": [
+            40,
+            90,
+            1270,
+            420
+          ],
+          "editorial_label": null
+        }
+      ],
+      "transformation": "Recorte sem redimensionamento dos pixels; composição vertical quando há mais de um painel; rótulos (a–c) apenas na figura de percursos.",
+      "status": "approved_for_document",
+      "raster_inside_svg": true
+    },
+    {
+      "id": "IMG-MAB-PUB-08",
+      "basename": "08-falha-faq",
+      "title": "Requisitos e consulta obrigatória na falha de R-faq-02",
+      "png": "docs/tcc/figures/captures/2026-10-12/publicacao/08-falha-faq.png",
+      "svg": "docs/tcc/figures/captures/2026-10-12/publicacao/08-falha-faq.svg",
+      "width_px": 1500,
+      "height_px": 870,
+      "sha256_png": "6e3d64a82d92079bf7b75a34ffef51910a3933f3ca28568dad881e1f57bb9281",
+      "panels": [
+        {
+          "source": "07_falha_faq_criterios.png",
+          "source_sha256": "09d45b494d3684a6436346a06d75ca3bc657928f5f6dad72537c0a91e6d2e703",
+          "crop_xyxy": [
+            1620,
+            960,
+            3120,
+            1830
+          ],
+          "editorial_label": null
+        }
+      ],
+      "transformation": "Recorte sem redimensionamento dos pixels; composição vertical quando há mais de um painel; rótulos (a–c) apenas na figura de percursos.",
+      "status": "approved_for_document",
+      "raster_inside_svg": true
+    },
+    {
+      "id": "IMG-MAB-PUB-09",
+      "basename": "09-falha-recomendacao",
+      "title": "Requisitos de recomendação e consulta na falha de R-referral-08",
+      "png": "docs/tcc/figures/captures/2026-10-12/publicacao/09-falha-recomendacao.png",
+      "svg": "docs/tcc/figures/captures/2026-10-12/publicacao/09-falha-recomendacao.svg",
+      "width_px": 1500,
+      "height_px": 890,
+      "sha256_png": "cbe2dfe0c5c2400737b9a89bd6784af0cb3c706939728f13fea236b4821eac9c",
+      "panels": [
+        {
+          "source": "08_falha_recomendacao_criterios.png",
+          "source_sha256": "d4105433df02021b1a6728ce13d12654f624da9e8b006c5173b46086cc4277c7",
+          "crop_xyxy": [
+            1620,
+            870,
+            3120,
+            1760
+          ],
+          "editorial_label": null
+        }
+      ],
+      "transformation": "Recorte sem redimensionamento dos pixels; composição vertical quando há mais de um painel; rótulos (a–c) apenas na figura de percursos.",
+      "status": "approved_for_document",
+      "raster_inside_svg": true
+    }
+  ]
+}
