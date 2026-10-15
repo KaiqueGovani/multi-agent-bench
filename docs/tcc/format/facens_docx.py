@@ -112,6 +112,27 @@ REFERENCE_EMPHASIS = {
     "ZHUGE": "Proceedings [...]",
 }
 
+# Verified bibliography additions retained from the author's October revisions.
+# Specific prefixes precede broad author matches to distinguish multiple works.
+REFERENCE_EMPHASIS = {
+    "ANTHROPIC. BUILDING EFFECTIVE AGENTS": "Building effective agents",
+    "ANTHROPIC. CLAUDE ON AMAZON BEDROCK": "Claude on Amazon Bedrock",
+    "ANTHROPIC. PRICING": "Pricing",
+    "AMAZON WEB SERVICES. CLAUDE HAIKU 4.5": "Claude Haiku 4.5",
+    "AMAZON WEB SERVICES. CLAUDE SONNET 4.5": "Claude Sonnet 4.5",
+    "BUHNILA, IOANA": "Proceedings of the 25th Workshop on Biomedical Language Processing (BioNLP 2026)",
+    "DEVICON. DEVICON": "Devicon",
+    "STRANDS AGENTS. STRANDS AGENTS": "Strands Agents",
+    "YAO, SHUNYU ET AL. Τ-BENCH": "τ-bench: a benchmark for tool-agent-user interaction in real-world domains",
+    "ZHUGE, MINGCHEN": "Proceedings of the 41st International Conference on Machine Learning",
+    "JAGATAP, AKSHAY": "Proceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 3: Industry Track)",
+    "ZHENG, LIANMIN": "Advances in Neural Information Processing Systems",
+    "SCIPY. FRIEDMANCHISQUARE": "friedmanchisquare",
+    "SCIPY. SPEARMANR": "spearmanr",
+    "SCIPY. WILCOXON": "wilcoxon",
+    **REFERENCE_EMPHASIS,
+}
+
 
 @dataclass(frozen=True)
 class TocEntry:
@@ -291,14 +312,19 @@ def configure_styles(doc: Document) -> None:
     reference.paragraph_format.keep_together = True
 
     caption = styles["Figure Caption"]
-    set_style_font(caption, 10)
+    # Advisor review of October 2026 supersedes the older 10 pt caption rule.
+    set_style_font(caption, 12)
     caption.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
     caption.paragraph_format.first_line_indent = Cm(0)
     caption.paragraph_format.space_before = Pt(6)
-    caption.paragraph_format.space_after = Pt(0)
+    caption.paragraph_format.space_after = Pt(6)
     caption.paragraph_format.line_spacing_rule = WD_LINE_SPACING.SINGLE
     caption.paragraph_format.keep_together = True
     caption.paragraph_format.keep_with_next = True
+
+    for name in ("Table Caption", "Quadro Caption"):
+        if name in styles:
+            set_style_font(styles[name], 12)
 
     source = styles["Figure Source"]
     set_style_font(source, 10)
@@ -388,9 +414,9 @@ def enforce_document_typography(doc: Document) -> None:
         elif style_name == FIGURE_LIST_STYLE:
             for run in paragraph.runs:
                 set_run_typography(run, 12, bold=False, caps=False)
-        elif style_name in {"Figure Caption", "Figure Source"}:
+        elif style_name in {"Figure Caption", "Table Caption", "Quadro Caption", "Figure Source", "Table Source", "Quadro Source"}:
             for run in paragraph.runs:
-                set_run_typography(run, 10, bold=False, caps=False)
+                set_run_typography(run, 12 if style_name.endswith("Caption") else 10, bold=False, caps=False)
         elif style_name == "Reference Entry" or body_started:
             for run in paragraph.runs:
                 set_run_typography(run, 12)
@@ -842,6 +868,8 @@ def configure_references(doc: Document) -> None:
         if paragraph._p is heading._p:
             seen = True
             continue
+        if seen and paragraph.text.startswith("APÊNDICE "):
+            break
         if not seen or not paragraph.text.strip():
             continue
         upper = normalized(paragraph.text)
@@ -937,6 +965,17 @@ def collect_toc_entries(doc: Document) -> list[TocEntry]:
             add_bookmark(paragraph, bookmark, bookmark_id)
             entries.append(TocEntry(1, "REFERÊNCIAS", "REFERÊNCIAS", bookmark))
             break
+    for paragraph in doc.paragraphs:
+        if paragraph.style.name == "Front Matter Heading" and paragraph.text.startswith("APÊNDICE "):
+            letter = paragraph.text.split()[1]
+            bookmark = "_TCC_APPENDIX_" + letter
+            stale_ids = {n.get(qn("w:id")) for n in paragraph._p.xpath('.//w:bookmarkStart')
+                         if (n.get(qn("w:name")) or '').startswith('_TCC_APPENDIX_')}
+            for node in list(paragraph._p.xpath('.//w:bookmarkStart|.//w:bookmarkEnd')):
+                if node.get(qn("w:id")) in stale_ids:
+                    node.getparent().remove(node)
+            add_bookmark(paragraph, bookmark, 9001 + ord(letter) - ord('A'))
+            entries.append(TocEntry(1, paragraph.text, paragraph.text, bookmark))
     return entries
 
 
@@ -1080,11 +1119,17 @@ def page_map_from_pdf(pdf_path: Path, entries) -> dict[str, int]:
     pages = []
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
-            pages.append(normalized(page.extract_text() or ""))
+            text = page.extract_text() or ""
+            # Keep case in isolated lines: "Referências" may be a table cell.
+            pages.append((normalized(text), [re.sub(r"\s+", " ", line.replace("\u00a0", " ")).strip()
+                                            for line in text.splitlines()]))
     page_map = {}
     for entry in entries:
         needle = normalized(entry.display)
-        matches = [index + 1 for index, text in enumerate(pages) if needle in text]
+        # Prompt examples can contain the word REFERÊNCIAS after the bibliography.
+        # Match the standalone heading, rather than its last arbitrary occurrence.
+        matches = [index + 1 for index, (text, lines) in enumerate(pages)
+                   if (needle in lines if needle == "REFERÊNCIAS" else needle in text)]
         if not matches:
             raise ValueError(f"Título não localizado no PDF: {entry.display}")
         physical_page = max(matches)
@@ -1384,6 +1429,31 @@ def audit(input_path: Path, pdf_path: Path | None = None) -> list[str]:
             errors.append(f"Espaçamento incorreto no título: {paragraph.text}")
         previous_was_heading = True
 
+    # Blank paragraphs, captions and source notes do not introduce a section.
+    previous_heading = None
+    prose_since_heading = True
+    for paragraph in doc.paragraphs:
+        is_heading = (paragraph.style.name in HEADING_STYLES
+                      or paragraph.style.name == "Appendix Section"
+                      or paragraph.style.name == "Front Matter Heading" and paragraph.text.startswith("APÊNDICE "))
+        if is_heading:
+            if previous_heading is not None and not prose_since_heading:
+                errors.append(f"Títulos sem texto introdutório entre eles: {previous_heading} / {paragraph.text}")
+            previous_heading = paragraph.text
+            prose_since_heading = False
+        elif paragraph.style.name == "Front Matter Heading":
+            previous_heading = None
+            prose_since_heading = True
+        elif paragraph.style.name == "Normal" and paragraph.text.strip():
+            prose_since_heading = True
+
+    for paragraph in doc.paragraphs:
+        if paragraph.style.name in {"Figure Caption", "Table Caption", "Quadro Caption"}:
+            for run in paragraph.runs:
+                if run.text and (run.font.size or paragraph.style.font.size) != Pt(12):
+                    errors.append(f"Título de ilustração fora de Arial 12: {paragraph.text}")
+                    break
+
     reference_heading = next(
         (p for p in doc.paragraphs if normalized(p.text) == "REFERÊNCIAS"), None
     )
@@ -1398,6 +1468,8 @@ def audit(input_path: Path, pdf_path: Path | None = None) -> list[str]:
         if reference_heading is not None and paragraph._p is reference_heading._p:
             in_references = True
             continue
+        if in_references and paragraph.text.startswith("APÊNDICE "):
+            break
         if in_references and paragraph.text.strip():
             reference_entries.append(paragraph)
             if paragraph.style.name != "Reference Entry":

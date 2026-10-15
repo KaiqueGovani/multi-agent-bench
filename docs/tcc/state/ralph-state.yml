@@ -62,6 +62,42 @@ constraints:
   - "Execuções recorrentes gravam diretamente na branch dedicada e não utilizam pull requests."
 
 audit:
+  advisor_revision_2026_10_14:
+    date: "2026-10-14"
+    mode: "explicit_user_document_task"
+    source: "author_supplied_Talita_annotated_October_12_revision"
+    review: "docs/tcc/reviews/advisor-feedback-2026-10-14.md"
+    run_record: "docs/tcc/state/runs/2026-10-14-advisor-review.md"
+    comments_addressed: 12
+    highlighted_paragraphs_reviewed: 14
+    tcc_delivery: "TCC_MAB_Revisao_Talita_2026-10-14.docx"
+    report6_delivery: "Report_6_Resultados_Atualizado_2026-10-14.docx"
+    document_delivery: "separate_user_artifacts"
+    document_save_completed: true
+    tcc_pages: 105
+    report6_pages: 34
+    tcc_figures: 30
+    report6_figures: 13
+    tcc_numeric_tables: 25
+    tcc_quadros: 6
+    report6_numeric_tables: 15
+    tcc_references: 45
+    report6_references: 15
+    missing_or_uncited_references: 0
+    headings_without_intervening_prose: 0
+    formatting_audit: "passed_both_documents"
+    visual_and_pagination_audit: "passed_105_and_34_pages"
+    frozen_prompts_and_source_tables_preserved: true
+    source_figure_blobs_preserved: true
+    discussion: "integrated_as_final_section_of_results"
+    final_considerations: "chapter_8_without_subheadings"
+    canonical_repository_docx_changed: false
+    historical_manuscript_changed: false
+    prototype_code_changed: false
+    experiment_rerun: false
+    evaluation_changed: false
+    evidence_gates_changed: false
+    public_commit_scope: "formatting_rules_document_utility_advisor_learnings_and_run_log"
   capture_delivery_2026_10_12:
     date: "2026-10-12"
     mode: "explicit_user_document_task"
@@ -359,8 +395,8 @@ audit:
     - "Figuras de R033, R034, R041, R044 e R058 permaneceram apenas como referências conceituais porque não foi confirmada licença pública suficiente para armazenamento e adaptação."
     - "O sincronizador versionado de Markdown para DOCX está delimitado ao Capítulo 4; alterações em outros capítulos exigem substituição cirúrgica validada ou futura generalização do utilitário fora do escopo documental."
 
-last_run: "2026-09-11"
-last_run_record: "docs/tcc/state/runs/2026-09-11.md"
+last_run: "2026-10-14"
+last_run_record: "docs/tcc/state/runs/2026-10-14-advisor-review.md"
 next_recommended_action: "No sábado, auditar a rastreabilidade das novas citações do Capítulo 3 entre manuscrito, matriz, registro e DOCX; manter a coleta em NO-GO até GOV-01 a GOV-10 e aguardar OQ-004 e OQ-005."
 manual_review:
   date: "2026-09-07"

@@ -46,7 +46,7 @@ O caminho de `render_docx.py` pode variar no ambiente. Quando isso ocorrer, use 
 - títulos em preto absoluto, com remoção de `themeColor`, `themeTint` e `themeShade` do OOXML;
 - numeração multinível decimal única (`1`, `1.1`, `1.1.1`), com família Arial, tamanho, peso e cor explicitamente gravados nos marcadores, sem atributos de fonte de tema, e com os estilos `Heading 1`, `Heading 2` e `Heading 3` vinculados aos níveis correspondentes do mesmo `numId`;
 - capítulos de primeiro nível iniciando em nova página;
-- uma linha e meia antes e depois dos títulos, sem intervalo duplicado entre títulos consecutivos;
+- uma linha e meia antes e depois dos títulos, com reprovação de títulos consecutivos sem texto introdutório ou de desenvolvimento;
 - corpo em Arial 12, justificado, espaçamento 1,5 e recuo de primeira linha;
 - palavras e expressões estrangeiras isoladas em itálico, com preservação das exceções bibliográficas;
 - sumário estático reproduzível, com links internos, tabulação automática à direita com líder pontilhado do Word e páginas conferidas no PDF;
@@ -55,6 +55,8 @@ O caminho de `render_docx.py` pode variar no ambiente. Quando isso ocorrer, use 
 - legendas numeradas por campo `SEQ Figura`, notas de fonte e lista de figuras reconstruída automaticamente a partir das legendas;
 - lista de figuras com links internos, páginas conferidas na segunda passagem, tabulação à direita e líder pontilhado automático;
 - referências em ordem alfabética, alinhadas à esquerda, espaço simples, uma linha de separação, entrada não fragmentada quando couber e destaque bibliográfico uniforme em negrito;
+- títulos de figuras, tabelas e quadros em Arial 12, fontes em Arial 10 e espaço visível depois das legendas;
+- referências encerradas antes dos apêndices, com os títulos dos apêndices incluídos no sumário;
 - `et al.` sempre em itálico, inclusive em tabelas e referências;
 - paginação visível a partir da Introdução, sem exibir número na capa e nos elementos pré-textuais;
 - preservação dos placeholders dos capítulos protegidos pelos evidence gates.
@@ -74,6 +76,16 @@ O manuscrito associa cada figura a um comentário estruturado `FIGURE`, seguido 
 As legendas usam o estilo `Figure Caption` e o campo `SEQ Figura`; a nota de fonte usa `Figure Source`. O formatador coleta essas legendas, cria a `LISTA DE FIGURAS` e recalcula as páginas a partir do PDF da primeira passagem. Não digite números de figura, páginas ou sequências de pontos na lista.
 
 O texto deve introduzir cada figura por seu número, usar os mesmos termos do desenho na explicação e continuar após a nota de fonte; não encerre uma subseção imediatamente depois da figura.
+
+## Consolidação da revisão da orientadora de 14 de outubro de 2026
+
+Leia `../reviews/advisor-feedback-2026-10-14.md` junto das regras anteriores. Títulos de ilustrações passaram a tamanho 12; notas de fonte continuam em tamanho 10. Nenhuma mudança foi feita na lista multinível, na caixa dos títulos, no itálico, nas margens ou nos líderes automáticos do sumário.
+
+A auditoria agora rejeita títulos seguidos de outros títulos sem texto, inclusive quando separados apenas por parágrafos vazios. Ela também confere o tamanho dos títulos de figuras, tabelas e quadros. A presença de texto não comprova sua clareza: a revisão editorial continua necessária para verificar definições, conexão dos parágrafos, unidades e interpretação das comparações.
+
+O bloco de referências termina antes do primeiro apêndice. A localização da seção `REFERÊNCIAS` no PDF usa seu título isolado, para que a palavra presente em um exemplo de prompt não desloque a página do sumário. Prefixos bibliográficos específicos têm precedência sobre regras genéricas de autoria.
+
+As notas de fonte identificam a procedência do material. Explicações sobre medianas, amostras, permutações ou denominadores devem aparecer no corpo do texto. Os exemplos de falhas precisam indicar seu caráter ilustrativo. Prompts e esquemas congelados permanecem literais, com a explicação editorial fora dos blocos do instrumento.
 
 Ao adicionar ou remover uma figura, sempre execute novamente as duas passagens. A auditoria deve confirmar: objeto inline, SVG incorporado, legenda sequencial, quantidade idêntica de legendas e entradas, tab stop direito com líder `dot` e páginas coerentes com o PDF.
 

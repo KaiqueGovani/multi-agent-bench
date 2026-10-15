@@ -28,7 +28,8 @@ Consolidação baseada no modelo Word e nos manuais técnicos fornecidos pelos a
 - seção (nível 2): Arial 12, negrito, caixa alta e alinhada à esquerda;
 - subseção (nível 3 ou superior): Arial 12, sem negrito, caixa alta e alinhada à esquerda;
 - todos os títulos devem usar preto absoluto (`#000000`), sem cores de tema ou destaque azul herdado;
-- manter uma linha e meia de separação antes e depois de cada título; entre títulos consecutivos, usar apenas um intervalo;
+- manter uma linha e meia de separação antes e depois de cada título;
+- entre dois títulos, de quaisquer níveis, deve existir texto que introduza ou desenvolva a seção; parágrafos vazios, uma figura ou uma nota de fonte não substituem essa introdução;
 - toda numeração deve ser gerada por uma única lista multinível vinculada aos estilos de título; números digitados manualmente no texto do título são proibidos.
 - a lista deve usar exclusivamente o formato decimal nos três níveis: nível 1 `%1` (`1`), nível 2 `%1.%2` (`1.1`) e nível 3 `%1.%2.%3` (`1.1.1`), sem ponto depois do último algarismo;
 - o marcador numérico deve declarar Arial nos quatro atributos OOXML de fonte (`ascii`, `hAnsi`, `eastAsia` e `cs`), sem `asciiTheme`, `hAnsiTheme`, `eastAsiaTheme` ou `cstheme`; tamanho, negrito e cor também devem ser gravados explicitamente conforme o respectivo nível, sem depender da herança do tema;
@@ -60,12 +61,25 @@ Consolidação baseada no modelo Word e nos manuais técnicos fornecidos pelos a
 - usar, preferencialmente, SVG para diagramas autorais, com PNG de alta resolução como *fallback*;
 - inserir a figura de forma `inline`, centralizada e sem texto flutuante;
 - manter a ordem título da figura, imagem e fonte; os três elementos devem permanecer juntos sempre que couberem na página;
-- título/legenda imediatamente acima da imagem, em Arial 10, centralizado, com numeração automática por campo `SEQ Figura` e travessão antes do título;
+- título/legenda imediatamente acima da imagem, em Arial 12, centralizado, com numeração automática por campo `SEQ Figura` e travessão antes do título; a orientação da professora de outubro de 2026 substitui o tamanho 10 usado anteriormente;
+- aplicar Arial 12 também aos títulos de tabelas e quadros, mantendo notas de fonte em Arial 10;
+- manter espaço visível depois do título da figura (6 pt) e depois de sua nota de fonte (10 pt), sem inserir parágrafos vazios para simular espaçamento;
 - nota de fonte em Arial 10, centralizada, imediatamente abaixo da imagem;
 - gerar a `LISTA DE FIGURAS` automaticamente a partir das legendas, nunca por transcrição manual;
 - formatar as entradas da lista em Arial 12, espaço 1,5, tab stop à direita e líder pontilhado automático;
 - conferir os números de página na segunda passagem do pipeline e reprovar pontos ou páginas digitados manualmente;
 - preservar texto alternativo descritivo em cada desenho incorporado.
+- citar a figura pelo número antes de sua inserção e interpretar seu conteúdo no texto; uma seção não deve terminar na figura ou em sua fonte;
+- em fluxos horizontais, organizar o percurso principal da esquerda para a direita; em fluxos verticais, de cima para baixo, identificando retornos e desvios quando necessários;
+- usar a nota de fonte para proveniência; explicações sobre denominadores, agregação, critérios e limites de interpretação pertencem ao texto corrido.
+
+## Tabelas e quadros
+
+- manter os valores, unidades e denominadores do conjunto efetivamente analisado;
+- tabelas numéricas científicas usam linhas horizontais de abertura, sob o cabeçalho e de fechamento, sem grade vertical; quadros descritivos podem manter grade discreta;
+- remover recuos e tabulações iniciais das células, permitir quebra de linha e repetir o cabeçalho quando a tabela continuar em outra página;
+- identificar a unidade nas colunas e no texto: cenário, execução, resposta, chamada ou token não são termos intercambiáveis;
+- conservar as ressalvas metodológicas perto dos valores correspondentes, em parágrafos legíveis, sem escondê-las na fonte.
 
 ## Paginação
 
@@ -83,6 +97,22 @@ Consolidação baseada no modelo Word e nos manuais técnicos fornecidos pelos a
 - aplicar negrito uniformemente ao elemento título nas obras autônomas e ao título do periódico ou evento em artigos e trabalhos de conferência, conforme os exemplos institucionais;
 - grafar `et al.` sempre em itálico, no texto, em quadros, tabelas, legendas e na lista de referências;
 - não inventar nem completar metadados: título, autoria, veículo, ano, DOI e URL precisam ser verificáveis.
+- toda referência final deve ter citação no texto e toda citação deve corresponder a uma entrada final; o bloco bibliográfico termina antes dos apêndices;
+- diferenciar obras do mesmo autor por prefixos específicos antes de aplicar destaque bibliográfico, sem deixar uma regra genérica sobrepor títulos verificados.
+
+## Atualizações autorais de outubro de 2026
+
+As orientações de 12 e 14 de outubro complementam as revisões de setembro; não substituem as regras de numeração, itálico, sumário, referências ou posição das figuras. A prevalência de uma orientação nova deve ser registrada no parecer, como ocorreu com os títulos de ilustrações em tamanho 12.
+
+- contextualizar o objetivo da análise antes de iniciar um capítulo com números;
+- definir siglas, códigos de requisitos, hipóteses, medianas, razões e referências de comparação antes de utilizá-los;
+- manter `centralizada`, `workflow` e `swarm` como denominações consistentes depois de apresentar seus nomes completos;
+- distinguir categoria da demanda, dificuldade e tipo de resolução esperado no gabarito;
+- descrever exemplos de falhas como ilustrações selecionadas, sem apresentá-los como catálogo completo ou comprovação de uma causa geral;
+- denominar os atendimentos individuais por contatos ou conversas; reservar “grupo do WhatsApp” ao tipo de conversa com múltiplos participantes, sem equiparar contato a pessoa verificada;
+- preservar literalmente prompts, identificadores e esquemas congelados: a revisão editorial se aplica às explicações que os acompanham;
+- encerrar resultados com interpretação e limites; a revisão de 14 de outubro integrou a discussão ao capítulo de resultados e deixou as considerações finais sem subtítulos;
+- contabilizar custos pelas tarifas históricas declaradas e separar geração de julgamento; conformidade com gabaritos técnicos não constitui validação clínica.
 
 ## Validação obrigatória
 
