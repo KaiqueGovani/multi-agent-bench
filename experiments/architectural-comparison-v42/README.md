@@ -38,7 +38,7 @@ Os prompts de domínio, fontes, política de recomendação e papéis do workflo
 
 ## Configuração
 
-Geração: `us.anthropic.claude-haiku-4-5-20251001-v1:0`, temperatura 0, saída máxima 2.048 tokens. Julgamento: `us.anthropic.claude-sonnet-4-5-20250929-v1:0`, temperatura 0, saída máxima 4.096 tokens. Região `us-west-2`. Sem fallback mock, sem retries automáticos de inferência. Geração e julgamento sequenciais.
+Geração: `us.anthropic.claude-haiku-4-5-20251001-v1:0`, temperatura 0, saída máxima 2.048 tokens. Julgamento: `us.anthropic.claude-sonnet-4-5-20250929-v1:0`, temperatura 0, saída máxima 4.096 tokens. Região `us-west-2`. Sem fallback mock, sem retries automáticos de inferência. A geração permanece sequencial. Por decisão posterior explícita do autor, tomada antes do primeiro julgamento principal, a avaliação e as rechecagens passam a quatro processos com propriedade exclusiva por resposta; ver `JUDGE_DISPATCH_AMENDMENT.md`. O instrumento semântico permanece congelado.
 
 Por tentativa, os limites globais incluem chamadas aninhadas: 20 requisições ao modelo, 20 chamadas de domínio e 180 segundos. O encerramento por tempo não permite continuar executando filhos em segundo plano. Uma resposta sem delegação obrigatória é preservada com violação arquitetural; não se acrescenta uma chamada artificial.
 
