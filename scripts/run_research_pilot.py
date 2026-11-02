@@ -51,7 +51,7 @@ def sha(value):
 
 
 def code_hashes():
-    files = list((ROOT / "apps/agent-runtime/app").rglob("*.py")) + list((ROOT / "scripts").glob("*research_pilot.py")) + list((ROOT / "scripts").glob("*automated_pilots.py"))
+    files = list((ROOT / "apps/agent-runtime/app").rglob("*.py")) + list((ROOT / "scripts").glob("*research_pilot.py")) + list((ROOT / "scripts").glob("*automated_pilots.py")) + list((ROOT / "scripts").glob("*corrected_comparison.py"))
     return {str(p.relative_to(ROOT)): sha(p.read_bytes()) for p in sorted(files)}
 
 
@@ -100,6 +100,83 @@ class LocalEvents:
                           **event.model_dump(by_alias=True, mode="json")})
 
 
+DOMAIN_TOOLS = {"faq_lookup", "stock_lookup", "attachment_intake"}
+SPECIALIST_TOOLS = {"faq_specialist": "faq", "stock_specialist": "stock", "attachments_specialist": "attachments"}
+
+
+def trace_measurements(events):
+    """Reconcile physical requests once; aggregate SDK metrics are not additive."""
+    model_starts = [e for e in events if e["eventFamily"] == "model" and e["eventName"] == "started"]
+    model_ends = [e for e in events if e["eventFamily"] == "model" and e["eventName"] in {"completed", "failed"}]
+    starts = {e["payload"]["callId"]: e for e in model_starts}
+    ends = {e["payload"]["callId"]: e for e in model_ends}
+    unique = len(starts) == len(model_starts) and len(ends) == len(model_ends)
+    complete = bool(starts) and unique and starts.keys() == ends.keys() and all(
+        e["eventName"] == "completed" and isinstance(e["payload"].get("usage"), dict)
+        and all(e["payload"]["usage"].get(k) is not None for k in ("inputTokens", "outputTokens", "totalTokens"))
+        for e in ends.values())
+    agent_starts = [e for e in events if e["eventFamily"] == "agent" and e["eventName"] == "started"]
+    tools = [e for e in events if e["eventFamily"] == "tool" and e["eventName"] == "started"]
+    result = dict(agent_invocations=len(agent_starts), actual_agents=len({
+        e["payload"].get("agentId") or e.get("actorName") for e in model_starts}),
+        model_requests=len(starts), domain_tool_calls=sum(e.get("toolName") in DOMAIN_TOOLS for e in tools),
+        coordination_tool_calls=sum(e.get("toolName") not in DOMAIN_TOOLS for e in tools),
+        specialist_tool_invocations=sum(e.get("toolName") in SPECIALIST_TOOLS for e in tools),
+        peer_delegations=sum(e["eventFamily"] == "handoff" and e["eventName"] == "requested" for e in events),
+        explicit_messages=sum(e["eventFamily"] == "communication" and e["eventName"] == "message" for e in events),
+        token_measurement_complete=complete, provider_call_ids_unique=unique)
+    for key, payload_key in (("input_tokens", "inputTokens"), ("output_tokens", "outputTokens"), ("total_tokens", "totalTokens")):
+        known = [e["payload"]["usage"][payload_key] for e in ends.values()
+                 if isinstance(e["payload"].get("usage"), dict) and e["payload"]["usage"].get(payload_key) is not None]
+        result[key] = sum(known) if complete else None
+        result["known_partial_" + key] = sum(known) if known else None
+    return result
+
+
+def verify_architectural_trace(architecture, events, reported=None):
+    """Verify recorded execution, never infer real agents from names or text alone."""
+    failures = []
+    contract = [e for e in events if e["eventFamily"] == "architecture" and e["eventName"] == "contract"]
+    if len(contract) != 1:
+        failures.append("missing_or_duplicate_contract_event")
+    elif contract[0]["payload"].get("compliant") is not True:
+        failures.extend(contract[0]["payload"].get("violations") or ["runtime_contract_failed"])
+    if reported is False:
+        failures.append("runtime_reported_contract_failed")
+    agent_starts = [(i, e) for i, e in enumerate(events) if e["eventFamily"] == "agent" and e["eventName"] == "started"]
+    specialist_starts = [(i, e) for i, e in agent_starts if e.get("actorName") in SPECIALIST_TOOLS.values()]
+    if not specialist_starts:
+        failures.append("no_specialist_agent_invocation")
+    for i, start in specialist_starts:
+        invocation = start["payload"].get("agentInvocationId", start["payload"].get("callId"))
+        if not invocation or not any(e["eventFamily"] == "model" and e["eventName"] == "started"
+                                    and e["payload"].get("agentInvocationId") == invocation for e in events[i + 1:]):
+            failures.append("specialist_without_physical_model_request")
+    if architecture == "centralized_orchestration":
+        tool_starts = [(i, e) for i, e in enumerate(events) if e["eventFamily"] == "tool" and e["eventName"] == "started" and e.get("toolName") in SPECIALIST_TOOLS]
+        if not 1 <= len(tool_starts) <= 6:
+            failures.append("specialist_tool_invocation_limit")
+        if any(e["eventFamily"] == "tool" and e["eventName"] == "started" and
+               ((e.get("actorName") == "supervisor" and e.get("toolName") in DOMAIN_TOOLS) or e.get("toolName") == "handoff_to_peer") for e in events):
+            failures.append("forbidden_supervisor_domain_or_peer_tool")
+        finals = [i for i, e in enumerate(events) if e["eventFamily"] == "response" and e["eventName"] == "final"]
+        for i, tool_start in tool_starts:
+            tid = tool_start["payload"]["toolCallId"]
+            ends = [(j, e) for j, e in enumerate(events) if j > i and e["eventFamily"] == "tool" and e["eventName"] == "completed" and e["payload"].get("toolCallId") == tid]
+            children = [(j, e) for j, e in specialist_starts if j > i and e["payload"].get("parentCallId") == tid and e.get("actorName") == SPECIALIST_TOOLS[tool_start["toolName"]]]
+            if len(ends) != 1 or len(children) != 1:
+                failures.append("specialist_tool_child_or_return_unverified")
+                continue
+            end_index, end = ends[0]
+            child_index, child = children[0]
+            invocation = child["payload"].get("agentInvocationId", child["payload"].get("callId"))
+            completed = [j for j, e in enumerate(events) if child_index < j < end_index and e["eventFamily"] == "agent" and e["eventName"] == "completed" and e["payload"].get("callId") == invocation]
+            if end.get("status") != "completed" or not completed or not finals or end_index >= finals[0]:
+                failures.append("specialist_result_not_returned_before_final")
+    return {"version": "architectural-trace-v1", "compliant": not failures,
+            "violations": list(dict.fromkeys(failures))}
+
+
 def worker(task_path):
     task = json.loads(task_path.read_text())
     case, unit = task["case"], task["unit"]
@@ -124,25 +201,17 @@ def worker(task_path):
     event_list = [json.loads(line) for line in events.path.read_text().splitlines()] if events.path.exists() else []
     if any(e["eventFamily"] == "limit" for e in event_list):
         record.update(status="limit_exceeded",success=False)
-    calls = [e for e in event_list if e["eventFamily"] == "model"]
-    agent_events = [e for e in event_list if e["eventFamily"] == "agent"]
-    tools = [e for e in event_list if e["eventFamily"] == "tool" and e["eventName"] == "started"]
-    starts = {e["payload"]["callId"] for e in calls if e["eventName"] == "started"}
-    terminals = {e["payload"]["callId"]:e for e in calls if e["eventName"] in {"completed","failed"}}
-    complete = bool(starts) and starts == set(terminals) and all(
-        e["eventName"] == "completed" and isinstance(e["payload"].get("usage"),dict)
-        and all(e["payload"]["usage"].get(k) is not None for k in ("inputTokens","outputTokens","totalTokens"))
-        for e in terminals.values())
-    record.update(agent_invocations=sum(e["eventName"] == "started" for e in agent_events),
-        actual_agents=len({e["actorName"] for e in calls if e["eventName"] == "started"}),
-        model_requests=len(starts), domain_tool_calls=sum(e["toolName"] in {"faq_lookup","stock_lookup","attachment_intake"} for e in tools),
-        coordination_tool_calls=sum(e["toolName"] not in {"faq_lookup","stock_lookup","attachment_intake"} for e in tools),
-        token_measurement_complete=complete, inference_provenance="live-bedrock", tool_provenance="deterministic-controlled-fixtures",
-        limit_exceeded=record["status"] == "limit_exceeded")
-    for key,payload_key in (("input_tokens","inputTokens"),("output_tokens","outputTokens"),("total_tokens","totalTokens")):
-        known=[e["payload"]["usage"][payload_key] for e in terminals.values() if isinstance(e["payload"].get("usage"),dict) and e["payload"]["usage"].get(payload_key) is not None]
-        record[key]=sum(known) if complete else None
-        record["known_partial_"+key]=sum(known) if known else None
+    elif any(e["eventFamily"] == "model" and e["eventName"] == "failed" for e in event_list):
+        # Strands can turn a nested exception into a tool error and let the
+        # supervisor finish. Preserve its text but retain the provider failure.
+        record.update(status="failed_model_request", success=False)
+    record.update(trace_measurements(event_list), inference_provenance="live-bedrock",
+                  tool_provenance="deterministic-controlled-fixtures", comparison_protocol=PROTOCOL_VERSION,
+                  limit_exceeded=record["status"] == "limit_exceeded")
+    if PROTOCOL_VERSION == "architectural-comparison-v4.2":
+        contract = verify_architectural_trace(unit["architecture"], event_list, record.get("architectural_compliance"))
+        record.update(architecture_contract=contract, architectural_compliance=contract["compliant"],
+                      architectural_violations=contract["violations"])
     dump(out / "result.json", record)
 
 
@@ -172,6 +241,69 @@ def build_order(cases, repetitions, seed, experiment_id, architecture_selection=
     return order
 
 
+def stability_plan(order, seed=20261011):
+    """Select planned units before responses exist, independent of their quality."""
+    rng = random.Random(seed)
+    units = []
+    for arch in ARCHITECTURES:
+        for stratum in ("faq", "stock", "attachments", "professional_review", "continuity"):
+            choices = [u for u in order if u["architecture"] == arch and u["stratum"] == stratum]
+            if choices:
+                units.append(rng.choice(choices)["unit_id"])
+    rng.shuffle(units)
+    return {"version": "planned-unit-stability-v1", "seed": seed, "unit_ids": units,
+            "selection": "one planned unit per architecture and stratum; no replacement for unavailable responses",
+            "human_review_performed": False}
+
+
+def default_analysis_plan():
+    return {"version": "corrected-comparison-analysis-v1", "frozen_before_generation": True,
+            "unit": "scenario; five repetitions remain grouped", "seed": 20261011,
+            "success": "technical completion + architectural compliance + essentials + mandatory evidence + no critical violation",
+            "missing": "retain all first attempts; unknown remains unknown; explicit denominators and bounds",
+            "paired_success": {"effect": "mean of scenario success-rate differences in percentage points, B minus A",
+                "bootstrap": "20000 paired percentile resamples of whole scenarios; 95% conditional interval",
+                "test": "two-sided within-scenario label-swap sign permutation of scenario success-rate differences; 99999 samples with add-one correction",
+                "multiplicity": "Holm across all three architecture pairs", "complete_pairs": "both architectures have five non-null task outcomes; excluded scenarios explicit"},
+            "continuous": "scenario medians of five observed repetitions; scenario distributions and paired effects; no pooling repetitions as independent samples",
+            "reliability": "distribution of 0 through 5 task successes, pass_1 and pass_5 with unknown bounds",
+            "failure_precedence": ["technical", "architectural", "invalid_or_missing_judgment", "content_and_mandatory_source", "content_only", "mandatory_source_only", "unresolved"],
+            "limitations": "intentional known sample; same judge recheck; no human or clinical validation; no causal historical claim"}
+
+
+def validate_historical_dataset(path, cases):
+    historical = json.loads(path.read_text())
+    if cases != historical["cases"]:
+        raise ValueError("Cases differ from historical frozen manifest; do not replace the original 40 scenarios")
+    if len(cases) != 40:
+        raise ValueError("Historical comparison requires exactly 40 scenarios")
+    return {"manifest_sha256": sha(path.read_bytes()), "experiment_id": historical["experiment_id"],
+            "cases_sha256": historical["cases_sha256"], "dataset_version": historical["dataset_version"],
+            "centralized_condition": "historical single agent with domain functions; not the corrected orchestrator"}
+
+
+def preserve_interrupted_attempt(attempt_dir, unit):
+    """Recover a dead first attempt without ever launching that unit again."""
+    launch = json.loads((attempt_dir / "launch.json").read_text()) if (attempt_dir / "launch.json").exists() else {}
+    if launch.get("pid"):
+        try:
+            os.kill(launch["pid"], 0)
+        except ProcessLookupError:
+            pass
+        else:
+            raise RuntimeError("An earlier worker may still be alive; inspect it before resuming")
+    task = json.loads((attempt_dir / "task.json").read_text())
+    events_path = attempt_dir / "events.jsonl"
+    events = [json.loads(x) for x in events_path.read_text().splitlines()] if events_path.exists() else []
+    record = {**unit, "attempt_id": task["attempt_id"], "status": "interrupted", "success": False,
+              "mode": "live", "comparison_protocol": PROTOCOL_VERSION, "transport": "direct-core-runtime",
+              "finished_at": datetime.now(UTC).isoformat(), "interruption_recovered": True,
+              "latency_ms": None, "end_to_end_latency_ms": None,
+              "architectural_compliance": None, **trace_measurements(events)}
+    dump(attempt_dir / "result.json", record)
+    return record
+
+
 def write_csv(path, rows, fields=None):
     if not rows and fields is None:
         return
@@ -195,12 +327,12 @@ def export(folder, records, cases):
             all_events.extend({"attempt_id":r["attempt_id"],**json.loads(line)} for line in path.read_text().splitlines())
     jsonl_export("events.jsonl",all_events)
     jsonl_export("calls.jsonl",[e for e in all_events if e["eventFamily"] in {"model","tool","handoff","communication"}])
-    jsonl_export("responses.jsonl",[{"response_id":sha((r["attempt_id"]+"blind-v1").encode())[:24], "attempt_id":r["attempt_id"], "response":r["final_text"], "evidence_refs":[] } for r in records if r.get("success")])
+    jsonl_export("responses.jsonl",[{"response_id":sha((r["attempt_id"]+"blind-v1").encode())[:24], "attempt_id":r["attempt_id"], "response":r.get("final_text"), "response_available":bool(r.get("final_text", "").strip()), "evidence_refs":[] } for r in records])
     blind = []
     forms = []
     by_case = {c["id"]: c for c in cases}
     for r in records:
-        if not r.get("success"):
+        if not r.get("final_text", "").strip():
             continue
         evaluation_id = sha((r["attempt_id"] + "blind-v1").encode())[:24]
         blind.append({"evaluation_id": evaluation_id, "input": by_case[r["scenario_id"]], "response": r["final_text"]})
@@ -210,13 +342,16 @@ def export(folder, records, cases):
                           "referral_adequacy": "", "critical_error": "", "justification": ""})
     random.Random(1031).shuffle(blind)
     dump(folder / "blind-responses.json", blind)
-    dump(folder / "blind-mapping.json", {sha((r["attempt_id"]+"blind-v1").encode())[:24]: r["attempt_id"] for r in records if r.get("success")})
+    dump(folder / "blind-mapping.json", {sha((r["attempt_id"]+"blind-v1").encode())[:24]: r["attempt_id"] for r in records if r.get("final_text", "").strip()})
     write_csv(folder / "pharmacist-scores-template.csv", forms,
               ["evaluation_id", "reviewer_id", "correctness", "completeness", "clarity", "context", "safety", "referral_adequacy", "critical_error", "justification"])
     manifest=json.loads((folder / 'manifest.json').read_text())
     summary = {"planned": len(manifest["order"]),
                "attempts": len(records), "completed": sum(bool(r.get("success")) for r in records),
                "failed": sum(not r.get("success") for r in records), "human_review_performed": False,
+               "architecturally_compliant": sum(r.get("architectural_compliance") is True for r in records),
+               "architectural_violations": sum(r.get("architectural_compliance") is False for r in records),
+               "responses_available": sum(bool(r.get("final_text", "").strip()) for r in records),
                "dataset_version":manifest.get('dataset_version'),"cohort":manifest.get('cohort','pilot'),
                "scope": "direct core runtime; technical references without clinical validation; descriptive analysis only"}
     dump(folder / "summary.json", summary)
@@ -224,6 +359,7 @@ def export(folder, records, cases):
 
 
 def main():
+    os.umask(0o077)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cases", type=Path, default=ROOT / "experiments/pilots-v5/pilot-b.json")
     parser.add_argument("--output", type=Path, default=ROOT / "var/reports/research-pilot" / datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ"))
@@ -237,6 +373,8 @@ def main():
     parser.add_argument("--case", action="append")
     parser.add_argument("--architecture", action="append", choices=ARCHITECTURES,
                         help="Restrict a separate verification round; default compares all three")
+    parser.add_argument("--historical-manifest", type=Path, help="Require exact equality to the original frozen 40 cases")
+    parser.add_argument("--analysis-plan", type=Path, help="JSON analysis plan frozen before generation")
     parser.add_argument("--continue-after-failure", action="store_true", help="Preserve technical failures and continue the planned units; never retry")
     parser.add_argument("--plan-only", action="store_true")
     parser.add_argument("--resume", action="store_true")
@@ -246,7 +384,7 @@ def main():
         worker(args.worker); return 0
     if args.repetitions < 1 or args.timeout < 1 or args.max_tokens < 1:
         parser.error("repetitions, timeout and max-tokens must be positive")
-    folder = args.output.resolve(); folder.mkdir(parents=True, exist_ok=True)
+    folder = args.output.resolve(); folder.mkdir(parents=True, exist_ok=True); folder.chmod(0o700)
     manifest_path = folder / "manifest.json"
     if args.resume:
         manifest = json.loads(manifest_path.read_text())
@@ -273,6 +411,8 @@ def main():
         from judge_automated_pilots import config as judge_config
         from app.experiments.methodology import VERSION,OBJECTIVE_CHECK_VERSION
         frozen_judge=judge_config()
+        analysis_plan = json.loads(args.analysis_plan.read_text()) if args.analysis_plan else default_analysis_plan()
+        historical = validate_historical_dataset(args.historical_manifest, cases) if args.historical_manifest else None
         manifest = {"experiment_id": experiment_id, "created_at": datetime.now(UTC).isoformat(),
                     "dataset_version":catalogue.get('dataset_version',catalogue.get('version')),
                     "cohort":catalogue.get('cohort','pilot'),
@@ -282,13 +422,17 @@ def main():
                     "code_hashes": code_hashes(), "commit": subprocess.check_output(["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip(),
                     "sdk_version": importlib.metadata.version("strands-agents"), "configuration": snapshot(settings),
                     "evaluation_plan":{"model_id":frozen_judge['model_id'],"temperature":0,"max_tokens":4096,"version":VERSION,
-                        "objective_check_version":OBJECTIVE_CHECK_VERSION,
+                        "objective_check_version":"objective-evidence-v5.4-nested" if PROTOCOL_VERSION == "architectural-comparison-v4.2" else OBJECTIVE_CHECK_VERSION,
                         "calibration_folder":str(args.calibration.resolve()),"configuration_sha256":sha(json.dumps(frozen_judge,sort_keys=True,ensure_ascii=False).encode())},
                     "dependency_versions": dependency_versions(),
                     "asset_hashes": {str(p.relative_to(ROOT)):sha(p.read_bytes()) for p in sorted(set([args.cases.resolve(), *args.cases.resolve().parent.glob("*.md"), *args.cases.resolve().parent.glob("*.json")]))},
                     "settings": {k: getattr(settings,k) for k in ("bedrock_model_id","aws_region","runtime_timeout_seconds","llm_temperature","llm_max_tokens","runtime_max_handoffs")},
+                    "analysis_plan": analysis_plan, "analysis_plan_sha256": sha(json.dumps(analysis_plan,sort_keys=True,ensure_ascii=False).encode()),
+                    "historical_reference": historical,
+                    "measurement_boundaries": {"latency_ms": "core RuntimeExecutor plus local event instrumentation; excludes Python import/HTTP/database/UI/evaluation", "end_to_end_latency_ms": "historical collector process launch through worker exit and result-file completion; includes imports/core/local instrumentation; excludes HTTP/database/UI/evaluation"},
                     "order": build_order(cases, args.repetitions, args.seed, experiment_id,
                                          tuple(dict.fromkeys(args.architecture)) if args.architecture else ARCHITECTURES)}
+        manifest["stability_recheck_plan"] = stability_plan(manifest["order"], args.seed) if len(manifest["order"]) == 600 else {"version":"engineering-pilot-no-stability-recheck", "unit_ids":[], "seed":args.seed}
         for name, expected in manifest["code_hashes"].items():
             source = ROOT / name
             if sha(source.read_bytes()) != expected:
@@ -299,6 +443,8 @@ def main():
         for name in manifest["asset_hashes"]:
             dest=folder/"assets-snapshot"/name;dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(ROOT/name,dest)
         dump(manifest_path, manifest)
+        dump(folder / "analysis-plan.json", analysis_plan)
+        dump(folder / "stability-recheck-plan.json", manifest["stability_recheck_plan"])
         write_csv(folder / "execution-order.csv", manifest["order"])
     print(f'Planned: {len(manifest["order"])} sequential live executions; output: {folder}', flush=True)
     if args.plan_only:
@@ -323,11 +469,11 @@ def main():
             result_path = attempt_dir / "result.json"
             if result_path.exists():
                 terminal=json.loads(result_path.read_text())
-                if terminal["status"] in {"timeout","cancelled","worker_failed"}:
-                    raise RuntimeError("Interrupted worker requires explicit trace/process resolution before continuing; no automatic replacement")
-                records.append(json.loads(result_path.read_text())); continue
+                records.append(terminal); continue
             if (attempt_dir / "started.json").exists() or (attempt_dir / "launch.json").exists():
-                raise RuntimeError("Unfinished attempt detected; inspect process/events before authorizing replacement")
+                terminal = preserve_interrupted_attempt(attempt_dir, unit)
+                records.append(terminal); append(folder / "attempts.jsonl", terminal)
+                continue
             attempt_id = str(uuid4())
             task = {"case": next(c for c in manifest["cases"] if c["id"] == unit["scenario_id"]),
                     "unit": unit, "experiment_id": manifest["experiment_id"], "attempt_id": attempt_id,
@@ -343,19 +489,22 @@ def main():
             except (subprocess.TimeoutExpired, KeyboardInterrupt):
                 os.killpg(proc.pid, signal.SIGKILL); proc.wait()
                 if not result_path.exists():
-                    dump(result_path, {**unit, "attempt_id": attempt_id, "status": "cancelled" if isinstance(sys.exc_info()[1], KeyboardInterrupt) else "timeout", "success": False,
-                                       "latency_ms": (time.monotonic()-launch_time)*1000, "mode":"live"})
+                    terminal = preserve_interrupted_attempt(attempt_dir, unit)
+                    terminal.update(status="cancelled" if isinstance(sys.exc_info()[1], KeyboardInterrupt) else "timeout",
+                                    end_to_end_latency_ms=(time.monotonic()-launch_time)*1000)
+                    dump(result_path, terminal)
                 if isinstance(sys.exc_info()[1], KeyboardInterrupt):
                     raise
             if not result_path.exists():
-                dump(result_path, {**unit, "attempt_id": attempt_id, "status":"worker_failed", "success":False,
-                                   "latency_ms": (time.monotonic()-launch_time)*1000, "mode":"live"})
+                terminal = preserve_interrupted_attempt(attempt_dir, unit)
+                terminal.update(status="worker_failed", end_to_end_latency_ms=(time.monotonic()-launch_time)*1000)
+                dump(result_path, terminal)
             record = json.loads(result_path.read_text()); record["end_to_end_latency_ms"]=(time.monotonic()-launch_time)*1000
             dump(result_path,record); records.append(record)
             append(folder / "attempts.jsonl", record)
             print(f'{unit["global_position"]+1}/{len(manifest["order"])} {unit["scenario_id"]} {unit["architecture"]}: {record["status"]}',flush=True)
             export(folder, records, manifest["cases"])
-            if record["status"] in {"timeout","cancelled","worker_failed"} or (not record.get("success") and not args.continue_after_failure):
+            if not record.get("success") and not args.continue_after_failure:
                 print("Stopped at failed attempt; original is preserved, no automatic replacement.", flush=True)
                 return 1
         summary = export(folder, records, manifest["cases"])

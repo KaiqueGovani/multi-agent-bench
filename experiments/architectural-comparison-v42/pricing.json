@@ -1,0 +1,22 @@
+{
+  "currency": "USD",
+  "checked_on": "2026-11-02",
+  "region": "us-west-2",
+  "inference_profile_scope": "US geographic cross-region (us.*), standard on-demand; no batch discount",
+  "rates_per_million_tokens": {
+    "haiku_4_5": {
+      "input": 1.1,
+      "output": 5.5
+    },
+    "sonnet_4_5": {
+      "input": 3.3,
+      "output": 16.5
+    }
+  },
+  "source_effective_date": "2026-05-27",
+  "source": "https://www-cdn.anthropic.com/files/4zrzovbb/website/3684c2faafb97418665782cea0001f439f74b1d2.pdf",
+  "secondary_source": "https://platform.claude.com/docs/en/about-claude/pricing",
+  "aws_pricing": "https://aws.amazon.com/bedrock/pricing/",
+  "meaning": "estimate from publicly listed standard geographic cross-region rates, not AWS billing or account-specific discounts; usage missing => full cost unknown",
+  "cache": "no prompt cache configured; any recorded cache usage must be reported separately and not priced silently as base input"
+}

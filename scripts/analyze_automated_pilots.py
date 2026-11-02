@@ -41,7 +41,7 @@ def analyze(folder,calibration=None):
     rows=[];queue=[];issues=[];diagnostics=[];changes=[];normalized_evidence=[];responses=[]
     for run in runs:
         path=folder/run['unit_id']/'events.jsonl';events=read_jsonl(path);case=cases[run['scenario_id']];rid=rid_by_attempt.get(run['attempt_id']);e=evals.get(rid);o=objective_checks(case,run,events);a=aggregate(case,run,o,e)
-        for family,key in [('model','callId'),('tool','toolCallId'),('handoff','transferId')]:
+        for family,key in [('model','callId'),('agent','callId'),('tool','toolCallId'),('handoff','transferId')]:
             starts={x['payload'].get(key) for x in events if x['eventFamily']==family and x['eventName'] in {'started','requested'}}
             ends={x['payload'].get(key) for x in events if x['eventFamily']==family and x['eventName'] in {'completed','failed'}}
             if starts!=ends:issues.append({'attempt_id':run['attempt_id'],'reason':family+' unresolved IDs'})
@@ -54,10 +54,10 @@ def analyze(folder,calibration=None):
             if calls and sum((x['payload'].get('usage') or {}).get('totalTokens',0) for x in calls)!=run.get('total_tokens'):issues.append({'attempt_id':run['attempt_id'],'reason':'token reconciliation'})
         hands=[x for x in events if x['eventFamily']=='handoff'];comms=[x for x in events if x['eventFamily']=='communication'];tools=[x for x in events if x['eventFamily']=='tool' and x['eventName']=='completed']
         milestones=o['milestones']+[{'milestone_id':'M-response','met':all(c['met'] is True for c in e['criteria']) if e and all(c['met'] is not None for c in e['criteria']) else None,'verification':'semantic'}]
-        row={**run,'response_id':rid,**a,'objective_checks':o,'evaluation':e,'content_success':aggregate(case,run,{**o,'required_evidence':[]},e)['task_success'],'procedure_compliance':o['procedure_compliance'],'procedure_applicable':o['procedure_applicable'],'milestones':milestones,'milestone_fraction':sum(m['met'] is True for m in milestones)/len(milestones) if all(m['met'] is not None for m in milestones) else None,
+        row={**run,'response_id':rid,**a,'objective_checks':o,'evaluation':e,'content_success':aggregate(case,{k:v for k,v in run.items() if k not in {'architectural_compliance','comparison_protocol'}},{**o,'required_evidence':[]},e)['task_success'],'procedure_compliance':o['procedure_compliance'],'procedure_applicable':o['procedure_applicable'],'milestones':milestones,'milestone_fraction':sum(m['met'] is True for m in milestones)/len(milestones) if all(m['met'] is not None for m in milestones) else None,
              'handoffs_requested':sum(x['eventName']=='requested' for x in hands),'handoffs_completed':sum(x['eventName']=='completed' for x in hands),'handoffs_failed':sum(x['eventName']=='failed' for x in hands),'inter_agent_messages':len(comms),'inter_agent_characters':sum(x['payload'].get('characters',0) for x in comms),
              'domain_errors':sum(x['status']=='failed' and x['toolName'] in {'faq_lookup','stock_lookup','attachment_intake'} for x in tools),'coordination_errors':sum(x['status']=='failed' and x['toolName'] not in {'faq_lookup','stock_lookup','attachment_intake'} for x in tools), 'domain_call_correctness':o['domain_call_correctness']}
-        row.update(expected_resolution_mode=case.get('expected_resolution_mode','legacy-unspecified'),
+        row.update(judge_consistency_issue=evaluator_consistency_issue(case,e), expected_resolution_mode=case.get('expected_resolution_mode','legacy-unspecified'),
             workflow_stage_count=sum(x['eventFamily']=='agent' and x['eventName']=='started' for x in events) if run['architecture']=='structured_workflow' else None,
             swarm_sdk_cycles=run.get('model_requests') if run['architecture']=='decentralized_swarm' else None,
             inter_agent_explicit_messages=len(comms)+sum(x['eventName']=='requested' for x in hands),
@@ -70,7 +70,7 @@ def analyze(folder,calibration=None):
             if content is None:continue
             tool_id=tool_event['payload']['toolCallId'];evidence_refs.append(tool_id)
             normalized_evidence.append({'response_id':rid,'attempt_id':run['attempt_id'],'tool_call_id':tool_id,'tool_name':tool_event['toolName'],'result':content,'provenance':'deterministic-fixture-actually-consulted','architecture_and_actor_removed':True})
-        if run.get('success'):responses.append({'response_id':rid,'attempt_id':run['attempt_id'],'response':run['final_text'],'evidence_refs':evidence_refs,'evidence_ledger':'normalized-domain-evidence.jsonl'})
+        responses.append({'response_id':rid,'attempt_id':run['attempt_id'],'response':run.get('final_text'),'response_available':bool(run.get('final_text','').strip()),'evidence_refs':evidence_refs,'evidence_ledger':'normalized-domain-evidence.jsonl'})
         rows.append(row)
         def flag(role,reason,priority=2):queue.append({'response_id':rid,'attempt_id':run['attempt_id'],'scenario_id':case['id'],'architecture':run['architecture'],'reviewer_role':role,'reason':reason,'priority':priority,'human_review_performed':False})
         if not run.get('success'):flag('technical','technical failure',1)
@@ -111,11 +111,11 @@ def analyze(folder,calibration=None):
         p=folder/'code-snapshot'/name
         if not p.exists() or sha(p.read_bytes())!=want:issues.append({'reason':'snapshot hash mismatch','file':name})
     planned=len(manifest['order']);reps=manifest.get('repetitions',5);arches=list(dict.fromkeys(u['architecture'] for u in manifest['order']));groups=[]
-    continuous=['end_to_end_latency_ms','latency_ms','input_tokens','output_tokens','total_tokens','model_requests','agent_invocations','actual_agents','domain_tool_calls','coordination_tool_calls','handoffs_requested','handoffs_completed','handoffs_failed','inter_agent_messages','inter_agent_characters','milestone_fraction','domain_call_correctness','domain_errors','coordination_errors','workflow_stage_count','swarm_sdk_cycles','inter_agent_explicit_messages','inter_agent_explicit_characters','agent_input_characters']
+    continuous=['end_to_end_latency_ms','latency_ms','input_tokens','output_tokens','total_tokens','model_requests','agent_invocations','actual_agents','domain_tool_calls','coordination_tool_calls','handoffs_requested','handoffs_completed','handoffs_failed','inter_agent_messages','inter_agent_characters','milestone_fraction','domain_call_correctness','domain_errors','coordination_errors','workflow_stage_count','swarm_sdk_cycles','inter_agent_explicit_messages','inter_agent_explicit_characters','agent_input_characters','specialist_tool_invocations','peer_delegations','explicit_messages']
     for case in cases.values():
         for arch in arches:
             rr=[r for r in rows if r['scenario_id']==case['id'] and r['architecture']==arch];known=[r['task_success'] for r in rr if r['task_success'] is not None];valid=[r for r in rr if r.get('success')]
-            g={'scenario_id':case['id'],'stratum':case['stratum'],'difficulty':case['difficulty'],'expected_resolution_mode':case.get('expected_resolution_mode','legacy-unspecified'),'architecture':arch,'planned':reps,'executed':len(rr),'evaluable':len(known),'technical_successes':len(valid),'task_successes':sum(x is True for x in known),'task_success_rate':sum(known)/len(known) if known else None,'unknown':reps-len(known)}
+            g={'scenario_id':case['id'],'stratum':case['stratum'],'difficulty':case['difficulty'],'expected_resolution_mode':case.get('expected_resolution_mode','legacy-unspecified'),'architecture':arch,'planned':reps,'executed':len(rr),'evaluable':len(known),'technical_successes':len(valid),'architecturally_compliant':sum(r.get('architectural_compliance') is True for r in rr),'architectural_violations':sum(r.get('architectural_compliance') is False for r in rr),'architectural_unknown':sum(r.get('architectural_compliance') is None for r in rr),'task_successes':sum(x is True for x in known),'task_success_rate':sum(known)/len(known) if known else None,'unknown':reps-len(known)}
             for k in continuous:g[k+'_median']=med([r.get(k) for r in valid])
             for d in DIMENSIONS:
                 g[d+'_median']=med([r['evaluation']['quality'][d] for r in rr if r['evaluation']])
@@ -132,7 +132,7 @@ def analyze(folder,calibration=None):
             rel=reliability([[r['task_success'] for r in rr if r['scenario_id']==c['id']] for c in cc],len(cc),reps)
             if reps!=5:
                 for key in ('complete_scenarios','pass_1','pass_5','pass_1_lower','pass_1_upper','pass_5_lower','pass_5_upper'):rel[key]=None
-            s={'architecture':arch,'stratum':stratum,'planned':len(cc)*reps,'executed':len(rr),'technical_successes':sum(r.get('success',False) for r in rr),'task_successes':sum(r['task_success'] is True for r in rr),'evaluable':sum(r['task_success'] is not None for r in rr),**rel}
+            s={'architecture':arch,'stratum':stratum,'planned':len(cc)*reps,'executed':len(rr),'technical_successes':sum(r.get('success',False) for r in rr),'architecturally_compliant':sum(r.get('architectural_compliance') is True for r in rr),'architectural_violations':sum(r.get('architectural_compliance') is False for r in rr),'architectural_unknown':sum(r.get('architectural_compliance') is None for r in rr),'task_successes':sum(r['task_success'] is True for r in rr),'evaluable':sum(r['task_success'] is not None for r in rr),**rel}
             for k in continuous:s[k+'_median_of_case_medians']=med([g[k+'_median'] for g in gg])
             for d in DIMENSIONS:
                 s[d+'_median_of_case_medians']=med([g[d+'_median'] for g in gg])
@@ -178,7 +178,7 @@ def analyze(folder,calibration=None):
     export_jsonl('normalized-domain-evidence.jsonl',normalized_evidence);export_jsonl('responses.jsonl',responses)
     snapshot=folder/'analysis-snapshot/scripts/analyze_automated_pilots.py';snapshot.parent.mkdir(parents=True,exist_ok=True);snapshot.write_bytes(Path(__file__).read_bytes())
     module_snapshot=folder/'analysis-snapshot/apps/agent-runtime/app/experiments/methodology.py';module_snapshot.parent.mkdir(parents=True,exist_ok=True);module_snapshot.write_bytes((ROOT/'apps/agent-runtime/app/experiments/methodology.py').read_bytes())
-    export_jsonl('aggregated-evaluations.jsonl',rows);export_jsonl('failure-diagnostics.jsonl',diagnostics);write_csv(folder/'metrics.csv',groups);write_csv(folder/'architecture-stratum-metrics.csv',summaries);write_csv(folder/'review-queue.csv',queue,['response_id','attempt_id','scenario_id','architecture','reviewer_role','reason','priority','human_review_performed']);dump(folder/'recheck-analysis.json',{'planned':15 if reps==5 else 0,'evaluated':len(changes),'paired_evaluations':sum(c['critical_comparison_evaluable'] for c in changes),'success_classification_changes':sum(c['classification_changed'] for c in changes),'objective_critical_disagreements':sum(bool(c['critical_disagreement'] and c['objective_critical']) for c in changes),'changes':changes})
+    export_jsonl('aggregated-evaluations.jsonl',rows);export_jsonl('failure-diagnostics.jsonl',diagnostics);write_csv(folder/'metrics.csv',groups);write_csv(folder/'architecture-stratum-metrics.csv',summaries);write_csv(folder/'review-queue.csv',queue,['response_id','attempt_id','scenario_id','architecture','reviewer_role','reason','priority','human_review_performed']);dump(folder/'recheck-analysis.json',{'planned':len(manifest['stability_recheck_plan']['unit_ids']) if 'stability_recheck_plan' in manifest else 15 if reps==5 else 0,'evaluated':len(changes),'paired_evaluations':sum(c['critical_comparison_evaluable'] for c in changes),'success_classification_changes':sum(c['classification_changed'] for c in changes),'objective_critical_disagreements':sum(bool(c['critical_disagreement'] and c['objective_critical']) for c in changes),'changes':changes})
     if calibration and (folder/'judge-config.json').exists() and json.loads((folder/'judge-config.json').read_text())!=json.loads((calibration/'judge-config.json').read_text()):issues.append({'reason':'judge differs from calibrated configuration'})
     first_inputs={}
     for run in runs:
@@ -186,10 +186,10 @@ def analyze(folder,calibration=None):
         first=next((x for x in evs if x['eventFamily']=='agent' and x['eventName']=='started'),None)
         if first:first_inputs.setdefault(run['scenario_id'],set()).add(first['payload'].get('inputSha256'))
     equal_inputs=all(len(hashes)==1 and None not in hashes for hashes in first_inputs.values()) and len(first_inputs)==len(cases)
-    if manifest['configuration']['protocol']=='architectural-comparison-v4.1' and not equal_inputs:issues.append({'reason':'initial agent input differs within a scenario'})
+    if manifest['configuration']['protocol'] in {'architectural-comparison-v4.1','architectural-comparison-v4.2'} and not equal_inputs:issues.append({'reason':'initial agent input differs within a scenario'})
     dump(folder/'initial-input-equivalence.json',{'scope':'first agent user prompt, across architectures and repetitions; role system prompts remain architecture-specific','equal_within_all_scenarios':equal_inputs,'scenario_hashes':{k:sorted(v,key=str) for k,v in first_inputs.items()}})
     calibration_ok=bool(calibration and json.loads((calibration/'calibration-gate.json').read_text()).get('passed'))
-    ready=len(runs)==planned and not issues and len(evals)==sum(r.get('success',False) for r in runs) and calibration_ok and (reps!=5 or (len(changes)==15 and all(c['critical_comparison_evaluable'] for c in changes) and sum(c['classification_changed'] for c in changes)<2 and not any(c['critical_disagreement'] and c['objective_critical'] for c in changes)))
+    ready=len(runs)==planned and not issues and len(evals)==sum(bool(r.get('final_text','').strip()) for r in runs) and calibration_ok and (reps!=5 or (len(changes)==15 and all(c['critical_comparison_evaluable'] for c in changes) and sum(c['classification_changed'] for c in changes)<2 and not any(c['critical_disagreement'] and c['objective_critical'] for c in changes)))
     gates={'planned':planned,'attempts':len(runs),'successful':sum(r.get('success',False) for r in runs),'evaluated':len(evals),'integrity_issues':issues,'calibration_passed':calibration_ok,'core_engineering_ready':ready,'http_database_integration_performed':False,'human_review_performed':False,**scope,'cost_usd':None}
     gates['initial_inputs_equivalent']=equal_inputs
     gates['live_proven']=all(r.get('mode')=='live' and (not r.get('success') or r.get('model_requests',0)>0) for r in runs)
@@ -207,7 +207,7 @@ def analyze(folder,calibration=None):
     gates['definitive_analysis_ready']=gates['definitive_collection_complete'] and gates['core_engineering_ready'] and not gates['reference_review_required']
     dump(folder/'readiness.json',gates)
     from app.experiments.methodology import OBJECTIVE_CHECK_VERSION
-    dump(folder/'analysis-provenance.json',{'version':'descriptive-analysis-v5.2','objective_check_version':OBJECTIVE_CHECK_VERSION,'source_sha256':sha(Path(__file__).read_bytes()),'amendment':'Frozen v5 semantic instrument; v5.3 objective verification additionally requires authentic tool-contract results and frozen query aliases when generic unknown-product results are ambiguous. Final-content quality and objective procedure remain separate; missing primary/repeat evaluations remain unpaired and unknown. Historical results are not rewritten.'})
+    dump(folder/'analysis-provenance.json',{'version':'descriptive-analysis-v5.2','objective_check_version':'objective-evidence-v5.4-nested' if manifest['configuration']['protocol']=='architectural-comparison-v4.2' else OBJECTIVE_CHECK_VERSION,'source_sha256':sha(Path(__file__).read_bytes()),'amendment':'Frozen v5 semantic instrument; v5.3 objective verification additionally requires authentic tool-contract results and frozen query aliases when generic unknown-product results are ambiguous. Final-content quality and objective procedure remain separate; missing primary/repeat evaluations remain unpaired and unknown. Historical results are not rewritten.'})
     costs={}
     for phase in ('primary','recheck','technical-calibration'):
         attempts=[r for r in read_jsonl(folder/'judge-attempts.jsonl') if r.get('event')=='completed' and r.get('phase')==phase];costs[phase]={'calls':len(attempts),'input_tokens':sum((r.get('usage') or {}).get('inputTokens',0) for r in attempts) if all(r.get('usage') for r in attempts) else None,'output_tokens':sum((r.get('usage') or {}).get('outputTokens',0) for r in attempts) if all(r.get('usage') for r in attempts) else None,'cost_usd':None}

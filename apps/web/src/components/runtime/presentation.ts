@@ -18,6 +18,13 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const ACTOR_LABELS: Record<string, string> = {
+  supervisor: "Agente Supervisor",
+  faq: "Agente FAQ",
+  stock: "Agente de Estoque",
+  attachments: "Agente de Anexos",
+  router: "Agente Roteador",
+  coordinator: "Par Inicial (Swarm)",
+  synthesizer: "Agente de Síntese",
   supervisor_agent: "Agente Supervisor",
   faq_agent: "Agente FAQ",
   stock_agent: "Agente de Estoque",

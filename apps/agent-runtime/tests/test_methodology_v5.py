@@ -108,7 +108,10 @@ def test_architectural_role_prompts_not_tuned_to_pilot_cases():
     from app.core.config import get_settings
     original=json.loads((ROOT/'var/reports/automated-pilots-v4/pilot-b/manifest.json').read_text()) if (ROOT/'var/reports/automated-pilots-v4/pilot-b/manifest.json').exists() else None
     if original is None:pytest.skip('Local private historical artifacts are optional in clean checkouts')
-    assert original['configuration']['role_prompts']==c.snapshot(get_settings())['role_prompts']
+    old = original['configuration']['role_prompts']
+    new = c.snapshot(get_settings())['role_prompts']
+    assert {k:v for k,v in old.items() if k != 'supervisor'} == {k:v for k,v in new.items() if k != 'supervisor'}
+    assert old['supervisor'] != new['supervisor']  # v4.2 deliberately fixes single-agent authority/tools.
 
 
 def test_recheck_without_primary_preserves_unknown_and_unpaired_comparison():

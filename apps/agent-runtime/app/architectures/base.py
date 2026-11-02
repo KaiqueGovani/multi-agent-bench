@@ -11,7 +11,7 @@ import hashlib
 import logging
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Protocol
 from uuid import uuid4
 
@@ -175,6 +175,13 @@ class ExecutionResult:
     input_tokens: int | None = None
     output_tokens: int | None = None
     total_tokens: int | None = None
+    architectural_compliance: bool | None = None
+    architectural_violations: list[str] = field(default_factory=list)
+    specialist_tool_invocations: int = 0
+    model_requests: int = 0
+    domain_tool_calls: int = 0
+    coordination_tool_calls: int = 0
+    token_measurement_complete: bool | None = None
 
 
 # ---------------------------------------------------------------------------

@@ -42,65 +42,8 @@ class CentralizedExecutor:
         return self._execute_mock(ctx, text)
 
     def _execute_live(self, ctx: ExecutionContext, text: str) -> ExecutionResult:
-        from app.tools.domain_tools import faq_lookup, stock_lookup, attachment_intake
-
-        system_prompt = (
-            "Você é o supervisor de atendimento de uma farmácia. Você é o ÚNICO agente "
-            "responsável por toda a interação. Analise a mensagem do usuário e decida:\n\n"
-            "1. Se é uma pergunta genérica (horário, entrega, devolução, pagamento) → use faq_lookup\n"
-            "2. Se pergunta sobre disponibilidade de um produto → use stock_lookup\n"
-            "3. Se o usuário enviou anexos (imagem, PDF) → use attachment_intake PRIMEIRO\n\n"
-            "Após coletar a informação, componha a resposta final em português do Brasil, "
-            "em prosa corrida. Se a pergunta for clínica (dosagem, interação, efeito "
-            "colateral, gestação), SEMPRE recomende consultar um farmacêutico ou médico. "
-            "Nunca forneça dosagens específicas."
-        )
-
-        ctx.emit_reasoning(
-            "supervisor_agent",
-            "supervisor.dispatch",
-            "Supervisor LLM ativo — decide rota e ferramenta via Strands.",
-            "live_llm",
-            ["faq_lookup", "stock_lookup", "attachment_intake"],
-        )
-
-        result = ctx.invoke_live_supervisor(
-            system_prompt=system_prompt,
-            user_message=ctx.contextual_user_message(),
-            tools=[faq_lookup, stock_lookup, attachment_intake],
-        )
-
-        if result is None:
-            return self._execute_mock(ctx, text)
-
-        final_text, tool_calls = result
-        route = _infer_route_from_tools(tool_calls)
-        review_required = _detect_review_required_in_text(final_text)
-
-        specialist_actor = ctx.specialist_actor(route)
-        ctx.emit(
-            "node", "started", "running",
-            actor_name=specialist_actor,
-            node_id=f"specialist.{specialist_actor}",
-            payload={"phase": "specialist", "route": route},
-        )
-        ctx.emit(
-            "node", "completed", "completed",
-            actor_name=specialist_actor,
-            node_id=f"specialist.{specialist_actor}",
-            payload={"phase": "specialist", "route": route},
-        )
-
-        ctx.emit_final(
-            final_text,
-            route=route,
-            final_actor="supervisor_agent",
-            architecture_mode="centralized_orchestration",
-            review_required=review_required,
-        )
-        ctx.emit("run", "completed", "completed",
-                 payload={"phase": "completed", "reviewRequired": review_required})
-        return ctx.build_result(final_text, review_required)
+        from app.architectures.comparison import execute_comparison
+        return execute_comparison(ctx, "centralized_orchestration", source_profile="application")
 
     def _execute_mock(self, ctx: ExecutionContext, text: str) -> ExecutionResult:
         route = ctx.infer_route_from_context()

@@ -17,6 +17,7 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { Badge, type BadgeProps } from "@/components/ui/badge";
+import { observedAgentGraph } from "@/components/runtime/observed-agent-graph";
 import type { RunExecutionEvent } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -56,7 +57,7 @@ function AgentEventTimeline({ events }: { events: RunExecutionEvent[] }) {
     <div className="max-h-64 overflow-y-auto">
       {events.map((event) => {
         const isExpanded = expandedId === event.id;
-        const hasDetail = event.eventFamily === "tool" || event.eventFamily === "response";
+        const hasDetail = ["tool", "response", "agent", "communication"].includes(event.eventFamily);
         const payload = event.payload as Record<string, unknown> | undefined;
 
         return (
@@ -91,7 +92,7 @@ function AgentEventTimeline({ events }: { events: RunExecutionEvent[] }) {
               <div className="border-t border-dashed bg-muted/20 px-3 py-2 text-[11px]">
                 {event.eventFamily === "tool" ? (
                   <ToolCallDetail payload={payload} eventName={event.eventName} />
-                ) : event.eventFamily === "response" ? (
+                ) : ["response", "agent", "communication"].includes(event.eventFamily) ? (
                   <ResponseDetail payload={payload} />
                 ) : null}
               </div>
@@ -151,12 +152,12 @@ function ToolCallDetail({ payload, eventName }: { payload: Record<string, unknow
 
 function ResponseDetail({ payload }: { payload: Record<string, unknown> | undefined }) {
   if (!payload) return <p className="text-muted-foreground">Sem dados.</p>;
-  const contentText = payload.contentText as string | undefined;
+  const contentText = (payload.contentText ?? payload.outputText ?? payload.text ?? payload.inputText) as string | undefined;
   return (
     <div className="space-y-1">
       {contentText ? (
         <p className="max-h-24 overflow-auto whitespace-pre-wrap text-foreground leading-relaxed">
-          {contentText.length > 300 ? contentText.slice(0, 300) + "..." : contentText}
+          {contentText}
         </p>
       ) : (
         <pre className="max-h-20 overflow-auto rounded bg-background p-1.5 text-[10px] text-muted-foreground">
@@ -431,6 +432,13 @@ function FlowWrapper({
 // ---------------------------------------------------------------------------
 
 const AGENT_NAME_MAP: Record<string, string> = {
+  supervisor: "Supervisor",
+  faq: "FAQ",
+  stock: "Estoque",
+  attachments: "Anexos",
+  router: "Roteador",
+  coordinator: "Iniciador",
+  synthesizer: "Sintetizador",
   supervisor_agent: "Supervisor",
   faq_agent: "FAQ",
   stock_agent: "Estoque",
@@ -708,6 +716,9 @@ export function CentralizedFlow({
     return { nodes, edges };
   }, [activeActorName, actors, executionEvents, runStatus]);
 
+  if (usesObservedAgentTrace(executionEvents)) {
+    return <ObservedAgentFlow executionEvents={executionEvents} runStatus={runStatus} testId="runtime-visual-centralized" />;
+  }
   return <FlowWrapper nodes={nodes} edges={edges} testId="runtime-visual-centralized" height={360} />;
 }
 
@@ -767,6 +778,9 @@ export function WorkflowFlow({
     return { nodes, edges };
   }, [activeActorName, executionEvents, runStatus, stages]);
 
+  if (usesObservedAgentTrace(executionEvents)) {
+    return <ObservedAgentFlow executionEvents={executionEvents} runStatus={runStatus} testId="runtime-visual-workflow" />;
+  }
   return <FlowWrapper nodes={nodes} edges={edges} testId="runtime-visual-workflow" height={300} />;
 }
 
@@ -905,7 +919,43 @@ export function SwarmFlow({
     return { nodes, edges: Array.from(edgeMap.values()) };
   }, [activeActorName, actors, executionEvents, handoffs, runStatus]);
 
+  if (usesObservedAgentTrace(executionEvents)) {
+    return <ObservedAgentFlow executionEvents={executionEvents} runStatus={runStatus} testId="runtime-visual-swarm" />;
+  }
   return <FlowWrapper nodes={nodes} edges={edges} testId="runtime-visual-swarm" height={400} />;
+}
+
+function usesObservedAgentTrace(events: RunExecutionEvent[]) {
+  return events.length === 0 || events.some((event) => event.eventFamily === "agent" || event.source === "ai_service");
+}
+
+function ObservedAgentFlow({ executionEvents, runStatus, testId }: {
+  executionEvents: RunExecutionEvent[];
+  runStatus?: string | null;
+  testId: string;
+}) {
+  const terminal = isTerminalRunStatus(runStatus);
+  const graph = observedAgentGraph(executionEvents, terminal);
+  const rootRoles = new Set(graph.links.filter((link) => link.kind === "call").map((link) => link.to));
+  const nodes = graph.agents.map((agent, index) => {
+    const root = !rootRoles.has(agent.role);
+    const childIndex = graph.agents.filter((candidate) => rootRoles.has(candidate.role)).findIndex((candidate) => candidate.role === agent.role);
+    return makeNode(agent.role, formatAgentName(agent.role), root ? "agente executado" : "especialista executado",
+      agent.status, !terminal && agent.status === "running", root ? index * 220 : 300,
+      root ? 110 : Math.max(childIndex, 0) * 130, undefined, undefined, undefined, agent.events);
+  });
+  const edges = graph.links.map((link) => ({
+    ...makeEdge(link.from, link.to, terminal ? "settled" : link.kind === "return" ? "recent" : "active"),
+    id: `${link.from}-${link.to}-${link.kind}`,
+    label: link.kind === "return" ? "retorno registrado" : "invocação registrada",
+  }));
+  return (
+    <div data-testid="observed-agent-flow">
+      <p className="mb-2 text-xs text-muted-foreground">Agentes e comunicações registrados na execução. Consulte os eventos de cada agente para conferir entradas, fontes e retornos.</p>
+      {graph.agents.length === 0 ? <p className="text-xs text-muted-foreground">{terminal ? "Nenhuma invocação de agente registrada." : "Aguardando registro de invocação de agente."}</p> : null}
+      <FlowWrapper nodes={nodes} edges={edges} testId={testId} height={Math.max(320, graph.agents.length * 85)} />
+    </div>
+  );
 }
 
 function isTerminalRunStatus(status: string | null | undefined): boolean {
@@ -922,6 +972,7 @@ function formatNodeStatusLabel(status: string): string {
   if (status === "skipped") return "ignorado";
   if (status === "not_invoked") return "não acionado";
   if (status === "not_applicable") return "não aplicável";
+  if (status === "interrupted") return "interrompido";
   if (status === "human_review_required") return "revisão humana";
   return status;
 }

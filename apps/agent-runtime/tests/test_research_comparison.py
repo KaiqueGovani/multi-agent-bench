@@ -65,7 +65,8 @@ def test_agent_factory_freezes_model_and_emits_usage(monkeypatch):
     monkeypatch.setattr(c,"Agent",FakeSDKAgent)
     ctx = context("centralized_orchestration")
     for role in c.ROLE_PROMPTS: c.ControlledAgent(ctx,role,[])("test")
-    assert ctx.total_tokens == 6*len(c.ROLE_PROMPTS)
+    assert ctx.total_tokens is None  # SDK aggregate is diagnostic; no physical provider ledger.
+    assert all(e.payload["sdkOwnTotalTokens"] == 6 for e in ctx.callbacks.events if e.event_family == "agent" and e.event_name == "completed")
     assert all(m["temperature"] == 0.0 and m["max_tokens"] == 1024 and not m["streaming"] for m in models)
     assert all(a["system_prompt"].startswith(c.DOMAIN_POLICY) and a["retry_strategy"] is None for a in agents)
 

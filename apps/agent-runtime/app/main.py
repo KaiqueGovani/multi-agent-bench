@@ -62,7 +62,7 @@ def create_app() -> FastAPI:
                 detail="AWS_BEARER_TOKEN_BEDROCK is required when ENABLE_LIVE_LLM=true",
             )
         # Submit to thread pool for parallel execution
-        future = _executor.submit(RuntimeExecutionService(settings).execute_run, request)
+        future = _executor.submit(RuntimeExecutionService(settings, isolate_live=True).execute_run, request)
         future.add_done_callback(_log_failed_future)
         return RuntimeDispatchResponse(run_id=request.run_id)
 

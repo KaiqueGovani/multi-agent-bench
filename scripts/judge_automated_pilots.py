@@ -27,7 +27,9 @@ def config(model=MODEL):
 def converse(cfg,prompt,system=None):
     client=boto3.client('bedrock-runtime',region_name=cfg['region'],config=Config(connect_timeout=10,read_timeout=150,retries={'total_max_attempts':1}))
     result=client.converse(modelId=cfg['model_id'],messages=[{'role':'user','content':[{'text':prompt}]}],system=[{'text':system or cfg['prompt']}],inferenceConfig={'temperature':cfg['temperature'],'maxTokens':cfg['max_tokens'],'stopSequences':[]})
-    return ''.join(x.get('text','') for x in result['output']['message']['content']),result.get('usage'),result.get('stopReason')
+    usage=result.get('usage')
+    if isinstance(usage,dict):usage={**usage,'providerRequestId':result.get('ResponseMetadata',{}).get('RequestId')}
+    return ''.join(x.get('text','') for x in result['output']['message']['content']),usage,result.get('stopReason')
 
 def frozen_config(folder,cfg):
     path=folder/'judge-config.json'
@@ -122,6 +124,12 @@ def calibrate(folder,cfg):
 def read_jsonl(path):return [json.loads(x) for x in path.read_text().splitlines()] if path.exists() else []
 
 def select_rechecks(manifest,blind,mapping,runs):
+    if 'stability_recheck_plan' in manifest:
+        # This selection was frozen before generation and never replaces missing
+        # or invalid outcomes with a more convenient response.
+        by_unit={r['unit_id']:r for r in runs};by_attempt={v:k for k,v in mapping.items()}
+        return [by_attempt[by_unit[uid]['attempt_id']] for uid in manifest['stability_recheck_plan']['unit_ids']
+                if uid in by_unit and by_unit[uid]['attempt_id'] in by_attempt]
     rng=random.Random(20261011);by_attempt={r['attempt_id']:r for r in runs};selected=[]
     # 15 cells: one response per architecture × stratum, choosing a scenario/repetition randomly.
     for arch in ('centralized_orchestration','structured_workflow','decentralized_swarm'):
@@ -139,12 +147,31 @@ def evaluate_folder(folder,cfg,calibration,repeat):
     blind=json.loads((folder/'blind-responses.json').read_text());existing={r['response_id'] for r in read_jsonl(folder/'evaluations.jsonl')}
     if repeat:
         path=folder/'recheck-selection.json'
-        if not path.exists():dump(path,{'seed':20261011,'response_ids':select_rechecks(manifest,blind,json.loads((folder/'blind-mapping.json').read_text()),read_jsonl(folder/'runs.jsonl'))})
+        if not path.exists():
+            selected=select_rechecks(manifest,blind,json.loads((folder/'blind-mapping.json').read_text()),read_jsonl(folder/'runs.jsonl'))
+            dump(path,{'seed':20261011,'response_ids':selected,'planned_unit_ids':manifest.get('stability_recheck_plan',{}).get('unit_ids'),
+                'unavailable_responses':len(manifest.get('stability_recheck_plan',{}).get('unit_ids',selected))-len(selected),
+                'replacement_permitted':False})
         chosen=set(json.loads(path.read_text())['response_ids']);blind=[b for b in blind if b['evaluation_id'] in chosen]
         name='reevaluations.jsonl';existing={r['response_id'] for r in read_jsonl(folder/name)}
     else:name='evaluations.jsonl'
     phase='recheck' if repeat else 'primary'
     existing.update(r['response_id'] for r in read_jsonl(folder/'evaluation-failures.jsonl') if r['phase']==phase)
+    # A process crash must not silently purchase a second primary judgment.
+    # Reuse a durably completed valid response, or retain unknown on interruption.
+    journal=read_jsonl(folder/'judge-attempts.jsonl')
+    started={r['response_id'] for r in journal if r.get('phase')==phase and r['event']=='started'}
+    for b in blind:
+        rid=b['evaluation_id']
+        if rid in existing or rid not in started:continue
+        completed=[r for r in journal if r.get('phase')==phase and r['response_id']==rid and r['event']=='completed' and r.get('valid')]
+        if completed:
+            saved=completed[0]
+            value=validate_evaluation(normalize_json_format(saved['raw_output'])[0],b['input'],rid)
+            append(folder/name,{'response_id':rid,'attempt_id':saved['attempt_id'],'configuration_version':VERSION,'evaluation':value,'human_review_performed':False,'recovered_without_inference':True})
+        else:
+            append(folder/'evaluation-failures.jsonl',{'response_id':rid,'attempt_id':None,'phase':phase,'reason':'interrupted_prior_judgment_preserved_no_replacement'})
+        existing.add(rid)
     for i,b in enumerate(blind):
         rid=b['evaluation_id']
         if rid in existing:continue

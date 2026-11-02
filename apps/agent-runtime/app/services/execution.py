@@ -50,6 +50,9 @@ class RuntimeExecutor:
             if protocol != PROTOCOL_VERSION:
                 raise ValueError(f"Unknown comparison protocol: {protocol}")
             return execute_comparison(ctx, architecture)
+        if self.settings.enable_live_llm:
+            from app.architectures.comparison import execute_comparison
+            return execute_comparison(ctx, architecture, source_profile="application")
         try:
             executor = get_executor(architecture)
         except KeyError:
@@ -77,17 +80,22 @@ class RuntimeExecutor:
 
 
 class RuntimeExecutionService:
-    def __init__(self, settings: Settings | None = None) -> None:
+    def __init__(self, settings: Settings | None = None, *, isolate_live: bool = False) -> None:
         self._settings = settings or get_settings()
+        self._isolate_live = isolate_live
 
     def execute_run(self, request: RuntimeDispatchRequest) -> ExecutionResult:
         run_id_short = str(request.run_id)[:8]
         architecture = request.architecture_mode
         logger.info("[RUN:%s] Starting execution for %s", run_id_short, architecture)
 
-        executor = RuntimeExecutor(request)
+        executor = RuntimeExecutor(request, settings=self._settings)
         try:
-            result = executor.execute()
+            if self._isolate_live and self._settings.enable_live_llm:
+                from app.services.isolated_execution import execute_isolated
+                result = execute_isolated(executor)
+            else:
+                result = executor.execute()
 
             elapsed_ms = executor.elapsed_ms()
             logger.info("[RUN:%s] Completed %s in %dms", run_id_short, architecture, elapsed_ms)
