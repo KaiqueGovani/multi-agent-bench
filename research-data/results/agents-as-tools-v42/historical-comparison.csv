@@ -1,0 +1,7 @@
+cohort,architecture,implementation,planned,task_successes,task_unknown
+v4.1 historical,centralized_orchestration,single agent with domain tools,200,123,0
+v4.1 historical,structured_workflow,structured_workflow,200,126,0
+v4.1 historical,decentralized_swarm,decentralized_swarm,200,107,0
+v4.2 new,centralized_orchestration,supervisor with specialists as tools,200,84,0
+v4.2 new,structured_workflow,structured_workflow,200,117,0
+v4.2 new,decentralized_swarm,decentralized_swarm,200,122,0

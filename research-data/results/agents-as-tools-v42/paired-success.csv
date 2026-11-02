@@ -1,0 +1,4 @@
+architecture_a,architecture_b,paired_scenarios,difference_pp_b_minus_a,bootstrap_95_low_pp,bootstrap_95_high_pp,p_unadjusted,nonzero_scenarios,method,seed,bootstrap_resamples,permutation_resamples,p_holm_three_comparisons
+centralized_orchestration,structured_workflow,40,16.499999999999996,-0.9999999999999999,34.0,0.08313,18,Monte Carlo paired sign permutation; plus-one correction,20261011,20000,99999,0.17001
+centralized_orchestration,decentralized_swarm,40,19.0,0.49999999999999994,37.0,0.05667,19,Monte Carlo paired sign permutation; plus-one correction,20261011,20000,99999,0.17001
+structured_workflow,decentralized_swarm,40,2.5,-3.0,9.0,0.625,4,exact paired sign permutation,20261011,20000,99999,0.625

@@ -1,0 +1,13 @@
+architecture_a,architecture_b,metric,paired_scenarios,excluded_scenarios,median_paired_difference_b_minus_a,median_paired_ratio_b_over_a
+centralized_orchestration,structured_workflow,latency_ms,40,0,4051.778833498247,1.5448676868902034
+centralized_orchestration,decentralized_swarm,latency_ms,40,0,3152.2787080612034,1.3614471552716192
+structured_workflow,decentralized_swarm,latency_ms,40,0,349.1805409430526,1.0451470778479401
+centralized_orchestration,structured_workflow,end_to_end_latency_ms,40,0,4084.3384579056874,1.4777725656061764
+centralized_orchestration,decentralized_swarm,end_to_end_latency_ms,40,0,3265.778124507051,1.3286873431808326
+structured_workflow,decentralized_swarm,end_to_end_latency_ms,40,0,268.4035415877588,1.028794390856136
+centralized_orchestration,structured_workflow,total_tokens,40,0,1063.5,1.184695929070453
+centralized_orchestration,decentralized_swarm,total_tokens,40,0,1569.5,1.2619071481810522
+structured_workflow,decentralized_swarm,total_tokens,40,0,423.5,1.0910566806751367
+centralized_orchestration,structured_workflow,estimated_generation_cost_usd,40,0,0.00270325,1.3345144613727888
+centralized_orchestration,decentralized_swarm,estimated_generation_cost_usd,40,0,0.0031410499999999994,1.304629751862017
+structured_workflow,decentralized_swarm,estimated_generation_cost_usd,40,0,0.0003888499999999996,1.052046257218148

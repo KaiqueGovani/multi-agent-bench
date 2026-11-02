@@ -1,0 +1,41 @@
+{
+  "version": "judge-dispatch-v42-amendment-1",
+  "declared_at": "2026-11-02T20:07:13.569812+00:00",
+  "user_approved_judge_only_parallelism": true,
+  "workers": 4,
+  "declared_before_first_main_judgment": true,
+  "generation_dispatch": "sequential unchanged",
+  "generation_measurements_changed": false,
+  "semantic_instrument_changed": false,
+  "judge_prompt_sha256": "ac77d9d9800bd6830102e5760a4d848330c3bcfcfa6d65b7d5723713f9478e36",
+  "judgment_time_boundary": "separate from sequential generation core and collector latency",
+  "physical_accounting": "per-owner journals and canonical journals are views of the same requests; count each physical request once",
+  "phases": [
+    {
+      "phase": "primary",
+      "dispatch_version": "exclusive-parallel-judge-v1",
+      "workers": 4,
+      "started_at": "2026-11-02T20:40:21.990583+00:00",
+      "completed_at": "2026-11-02T21:19:35.423595+00:00",
+      "adapter_source_sha256": "756b70ed627ff8a41279c0dcd09746167fe3f8b6fd56998e6be8a6950385b4b1",
+      "preexisting_terminal_responses": 0,
+      "new_owned_responses": 600,
+      "merged_responses": 600,
+      "schema_valid_total": 600,
+      "invalid_or_failed_total": 0
+    },
+    {
+      "phase": "recheck",
+      "dispatch_version": "exclusive-parallel-judge-v1",
+      "workers": 4,
+      "started_at": "2026-11-02T21:19:35.583437+00:00",
+      "completed_at": "2026-11-02T21:20:35.987266+00:00",
+      "adapter_source_sha256": "756b70ed627ff8a41279c0dcd09746167fe3f8b6fd56998e6be8a6950385b4b1",
+      "preexisting_terminal_responses": 0,
+      "new_owned_responses": 15,
+      "merged_responses": 15,
+      "schema_valid_total": 15,
+      "invalid_or_failed_total": 0
+    }
+  ]
+}

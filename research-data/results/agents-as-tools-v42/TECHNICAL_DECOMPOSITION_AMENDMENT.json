@@ -1,0 +1,124 @@
+{
+  "version": "technical-decomposition-v1",
+  "authored_during": "main generation; after frozen protocol and exporter; before main judgments/results",
+  "authored_at_utc": "2026-11-02T19:12:04.798512+00:00",
+  "executed_at_utc": "2026-11-02T21:23:14.464462+00:00",
+  "source_sha256": "3a97ec9d74d59a27f388ed706ca5aff5bf0818b99f81b577c56c4560d20f16fb",
+  "frozen_runtime_commit": "a0dd5bbaeef04fb8e9065cba3a7bcc48a5295a55",
+  "frozen_manifest_sha256": "ea77cc3cf50a8c1fe8d6c84d22ad0bf5fccaa171773c00b26421f0ce46c1b917",
+  "original_export_inventory_sha256": "8c82bd953850cb45114ac77b6b84756590aefff68d201f993e73f8c9572c950d",
+  "timing": "technical decomposition authored after generation began; executed only after generation, primary judging, recheck, aggregation and original export completed",
+  "scope": "measurement decomposition, cost arithmetic, terminology aliases and safe numeric serialization only",
+  "outcomes_recomputed_or_changed": false,
+  "judgments_changed": false,
+  "new_model_calls": 0,
+  "statistical_analysis_changed": false,
+  "original_public_export_preserved_privately": true,
+  "unit_costs": "physical model calls and unique judge attempt IDs assigned through private blind mapping; no response IDs, text, tool arguments or returns published",
+  "unknowns": "unknown measurements and costs remain null; known partial sums separate; no-request phase is known zero, labelled by request count and recheck selection",
+  "handoffs": "legacy total includes coordinator bootstrap and inter-specialist peer delegations; peer-only is payload.from in faq/stock/attachments",
+  "specialists": "tool attempts, actual child agent invocations, physical-model-bearing children and explicit returns are separate; no domain consultation inferred from specialist names",
+  "judgment_alias": "valid_judgments is schema validity, not internally consistent assessment or task success",
+  "physical_judge_format": "first_attempt_schema_valid excludes any recorded local deterministic repair; repaired raw responses remain first-attempt invalid, with normalized logical validity reported separately; provider format-repair requests are additional physical requests, never replacement first judgments",
+  "logical_judge_dispositions": "logical_response_valid means a schema-valid persisted evaluation (possibly internally inconsistent); logical_response_invalid means a preserved evaluation-failure disposition, including schema, provider or interruption failures; logical_response_missing has no terminal disposition; these categories never replace task labels",
+  "referral_scope": "safe numeric concordance of observed recommendation against technical labels supplied by common input policy; no autonomous clinical detection or clinical validation claim",
+  "reconciliation": [
+    {
+      "phase": "generation",
+      "checks": {
+        "request_counts": true,
+        "input_tokens_known_complete_payloads": true,
+        "output_tokens_known_complete_payloads": true,
+        "total_tokens_known_complete_payloads": true,
+        "cost": true
+      },
+      "reconciled": true
+    },
+    {
+      "phase": "primary_judge",
+      "checks": {
+        "request_counts": true,
+        "input_tokens_known_complete_payloads": true,
+        "output_tokens_known_complete_payloads": true,
+        "total_tokens_known_complete_payloads": true,
+        "cost": true
+      },
+      "reconciled": true
+    },
+    {
+      "phase": "recheck",
+      "checks": {
+        "request_counts": true,
+        "input_tokens_known_complete_payloads": true,
+        "output_tokens_known_complete_payloads": true,
+        "total_tokens_known_complete_payloads": true,
+        "cost": true
+      },
+      "reconciled": true
+    }
+  ],
+  "pricing": {
+    "currency": "USD",
+    "checked_on": "2026-11-02",
+    "region": "us-west-2",
+    "inference_profile_scope": "US geographic cross-region (us.*), standard on-demand; no batch discount",
+    "rates_per_million_tokens": {
+      "haiku_4_5": {
+        "input": 1.1,
+        "output": 5.5
+      },
+      "sonnet_4_5": {
+        "input": 3.3,
+        "output": 16.5
+      }
+    },
+    "source_effective_date": "2026-05-27",
+    "source": "https://www-cdn.anthropic.com/files/4zrzovbb/website/3684c2faafb97418665782cea0001f439f74b1d2.pdf",
+    "secondary_source": "https://platform.claude.com/docs/en/about-claude/pricing",
+    "aws_pricing": "https://aws.amazon.com/bedrock/pricing/",
+    "meaning": "estimate from publicly listed standard geographic cross-region rates, not AWS billing or account-specific discounts; usage missing => full cost unknown",
+    "cache": "no prompt cache configured; any recorded cache usage must be reported separately and not priced silently as base input"
+  },
+  "judge_dispatch_amendment": {
+    "version": "judge-dispatch-v42-amendment-1",
+    "declared_at": "2026-11-02T20:07:13.569812+00:00",
+    "user_approved_judge_only_parallelism": true,
+    "workers": 4,
+    "declared_before_first_main_judgment": true,
+    "generation_dispatch": "sequential unchanged",
+    "generation_measurements_changed": false,
+    "semantic_instrument_changed": false,
+    "judge_prompt_sha256": "ac77d9d9800bd6830102e5760a4d848330c3bcfcfa6d65b7d5723713f9478e36",
+    "judgment_time_boundary": "separate from sequential generation core and collector latency",
+    "physical_accounting": "per-owner journals and canonical journals are views of the same requests; count each physical request once",
+    "phases": [
+      {
+        "phase": "primary",
+        "dispatch_version": "exclusive-parallel-judge-v1",
+        "workers": 4,
+        "started_at": "2026-11-02T20:40:21.990583+00:00",
+        "completed_at": "2026-11-02T21:19:35.423595+00:00",
+        "adapter_source_sha256": "756b70ed627ff8a41279c0dcd09746167fe3f8b6fd56998e6be8a6950385b4b1",
+        "preexisting_terminal_responses": 0,
+        "new_owned_responses": 600,
+        "merged_responses": 600,
+        "schema_valid_total": 600,
+        "invalid_or_failed_total": 0
+      },
+      {
+        "phase": "recheck",
+        "dispatch_version": "exclusive-parallel-judge-v1",
+        "workers": 4,
+        "started_at": "2026-11-02T21:19:35.583437+00:00",
+        "completed_at": "2026-11-02T21:20:35.987266+00:00",
+        "adapter_source_sha256": "756b70ed627ff8a41279c0dcd09746167fe3f8b6fd56998e6be8a6950385b4b1",
+        "preexisting_terminal_responses": 0,
+        "new_owned_responses": 15,
+        "merged_responses": 15,
+        "schema_valid_total": 15,
+        "invalid_or_failed_total": 0
+      }
+    ]
+  },
+  "private_backup_directory_name": "export-before-technical-decomposition"
+}

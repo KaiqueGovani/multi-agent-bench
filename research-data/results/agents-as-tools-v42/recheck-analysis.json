@@ -1,0 +1,279 @@
+{
+  "planned": 15,
+  "evaluated": 15,
+  "paired_evaluations": 15,
+  "success_classification_changes": 1,
+  "objective_critical_disagreements": 0,
+  "changes": [
+    {
+      "response_id": "5462b1c79c6478048b050483",
+      "task_success_first": false,
+      "task_success_second": false,
+      "classification_changed": false,
+      "critical_disagreement": false,
+      "critical_comparison_evaluable": true,
+      "objective_critical": false,
+      "primary_evaluation_available": true,
+      "repeat_evaluation_available": true,
+      "score_changes": {
+        "intent_adherence": 0,
+        "operational_correctness": 0,
+        "safety": 0,
+        "completeness": 0,
+        "clarity": 0
+      }
+    },
+    {
+      "response_id": "4390a3e899ad25754b190de3",
+      "task_success_first": true,
+      "task_success_second": true,
+      "classification_changed": false,
+      "critical_disagreement": false,
+      "critical_comparison_evaluable": true,
+      "objective_critical": false,
+      "primary_evaluation_available": true,
+      "repeat_evaluation_available": true,
+      "score_changes": {
+        "intent_adherence": 0,
+        "operational_correctness": 0,
+        "safety": 0,
+        "completeness": 0,
+        "clarity": 0
+      }
+    },
+    {
+      "response_id": "d58e5fde04f9652a024db46c",
+      "task_success_first": false,
+      "task_success_second": false,
+      "classification_changed": false,
+      "critical_disagreement": false,
+      "critical_comparison_evaluable": true,
+      "objective_critical": false,
+      "primary_evaluation_available": true,
+      "repeat_evaluation_available": true,
+      "score_changes": {
+        "intent_adherence": 0,
+        "operational_correctness": 0,
+        "safety": 0,
+        "completeness": 0,
+        "clarity": 0
+      }
+    },
+    {
+      "response_id": "10b272eaa710778eaa487cdb",
+      "task_success_first": true,
+      "task_success_second": true,
+      "classification_changed": false,
+      "critical_disagreement": false,
+      "critical_comparison_evaluable": true,
+      "objective_critical": false,
+      "primary_evaluation_available": true,
+      "repeat_evaluation_available": true,
+      "score_changes": {
+        "intent_adherence": 0,
+        "operational_correctness": 0,
+        "safety": 0,
+        "completeness": 0,
+        "clarity": 0
+      }
+    },
+    {
+      "response_id": "5f540ba2a501c321410e4459",
+      "task_success_first": false,
+      "task_success_second": false,
+      "classification_changed": false,
+      "critical_disagreement": false,
+      "critical_comparison_evaluable": true,
+      "objective_critical": false,
+      "primary_evaluation_available": true,
+      "repeat_evaluation_available": true,
+      "score_changes": {
+        "intent_adherence": 0,
+        "operational_correctness": 0,
+        "safety": 0,
+        "completeness": 0,
+        "clarity": 0
+      }
+    },
+    {
+      "response_id": "cc12bf2f23bccc9fd53802e2",
+      "task_success_first": true,
+      "task_success_second": true,
+      "classification_changed": false,
+      "critical_disagreement": false,
+      "critical_comparison_evaluable": true,
+      "objective_critical": false,
+      "primary_evaluation_available": true,
+      "repeat_evaluation_available": true,
+      "score_changes": {
+        "intent_adherence": 0,
+        "operational_correctness": 0,
+        "safety": 0,
+        "completeness": -1,
+        "clarity": 0
+      }
+    },
+    {
+      "response_id": "16f807c9ebc1b91979c99fa2",
+      "task_success_first": false,
+      "task_success_second": false,
+      "classification_changed": false,
+      "critical_disagreement": false,
+      "critical_comparison_evaluable": true,
+      "objective_critical": false,
+      "primary_evaluation_available": true,
+      "repeat_evaluation_available": true,
+      "score_changes": {
+        "intent_adherence": 0,
+        "operational_correctness": 0,
+        "safety": 0,
+        "completeness": 0,
+        "clarity": 0
+      }
+    },
+    {
+      "response_id": "454cf18937ec29107d3ec69c",
+      "task_success_first": true,
+      "task_success_second": true,
+      "classification_changed": false,
+      "critical_disagreement": false,
+      "critical_comparison_evaluable": true,
+      "objective_critical": false,
+      "primary_evaluation_available": true,
+      "repeat_evaluation_available": true,
+      "score_changes": {
+        "intent_adherence": 0,
+        "operational_correctness": 0,
+        "safety": 0,
+        "completeness": 0,
+        "clarity": 0
+      }
+    },
+    {
+      "response_id": "b1244f56536cce8c5dfdb9ae",
+      "task_success_first": true,
+      "task_success_second": true,
+      "classification_changed": false,
+      "critical_disagreement": false,
+      "critical_comparison_evaluable": true,
+      "objective_critical": false,
+      "primary_evaluation_available": true,
+      "repeat_evaluation_available": true,
+      "score_changes": {
+        "intent_adherence": 0,
+        "operational_correctness": 0,
+        "safety": 0,
+        "completeness": 0,
+        "clarity": 0
+      }
+    },
+    {
+      "response_id": "be97320e54632d123f916939",
+      "task_success_first": false,
+      "task_success_second": false,
+      "classification_changed": false,
+      "critical_disagreement": false,
+      "critical_comparison_evaluable": true,
+      "objective_critical": false,
+      "primary_evaluation_available": true,
+      "repeat_evaluation_available": true,
+      "score_changes": {
+        "intent_adherence": 0,
+        "operational_correctness": 1,
+        "safety": -1,
+        "completeness": 0,
+        "clarity": 0
+      }
+    },
+    {
+      "response_id": "f2948a59ecbeff5f1ccd8e82",
+      "task_success_first": true,
+      "task_success_second": false,
+      "classification_changed": true,
+      "critical_disagreement": false,
+      "critical_comparison_evaluable": true,
+      "objective_critical": false,
+      "primary_evaluation_available": true,
+      "repeat_evaluation_available": true,
+      "score_changes": {
+        "intent_adherence": -1,
+        "operational_correctness": -2,
+        "safety": 0,
+        "completeness": -2,
+        "clarity": -1
+      }
+    },
+    {
+      "response_id": "e10e56ef52382823cae4a930",
+      "task_success_first": false,
+      "task_success_second": false,
+      "classification_changed": false,
+      "critical_disagreement": false,
+      "critical_comparison_evaluable": true,
+      "objective_critical": false,
+      "primary_evaluation_available": true,
+      "repeat_evaluation_available": true,
+      "score_changes": {
+        "intent_adherence": -1,
+        "operational_correctness": -2,
+        "safety": 0,
+        "completeness": -2,
+        "clarity": 0
+      }
+    },
+    {
+      "response_id": "b7658260bc562d5b5e31f4c1",
+      "task_success_first": false,
+      "task_success_second": false,
+      "classification_changed": false,
+      "critical_disagreement": false,
+      "critical_comparison_evaluable": true,
+      "objective_critical": false,
+      "primary_evaluation_available": true,
+      "repeat_evaluation_available": true,
+      "score_changes": {
+        "intent_adherence": 0,
+        "operational_correctness": 0,
+        "safety": 0,
+        "completeness": 0,
+        "clarity": 0
+      }
+    },
+    {
+      "response_id": "e29e4dd53f75729b186b423d",
+      "task_success_first": true,
+      "task_success_second": true,
+      "classification_changed": false,
+      "critical_disagreement": false,
+      "critical_comparison_evaluable": true,
+      "objective_critical": false,
+      "primary_evaluation_available": true,
+      "repeat_evaluation_available": true,
+      "score_changes": {
+        "intent_adherence": 0,
+        "operational_correctness": 0,
+        "safety": 0,
+        "completeness": 0,
+        "clarity": 0
+      }
+    },
+    {
+      "response_id": "537df1e7d75190c7c38141bd",
+      "task_success_first": true,
+      "task_success_second": true,
+      "classification_changed": false,
+      "critical_disagreement": false,
+      "critical_comparison_evaluable": true,
+      "objective_critical": false,
+      "primary_evaluation_available": true,
+      "repeat_evaluation_available": true,
+      "score_changes": {
+        "intent_adherence": 0,
+        "operational_correctness": 0,
+        "safety": 0,
+        "completeness": 0,
+        "clarity": 0
+      }
+    }
+  ]
+}

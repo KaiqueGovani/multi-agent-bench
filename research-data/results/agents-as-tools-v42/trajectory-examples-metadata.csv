@@ -1,0 +1,16 @@
+example_id,category,difficulty,architecture,repetition,technical_success,architectural_compliance,task_success,actual_agents,agent_invocations,model_requests,domain_tool_calls,coordination_tool_calls,specialist_tool_invocations,peer_delegations,explicit_messages,tool_names,other_tool_names_count,token_measurement_complete,input_tokens,output_tokens,total_tokens
+example-attachments-centralized_orchestration-r0,attachments,low,centralized_orchestration,0,True,False,False,1,1,1,0,0,0,0,0,,0,True,1340,215,1555
+example-attachments-structured_workflow-r0,attachments,low,structured_workflow,0,True,True,True,4,4,6,1,1,0,0,2,attachment_intake,1,True,6883,1071,7954
+example-attachments-decentralized_swarm-r0,attachments,low,decentralized_swarm,0,True,True,True,4,4,6,1,3,0,2,2,attachment_intake;handoff_to_peer,1,True,7751,1210,8961
+example-continuity-centralized_orchestration-r0,continuity,low,centralized_orchestration,0,True,True,True,2,2,4,1,1,1,0,1,stock_lookup;stock_specialist,0,True,5531,673,6204
+example-continuity-structured_workflow-r0,continuity,low,structured_workflow,0,True,True,True,3,3,4,1,1,0,0,1,stock_lookup,1,True,4129,701,4830
+example-continuity-decentralized_swarm-r0,continuity,low,decentralized_swarm,0,True,True,True,3,3,4,1,2,0,1,1,handoff_to_peer;stock_lookup,1,True,4599,594,5193
+example-faq-centralized_orchestration-r0,faq,low,centralized_orchestration,0,True,True,True,2,2,4,1,1,1,0,1,faq_lookup;faq_specialist,0,True,5395,644,6039
+example-faq-structured_workflow-r0,faq,low,structured_workflow,0,True,True,False,3,3,3,0,1,0,0,1,,1,True,2682,615,3297
+example-faq-decentralized_swarm-r0,faq,low,decentralized_swarm,0,True,True,False,3,3,4,1,2,0,1,1,faq_lookup;handoff_to_peer,1,True,4373,629,5002
+example-professional_review-centralized_orchestration-r0,professional_review,low,centralized_orchestration,0,True,True,True,3,3,6,2,2,2,0,2,faq_lookup;faq_specialist;stock_lookup;stock_specialist,0,True,7950,944,8894
+example-professional_review-structured_workflow-r0,professional_review,low,structured_workflow,0,True,True,False,3,3,4,1,1,0,0,1,faq_lookup,1,True,3865,701,4566
+example-professional_review-decentralized_swarm-r0,professional_review,low,decentralized_swarm,0,True,True,False,4,4,4,0,3,0,2,2,handoff_to_peer,1,True,4555,947,5502
+example-stock-centralized_orchestration-r0,stock,low,centralized_orchestration,0,True,True,True,2,2,4,1,1,1,0,1,stock_lookup;stock_specialist,0,True,5287,592,5879
+example-stock-structured_workflow-r0,stock,low,structured_workflow,0,True,True,True,3,3,4,1,1,0,0,1,stock_lookup,1,True,3860,599,4459
+example-stock-decentralized_swarm-r0,stock,low,decentralized_swarm,0,True,True,True,3,3,4,1,2,0,1,1,handoff_to_peer;stock_lookup,1,True,4341,570,4911

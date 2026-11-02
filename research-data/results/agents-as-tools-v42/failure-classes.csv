@@ -1,0 +1,13 @@
+architecture,failure_class,count,denominator
+centralized_orchestration,architectural_contract_violation,65,200
+structured_workflow,architectural_contract_violation,0,200
+decentralized_swarm,architectural_contract_violation,0,200
+centralized_orchestration,content_and_mandatory_evidence,30,200
+structured_workflow,content_and_mandatory_evidence,42,200
+decentralized_swarm,content_and_mandatory_evidence,45,200
+centralized_orchestration,content_only,17,200
+structured_workflow,content_only,28,200
+decentralized_swarm,content_only,28,200
+centralized_orchestration,mandatory_evidence_only,4,200
+structured_workflow,mandatory_evidence_only,13,200
+decentralized_swarm,mandatory_evidence_only,5,200
