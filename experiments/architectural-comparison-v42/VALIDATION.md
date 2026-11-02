@@ -29,6 +29,8 @@ Uma condição de corrida entre watchdog e limpeza de processo apareceu como war
 
 As primeiras capturas da interface foram preservadas. As capturas verificadas aguardam o texto de retorno e usam contexto de navegador isolado por caso, evitando estado residual do controle de expansão. Não geram novas respostas.
 
+Após o início do lote principal, uma correção exclusivamente visual passou a contar chamadas de ferramenta por `toolCallId` iniciado, em vez de somar eventos de início e término. TypeScript e as 13 regressões Chromium passaram; os dez contadores de agentes nas quatro execuções API preservadas foram confrontados com os eventos e conferem. As novas capturas estão em `ui-tool-counts-verified`, sem inferência adicional. Nenhum código do runtime, coletor, julgador, fonte, parâmetro ou plano congelado do benchmark mudou.
+
 ## Decisão de liberação
 
 Auditoria independente dos 18 registros confirmou integridade, instâncias isoladas, ausência de sobreposição, contexto original equivalente, ausência de gabaritos, limites, snapshots e reconciliação de consumo. A coleta foi tecnicamente liberada. A omissão de delegação é um resultado arquitetural observado e não foi corrigida por chamada artificial, substituição da resposta ou ajuste de prompt para favorecer o resultado. O julgamento de conteúdo permanece independente da liberação.

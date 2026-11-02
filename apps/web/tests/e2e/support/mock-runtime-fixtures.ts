@@ -124,12 +124,14 @@ const runExecutions = {
   [mockIds.centralizedRun]: {
     executionEvents: [
       buildRunEvent(mockIds.centralizedRun, mockIds.centralizedConversation, 1, "node", "supervisor.started", "completed", "supervisor_agent"),
-      buildRunEvent(mockIds.centralizedRun, mockIds.centralizedConversation, 2, "tool", "faq.lookup", "completed", "faq_agent", { toolName: "faq_lookup" }),
-      buildRunEvent(mockIds.centralizedRun, mockIds.centralizedConversation, 3, "tool", "stock.lookup", "completed", "stock_agent", { toolName: "stock_lookup" }),
+      buildRunEvent(mockIds.centralizedRun, mockIds.centralizedConversation, 2, "tool", "started", "running", "faq_agent", { toolName: "faq_lookup" }),
+      buildRunEvent(mockIds.centralizedRun, mockIds.centralizedConversation, 3, "tool", "faq.lookup", "completed", "faq_agent", { toolName: "faq_lookup" }),
+      buildRunEvent(mockIds.centralizedRun, mockIds.centralizedConversation, 4, "tool", "started", "running", "stock_agent", { toolName: "stock_lookup" }),
+      buildRunEvent(mockIds.centralizedRun, mockIds.centralizedConversation, 5, "tool", "stock.lookup", "completed", "stock_agent", { toolName: "stock_lookup" }),
       buildRunEvent(
         mockIds.centralizedRun,
         mockIds.centralizedConversation,
-        4,
+        6,
         "response",
         "final",
         "completed",
@@ -156,7 +158,7 @@ const runExecutions = {
       conversationId: mockIds.centralizedConversation,
       currentPhase: "completed",
       messageId: `${mockIds.centralizedConversation}-inbound`,
-      metrics: { eventCount: 4, handoffCount: 2, toolCallCount: 2 },
+      metrics: { eventCount: 6, handoffCount: 2, toolCallCount: 2 },
       runId: mockIds.centralizedRun,
       runStatus: "completed",
       source: "mock",

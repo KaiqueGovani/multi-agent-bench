@@ -17,14 +17,17 @@ const events = [
   event(1, "agent", "started", "supervisor", { agentInvocationId: "supervisor-1" }),
   event(2, "tool", "started", "supervisor", { toolCallId: "specialist-tool", callKind: "specialist" }),
   event(3, "agent", "started", "stock", { agentInvocationId: "stock-1", parentAgentInvocationId: "supervisor-1", parentCallId: "specialist-tool" }),
-  event(4, "tool", "completed", "stock", { toolCallId: "domain-tool", callKind: "domain", result: { quantity: 17 } }),
-  event(5, "agent", "completed", "stock", { agentInvocationId: "stock-1", outputText: "Consulta controlada: dipirona, 17 frascos." }),
-  event(6, "communication", "message", "stock", { to: "supervisor", text: "Consulta controlada: dipirona, 17 frascos." }),
-  event(7, "agent", "completed", "supervisor", { agentInvocationId: "supervisor-1", outputText: "A fonte controlada informa 17 frascos de dipirona." }),
+  event(4, "tool", "started", "stock", { toolCallId: "domain-tool", callKind: "domain" }),
+  event(5, "tool", "started", "stock", { toolCallId: "domain-tool", callKind: "domain" }),
+  event(6, "tool", "completed", "stock", { toolCallId: "domain-tool", callKind: "domain", result: { quantity: 17 } }),
+  event(7, "agent", "completed", "stock", { agentInvocationId: "stock-1", outputText: "Consulta controlada: dipirona, 17 frascos." }),
+  event(8, "communication", "message", "stock", { to: "supervisor", text: "Consulta controlada: dipirona, 17 frascos." }),
+  event(9, "tool", "completed", "supervisor", { toolCallId: "specialist-tool", callKind: "specialist" }),
+  event(10, "agent", "completed", "supervisor", { agentInvocationId: "supervisor-1", outputText: "A fonte controlada informa 17 frascos de dipirona." }),
 ];
 
 test("graph requires agent invocation evidence and explicit parent/return records", () => {
-  const graph = observedAgentGraph([...events, event(8, "tool", "completed", "faq")], true);
+  const graph = observedAgentGraph([...events, event(11, "tool", "completed", "faq")], true);
   expect(graph.agents.map((agent) => agent.role)).toEqual(["supervisor", "stock"]);
   expect(graph.links).toEqual([
     { from: "supervisor", to: "stock", kind: "call", status: "running" },
@@ -59,6 +62,11 @@ test("actual specialist and its returned text are shown without a fabricated syn
   await expect(flow.locator(".react-flow__edge")).toHaveCount(2);
   await expect(flow).not.toContainText("Streamer");
   await expect(flow).not.toContainText("FAQ");
+  // One tool lifecycle is one invocation. A duplicate started record with the
+  // same toolCallId and the completed record must not inflate the node badge.
+  await expect(flow.locator(".react-flow__node").filter({ hasText: "Estoque" })).toContainText("1 tool");
+  await expect(flow.locator(".react-flow__node").filter({ hasText: "Estoque" })).not.toContainText("2 tool");
+  await expect(flow.locator(".react-flow__node").filter({ hasText: "Supervisor" })).toContainText("1 tool");
   await flow.locator(".react-flow__node").filter({ hasText: "Estoque" }).hover();
   await page.getByRole("button", { name: "agent.completed" }).click();
   await expect(page.getByText("Consulta controlada: dipirona, 17 frascos.", { exact: true })).toBeVisible();

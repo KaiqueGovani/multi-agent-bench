@@ -188,7 +188,11 @@ const AgentNode = memo(function AgentNode({ data }: NodeProps<Node<AgentNodeData
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const agentEvents = (events ?? []) as RunExecutionEvent[];
   const eventCount = agentEvents.length;
-  const toolCount = agentEvents.filter((e) => e.eventFamily === "tool").length;
+  const toolCount = new Set(
+    agentEvents
+      .filter((event) => event.eventFamily === "tool" && event.eventName === "started")
+      .map((event) => event.payload?.toolCallId ?? event.id),
+  ).size;
   const responseCount = agentEvents.filter((e) => e.eventFamily === "response").length;
 
   useEffect(() => {
