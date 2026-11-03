@@ -7,6 +7,7 @@ export default async function ResearchPage() {
   const showReplay = canAccessPrivateReplay(await headers());
   const comparisons = (
     <nav aria-label="Comparações publicadas" className="flex flex-wrap gap-4 text-sm">
+      <a href="/research/defense" className="font-medium text-primary underline underline-offset-4">Apresentar à banca · coleta histórica</a>
       <a href="/research/comparison-v44" className="font-medium text-primary underline underline-offset-4">Resultados v4.4</a>
       <a href="/research/comparison-v42" className="text-primary underline underline-offset-4">Histórico v4.2</a>
     </nav>
