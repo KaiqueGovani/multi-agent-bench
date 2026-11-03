@@ -300,9 +300,6 @@ export function useConversation(
 
         await sendMultipartMessage(
           targetConversationId, text.trim(), files, activeArchitectureMode, executionMode,
-          conversation?.metadata.source === "whatsapp_web" && executionMode === "real"
-            ? "architectural-comparison-v4.1"
-            : typeof conversation?.metadata.comparisonProtocol === "string" ? conversation.metadata.comparisonProtocol : undefined,
         );
         await refreshConversationDetail(targetConversationId);
         
@@ -340,8 +337,6 @@ export function useConversation(
       activeArchitectureMode,
       architectureMode,
       conversationId,
-      conversation?.metadata.comparisonProtocol,
-      conversation?.metadata.source,
       executionMode,
       refreshConversationDetail,
       refreshConversations

@@ -250,13 +250,16 @@ export function ChatWorkspace() {
   }, [conversationId, isDraftConversation, requestedConversationId, selectConversation]);
 
   useEffect(() => {
-    if (!conversationId || requestedConversationId === conversationId) {
+    if (!conversationId) {
+      return;
+    }
+    if (requestedConversationId === conversationId) {
+      if (isDraftConversation) setIsDraftConversation(false);
       return;
     }
     if (!isDraftConversation && requestedConversationId) {
       return;
     }
-    setIsDraftConversation(false);
     router.replace(`/?conversationId=${conversationId}`, { scroll: false });
   }, [conversationId, isDraftConversation, requestedConversationId, router]);
 

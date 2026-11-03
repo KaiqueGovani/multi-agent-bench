@@ -10,6 +10,7 @@ from app.adapters.inbound import WebChatAdapter
 from app.core.observability import get_request_id
 from app.core.tracing import extract_trace_id
 from app.db import get_db_session
+from app.db.models import ConversationModel
 from app.schemas.api import SendMessageResponse
 from app.schemas.domain import OperationalMetadata, RunExperimentMetadata
 from app.schemas.enums import ArchitectureMode
@@ -50,6 +51,12 @@ async def send_message(
         response = MessageService(db).create_message(
             inbound=inbound_message,
         )
+        conversation = db.get(ConversationModel, response.conversation_id)
+        whatsapp_application = (
+            conversation is not None
+            and conversation.channel == "whatsapp"
+            and (conversation.metadata_json or {}).get("source") == "whatsapp_web"
+        )
         architecture_keys = _expand_architecture_keys(metadata.architecture_mode)
         created_runs = []
         dispatches: list[dict[str, UUID]] = []
@@ -68,6 +75,7 @@ async def send_message(
                     architecture_key=architecture_key,
                     comparison_only=len(architecture_keys) > 1 and index > 0,
                     text=text,
+                    whatsapp_application=whatsapp_application,
                 ),
             )
             dispatches.append(

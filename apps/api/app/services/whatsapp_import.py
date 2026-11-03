@@ -17,10 +17,9 @@ from app.schemas.domain import OperationalMetadata
 from app.schemas.enums import ConversationStatus, ProcessingEventType, ProcessingStatus
 from app.schemas.whatsapp import WhatsAppImportRequest, WhatsAppImportResponse
 from app.services.events import EventService
-from app.services.run_configuration import _build_run_experiment, _expand_architecture_keys
+from app.services.run_configuration import WHATSAPP_APPLICATION_PROTOCOL, _build_run_experiment, _expand_architecture_keys
 
 IMPORT_NAMESPACE = UUID("de366871-74d2-4c72-b39d-fa6733ac1d93")
-COMPARISON_PROTOCOL = "architectural-comparison-v4.4"
 
 
 class WhatsAppImportConflict(ValueError):
@@ -73,7 +72,7 @@ class WhatsAppImportService:
             "runtimeMode": request.runtime_mode.value,
             "importedMessageCount": len(prefix), "targetSourceId": request.target_source_id,
             "targetMessageId": str(message_ids[-1]), "importRunIds": [str(i) for i in ids],
-            "comparisonProtocol": COMPARISON_PROTOCOL if request.runtime_mode == "real" else None,
+            "comparisonProtocol": WHATSAPP_APPLICATION_PROTOCOL if request.runtime_mode == "real" else None,
         }
         conversation = ConversationModel(
             id=conversation_id, channel="whatsapp", status=ConversationStatus.ACTIVE.value,
@@ -103,14 +102,13 @@ class WhatsAppImportService:
             run_metadata = OperationalMetadata.model_validate({
                 "architectureMode": request.architecture_mode.value,
                 "runtimeMode": request.runtime_mode.value,
-                "comparisonProtocol": COMPARISON_PROTOCOL if request.runtime_mode == "real" else None,
                 "experimentId": "whatsapp-demo-v1", "scenarioId": f"whatsapp-{request.capture_id}",
             })
             for i, architecture in enumerate(architectures):
-                experiment = _build_run_experiment(run_metadata, architecture_key=architecture,
-                                                  comparison_only=i > 0, text=prefix[-1].text)
-                if request.runtime_mode == "real":
-                    experiment = experiment.model_copy(update={"comparisonSourceProfile": "application"})
+                experiment = _build_run_experiment(
+                    run_metadata, architecture_key=architecture, comparison_only=i > 0,
+                    text=prefix[-1].text, whatsapp_application=True,
+                )
                 self.db.add(RunModel(
                     id=ids[i], conversation_id=conversation_id, message_id=message_ids[-1],
                     correlation_id=correlation_id, status="pending", created_at=now, updated_at=now,

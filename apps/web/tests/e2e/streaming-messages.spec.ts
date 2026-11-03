@@ -32,9 +32,12 @@ test.describe("P1 — Streaming messages in chat UI", () => {
     await page.getByTestId("message-composer-input").fill("Mensagem otimista de teste");
     await page.getByRole("button", { name: "Enviar" }).click();
 
-    // The optimistic message should appear immediately (before SSE)
-    await expect(page.getByTestId("message-list")).toContainText("Mensagem otimista de teste");
-    release();
+    try {
+      await expect(page.getByTestId("message-list")).toContainText("Mensagem otimista de teste");
+      await expect(page).toHaveURL(new RegExp(`conversationId=${mockIds.draftConversation}`));
+    } finally {
+      release();
+    }
   });
 
   test("streaming indicator appears during response.partial events", async ({ page }) => {

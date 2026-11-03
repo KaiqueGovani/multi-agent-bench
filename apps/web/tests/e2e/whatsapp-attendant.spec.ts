@@ -38,12 +38,12 @@ test("imported attendant history stays visible across architectures and only mod
   await expect(list.getByText("Olá, como posso ajudar?")).toBeVisible();
   await expect(list.getByText("Sugestão 2", { exact: true })).toBeVisible();
   await expect(list.getByText("Sugestão 1", { exact: true })).toHaveCount(0);
-  // A capture may start simulated; a later real turn must still use the research protocol.
+  // The API selects the application protocol for a real WhatsApp turn.
   await page.getByRole("button", { name: "Modo de execução: Simulado", exact: true }).click();
   await page.getByTestId("message-composer-input").fill("E qual é o horário?");
   const sent = page.waitForRequest(request => request.method() === "POST" && request.url().endsWith("/messages"));
   await page.getByRole("button", { name: "Enviar mensagem", exact: true }).click();
   const body = (await sent).postData() || "";
-  expect(body).toContain('"comparisonProtocol":"architectural-comparison-v4.4"');
   expect(body).toContain('"runtimeMode":"real"');
+  expect(body).not.toContain('"comparisonProtocol"');
 });

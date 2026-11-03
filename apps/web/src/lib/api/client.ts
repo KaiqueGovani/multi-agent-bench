@@ -145,8 +145,7 @@ export function sendMessage(
   text: string,
   files: File[],
   architectureMode: ArchitectureMode,
-  executionMode: ExecutionMode = "real",
-  comparisonProtocol?: string
+  executionMode: ExecutionMode = "real"
 ): Promise<SendMessageResponse> {
   const body = new FormData();
   body.append("conversationId", conversationId);
@@ -157,7 +156,6 @@ export function sendMessage(
     "metadata_json",
     JSON.stringify({
       ...getClientMetadata(architectureMode, executionMode),
-      ...(comparisonProtocol ? { comparisonProtocol } : {}),
       fileCount: files.length,
       fileTypes: files.map((file) => file.type),
       fileSizes: files.map((file) => file.size)

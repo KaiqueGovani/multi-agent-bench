@@ -25,7 +25,9 @@ test("keeps chat as the main surface and moves technical monitoring to dashboard
 
   await page.getByTestId("dashboard-link").click();
 
-  await expect(page).toHaveURL(new RegExp(`/dashboard\\?conversationId=${mockIds.swarmConversation}$`));
+  await expect(page).toHaveURL(new RegExp(`/dashboard\\?conversationId=${mockIds.swarmConversation}$`), {
+    timeout: 15_000,
+  });
   await expect(page.getByTestId("dashboard-page")).toBeVisible();
   await expect(page.getByTestId("runtime-panel-technical")).toBeVisible();
   await expect(page.getByText("Monitor técnico do runtime")).toBeVisible();

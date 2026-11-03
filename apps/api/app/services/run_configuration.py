@@ -2,7 +2,10 @@
 from uuid import UUID
 
 from app.schemas.domain import OperationalMetadata, RunExperimentMetadata
-from app.schemas.enums import ArchitectureMode
+from app.schemas.enums import ArchitectureMode, RuntimeMode
+
+
+WHATSAPP_APPLICATION_PROTOCOL = "architectural-comparison-v4.4"
 
 
 def _classify_scenario(text: str | None, file_types: list[str] | None) -> str:
@@ -54,6 +57,7 @@ def _build_run_experiment(
     architecture_key: str,
     comparison_only: bool,
     text: str | None = None,
+    whatsapp_application: bool = False,
 ) -> RunExperimentMetadata:
     from app.core.config import get_settings
 
@@ -61,6 +65,11 @@ def _build_run_experiment(
     extra = metadata.model_extra or {}
     file_types = metadata.file_types if metadata.file_types else extra.get("fileTypes")
     scenario_id = extra.get("scenarioId") or _classify_scenario(text, file_types)
+    comparison = {}
+    if whatsapp_application and metadata.runtime_mode == RuntimeMode.REAL:
+        comparison = {"comparisonProtocol": WHATSAPP_APPLICATION_PROTOCOL, "comparisonSourceProfile": "application"}
+    elif "comparisonProtocol" in extra:
+        comparison = {"comparisonProtocol": extra["comparisonProtocol"]}
     return RunExperimentMetadata.model_validate(
         {
             "architectureFamily": extra.get("architectureFamily")
@@ -86,8 +95,7 @@ def _build_run_experiment(
             "runtimeCommitSha": extra.get("runtimeCommitSha"),
             "comparisonOnly": comparison_only,
             "requestedArchitectureMode": metadata.architecture_mode or architecture_key,
-            **({"comparisonProtocol": extra["comparisonProtocol"]}
-               if "comparisonProtocol" in extra else {}),
+            **comparison,
         }
     )
 

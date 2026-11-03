@@ -1,6 +1,7 @@
 """Exercise actual persistence, import entrypoint, and dispatch history without AWS."""
 import asyncio
 from datetime import UTC, datetime, timedelta
+import json
 from uuid import UUID, uuid4
 
 import pytest
@@ -167,6 +168,42 @@ def test_followup_snapshot_includes_new_turn_and_imported_history(local_api):
         assert len(history) == 4
         assert history[1].direction == "outbound"
         assert history[-1].content_text == "E qual o horário?"
+
+
+@pytest.mark.parametrize("legacy_protocol", [None, "architectural-comparison-v4.1"])
+def test_real_followup_after_mock_import_uses_application_protocol_and_fails_closed(local_api, monkeypatch, legacy_protocol):
+    client, factory, dispatched = local_api
+    imported = submit(client, capture(runtimeMode="mock")).json()
+    metadata = {"runtimeMode": "real", "architectureMode": "centralized_orchestration"}
+    if legacy_protocol is not None:
+        metadata["comparisonProtocol"] = legacy_protocol
+    response = client.post(
+        "/messages",
+        data={"conversationId": imported["conversationId"], "text": "E qual o horário?", "metadata_json": json.dumps(metadata)},
+        headers={"X-API-Key": "test-import-key"},
+    )
+    assert response.status_code == 202, response.text
+    run_id = UUID(response.json()["runId"])
+    assert dispatched[-1][0]["run_id"] == run_id
+
+    with factory() as db:
+        original = db.get(RunModel, UUID(imported["runId"]))
+        assert "comparisonProtocol" not in original.experiment_json
+        followup = db.get(RunModel, run_id)
+        assert followup.experiment_json["comparisonProtocol"] == "architectural-comparison-v4.4"
+        assert followup.experiment_json["comparisonSourceProfile"] == "application"
+        assert db.get(MessageModel, followup.message_id).metadata_json["runtimeMode"] == "real"
+
+    def fail_if_mocked(*args, **kwargs):
+        pytest.fail("The real WhatsApp continuation must not dispatch mock processing")
+
+    monkeypatch.setattr(ProcessingDispatcher, "_dispatch_mock", fail_if_mocked)
+    ProcessingDispatcher().dispatch(**dispatched[-1][0])
+    with factory() as db:
+        followup = db.get(RunModel, run_id)
+        assert followup.status == "failed"
+        assert followup.final_outcome == "dispatch_failed"
+        assert "Real runtime is not configured" in followup.summary_json["stopReason"]
 
 
 @pytest.mark.parametrize("health", [{"llm": {"ready": False}}, {"llm": None}, {}, []])
