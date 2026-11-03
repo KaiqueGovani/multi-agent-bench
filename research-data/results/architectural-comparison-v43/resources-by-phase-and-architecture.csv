@@ -1,0 +1,10 @@
+phase,architecture,phase_status,requests_started,requests_terminal,requests_with_usage,requests_failed,usage_complete,cache_usage_observed,known_inputTokens,known_outputTokens,known_totalTokens,estimated_cost_usd,known_partial_estimated_cost_usd,known_request_latencies,provider_format_repair_requests,locally_normalized_outputs,schema_invalid_physical_outputs,p50_known_attempts,p95_known_attempts
+generation,centralized_orchestration,canonical_runs_complete,504,504,504,0,True,False,724818,78822,803640,1.2308208,1.2308208,504,,,,1478.3191249589436,2835.0462000933476
+generation,structured_workflow,canonical_runs_complete,507,507,507,0,True,False,530506,82693,613199,1.0383681,1.0383681,507,,,,1611.7077079834417,2850.224358041305
+generation,decentralized_swarm,canonical_runs_complete,255,255,255,0,True,False,387852,42352,430204,0.6595732,0.6595732,255,,,,1606.410957989283,2851.139254169538
+primary,centralized_orchestration,complete,121,121,121,0,True,False,736174,93826,830000,3.9775031999999997,3.9775031999999997,121,1,119,2,13167.071708012372,16703.571167076007
+primary,structured_workflow,complete,120,120,120,0,True,False,731024,93091,824115,3.9483806999999995,3.9483806999999995,120,0,120,0,13220.188021019567,16795.700599986594
+primary,decentralized_swarm,complete,120,120,120,0,True,False,728367,94127,822494,3.9567066,3.9567066,120,0,120,0,13260.35110396333,17424.997381225694
+recheck,centralized_orchestration,complete,5,5,5,0,True,False,30206,3638,33844,0.15970679999999998,0.15970679999999998,5,0,5,0,14710.086916922592,17588.406033231877
+recheck,structured_workflow,complete,5,5,5,0,True,False,30508,3764,34272,0.1627824,0.1627824,5,0,5,0,14892.536208033562,15806.785900029354
+recheck,decentralized_swarm,complete,5,5,5,0,True,False,29904,4068,33972,0.1658052,0.1658052,5,0,5,0,15655.524290981703,19765.13125782367

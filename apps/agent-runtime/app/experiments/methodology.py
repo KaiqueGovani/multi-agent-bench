@@ -139,9 +139,13 @@ def decode_tool_result(value):
     return None
 def subset(actual,expected):return isinstance(actual,dict) and all(k in actual and actual[k]==v for k,v in expected.items())
 OBJECTIVE_CHECK_VERSION='objective-evidence-v5.3'
+NESTED_PROCEDURE_PROTOCOLS = {
+    "architectural-comparison-v4.2", "architectural-comparison-v4.3", "architectural-comparison-v4.4"
+}
+NESTED_OBJECTIVE_CHECK_VERSION = "objective-evidence-v5.4-nested"
 
 def executed_specialist_domain_call(start,end,events):
-    """v4.2 requires a real specialist invocation around the source event pair."""
+    """Require a real specialist invocation around the source event pair."""
     roles={'faq_lookup':'faq','stock_lookup':'stock','attachment_intake':'attachments'}
     invocation=start['payload'].get('agentInvocationId')
     if not invocation or start.get('actorName')!=roles.get(start.get('toolName')):return False
@@ -162,6 +166,7 @@ def evidence_arguments_match(evidence, arguments):
     return any(contains(alias) for alias in constraints['question_any']) and not any(contains(alias) for alias in constraints.get('question_none',[]))
 
 def objective_checks(case,run,events):
+    nested_evidence = run.get("comparison_protocol") in NESTED_PROCEDURE_PROTOCOLS
     starts={e['payload']['toolCallId']:e for e in events if e['eventFamily']=='tool' and e['eventName']=='started' and e.get('toolName') in {'faq_lookup','stock_lookup','attachment_intake'}}
     ends={e['payload']['toolCallId']:e for e in events if e['eventFamily']=='tool' and e['eventName']=='completed'}
     matched=set();compatible=0;unknown=0;checks=[]
@@ -174,7 +179,7 @@ def objective_checks(case,run,events):
         try:
             expected={'faq_lookup':faq_lookup,'stock_lookup':stock_lookup,'attachment_intake':attachment_intake}[tool](**arguments)
             contract_valid=end['status']=='completed' and actual==expected
-            if run.get('comparison_protocol')=='architectural-comparison-v4.2':
+            if nested_evidence:
                 contract_valid=contract_valid and executed_specialist_domain_call(start,end,events)
             valid=contract_valid and any(x['tool']==tool and subset(actual,x['expected_result']) and evidence_arguments_match(x,arguments) for x in all_evidence(case))
         except Exception:valid=False
@@ -186,7 +191,7 @@ def objective_checks(case,run,events):
     violations=[{'violation_id':v['violation_id'],'evidence_refs':['R1'],'reason':'predefined prohibited pattern'} for v in case['critical_restrictions'] if v.get('objective_pattern') and re.search(v['objective_pattern'],text)]
     milestones=[{'milestone_id':m['milestone_id'],'met':next((e['met'] for e in evidence if e['evidence_id']==m.get('evidence_id')),None),'verification':'objective'} for m in case['milestones'] if m['type']=='objective']
     procedure=None if not evidence else False if any(e['met'] is False for e in evidence) else None if any(e['met'] is None for e in evidence) else True
-    return {'verification_version':'objective-evidence-v5.4-nested' if run.get('comparison_protocol')=='architectural-comparison-v4.2' else OBJECTIVE_CHECK_VERSION,'required_evidence':evidence,'procedure_compliance':procedure,'procedure_applicable':bool(evidence),'mandatory_consultations':len(evidence),'critical_violations':violations,'milestones':milestones,'domain_calls_evaluable':len(starts)-unknown,'domain_calls_correct':compatible,'domain_call_correctness':compatible/(len(starts)-unknown) if len(starts)>unknown else None,'call_checks':checks}
+    return {'verification_version':NESTED_OBJECTIVE_CHECK_VERSION if nested_evidence else OBJECTIVE_CHECK_VERSION,'required_evidence':evidence,'procedure_compliance':procedure,'procedure_applicable':bool(evidence),'mandatory_consultations':len(evidence),'critical_violations':violations,'milestones':milestones,'domain_calls_evaluable':len(starts)-unknown,'domain_calls_correct':compatible,'domain_call_correctness':compatible/(len(starts)-unknown) if len(starts)>unknown else None,'call_checks':checks}
 def evaluator_consistency_issue(case,evaluation):
     if not evaluation:return None
     observed=recommendation_observed(evaluation)
@@ -210,7 +215,7 @@ def aggregate(case,run,objective,evaluation):
     # New technical condition, intentionally outside the frozen semantic judge.
     # Historical records without this field retain their original interpretation.
     if run.get('architectural_compliance') is False:return {'task_success':False,'reason':'architectural contract violation'}
-    if run.get('comparison_protocol')=='architectural-comparison-v4.2' and run.get('architectural_compliance') is not True:return {'task_success':None,'reason':'architectural contract unverified'}
+    if run.get('comparison_protocol') in NESTED_PROCEDURE_PROTOCOLS and run.get('architectural_compliance') is not True:return {'task_success':None,'reason':'architectural contract unverified'}
     if objective['critical_violations'] or any(x['met'] is False for x in objective['required_evidence']):return {'task_success':False,'reason':'objective violation or missing mandatory evidence'}
     if evaluation is None:return {'task_success':None,'reason':'judge unavailable'}
     if evaluator_consistency_issue(case,evaluation):return {'task_success':None,'reason':'evaluator internal contradiction; technical review required'}

@@ -1,0 +1,11 @@
+{
+  "contract_passed": true,
+  "out_of_scope_requests_rejected": 1,
+  "rejected_request_execution_count": 0,
+  "physical_requests": 4,
+  "input_tokens": 6465,
+  "output_tokens": 879,
+  "scope": "separate synthetic engineering probe",
+  "total_tokens": 7344,
+  "estimated_cost_usd": 0.011946
+}

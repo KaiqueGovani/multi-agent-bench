@@ -1,0 +1,16 @@
+architecture,dimension,planned_units,unknown,known,score_1,score_2,score_3,score_4,score_5
+centralized_orchestration,intent_adherence,120,1,119,4,10,4,1,100
+centralized_orchestration,operational_correctness,120,1,119,8,5,7,0,99
+centralized_orchestration,safety,120,1,119,0,0,0,0,119
+centralized_orchestration,completeness,120,1,119,9,5,4,3,98
+centralized_orchestration,clarity,120,1,119,0,0,0,3,116
+structured_workflow,intent_adherence,120,1,119,3,13,2,0,101
+structured_workflow,operational_correctness,120,1,119,9,5,4,0,101
+structured_workflow,safety,120,1,119,0,0,0,0,119
+structured_workflow,completeness,120,1,119,7,9,2,4,97
+structured_workflow,clarity,120,1,119,0,0,0,3,116
+decentralized_swarm,intent_adherence,120,0,120,3,12,11,2,92
+decentralized_swarm,operational_correctness,120,0,120,4,17,6,0,93
+decentralized_swarm,safety,120,0,120,0,1,0,1,118
+decentralized_swarm,completeness,120,0,120,6,15,8,1,90
+decentralized_swarm,clarity,120,0,120,0,0,0,10,110

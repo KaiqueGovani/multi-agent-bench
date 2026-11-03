@@ -1,0 +1,45 @@
+{
+  "protocol": "architectural-comparison-v4.4",
+  "dataset_version": "real-conversations-v1.0",
+  "manifest_sha256": "a637c9d5d19b02a6ccccd198f9dc2ef485e468326ca5521421433d736476fe6c",
+  "historical_manifest_sha256": "ea77cc3cf50a8c1fe8d6c84d22ad0bf5fccaa171773c00b26421f0ce46c1b917",
+  "cases_sha256": "8c251bec5e78dc6f355840fb89f6e400c3988fa9f68496e31fd25b476b600866",
+  "analysis_plan_sha256": "a24de1352dcab5c89838db1185b2094be206c4c4ad5ef4fc3490d0fea727cfea",
+  "analysis_plan_declared_at": "2026-11-03T02:46:08.633961+00:00",
+  "exporter_sha256": "c244bb5a5d2ac730b02e7dcf8812f7a3badf1277e93a0f2896f83cd47a581587",
+  "pricing_sha256": "52d1339bbd486a500bc1fcff05d7897afa37caf8f4c027266a8e008a8109aebb",
+  "reused_v42_method_sha256": "f453154757b5aae3fa7e0b080112228bca5077e9fec4fc0aade63ce751243c91",
+  "generation_model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+  "judge_model_id": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+  "region": "us-west-2",
+  "judge_configuration_sha256": "6f45a31db81c9c6340bb13f7e199776890a300415ccbad0d408af6d09b143582",
+  "terminal_units": 600,
+  "scenario_count": 40,
+  "repetitions": 5,
+  "execution": "parallel_balanced_waves",
+  "generation_dispatch": {
+    "mode": "balanced concurrent waves of complete scenario-repetition triplets",
+    "workers": 48,
+    "waves": 13,
+    "wave_barriers_verified": 12,
+    "unit_timestamp_pairs_verified": 600
+  },
+  "parallel_amendment": {
+    "prior_sequential_terminal_units_excluded": 54,
+    "prior_sequential_evaluations_excluded": 0,
+    "included_prior_sequential_units": 0
+  },
+  "judge_workers": 48,
+  "generation_timestamp_pairs_checked": 600,
+  "judge_timestamp_pairs_checked": 0,
+  "judge_physical_requests": 617,
+  "engineering_pilot": {
+    "passed": true,
+    "gate_sha256": "bfca4f279d31f578a718fd9332483c48fdd010c4c9b4b8a4385b6cb6ae51b542",
+    "planned_units": 18,
+    "manifest_sha256": "71dc3e2452f5120fd4a545693c55cb746812ec1b0b17a375e4ee3e00fb951bb9"
+  },
+  "trace_measurement_limitations": {},
+  "raw_conversations_published": false,
+  "human_review_performed": false
+}

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Reproducible judge-only dispatcher. Frozen generation and judge semantics are unchanged.
+"""Reproducible dispatcher for a frozen cohort and judge.
 
-Four independent processes own disjoint blind response IDs. Each logical response
+Independent processes own disjoint blind response IDs. Each logical response
 has a durable claim and its own original judge_once journal. Only the coordinator
 consolidates those physical request records into the cohort's canonical files.
 No model call occurs without --allow-inference (or through any test command).
@@ -27,6 +27,10 @@ import run_research_pilot as collector
 
 VERSION = "exclusive-parallel-judge-v1"
 TERMINALS = {"completed", "failed"}
+PROVIDER_PAUSE_CODES = {
+    "ExpiredTokenException", "ExpiredToken", "AccessDeniedException", "UnrecognizedClientException",
+    "ThrottlingException", "ServiceUnavailableException", "ModelNotReadyException",
+}
 
 
 def now():
@@ -121,6 +125,11 @@ def recover_from_journal(unit, case, rid, phase):
 def prepare(folder, calibration, workers, phase, *, expected_units=600):
     cfg = validate_config(folder, calibration)
     manifest = read(folder / "manifest.json")
+    if manifest.get("configuration", {}).get("protocol") == collector.V43:
+        expected_units = len(manifest["order"])
+    if manifest.get("configuration", {}).get("protocol") == collector.V44:
+        if workers != manifest["evaluation_plan"]["dispatch_workers"]:
+            raise ValueError("Judge worker count differs from the frozen v4.4 protocol")
     if (folder / "runner.lock").exists():
         raise ValueError("Generation is still running; do not overlap judge dispatch")
     if len(lines(folder / "runs.jsonl")) != len(manifest["order"]) or len(manifest["order"]) != expected_units:
@@ -175,7 +184,11 @@ def prepare(folder, calibration, workers, phase, *, expected_units=600):
                 "model_rubric_reference_changed": False, "new_model_calls_during_preparation": 0,
                 "journal_merge": "original prefix then newly owned responses in immutable blind order; actual started_at preserves request concurrency; per-response journals are duplicate audit views, not extra physical requests",
                 "resume": "completed owner retained; dead started owner recovers first valid durable output or becomes unknown, never another inference; only unclaimed logical units can start",
-                "change_authorization": "user explicitly requested judge-only parallelism; generation remains sequential"}
+                "change_authorization": {
+                    collector.V43: "user explicitly requested generation and judgment concurrency for v4.3",
+                    collector.V44: "judge dispatch follows the frozen v4.4 plan",
+                }.get(manifest.get("configuration", {}).get("protocol"),
+                      "user explicitly requested judge-only parallelism; generation remains sequential")}
     original = base / "original-prefix"
     original.mkdir(mode=0o700)
     for filename in ("judge-attempts.jsonl", "evaluations.jsonl", "reevaluations.jsonl", "evaluation-failures.jsonl"):
@@ -234,6 +247,8 @@ def execute_one(folder, dispatch, item, worker, cfg, *, engine=None):
 def worker_main(folder, phase, index):
     base = phase_path(folder, phase)
     dispatch = read(base / "dispatch.json")
+    if not 1 <= index <= dispatch["workers"]:
+        raise ValueError("Worker index is outside the frozen dispatch")
     if dispatch["source_sha256"] != sha(Path(__file__)):
         raise ValueError("Private dispatcher changed after ownership freeze")
     cfg = read(base / "judge-config.json")
@@ -244,11 +259,23 @@ def worker_main(folder, phase, index):
     if sha(base / f"worker-{index:02d}" / "blind-partition.json") != dispatch["partition_sha256"][str(index)]:
         raise ValueError("Worker ownership partition changed")
     items = read(base / f"worker-{index:02d}" / "blind-partition.json")
+    pause = base / "provider-pause"
+    v44 = read(folder / "manifest.json").get("configuration", {}).get("protocol") == collector.V44
     for position, item in enumerate(items):
+        if v44 and pause.exists():
+            return 2
+        unit = base / "responses" / item["evaluation_id"]
+        already_terminal = (unit / "result.json").exists()
         execute_one(folder, dispatch, item, index, cfg)
         collector.dump(base / f"worker-{index:02d}" / "status.json",
                        {"worker": index, "phase": phase, "finished_or_preserved": position + 1,
                         "assigned": len(items), "updated_at": now()})
+        if v44 and not already_terminal and any(
+            attempt.get("error_code") in PROVIDER_PAUSE_CODES
+            for attempt in lines(unit / "judge-attempts.jsonl")
+        ):
+            pause.mkdir(exist_ok=True)
+            return 2
     return 0
 
 
@@ -339,6 +366,9 @@ def run_phase(folder, calibration, workers, phase, *, prepare_only=False):
         return 0
     base = phase_path(folder, phase)
     merge = CentralMerge(folder, dispatch)
+    pause = base / "provider-pause"
+    if pause.exists():
+        pause.rename(base / f"previous-provider-pause-{time.time_ns()}")
     processes, logs = [], []
     try:
         for index in range(1, workers + 1):
@@ -389,18 +419,20 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("folder", type=Path)
     parser.add_argument("--phase", choices=("primary", "recheck", "both"), default="both")
-    parser.add_argument("--workers", type=int, choices=(4,), default=4)
+    parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--calibration", type=Path, default=ROOT / "var/reports/automated-pilots-v5/calibration-v5.2")
     parser.add_argument("--allow-inference", action="store_true")
     parser.add_argument("--prepare-only", action="store_true")
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--worker-index", type=int, help=argparse.SUPPRESS)
     args = parser.parse_args()
+    if args.workers < 1:
+        parser.error("A positive worker count is required")
     if not args.allow_inference and not args.prepare_only:
         parser.error("Explicit --allow-inference or --prepare-only is required")
     folder = args.folder.resolve()
     if args.worker_index:
-        if args.phase == "both" or args.worker_index not in range(1, 5):
+        if args.phase == "both" or args.worker_index < 1:
             parser.error("Invalid private worker assignment")
         return worker_main(folder, args.phase, args.worker_index)
     lock = folder / "parallel-judge.lock"

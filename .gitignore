@@ -22,6 +22,7 @@ build/
 !.env.example
 
 # Local artifacts
+.DS_Store
 uploads/
 /storage/
 var/

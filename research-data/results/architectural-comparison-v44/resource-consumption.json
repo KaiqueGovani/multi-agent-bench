@@ -1,0 +1,82 @@
+{
+  "generation": {
+    "phase": "generation",
+    "architecture": "all",
+    "requests_started": 2739,
+    "requests_terminal": 2739,
+    "requests_with_usage": 2739,
+    "requests_failed": 0,
+    "usage_complete": true,
+    "cache_usage_observed": false,
+    "known_inputTokens": 3755095,
+    "known_outputTokens": 547356,
+    "known_totalTokens": 4302451,
+    "estimated_cost_usd": 7.1410625,
+    "known_partial_estimated_cost_usd": 7.1410625
+  },
+  "primary": {
+    "phase": "primary",
+    "architecture": "all",
+    "requests_started": 602,
+    "requests_terminal": 602,
+    "requests_with_usage": 602,
+    "requests_failed": 0,
+    "usage_complete": true,
+    "cache_usage_observed": false,
+    "known_inputTokens": 3816101,
+    "known_outputTokens": 562630,
+    "known_totalTokens": 4378731,
+    "estimated_cost_usd": 21.876528299999997,
+    "known_partial_estimated_cost_usd": 21.876528299999997,
+    "known_request_latencies": 602,
+    "latency_ms_p50": 15618.290854035877,
+    "latency_ms_p95": 20546.881681273226,
+    "provider_format_repairs": 2,
+    "locally_normalized": 600,
+    "invalid_schema_outputs": 2
+  },
+  "recheck": {
+    "phase": "recheck",
+    "architecture": "all",
+    "requests_started": 15,
+    "requests_terminal": 15,
+    "requests_with_usage": 15,
+    "requests_failed": 0,
+    "usage_complete": true,
+    "cache_usage_observed": false,
+    "known_inputTokens": 92985,
+    "known_outputTokens": 13749,
+    "known_totalTokens": 106734,
+    "estimated_cost_usd": 0.533709,
+    "known_partial_estimated_cost_usd": 0.533709,
+    "known_request_latencies": 15,
+    "latency_ms_p50": 19596.81979205925,
+    "latency_ms_p95": 22904.50196689926,
+    "provider_format_repairs": 0,
+    "locally_normalized": 15,
+    "invalid_schema_outputs": 0
+  },
+  "pricing": {
+    "currency": "USD",
+    "checked_on": "2026-11-02",
+    "region": "us-west-2",
+    "inference_profile_scope": "US geographic cross-region (us.*), standard on-demand; no batch discount",
+    "rates_per_million_tokens": {
+      "haiku_4_5": {
+        "input": 1.1,
+        "output": 5.5
+      },
+      "sonnet_4_5": {
+        "input": 3.3,
+        "output": 16.5
+      }
+    },
+    "source_effective_date": "2026-05-27",
+    "source": "https://www-cdn.anthropic.com/files/4zrzovbb/website/3684c2faafb97418665782cea0001f439f74b1d2.pdf",
+    "secondary_source": "https://platform.claude.com/docs/en/about-claude/pricing",
+    "aws_pricing": "https://aws.amazon.com/bedrock/pricing/",
+    "meaning": "estimate from publicly listed standard geographic cross-region rates, not AWS billing or account-specific discounts; usage missing => full cost unknown",
+    "cache": "no prompt cache configured; any recorded cache usage must be reported separately and not priced silently as base input"
+  },
+  "scope": "main cohort physical requests"
+}

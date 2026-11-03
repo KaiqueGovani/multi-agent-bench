@@ -1,0 +1,9 @@
+{
+  "planned": 15,
+  "available_responses": 15,
+  "schema_valid_rechecks": 15,
+  "schema_valid_pairs": 15,
+  "known_composite_pairs": 15,
+  "known_composite_changes": 1,
+  "critical_label_set_disagreements": 0
+}

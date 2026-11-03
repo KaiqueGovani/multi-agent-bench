@@ -1,0 +1,51 @@
+{
+  "pilot_first_runtime_snapshot": {
+    "unique_requests": 63,
+    "with_usage": 63,
+    "unknown_usage": 0,
+    "inputTokens": 78074,
+    "outputTokens": 8200,
+    "totalTokens": 86274,
+    "estimated_usd": 0.1309814
+  },
+  "pilot_runtime_used_by_main": {
+    "unique_requests": 63,
+    "with_usage": 63,
+    "unknown_usage": 0,
+    "inputTokens": 78074,
+    "outputTokens": 8200,
+    "totalTokens": 86274,
+    "estimated_usd": 0.1309814
+  },
+  "http_integration": {
+    "unique_requests": 10,
+    "with_usage": 10,
+    "unknown_usage": 0,
+    "inputTokens": 13141,
+    "outputTokens": 1837,
+    "totalTokens": 14978,
+    "estimated_usd": 0.0245586
+  },
+  "capacity_probe": {
+    "haiku_requests": 24,
+    "haiku_total_tokens": 145157,
+    "sonnet_requests": 24,
+    "sonnet_total_tokens": 286426,
+    "estimated_usd": null,
+    "explanation": "input/output split not retained for capacity probes"
+  },
+  "connectivity_probe": {
+    "haiku_requests": 1,
+    "sonnet_requests": 1,
+    "total_tokens": 30,
+    "estimated_usd": null
+  },
+  "pricing_basis": "public on-demand US geo inference list rates, estimates only",
+  "single_scope_diagnostic": {
+    "physical_requests": 6,
+    "inputTokens": 9270,
+    "outputTokens": 1105,
+    "totalTokens": 10375,
+    "estimated_usd": 0.0162745
+  }
+}

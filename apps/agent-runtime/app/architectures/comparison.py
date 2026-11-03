@@ -166,26 +166,34 @@ class RecordedBedrockModel(BedrockModel):
 
 
 class ControlledAgent:
-    def __init__(self, ctx, role, tools, *, peer=False):
+    def __init__(self, ctx, role, tools, *, peer=False, system_prompt=None, model_factory=None, tool_events=None):
         self.ctx, self.role = ctx, role
         self.agent_id = f"{role}:{uuid4()}"
-        system_prompt = DOMAIN_POLICY + "\n" + ROLE_PROMPTS[role]
+        if system_prompt is None:
+            system_prompt = DOMAIN_POLICY + "\n" + ROLE_PROMPTS[role]
         if peer:
             system_prompt += PEER_INSTRUCTION
         self.agent = Agent(
-            model=RecordedBedrockModel(
+            model=(model_factory or RecordedBedrockModel)(
                 model_id=ctx.settings.bedrock_model_id, region_name=ctx.settings.aws_region,
                 temperature=ctx.settings.llm_temperature, max_tokens=ctx.settings.llm_max_tokens,
                 stop_sequences=[], streaming=False,
                 boto_client_config=Config(connect_timeout=10, read_timeout=ctx.settings.runtime_timeout_seconds,
                                           retries={"total_max_attempts": 1}),
-            ).set_recorder(ctx, role), system_prompt=system_prompt, tools=tools, hooks=[ToolEvents(ctx, role)],
+            ).set_recorder(ctx, role), system_prompt=system_prompt, tools=tools,
+            hooks=[tool_events if tool_events is not None else ToolEvents(ctx, role)],
             callback_handler=None, tool_executor=SequentialToolExecutor(), retry_strategy=None,
             agent_id=self.agent_id, name=role,
             structured_output_model=RouteSelection if role in {"router", "coordinator"} else None,
         )
 
-    def __call__(self, prompt):
+    def output_text(self, result):
+        structured = getattr(result, "structured_output", None)
+        if self.role in {"router", "coordinator"} and structured is not None:
+            return structured.model_dump_json()
+        return str(result).strip()
+
+    def __call__(self, prompt, *, parent_link=None):
         check_deadline(self.ctx)
         call_id = str(uuid4())
         start = time.perf_counter()
@@ -194,6 +202,8 @@ class ControlledAgent:
         linkage = {"callId": call_id, "agentInvocationId": call_id, "agentId": self.agent_id,
                    "parentCallId": tool_stack[-1]["toolCallId"] if tool_stack else None,
                    "parentAgentInvocationId": parent.get("callId") or (tool_stack[-1].get("agentInvocationId") if tool_stack else None), "role": self.role}
+        if parent_link is not None:
+            linkage.update(parent_link)
         if not hasattr(self.ctx, "invocation_stack"):
             self.ctx.invocation_stack = []
         self.ctx.invocation_stack.append(linkage)
@@ -206,8 +216,7 @@ class ControlledAgent:
         self.ctx.emit("node", "started", "running", actor_name=self.role, node_id=self.agent_id, payload=linkage)
         try:
             result = self.agent(prompt)
-            structured = getattr(result, "structured_output", None)
-            text = structured.model_dump_json() if self.role in {"router", "coordinator"} and structured is not None else str(result).strip()
+            text = self.output_text(result)
             usage = _extract_strands_usage(result)
             if not text:
                 raise ValueError("Empty agent output")
@@ -274,18 +283,20 @@ class ToolEvents:
 
 class SpecialistFactory:
     """One actual agent per domain role per attempt, shared by architecture definitions."""
-    def __init__(self, ctx, tools, *, peer_tool=None):
+    def __init__(self, ctx, tools, *, peer_tool=None, agent_factory=None):
         self.ctx, self.tools, self.peer_tool = ctx, tools, peer_tool
         self.agents = {}
+        self.agent_factory = agent_factory
 
     def get(self, role):
         if role not in self.agents:
             tools = [self.tools[role]] + ([self.peer_tool] if self.peer_tool else [])
-            self.agents[role] = ControlledAgent(self.ctx, role, tools, peer=self.peer_tool is not None)
+            factory = self.agent_factory or ControlledAgent
+            self.agents[role] = factory(self.ctx, role, tools, peer=self.peer_tool is not None)
         return self.agents[role]
 
 
-def specialist_tools(ctx, factory, original_prompt):
+def specialist_tools(ctx, factory, original_prompt, *, on_completed=None):
     def invoke(role, task):
         check_deadline(ctx)
         if getattr(ctx, "specialist_tool_invocations", 0) >= MAX_SPECIALIST_INVOCATIONS:
@@ -294,6 +305,8 @@ def specialist_tools(ctx, factory, original_prompt):
             raise ExperimentLimitExceeded("Specialist invocation limit (6) exceeded")
         ctx.specialist_tool_invocations = getattr(ctx, "specialist_tool_invocations", 0) + 1
         reply = factory.get(role)(original_prompt + "\nSolicitação delegada pelo supervisor: " + task)
+        if on_completed is not None:
+            on_completed(role)
         tool_stack = getattr(ctx,"tool_stack",[])
         ctx.emit("communication", "message", "completed", actor_name=role,
                  payload={"messageId":str(uuid4()), "to":"supervisor", "text":reply, "characters":len(reply),
@@ -331,7 +344,8 @@ def attachment_context(ctx):
             for i,a in enumerate(ctx.attachment_dicts())]
 
 
-def execute_comparison(ctx, architecture, *, source_profile="controlled-research"):
+def execute_comparison(ctx, architecture, *, source_profile="controlled-research", configuration_factory=None,
+                       central_executor=None):
     """Same agent structure for experiment and application; only domain adapters differ."""
     if architecture not in ARCHITECTURES:
         raise ValueError("Unknown comparison architecture")
@@ -350,12 +364,14 @@ def execute_comparison(ctx, architecture, *, source_profile="controlled-research
     prompt = "Histórico integral normalizado:\n" + context + "\nMensagem atual: " + (ctx.request.latest_message.content_text or "")
     prompt += "\nDescritores de anexos: " + json.dumps(attachment_context(ctx), ensure_ascii=False)
     prompt += f"\nEncaminhamento obrigatório pela política comum: {str(review).lower()}."
-    configuration = snapshot(ctx.settings)
+    configuration = (configuration_factory or snapshot)(ctx.settings)
     configuration["sources_profile"] = source_profile
     configuration["tool_schema_hashes"] = {role: hashlib.sha256(json.dumps(t.tool_spec, sort_keys=True, ensure_ascii=False).encode()).hexdigest() for role,t in tools.items()}
     configuration["specialist_definition_hashes"] = {role: hashlib.sha256(json.dumps({"prompt":configuration["role_prompts"][role],"model":ctx.settings.bedrock_model_id,"temperature":ctx.settings.llm_temperature,"max_tokens":ctx.settings.llm_max_tokens,"schema":t.tool_spec},sort_keys=True,ensure_ascii=False).encode()).hexdigest() for role,t in tools.items()}
     ctx.emit("experiment", "configuration", "completed", payload=configuration)
     if architecture == "centralized_orchestration":
+        if central_executor is not None:
+            return central_executor(ctx, factory, prompt, review, configuration)
         final = ControlledAgent(ctx, "supervisor", specialist_tools(ctx, factory, prompt))(prompt)
         final_actor, route = "supervisor", "agent_selected"
     elif architecture == "structured_workflow":

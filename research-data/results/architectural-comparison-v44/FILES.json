@@ -1,0 +1,130 @@
+{
+  "README.md": {
+    "sha256": "a6262f738054ab5bb488d008e3f056b78c771fadc8c188c953d49feef415b428",
+    "bytes": 285
+  },
+  "RELATORIO.md": {
+    "sha256": "5b9df63b7727db99ae4e0103fd1876d1be788135d268aad10226ca151e58fd2a",
+    "bytes": 5502
+  },
+  "architecture-summary.csv": {
+    "sha256": "f289d0e34a3df2297f225ea83e0817e972ec889a86716f8267b490a266124faf",
+    "bytes": 3342
+  },
+  "category-summary.csv": {
+    "sha256": "bdc3905970966b86b7890d0766229fc35c3b151e4d7d155f684eac5a663c43fb",
+    "bytes": 8104
+  },
+  "critical-flags.csv": {
+    "sha256": "384073eaab03aac9767ab0638840e547731262784573f239a106c29d5a63f849",
+    "bytes": 1391
+  },
+  "difficulty-summary.csv": {
+    "sha256": "47beb4437c0cf69d92c0a6e5b5991c43a89aa9ec69816f362327f167b742a0b6",
+    "bytes": 6207
+  },
+  "failure-classes.csv": {
+    "sha256": "c74c141ddb4bce6ffc689a5b4793f23d7e112ca95ec0cc4ab20043041749857f",
+    "bytes": 1203
+  },
+  "figures/01_sucesso.png": {
+    "sha256": "e018fc319ad4feb5c8c6fe9720a1eb3da76a5c8e11c0c0c028aca1caf6e08347",
+    "bytes": 42754
+  },
+  "figures/01_sucesso.svg": {
+    "sha256": "033cdd782f9c8b8c73f2d04a676265570e1d923a125111187bcc8d987720b7cc",
+    "bytes": 8358
+  },
+  "figures/02_latencia_custo_sucesso.png": {
+    "sha256": "75d60a471d94400d569cbd7198d9359001d2765d21bd0e53f2c21cd737ba8f11",
+    "bytes": 115261
+  },
+  "figures/02_latencia_custo_sucesso.svg": {
+    "sha256": "fd070f6901d7395773e2661c46b6f6a5e7821a03965b53176683fa2b5b1c7bcc",
+    "bytes": 22665
+  },
+  "figures/03_categorias.png": {
+    "sha256": "08114471668fdec6aac866717e3b2cee47942fa09330e001f336e9263fa681c9",
+    "bytes": 77686
+  },
+  "figures/03_categorias.svg": {
+    "sha256": "ba183e6a361e355930a2e75b22063f778d7b227d919d8392334160f54f4d699f",
+    "bytes": 13749
+  },
+  "figures/04_consistencia.png": {
+    "sha256": "fc613a2862d3b620cf0041e9a5b53d81a8e0bb1cfcc06d032ce7b1384dcd520e",
+    "bytes": 67752
+  },
+  "figures/04_consistencia.svg": {
+    "sha256": "ffcb9442624b1449ab4a58a6eadcbe7f406f164a803df6f5f09667efdaeda32d",
+    "bytes": 11157
+  },
+  "figures/05_falhas.png": {
+    "sha256": "58cb178bde8f1709eb9fd3c23346609339f0bee76eb4216d8b4569e50e9a797b",
+    "bytes": 79553
+  },
+  "figures/05_falhas.svg": {
+    "sha256": "8ea86f30410082cd0d6f3877bc7dec8136878b6c2bf784e1551315a5582323d0",
+    "bytes": 15698
+  },
+  "historical-comparison.csv": {
+    "sha256": "a281dd662610f23c30cc8eefa434889a2271ed6f8d5997627782c92f1a6492f3",
+    "bytes": 638
+  },
+  "measurement-distributions.csv": {
+    "sha256": "31aa239bf3e112e863a97147905e9d01745ad52fd80a3193d90db93f10cfa1c8",
+    "bytes": 2887
+  },
+  "paired-secondary-effects.csv": {
+    "sha256": "c0db1171151d221237cbedfcefae0f3f75ec9ecac3f4c534af1aec5d32505148",
+    "bytes": 1349
+  },
+  "paired-success.csv": {
+    "sha256": "e74bdb418d6433582c0113c1e4e394c0dcd75dd5cb23ed989ed0985de438fda7",
+    "bytes": 849
+  },
+  "phase-cost-summary.csv": {
+    "sha256": "dbd259a0dec32d44516efd4682b90ae9c754a834f51f05a163a4648706e3245a",
+    "bytes": 2442
+  },
+  "provenance.json": {
+    "sha256": "abdc1e6e9385b345a46fee9f1e0972d42bd091700ecdd9834b0be2e19b9bdfa5",
+    "bytes": 2088
+  },
+  "quality-distributions.csv": {
+    "sha256": "376b7e90de1362d4872242db316da55d2f33fc2989eaa6fb97d5a16fdf409540",
+    "bytes": 4121
+  },
+  "recheck-analysis.json": {
+    "sha256": "f8ced86092b2a0b6c679f82a3dff188b3bc3dcb20cafbe234e3ea34fe0eeede3",
+    "bytes": 212
+  },
+  "resource-consumption.json": {
+    "sha256": "e729812137e237f3d4a3cacdb017f8fc4dc96bd352b3749ac9dc3a3b228ce70c",
+    "bytes": 2824
+  },
+  "results-summary.json": {
+    "sha256": "ceaa9d6f32053dc6de2cdb95200770a1133aed9c8dbbf74ef33f9757fa06623f",
+    "bytes": 14802
+  },
+  "scenario-measurements.csv": {
+    "sha256": "d450902eeddb333901714195f844d0ddbc7e0bf2c11d6e77671f7ba264d43c54",
+    "bytes": 1803
+  },
+  "scenario-metrics.csv": {
+    "sha256": "4db04adcd87bab0f30ed3d2ca91cc92dd35fda4edd761f85b4236ee8815900cb",
+    "bytes": 11807
+  },
+  "scope-probe-summary.json": {
+    "sha256": "0f59b68bad610d6e235a21a04e9df2c8b109ba1dfa2c2dbfa8c6dbbd0e617823",
+    "bytes": 293
+  },
+  "units.csv": {
+    "sha256": "202ce1a6ffc5f66662d40cc9647c35424b401af64ba6aef3ce676e3814dd281f",
+    "bytes": 178281
+  },
+  "units.jsonl": {
+    "sha256": "1789c06cf501c8fafd8e0a0dd52baea8a1c2b2d62cdf998cfd56c82868b5afbf",
+    "bytes": 863418
+  }
+}

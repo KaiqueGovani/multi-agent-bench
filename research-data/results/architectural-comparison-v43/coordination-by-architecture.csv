@@ -1,0 +1,4 @@
+architecture,handoffs_requested,handoffs_completed,handoffs_failed,handoffs_without_terminal,explicit_messages,explicit_message_characters,messages_linked_to_handoff
+centralized_orchestration,0,0,0,0,147,99468,0
+structured_workflow,0,0,0,0,147,91372,0
+decentralized_swarm,33,33,0,0,33,10011,33

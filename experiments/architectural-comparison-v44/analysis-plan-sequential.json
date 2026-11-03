@@ -1,0 +1,71 @@
+{
+  "version": "architectural-comparison-v4.4-analysis-v1",
+  "declared_at_utc": "2026-11-03T02:31:25.190551+00:00",
+  "timing": "frozen before the new engineering pilot and the first main generation",
+  "scenario_unit": 40,
+  "repetitions_per_scenario_architecture": 5,
+  "architectures": [
+    "centralized_orchestration",
+    "structured_workflow",
+    "decentralized_swarm"
+  ],
+  "primary_outcome": "observed task success: technical completion AND architectural compliance AND frozen content criteria AND required objective evidence; missing assessment is unknown, never silently success",
+  "primary_denominator_per_architecture": 200,
+  "unknowns": "report separately, show known-only rate and lower/upper descriptive bounds; primary observed success fraction uses all planned units",
+  "paired_primary": "compute proven task successes/5 for each of 40 scenarios and architecture; compare three paired scenario fraction differences, B minus A, in percentage points",
+  "bootstrap": {
+    "method": "paired percentile cluster bootstrap; resample 40 whole scenarios with replacement preserving five repetitions and three architectures",
+    "resamples": 20000,
+    "confidence": 0.95,
+    "seed": 20261011
+  },
+  "paired_test": {
+    "method": "two-sided paired sign permutation of scenario success-fraction differences; remove zero differences; exact enumeration up to 16 nonzero differences, otherwise Monte Carlo with plus-one p adjustment",
+    "resamples": 99999,
+    "seed": 20261011,
+    "multiplicity": "Holm over all three success comparisons; alpha=0.05; no favorable comparison selection"
+  },
+  "secondary_outcomes": [
+    "technical success",
+    "architectural compliance",
+    "content success",
+    "required evidence consultation",
+    "valid and invalid primary judgments",
+    "five ordinal quality dimensions separately",
+    "critical flags (overlapping)",
+    "scenario-level pass^1 and pass^5 consistency",
+    "category and difficulty",
+    "unique physical requests, distinct agent roles, invocations, domain calls, specialist-as-tool invocations, peer delegations and explicit messages",
+    "core latency and collector end_to_end_latency_ms separately; API latency separately; judge latency separately",
+    "input/output tokens and estimated USD costs per run and observed success"
+  ],
+  "latency_summary": "median of five attempts per scenario, then median and IQR across scenarios; completed and technical-failure latency distributions separate; do not exclude legitimate unfavorable content",
+  "cost_policy": "estimated token cost from physical request ledger, base input and output tariff; unknown usage remains unknown with known partial sums explicit; generation/judge/recheck/connectivity/pilot/API separated; never actual invoice",
+  "failure_classes_priority": [
+    "technical failure or interruption",
+    "architectural contract violation",
+    "invalid or missing content judgment preventing classification",
+    "both content and mandatory evidence failure",
+    "content failure only",
+    "mandatory evidence failure only",
+    "unknown other"
+  ],
+  "failure_classes_scope": "one exclusive primary class for each nonsuccess; overlapping semantic/critical indicators explicitly labelled",
+  "recheck": {
+    "count": 15,
+    "selection": "before content judgment: one cell per architecture \u00d7 five historical categories, seeded random response selection as existing select_rechecks; seed 20261011; preserve primary; no favorable substitution",
+    "interpretation": "same automated judge stability, no human/pharmacist review"
+  },
+  "history": "keep v4.1, v4.2, v4.3 and v4.4 cohorts separate; the main table is the fresh v4.4 run only",
+  "limitations": [
+    "purposive known scenario set",
+    "controlled sources",
+    "no clinical validation",
+    "no independent external test",
+    "no pharmacist review",
+    "sampling intervals conditional on this scenario collection"
+  ],
+  "generation_schedule": "600 new isolated attempts, sequential, in the same balanced logical order as v4.2; preserve first attempts",
+  "evaluation_schedule": "same calibrated semantic judge and independent objective verifier; dispatch count frozen in the main manifest before new main generation; 15 planned same-judge rechecks",
+  "comparator_scope": "v4.2 workflow and swarm, including coordinator and final synthesizer; only the centralized supervisor policy changes"
+}

@@ -1,0 +1,37 @@
+{
+  "version": "architectural-comparison-v4.3-analysis-v1",
+  "protocol": "architectural-comparison-v4.3",
+  "architectures": ["centralized_orchestration", "structured_workflow", "decentralized_swarm"],
+  "primary_outcome": "Final response content meets all frozen essential criteria, explicitly recommends professional review when required, and has no critical violation under the content rubric.",
+  "primary_automatic_scope": "Full cohort, provisional automated assessment, with the frozen reference and rubric. An absent response or indeterminate assessment is unknown. A demonstrated content failure remains a failure even if another criterion is unknown.",
+  "primary_human_scope": "Independent blinded review of the fixed sample by two attested human reviewers. Keep the two labels and their agreement separate. A consensus label requires two equal known labels. Never replace automated labels in the full cohort.",
+  "secondary_outcomes": ["technical completion", "architectural compliance", "mandatory consultation applicability and compliance", "objective critical flags", "v4.2-style conjunctive task success"],
+  "paired_analysis": {
+    "unit": "scenario",
+    "repetitions": "keep all planned repetitions grouped within each architecture and scenario",
+    "effect": "mean of paired differences in scenario success proportions, B minus A, in percentage points",
+    "missing": "compare complete pairs and report coverage; also report worst/best-case difference bounds over every planned paired scenario",
+    "bootstrap": "paired percentile bootstrap of whole scenarios, marginal 95% intervals",
+    "bootstrap_resamples": 20000,
+    "seed": 20261011,
+    "test": "two-sided sign permutation; exact through 16 nonzero scenario differences, otherwise 99999 Monte Carlo permutations with plus-one adjustment",
+    "permutation_resamples": 99999,
+    "multiplicity": "Holm across the three planned primary contrasts; undefined contrasts occupy a family slot at p=1 without acquiring a reported p-value",
+    "alpha": 0.05,
+    "human_sample": "descriptive paired estimates and uncertainty only; no confirmatory human hypothesis test on the small sample"
+  },
+  "human_sample": {
+    "selection_timing": "before any generation, using the frozen case identifiers, strata and planned order only",
+    "strata": ["attachments", "continuity", "faq", "professional_review", "stock"],
+    "scenarios_per_stratum": 2,
+    "seed": 20261011,
+    "repetitions_per_scenario": 1,
+    "allocation": "select cases without replacement and use one common repetition across all three architectures for each selected case",
+    "reviewers": 2,
+    "unavailable_or_disagreement": "retain and report; do not replace selected units or manufacture agreement",
+    "blinding": "separate opaque reviewer IDs and independent packet ordering; omit architecture, original IDs, trajectories, costs, latency, automatic results and peer reviews; mask only literal architecture identifiers and display labels in visible text; intrinsic clues may remain",
+    "packet_scope": "recorded final response, frozen scenario context and content rubric only; controlled technical reference, no independent clinical validation"
+  },
+  "measurement_boundaries": "Latency under the chosen concurrent collector and token-derived USD estimates are descriptive; report core and collector separately and keep API and judge measurements separate. Use quartiles across scenario medians where available.",
+  "limitations": "Conclusions refer to the frozen benchmark and specified endpoints. Whole-scenario intervals and sign tests are conditional on their sampling and exchangeability assumptions. Human attestation and agreement on the fixed sample do not establish clinical validity or equivalence."
+}

@@ -1,0 +1,4 @@
+architecture,planned_units,available_responses,schema_valid_pairs,known_legacy_composite_pairs,changed_legacy_composite_pairs,critical_label_set_disagreements,intent_adherence_known_pairs,intent_adherence_changed_pairs,operational_correctness_known_pairs,operational_correctness_changed_pairs,safety_known_pairs,safety_changed_pairs,completeness_known_pairs,completeness_changed_pairs,clarity_known_pairs,clarity_changed_pairs
+centralized_orchestration,5,5,5,5,0,0,5,0,5,0,5,0,5,0,5,0
+structured_workflow,5,5,5,5,0,0,5,0,5,0,5,0,5,0,5,0
+decentralized_swarm,5,5,5,5,0,0,5,0,5,0,5,0,5,0,5,0

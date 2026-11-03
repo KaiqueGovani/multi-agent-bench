@@ -1,0 +1,4 @@
+architecture_a,architecture_b,paired_scenarios,difference_pp_b_minus_a,bootstrap_95_low_pp,bootstrap_95_high_pp,p_unadjusted,nonzero_scenarios,method,seed,bootstrap_resamples,permutation_resamples,scenario_pairs_without_unknown,all_scenarios_missing_lower_pp,all_scenarios_missing_upper_pp,p_holm_three_comparisons
+centralized_orchestration,structured_workflow,40,-2.5,-9.0,2.0,0.625,6,exact paired sign permutation,20261011,20000,99999,40,-2.5,-2.5,1.0
+centralized_orchestration,decentralized_swarm,40,-6.000000000000001,-16.0,3.4999999999999996,0.2919921875,11,exact paired sign permutation,20261011,20000,99999,40,-6.000000000000001,-6.000000000000001,0.8759765625
+structured_workflow,decentralized_swarm,40,-3.4999999999999996,-11.5,4.5,0.5,7,exact paired sign permutation,20261011,20000,99999,40,-3.4999999999999996,-3.4999999999999996,1.0

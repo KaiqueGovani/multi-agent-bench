@@ -1,0 +1,66 @@
+{
+  "pilot_planned": 18,
+  "pilot_technical_complete": 18,
+  "pilot_architectural_conformant": 18,
+  "pilot_reconciled_provider_tokens": 18,
+  "pilot_matched_inputs": true,
+  "pilot_peer_handoffs_completed": 2,
+  "pilot_domain_requirements_proven": 17,
+  "pilot_domain_requirements_total": 18,
+  "pilot_provider_error_count": 0,
+  "pilot_runtime_hash_matches": true,
+  "http_sse": [
+    {
+      "architecture": "centralized_orchestration",
+      "status": "completed",
+      "elapsed_ms": 10033.4,
+      "protocol_match": true,
+      "contract_passed": true,
+      "attachment_specialist_passed": true,
+      "correct_final_actor": true,
+      "outbound_persisted": true,
+      "replayed_events": 28,
+      "persisted_events": 28,
+      "passed": true
+    },
+    {
+      "architecture": "structured_workflow",
+      "status": "completed",
+      "elapsed_ms": 10549.5,
+      "protocol_match": true,
+      "contract_passed": true,
+      "attachment_specialist_passed": true,
+      "correct_final_actor": true,
+      "outbound_persisted": true,
+      "replayed_events": 31,
+      "persisted_events": 31,
+      "passed": true
+    },
+    {
+      "architecture": "decentralized_swarm",
+      "status": "completed",
+      "elapsed_ms": 5652.9,
+      "protocol_match": true,
+      "contract_passed": true,
+      "attachment_specialist_passed": true,
+      "correct_final_actor": true,
+      "outbound_persisted": true,
+      "replayed_events": 16,
+      "persisted_events": 16,
+      "passed": true
+    }
+  ],
+  "capacity_probe": {
+    "haiku_4_5": {
+      "concurrent_requests": 24,
+      "success": 24,
+      "tokens": 145157
+    },
+    "sonnet_4_5": {
+      "concurrent_requests": 24,
+      "success": 24,
+      "tokens": 286426
+    }
+  },
+  "passed": true
+}

@@ -1,0 +1,73 @@
+{
+  "version": "comparison-v43-generation-audit-v1",
+  "passed": false,
+  "audit_source_sha256": "ad424b347ac83ada7699205c41921386ee3c74520fb31ec3e567435717f86491",
+  "protocol": "architectural-comparison-v4.3",
+  "planned_units": 360,
+  "terminal_units": 360,
+  "paired_cases": 40,
+  "case_input_hashes_verified": 40,
+  "wave_workers": 24,
+  "waves_with_launch_records": 15,
+  "frozen_snapshot_sources": 34,
+  "working_tree_source_drift_paths": [],
+  "working_tree_drift_note": "Frozen snapshots are the reference for historical traces. Current source drift is listed separately.",
+  "architecture_resources": {
+    "decentralized_swarm": {
+      "terminal_units": 120,
+      "technical_successes": 120,
+      "architectural_compliant": 120,
+      "token_usage_complete_units": 120,
+      "physical_requests_started": 255,
+      "physical_requests_terminal": 255,
+      "attachment_cases": 27,
+      "accepted_peer_handoffs": 33,
+      "known_input_tokens": 387852,
+      "known_output_tokens": 42352,
+      "known_total_tokens": 430204
+    },
+    "structured_workflow": {
+      "terminal_units": 120,
+      "technical_successes": 120,
+      "architectural_compliant": 120,
+      "token_usage_complete_units": 120,
+      "physical_requests_started": 507,
+      "physical_requests_terminal": 507,
+      "attachment_cases": 27,
+      "accepted_peer_handoffs": 0,
+      "known_input_tokens": 530506,
+      "known_output_tokens": 82693,
+      "known_total_tokens": 613199
+    },
+    "centralized_orchestration": {
+      "terminal_units": 120,
+      "technical_successes": 120,
+      "architectural_compliant": 120,
+      "token_usage_complete_units": 120,
+      "physical_requests_started": 504,
+      "physical_requests_terminal": 504,
+      "attachment_cases": 27,
+      "accepted_peer_handoffs": 0,
+      "known_input_tokens": 724818,
+      "known_output_tokens": 78822,
+      "known_total_tokens": 803640
+    }
+  },
+  "provider_identity_note": "Physical calls are counted by their unique runtime provider-call IDs. Upstream request IDs are verified only when present.",
+  "upstream_provider_ids_observed": 0,
+  "observations": {},
+  "anomalies": [
+    {
+      "code": "central_first_request_did_not_delegate_in_scope",
+      "unit_position": 2
+    },
+    {
+      "code": "central_first_request_did_not_delegate_in_scope",
+      "unit_position": 10
+    },
+    {
+      "code": "central_first_request_did_not_delegate_in_scope",
+      "unit_position": 14
+    }
+  ]
+}

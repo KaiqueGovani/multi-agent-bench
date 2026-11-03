@@ -1,5 +1,8 @@
 research-data/whatsapp-v1.1/*.tccenc filter=lfs diff=lfs merge=lfs -text
 # Preserve generated artifact bytes so FILES.json also verifies after checkout.
 research-data/results/agents-as-tools-v42/*.csv -text -whitespace
+research-data/results/architectural-comparison-v43/*.csv -text -whitespace
+research-data/results/architectural-comparison-v44/*.csv -text -whitespace
 # Matplotlib emits intentional whitespace in generated SVG path data.
 research-data/results/agents-as-tools-v42/figures/*.svg -whitespace
+research-data/results/architectural-comparison-v44/figures/*.svg -whitespace

@@ -47,9 +47,15 @@ class RuntimeExecutor:
         protocol = getattr(self.request.experiment, "comparisonProtocol", None)
         if protocol is not None:
             from app.architectures.comparison import execute_comparison, PROTOCOL_VERSION
-            if protocol != PROTOCOL_VERSION:
-                raise ValueError(f"Unknown comparison protocol: {protocol}")
-            return execute_comparison(ctx, architecture)
+            if protocol == PROTOCOL_VERSION:
+                return execute_comparison(ctx, architecture)
+            from app.architectures.comparison_v43 import PROTOCOL_VERSION as V43, execute_comparison_v43
+            if protocol == V43:
+                return execute_comparison_v43(ctx, architecture)
+            from app.architectures.comparison_v44 import PROTOCOL_VERSION as V44, execute_comparison_v44
+            if protocol == V44:
+                return execute_comparison_v44(ctx, architecture)
+            raise ValueError(f"Unknown comparison protocol: {protocol}")
         if self.settings.enable_live_llm:
             from app.architectures.comparison import execute_comparison
             return execute_comparison(ctx, architecture, source_profile="application")
@@ -99,10 +105,11 @@ class RuntimeExecutionService:
 
             elapsed_ms = executor.elapsed_ms()
             logger.info("[RUN:%s] Completed %s in %dms", run_id_short, architecture, elapsed_ms)
+            failed = result.final_outcome in {"failed", "architectural_contract_failed"}
 
             executor.callbacks.complete_run(
                 run_id=str(request.run_id),
-                status=("failed" if result.final_outcome == "failed" else
+                status=("failed" if failed else
                         "human_review_required" if result.human_review_required else "completed"),
                 trace_id=result.trace_id,
                 total_duration_ms=elapsed_ms,
@@ -118,7 +125,7 @@ class RuntimeExecutionService:
                     tool_error_count=result.tool_error_count,
                     loop_count=result.loop_count,
                     handoff_count=result.handoff_count,
-                    stop_reason="failed" if result.final_outcome == "failed" else "completed",
+                    stop_reason=result.final_outcome if failed else "completed",
                     final_outcome=result.final_outcome,
                 ),
             )

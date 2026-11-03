@@ -1,0 +1,7 @@
+architecture,outcome,planned_scenarios,complete_scenarios,planned_repetitions_per_scenario,all_pass_complete,all_pass_lower,all_pass_upper,complete_scenarios_with_0_passes,complete_scenarios_with_1_passes,complete_scenarios_with_2_passes,complete_scenarios_with_3_passes
+centralized_orchestration,automatic_content_pass,40,39,3,0.8205128205128205,0.8,0.825,6,1,0,32
+structured_workflow,automatic_content_pass,40,39,3,0.8461538461538461,0.825,0.85,6,0,0,33
+decentralized_swarm,automatic_content_pass,40,40,3,0.725,0.725,0.725,9,1,1,29
+centralized_orchestration,conjunctive_task_success,40,39,3,0.8205128205128205,0.8,0.825,6,1,0,32
+structured_workflow,conjunctive_task_success,40,39,3,0.8205128205128205,0.8,0.825,7,0,0,32
+decentralized_swarm,conjunctive_task_success,40,40,3,0.725,0.725,0.725,9,1,1,29
