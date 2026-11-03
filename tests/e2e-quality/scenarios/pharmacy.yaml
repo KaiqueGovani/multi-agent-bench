@@ -1,8 +1,8 @@
 # Cenários de atendimento farmacêutico — FAQ, estoque, revisão humana,
 # interação medicamentosa e multi-turn.
 #
-# Mock emits: processing.started → 3× (actor.invoked/progress/completed)
-#             → [review.required] → response.final → processing.completed
+# Mock derives public actor and tool events from the selected architecture trace
+# between processing.started and the final response.
 #
 # Route assertion now checks actor.completed events as fallback (mock's
 # router_agent sets payload.route there). final_actor falls back to
@@ -154,7 +154,7 @@ cases:
     input:
       text: "Quero saber se tem paracetamol em estoque e também qual a dosagem recomendada para adultos."
     expected:
-      # Mock routes both faq + stock; last actor.completed route is stock_lookup.
+      # The mock selects a single route. The real runtime must consult both tools.
       route: stock_lookup
       final_actor: supervisor_agent
       response_contains_any:
@@ -175,4 +175,6 @@ cases:
       loop_count_max: 5
       tool_calls_include:
         - faq_lookup
+        - stock_lookup
+      mock_tool_calls_include:
         - stock_lookup

@@ -45,6 +45,31 @@ test("renders markdown in received chat messages", async ({ page }) => {
   await expect(outboundMessage.locator("a")).toHaveAttribute("href", "https://example.com/produto/dipirona");
 });
 
+test("keeps the latest message in view when the graph opens and respects scrolling back", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 740 });
+  await installMockEventSource(page);
+  await mockFrontendApi(page);
+  await page.goto(`/?conversationId=${mockIds.centralizedConversation}`);
+  const messages = page.getByTestId("message-list");
+  await expect(messages).toContainText("Estoque confirmado");
+
+  await page.getByTestId("flow-toggle").click();
+  await expect(page.getByTestId("runtime-visual-centralized")).toBeVisible();
+
+  const viewport = messages.locator("..");
+  await expect.poll(() => viewport.evaluate((element) => element.scrollHeight - element.clientHeight)).toBeGreaterThan(48);
+  await expect.poll(() => viewport.evaluate((element) => (
+    element.scrollHeight - element.clientHeight - element.scrollTop
+  ))).toBeLessThan(2);
+
+  await viewport.evaluate((element) => {
+    element.scrollTop = 0;
+    element.dispatchEvent(new Event("scroll"));
+  });
+  await page.setViewportSize({ width: 1280, height: 710 });
+  await expect.poll(() => viewport.evaluate((element) => element.scrollTop)).toBe(0);
+});
+
 test("renders overview responses as collapsed markdown", async ({ page }) => {
   await installMockEventSource(page);
   await mockFrontendApi(page);

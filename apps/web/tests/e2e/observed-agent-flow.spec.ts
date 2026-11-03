@@ -30,12 +30,14 @@ test("graph requires agent invocation evidence and explicit parent/return record
   const graph = observedAgentGraph([...events, event(11, "tool", "completed", "faq")], true);
   expect(graph.agents.map((agent) => agent.role)).toEqual(["supervisor", "stock"]);
   expect(graph.links).toEqual([
-    { from: "supervisor", to: "stock", kind: "call", status: "running" },
+    { from: "supervisor", to: "stock", kind: "call", status: "completed" },
     { from: "stock", to: "supervisor", kind: "return", status: "completed" },
   ]);
   expect(observedAgentGraph([event(1, "tool", "completed", "stock")], true).agents).toEqual([]);
   const noParent = events.map((entry) => entry.sequenceNo === 3 ? { ...entry, payload: { agentInvocationId: "stock-1" } } : entry);
   expect(observedAgentGraph(noParent, true).links.map((link) => link.kind)).toEqual(["return"]);
+  expect(observedAgentGraph(events.slice(0, 5), false).links[0]?.status).toBe("running");
+  expect(observedAgentGraph(events.slice(0, 7), false).links[0]?.status).toBe("completed");
 });
 
 test("actual specialist and its returned text are shown without a fabricated synthesizer", async ({ page }) => {
@@ -70,4 +72,14 @@ test("actual specialist and its returned text are shown without a fabricated syn
   await flow.locator(".react-flow__node").filter({ hasText: "Estoque" }).hover();
   await page.getByRole("button", { name: "agent.completed" }).click();
   await expect(page.getByText("Consulta controlada: dipirona, 17 frascos.", { exact: true })).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  const trigger = flow.getByRole("button", { name: "Eventos de Estoque" });
+  await trigger.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("region", { name: "Eventos de Estoque" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Fechar eventos" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("region", { name: "Eventos de Estoque" })).toHaveCount(0);
+  await expect(trigger).toBeFocused();
 });

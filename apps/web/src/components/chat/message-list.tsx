@@ -25,14 +25,28 @@ interface MessageListProps {
   isLoading?: boolean;
 }
 
+const MESSAGE_STATUS_LABELS: Record<Message["status"], string> = {
+  draft: "Rascunho",
+  received: "Recebida",
+  accepted: "Aceita",
+  validating: "Validando",
+  processing: "Em processamento",
+  forwarded: "Encaminhada",
+  waiting: "Aguardando",
+  completed: "Concluída",
+  error: "Falhou",
+  human_review_required: "Revisão necessária"
+};
+
 export function MessageList({
   messages,
   attachmentsByMessage,
   isLoading = false
 }: MessageListProps) {
-  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [copyError, setCopyError] = useState<string | null>(null);
+  const hasMessages = messages.length > 0;
 
   async function copyResponse(message: Message) {
     try {
@@ -45,10 +59,32 @@ export function MessageList({
   }
 
   useEffect(() => {
-    if (messages.length > 0) {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-    }
-  }, [messages.length]);
+    if (isLoading || !hasMessages) return;
+    const list = listRef.current;
+    const viewport = list?.parentElement;
+    if (!list || !viewport) return;
+
+    let followLatest = true;
+    const handleScroll = () => {
+      followLatest = viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop < 48;
+    };
+    const scrollToLatest = () => {
+      if (followLatest) viewport.scrollTop = viewport.scrollHeight;
+    };
+
+    // Streamed text changes the list height. The graph opening changes the
+    // viewport height. Follow both while the reader is at the latest message.
+    const observer = new ResizeObserver(scrollToLatest);
+    observer.observe(list);
+    observer.observe(viewport);
+    viewport.addEventListener("scroll", handleScroll, { passive: true });
+    scrollToLatest();
+
+    return () => {
+      observer.disconnect();
+      viewport.removeEventListener("scroll", handleScroll);
+    };
+  }, [hasMessages, isLoading]);
 
   if (isLoading) {
     return (
@@ -84,7 +120,7 @@ export function MessageList({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 md:p-6" data-testid="message-list">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 md:p-6" data-testid="message-list" ref={listRef}>
       {messages.map((message) => {
         const isInbound = message.direction === "inbound";
         const isStreaming = message.id.startsWith("streaming-");
@@ -104,19 +140,19 @@ export function MessageList({
                 <Bot className="h-4 w-4" />
               </div>
             ) : null}
-            <div className={`max-w-[min(36rem,82vw)] ${isInbound ? "items-end" : "items-start"} flex flex-col`}>
-            <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+            <div className={`min-w-0 max-w-[min(36rem,82vw)] ${isInbound ? "items-end" : "items-start"} flex flex-col`}>
+            <div className={`mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground ${isInbound ? "justify-end" : ""}`}>
               <span className="flex items-center gap-1">
                 {isInbound ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
                 {author}
               </span>
-              <Badge className="gap-1" variant="outline">
+              <Badge className="gap-1" data-status={message.status} variant="outline">
                 <MessageStatusIcon status={message.status} />
-                {message.status}
+                {MESSAGE_STATUS_LABELS[message.status]}
               </Badge>
             </div>
             <div
-              className={`rounded-lg border px-4 py-3 text-sm leading-6 shadow-sm ${
+              className={`min-w-0 max-w-full rounded-lg border px-4 py-3 text-sm leading-6 shadow-sm [overflow-wrap:anywhere] ${
                 isInbound
                   ? "border-primary bg-primary text-primary-foreground"
                   : "bg-card text-card-foreground"
@@ -125,7 +161,7 @@ export function MessageList({
               <MarkdownContent
                 className="text-sm"
                 content={formatMessageContent(message.contentText)}
-                isStreaming={isStreaming}
+                isStreaming={isStreaming && message.status === "processing"}
               />
 
               {attachmentsByMessage[message.id]?.length ? (
@@ -190,7 +226,6 @@ export function MessageList({
         );
       })}
       {copyError ? <p role="alert" className="text-sm text-destructive">{copyError}</p> : null}
-      <div ref={bottomRef} />
     </div>
   );
 }
@@ -216,7 +251,7 @@ function MessageStatusIcon({ status }: { status: Message["status"] }) {
     return <CheckCircle2 className="h-3.5 w-3.5" />;
   }
   if (status === "processing" || status === "accepted" || status === "validating") {
-    return <Loader2 className="h-3.5 w-3.5 animate-spin" />;
+    return <Loader2 aria-hidden="true" className="h-3.5 w-3.5 motion-safe:animate-spin" />;
   }
   if (status === "error" || status === "human_review_required") {
     return <AlertTriangle className="h-3.5 w-3.5" />;

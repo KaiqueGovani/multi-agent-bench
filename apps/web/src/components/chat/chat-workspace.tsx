@@ -35,8 +35,9 @@ import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useConversation } from "@/hooks/use-conversation";
-import { getHealth, getRunExecution } from "@/lib/api/client";
-import type { ArchitectureMode, ConversationSummary, ExecutionMode, Message, ReviewTask, ReviewTaskStatus, Run, RunExecutionEvent, RunExecutionResponse, RuntimeHealthStatus } from "@/lib/types";
+import { useRunExecution } from "@/hooks/use-run-execution";
+import { getHealth } from "@/lib/api/client";
+import type { ArchitectureMode, ConversationSummary, ExecutionMode, Message, ReviewTask, ReviewTaskStatus, Run, RunExecutionEvent, RuntimeHealthStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { MessageComposer } from "./message-composer";
 import { MessageList } from "./message-list";
@@ -63,8 +64,10 @@ export function ChatWorkspace() {
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [isDraftConversation, setIsDraftConversation] = useState(false);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
-  const [selectedFlowRunId, setSelectedFlowRunId] = useState<string | null>(null);
-  const [selectedFlowExecution, setSelectedFlowExecution] = useState<RunExecutionResponse | null>(null);
+  const [flowSelection, setFlowSelection] = useState<{
+    conversationId: string;
+    architecture: Exclude<ArchitectureMode, "all_architectures">;
+  } | null>(null);
   const [architectureMode, setArchitectureMode] = useState<ArchitectureMode>(
     "all_architectures"
   );
@@ -89,7 +92,6 @@ export function ChatWorkspace() {
     messages,
     openReviewTasks,
     reviewTasks,
-    runExecution,
     runs,
     sendMessage,
     selectConversation,
@@ -103,13 +105,19 @@ export function ChatWorkspace() {
   const hasActiveConversation = Boolean(conversationId);
   const flowRuns = buildLatestArchitectureRuns(runs);
   const isMultiArchitecture = flowRuns.length > 1;
-  const selectedRun = flowRuns.find((r) => r.id === selectedFlowRunId) ?? null;
+  const selectedRun = flowRuns.find(
+    (run) => flowSelection?.conversationId === conversationId
+      && readArchitectureKey(run) === flowSelection?.architecture,
+  ) ?? flowRuns[0];
+  const selectedFlowRunId = selectedRun?.id ?? null;
   const selectedArchitectureKey = selectedRun ? readArchitectureKey(selectedRun) : null;
-  const displayedFlowExecution = pickDisplayedExecution({
-    selectedFlowRunId,
-    selectedFlowExecution,
-    runExecution,
-    isMultiArchitecture,
+  const {
+    run: loadedFlowRun,
+    projection: flowProjection,
+    executionEvents: flowEvents,
+    error: flowError,
+  } = useRunExecution(isFlowOpen && activeTab === "conversa" ? selectedFlowRunId : null, {
+    loadComparison: false,
   });
   const filteredMessages = filterMessagesForArchitecture({
     messages,
@@ -132,8 +140,7 @@ export function ChatWorkspace() {
     router.replace("/", { scroll: false });
     setIsInspectorOpen(false);
     setSelectedRunId(null);
-    setSelectedFlowRunId(null);
-    setSelectedFlowExecution(null);
+    setFlowSelection(null);
     void startConversation();
   }
 
@@ -183,64 +190,10 @@ export function ChatWorkspace() {
   }, [executionMode]);
 
   useEffect(() => {
-    if (!runs.length) {
-      setSelectedRunId(null);
-      return;
-    }
-    setSelectedRunId((current) => current ?? runs[runs.length - 1].id);
+    setSelectedRunId((current) =>
+      runs.some((run) => run.id === current) ? current : runs.at(-1)?.id ?? null,
+    );
   }, [runs]);
-
-  useEffect(() => {
-    if (flowRuns.length === 0) {
-      setSelectedFlowRunId(null);
-      setSelectedFlowExecution(null);
-      return;
-    }
-    setSelectedFlowRunId((current) => {
-      if (current && flowRuns.some((run) => run.id === current)) {
-        return current;
-      }
-      const currentRun = current ? runs.find((run) => run.id === current) : undefined;
-      const currentArchitecture = currentRun ? readArchitectureKey(currentRun) : null;
-      if (currentArchitecture) {
-        const latestForCurrentArchitecture = flowRuns.find(
-          (run) => readArchitectureKey(run) === currentArchitecture
-        );
-        if (latestForCurrentArchitecture) {
-          return latestForCurrentArchitecture.id;
-        }
-      }
-      return flowRuns[0].id;
-    });
-  }, [flowRuns, runs]);
-
-  useEffect(() => {
-    if (!selectedFlowRunId) {
-      setSelectedFlowExecution(null);
-      return;
-    }
-    if (runExecution?.run.id === selectedFlowRunId) {
-      setSelectedFlowExecution(null);
-      return;
-    }
-
-    let cancelled = false;
-    void getRunExecution(selectedFlowRunId)
-      .then((execution) => {
-        if (!cancelled) {
-          setSelectedFlowExecution(execution);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setSelectedFlowExecution(null);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [runExecution?.run.id, selectedFlowRunId]);
 
   useEffect(() => {
     if (isDraftConversation || !requestedConversationId || requestedConversationId === conversationId) {
@@ -293,7 +246,7 @@ export function ChatWorkspace() {
         />
       ) : null}
 
-      <section className="flex min-w-0 flex-col overflow-hidden">
+      <section className="flex min-h-0 min-w-0 flex-col overflow-hidden">
         <header className="flex min-h-16 flex-wrap items-center gap-3 border-b bg-card px-3 py-2 shadow-sm sm:px-4">
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <Button
@@ -467,10 +420,10 @@ export function ChatWorkspace() {
         ) : null}
 
         {/* Tab content — flex-1 + overflow-hidden ensures the parent fills remaining space */}
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           {activeTab === "conversa" ? (
             <>
-              <div className="flex flex-1 flex-col overflow-hidden bg-background">
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
                 {isMultiArchitecture ? (
                   <div className="flex items-center gap-2 border-b bg-card/60 px-3 py-2">
                     <span className="text-xs text-muted-foreground">
@@ -479,12 +432,20 @@ export function ChatWorkspace() {
                     <ArchitectureFlowPicker
                       runs={flowRuns}
                       selectedRunId={selectedFlowRunId}
-                      onSelectRun={setSelectedFlowRunId}
+                      onSelectRun={(runId) => {
+                        const run = flowRuns.find((candidate) => candidate.id === runId);
+                        if (run) {
+                          setFlowSelection({
+                            conversationId: run.conversationId,
+                            architecture: readArchitectureKey(run),
+                          });
+                        }
+                      }}
                     />
                   </div>
                 ) : null}
                 {isFlowOpen ? (
-                  displayedFlowExecution?.projection ? (
+                  flowProjection ? (
                     <div
                       aria-label="Fluxo da arquitetura"
                       className="shrink-0 border-b bg-muted/30 p-2"
@@ -493,25 +454,30 @@ export function ChatWorkspace() {
                     >
                       <ChatRuntimeVisual
                         architectureMode={
-                          isArchitectureMode(displayedFlowExecution.projection.architectureMode)
-                            ? displayedFlowExecution.projection.architectureMode
+                          isArchitectureMode(flowProjection.architectureMode)
+                            ? flowProjection.architectureMode
                             : architectureMode
                         }
-                        projection={displayedFlowExecution.projection}
-                        runStatus={displayedFlowExecution.projection.runStatus}
-                        executionEvents={displayedFlowExecution.executionEvents ?? []}
+                        projection={flowProjection}
+                        runStatus={
+                          selectedRun?.status === "failed" || selectedRun?.status === "cancelled"
+                            ? selectedRun.status
+                            : flowProjection.runStatus
+                        }
+                        executionEvents={flowEvents}
                       />
                     </div>
                   ) : (
                     <div
                       className="shrink-0 border-b bg-muted/30 p-6 text-center text-sm text-muted-foreground"
                       data-testid="chat-flow-panel"
+                      role="status"
                     >
-                      Envie uma mensagem para visualizar o fluxo.
+                      {getFlowPlaceholder(selectedRun, loadedFlowRun, isSending, isLoadingConversation, flowError)}
                     </div>
                   )
                 ) : null}
-                <div className="flex-1 overflow-y-auto">
+                <div className="min-h-0 flex-1 overflow-y-auto">
                   <MessageList
                     attachmentsByMessage={attachmentsByMessage}
                     isLoading={isLoadingConversation}
@@ -555,16 +521,15 @@ export function ChatWorkspace() {
           ) : null}
 
           {activeTab === "atividade" ? (
-            <div className="flex-1 overflow-y-auto bg-background">
+            <div className="flex min-h-0 max-h-[75dvh] flex-1 flex-col lg:max-h-none">
               <EventTimeline
                 architectureMode={architectureMode}
                 connectionStatus={connectionStatus}
                 events={events}
-                isOpen={true}
-                onOpenChange={() => {}}
-                reviewPanel={
+                key={conversationId}
+                reviewPanel={reviewTasks.length > 0 ? (
                   <ReviewPanel onResolve={updateReviewTask} reviewTasks={reviewTasks} />
-                }
+                ) : undefined}
               />
             </div>
           ) : null}
@@ -1028,6 +993,7 @@ function ArchitectureFlowPicker({
         const selected = run.id === selectedRunId;
         return (
           <button
+            aria-pressed={selected}
             className={cn(
               "inline-flex h-8 items-center gap-2 rounded-md border px-3 text-xs font-medium transition-colors",
               selected
@@ -1277,33 +1243,24 @@ function filterMessagesForArchitecture({
   });
 }
 
-function pickDisplayedExecution({
-  selectedFlowRunId,
-  selectedFlowExecution,
-  runExecution,
-  isMultiArchitecture,
-}: {
-  selectedFlowRunId: string | null;
-  selectedFlowExecution: RunExecutionResponse | null;
-  runExecution: RunExecutionResponse | null;
-  isMultiArchitecture: boolean;
-}): RunExecutionResponse | null {
-  if (!selectedFlowRunId) return runExecution;
-  // Prefer the explicitly fetched execution for the selected run when present.
-  if (selectedFlowExecution?.run.id === selectedFlowRunId) {
-    return selectedFlowExecution;
+function getFlowPlaceholder(
+  selectedRun: Run | undefined,
+  loadedRun: Run | null,
+  isSending: boolean,
+  isLoading: boolean,
+  error: string | null,
+) {
+  if (isLoading) return "Carregando a execução desta conversa…";
+  if (selectedRun && error) return "Não foi possível carregar o fluxo desta execução.";
+  if (selectedRun?.status === "failed") return "A execução falhou antes de registrar o fluxo.";
+  if (selectedRun?.status === "cancelled") return "A execução foi cancelada antes de registrar o fluxo.";
+  const status = loadedRun?.status ?? selectedRun?.status;
+  if (status === "pending" || status === "running" || isSending) {
+    return "Aguardando os primeiros eventos da execução…";
   }
-  // If the live runExecution already matches the selected run, use it.
-  if (runExecution?.run.id === selectedFlowRunId) {
-    return runExecution;
-  }
-  // In multi-architecture mode, fall back to NULL rather than the canonical
-  // run's execution. Showing the wrong architecture's flow while waiting for
-  // the right one to load misleads the user; the placeholder is honest.
-  if (isMultiArchitecture) {
-    return null;
-  }
-  return runExecution;
+  if (loadedRun) return "Esta execução não possui eventos de fluxo.";
+  if (selectedRun) return "Carregando o fluxo desta execução…";
+  return "Envie uma mensagem para visualizar o fluxo.";
 }
 
 function formatConversationPreview(value: string | null | undefined): string {

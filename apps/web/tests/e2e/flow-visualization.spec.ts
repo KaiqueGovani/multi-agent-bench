@@ -48,6 +48,12 @@ test.describe("flow visualization improvements", () => {
     // Edges should be present (handoffs are provided in mock data)
     const edges = flowContainer.locator(".react-flow__edge");
     await expect(edges.first()).toBeAttached();
+    const synthesis = nodes.filter({ hasText: "Sintetizador" });
+    await expect.poll(async () => {
+      const panel = await page.getByTestId("chat-flow-panel").boundingBox();
+      const node = await synthesis.boundingBox();
+      return panel != null && node != null && node.y + node.height <= panel.y + panel.height;
+    }).toBe(true);
   });
 
   test("agent nodes display event counts for tools and responses", async ({ page }) => {

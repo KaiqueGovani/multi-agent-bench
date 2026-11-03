@@ -91,7 +91,7 @@ test.describe("P1 — Streaming messages in chat UI", () => {
     await expect(streamingMsg).toContainText("Resposta parcial...");
 
     // Verify the Loader2 spinner is present
-    const spinner = streamingMsg.locator("[aria-label='Streaming']");
+    const spinner = streamingMsg.getByLabel("Resposta em andamento");
     await expect(spinner).toBeVisible();
   });
 });

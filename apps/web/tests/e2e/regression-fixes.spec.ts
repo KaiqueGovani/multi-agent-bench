@@ -232,6 +232,7 @@ test.describe("Regression — multi-architecture message visibility (bugs #2, #3
     // ...and ensure the final text replaces it without a blank gap. The
     // bubble must still display *something* the moment response.final fires.
     await expect(list).toContainText("Resposta completa final", { timeout: 4000 });
+    await expect(list.getByLabel("Resposta em andamento")).toHaveCount(0);
   });
 
   test("selected architecture shows final response before run refresh catches up", async ({ page }) => {
@@ -483,8 +484,9 @@ test.describe("Regression — SwarmFlow settles when run completes (bug #4)", ()
     await flow.waitFor();
     // After the fix, no edges should be animated when the run is terminal,
     // regardless of whether handoff event statuses were left at "running".
-    // We assert there is no <animateMotion> element under the swarm flow.
-    const animateMotionCount = await flow.locator("svg animateMotion").count();
-    expect(animateMotionCount).toBe(0);
+    await expect(flow.locator("[data-edge-motion]")).toHaveCount(0);
+    // Completed endpoints alone do not prove a direct handoff.
+    const unobserved = flow.getByTestId("rf__edge-swarm_coordinator-swarm_synthesizer");
+    await expect(unobserved.locator('[data-edge-state="idle"]')).toHaveCount(1);
   });
 });

@@ -169,6 +169,8 @@ def test_scenario(case: dict, architecture: str, api_client: E2EClient):
 
     # 7. Assert tool_calls_include (optional)
     expected_tools = expected.get("tool_calls_include") or []
+    if final_event and (final_event.get("payload") or {}).get("runtimeMode") == "mock":
+        expected_tools = expected.get("mock_tool_calls_include", expected_tools)
     if expected_tools:
         if conv_data is None:
             conv_data = api_client.get_conversation(conversation_id)

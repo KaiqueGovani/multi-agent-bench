@@ -69,10 +69,16 @@ class MockProcessingRuntime:
             context_text = self._contextual_query_text(db, message, resolved_architecture_mode)
             review_required = self._requires_review(message)
 
-            if comparison_only:
-                if run_id is None:
-                    raise ValueError("run_id is required for comparison-only processing")
-                self._process_comparison_run(
+            if comparison_only and run_id is None:
+                raise ValueError("run_id is required for comparison-only processing")
+
+            if run_id is not None:
+                if not comparison_only:
+                    message.metadata_json = {
+                        **(message.metadata_json or {}),
+                        "processingStartAt": started_at.isoformat(),
+                    }
+                self._process_run(
                     db,
                     run_id=run_id,
                     conversation_id=conversation_id,
@@ -82,6 +88,7 @@ class MockProcessingRuntime:
                     event_context=event_context,
                     review_required=review_required,
                     started_at=started_at,
+                    comparison_only=comparison_only,
                 )
                 return review_required
 
@@ -208,31 +215,9 @@ class MockProcessingRuntime:
                 ),
             )
 
-            # Emit run-execution telemetry for the primary run so its projection (metrics + flow)
-            # matches the comparison runs. suppress_public_events=True keeps the main flow above
-            # the SOLE source of the outbound message and conversation events (no duplicates).
-            if run_id is not None:
-                saved_delay = self._step_delay_seconds
-                self._step_delay_seconds = 0
-                try:
-                    self._process_comparison_run(
-                        db,
-                        run_id=run_id,
-                        conversation_id=conversation_id,
-                        message=message,
-                        correlation_id=correlation_id,
-                        architecture_mode=resolved_architecture_mode,
-                        event_context=event_context,
-                        review_required=review_required,
-                        started_at=started_at,
-                        suppress_public_events=True,
-                    )
-                finally:
-                    self._step_delay_seconds = saved_delay
-
             return review_required
 
-    def _process_comparison_run(
+    def _process_run(
         self,
         db: Session,
         *,
@@ -244,7 +229,7 @@ class MockProcessingRuntime:
         event_context: dict,
         review_required: bool,
         started_at: datetime,
-        suppress_public_events: bool = False,
+        comparison_only: bool,
     ) -> None:
         run_execution = RunExecutionService(db)
         self._record_run_event(
@@ -257,7 +242,6 @@ class MockProcessingRuntime:
             event_name="started",
             status=ProcessingStatus.RUNNING,
             payload=self._base_payload({"phase": "dispatch"}, event_context),
-            suppress_public_events=suppress_public_events,
         )
 
         context_text = self._contextual_query_text(db, message, architecture_mode)
@@ -278,7 +262,6 @@ class MockProcessingRuntime:
                 stage="classify",
                 result={"route": route},
                 event_context=event_context,
-                suppress_public_events=suppress_public_events,
             )
             self._simulate_run_node(
                 db,
@@ -292,7 +275,6 @@ class MockProcessingRuntime:
                 stage="gather_evidence",
                 result={"handledBy": selected_actor, "route": route},
                 event_context=event_context,
-                suppress_public_events=suppress_public_events,
             )
             self._simulate_tool_call(
                 run_execution,
@@ -305,7 +287,6 @@ class MockProcessingRuntime:
                 route=route,
                 event_context=event_context,
                 count=tool_calls,
-                suppress_public_events=suppress_public_events,
             )
             if self._has_attachments(db, message.id):
                 self._simulate_run_node(
@@ -320,7 +301,6 @@ class MockProcessingRuntime:
                     stage="multimodal_analysis",
                     result={"attachmentsAnalyzed": True},
                     event_context=event_context,
-                    suppress_public_events=suppress_public_events,
                 )
             if review_required:
                 self._simulate_run_node(
@@ -335,7 +315,6 @@ class MockProcessingRuntime:
                     stage="review_gate",
                     result={"reviewRequired": True},
                     event_context=event_context,
-                    suppress_public_events=suppress_public_events,
                 )
             final_actor = "workflow_synthesis_agent"
             self._simulate_run_node(
@@ -350,7 +329,6 @@ class MockProcessingRuntime:
                 stage="synthesize",
                 result={"reviewRequired": review_required},
                 event_context=event_context,
-                suppress_public_events=suppress_public_events,
             )
         elif architecture_mode == ArchitectureMode.DECENTRALIZED_SWARM.value:
             final_actor = "swarm_synthesizer"
@@ -366,7 +344,6 @@ class MockProcessingRuntime:
                 stage="handoff_loop",
                 result={"route": route},
                 event_context=event_context,
-                suppress_public_events=suppress_public_events,
             )
             self._record_run_event(
                 run_execution,
@@ -383,7 +360,6 @@ class MockProcessingRuntime:
                     {"from": "swarm_coordinator", "to": selected_actor, "route": route},
                     event_context,
                 ),
-                suppress_public_events=suppress_public_events,
             )
             self._simulate_run_node(
                 db,
@@ -397,7 +373,6 @@ class MockProcessingRuntime:
                 stage="specialist",
                 result={"handledBy": selected_actor},
                 event_context=event_context,
-                suppress_public_events=suppress_public_events,
             )
             self._simulate_tool_call(
                 run_execution,
@@ -410,7 +385,6 @@ class MockProcessingRuntime:
                 route=route,
                 event_context=event_context,
                 count=tool_calls,
-                suppress_public_events=suppress_public_events,
             )
             self._record_run_event(
                 run_execution,
@@ -427,7 +401,6 @@ class MockProcessingRuntime:
                     {"from": selected_actor, "to": final_actor, "route": route},
                     event_context,
                 ),
-                suppress_public_events=suppress_public_events,
             )
             self._simulate_run_node(
                 db,
@@ -441,7 +414,6 @@ class MockProcessingRuntime:
                 stage="synthesize",
                 result={"reviewRequired": review_required},
                 event_context=event_context,
-                suppress_public_events=suppress_public_events,
             )
         else:
             final_actor = "response_streamer"
@@ -457,7 +429,6 @@ class MockProcessingRuntime:
                 stage="dispatch",
                 result={"route": route},
                 event_context=event_context,
-                suppress_public_events=suppress_public_events,
             )
             self._simulate_run_node(
                 db,
@@ -471,7 +442,6 @@ class MockProcessingRuntime:
                 stage="specialist",
                 result={"handledBy": selected_actor},
                 event_context=event_context,
-                suppress_public_events=suppress_public_events,
             )
             self._simulate_tool_call(
                 run_execution,
@@ -484,7 +454,6 @@ class MockProcessingRuntime:
                 route=route,
                 event_context=event_context,
                 count=tool_calls,
-                suppress_public_events=suppress_public_events,
             )
             self._simulate_run_node(
                 db,
@@ -498,7 +467,6 @@ class MockProcessingRuntime:
                 stage="synthesize",
                 result={"reviewRequired": review_required},
                 event_context=event_context,
-                suppress_public_events=suppress_public_events,
             )
 
         if review_required:
@@ -520,28 +488,23 @@ class MockProcessingRuntime:
                     },
                     event_context,
                 ),
-                suppress_public_events=suppress_public_events,
             )
 
         total_duration_ms = int((datetime.now(UTC) - started_at).total_seconds() * 1000)
         token_usage = self._mock_token_usage(architecture_mode)
 
-        # For comparison-only runs, the run-execution domain sync is skipped
-        # (see RunExecutionService._is_comparison_only), so we explicitly
-        # persist a per-run outbound message here. This lets the UI display
-        # the response of every architecture in a multi-architecture run,
-        # not just the canonical one.
-        if not suppress_public_events:
-            self._create_outbound_message(
-                db,
-                inbound_message=message,
-                correlation_id=correlation_id,
-                review_required=review_required,
-                architecture_mode=architecture_mode,
-                context_text=context_text,
-                route=route,
-                run_id=run_id,
-            )
+        # Persist each architecture's reply with the simulated message metadata.
+        # The response event reconciles this row by run ID.
+        outbound_message = self._create_outbound_message(
+            db,
+            inbound_message=message,
+            correlation_id=correlation_id,
+            review_required=review_required,
+            architecture_mode=architecture_mode,
+            context_text=context_text,
+            route=route,
+            run_id=run_id,
+        )
 
         self._record_run_event(
             run_execution,
@@ -556,15 +519,16 @@ class MockProcessingRuntime:
             node_id=f"{final_actor}.final",
             payload=self._base_payload(
                 {
-                    "contentText": self._build_response_text(review_required, context_text, route=route),
+                    "contentText": outbound_message.content_text,
+                    "messageId": str(outbound_message.id),
                     "reviewRequired": review_required,
                     "route": route,
-                    "finalActor": final_actor,
+                    # Preserve the canonical mock response's public author.
+                    "finalActor": final_actor if comparison_only else "supervisor_agent",
                     "tokenUsage": token_usage,
                 },
                 event_context,
             ),
-            suppress_public_events=suppress_public_events,
         )
         self._record_run_event(
             run_execution,
@@ -585,7 +549,6 @@ class MockProcessingRuntime:
                 },
                 event_context,
             ),
-            suppress_public_events=suppress_public_events,
         )
 
     def _invoke_actor(
@@ -661,7 +624,6 @@ class MockProcessingRuntime:
         stage: str,
         result: dict,
         event_context: dict,
-        suppress_public_events: bool = False,
     ) -> None:
         started_at = datetime.now(UTC)
         self._record_run_event(
@@ -676,7 +638,6 @@ class MockProcessingRuntime:
             actor_name=actor_name,
             node_id=node_id,
             payload=self._base_payload({"phase": stage}, event_context),
-            suppress_public_events=suppress_public_events,
         )
         time.sleep(self._step_delay_seconds / 2)
         self._record_run_event(
@@ -698,7 +659,6 @@ class MockProcessingRuntime:
                 },
                 event_context,
             ),
-            suppress_public_events=suppress_public_events,
         )
         time.sleep(self._step_delay_seconds / 2)
         duration_ms = int((datetime.now(UTC) - started_at).total_seconds() * 1000)
@@ -715,7 +675,6 @@ class MockProcessingRuntime:
             node_id=node_id,
             duration_ms=duration_ms,
             payload=self._base_payload(result | {"phase": stage, "durationMs": duration_ms}, event_context),
-            suppress_public_events=suppress_public_events,
         )
         db.expire_all()
 
@@ -733,8 +692,8 @@ class MockProcessingRuntime:
         payload: dict,
         actor_name: str | None = None,
         node_id: str | None = None,
+        tool_name: str | None = None,
         duration_ms: int | None = None,
-        suppress_public_events: bool = False,
     ) -> None:
         run_execution.record_event(
             run_id=run_id,
@@ -747,9 +706,9 @@ class MockProcessingRuntime:
             payload=payload,
             actor_name=actor_name,
             node_id=node_id,
+            tool_name=tool_name,
             source="mock_runtime",
             duration_ms=duration_ms,
-            suppress_public_events=suppress_public_events,
         )
 
     def _record(
@@ -1078,10 +1037,10 @@ class MockProcessingRuntime:
         route: str,
         event_context: dict,
         count: int = 1,
-        suppress_public_events: bool = False,
     ) -> None:
         tool_name = self._TOOL_FOR_ROUTE.get(route, "faq_lookup")
         for _ in range(count):
+            started_at = time.perf_counter()
             self._record_run_event(
                 run_execution,
                 run_id=run_id,
@@ -1093,9 +1052,10 @@ class MockProcessingRuntime:
                 status=ProcessingStatus.RUNNING,
                 actor_name=actor_name,
                 node_id=node_id,
+                tool_name=tool_name,
                 payload=self._base_payload({"toolName": tool_name, "input": {"query": "mock"}}, event_context),
-                suppress_public_events=suppress_public_events,
             )
+            time.sleep(self._step_delay_seconds / (3 * count))
             self._record_run_event(
                 run_execution,
                 run_id=run_id,
@@ -1104,11 +1064,12 @@ class MockProcessingRuntime:
                 correlation_id=correlation_id,
                 event_family="tool",
                 event_name="completed",
+                duration_ms=round((time.perf_counter() - started_at) * 1000),
                 status=ProcessingStatus.COMPLETED,
                 actor_name=actor_name,
                 node_id=node_id,
+                tool_name=tool_name,
                 payload=self._base_payload({"toolName": tool_name, "result": {"status": "ok"}}, event_context),
-                suppress_public_events=suppress_public_events,
             )
 
     def _mock_token_usage(self, architecture_mode: str) -> dict[str, int]:

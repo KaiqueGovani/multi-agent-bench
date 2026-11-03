@@ -77,9 +77,80 @@ test.describe("chat flow panel (P5)", () => {
     const toggle = page.getByTestId("flow-toggle");
     await toggle.click();
 
-    // Panel shows placeholder (no projection available due to error)
+    // A known run with a failed snapshot has a distinct state from a new conversation.
     const panel = page.getByTestId("chat-flow-panel");
     await expect(panel).toBeVisible();
-    await expect(panel).toContainText("Envie uma mensagem para visualizar o fluxo");
+    await expect(panel).toContainText("Não foi possível carregar o fluxo desta execução");
+  });
+
+  test("loads a live projection from the selected run stream before any final response", async ({ page }) => {
+    await page.addInitScript(() => {
+      const OriginalEventSource = window.EventSource;
+      class ControlledEventSource extends OriginalEventSource {
+        constructor(url: string | URL) {
+          super(url);
+          if (!String(url).includes("/execution/stream")) return;
+          window.addEventListener("test-live-run", (event) => {
+            const executionEvent = (event as CustomEvent).detail;
+            const listeners = (this as unknown as {
+              listeners: Map<string, Array<(event: MessageEvent) => void>>;
+            }).listeners;
+            for (const listener of listeners.get("run.execution") ?? []) {
+              listener(new MessageEvent("run.execution", { data: JSON.stringify(executionEvent) }));
+            }
+          });
+        }
+      }
+      window.EventSource = ControlledEventSource;
+    });
+
+    const runId = mockIds.draftRun;
+    const conversationId = mockIds.draftConversation;
+    const time = "2026-04-29T03:54:36.000Z";
+    const executionEvent = {
+      id: "live-run-first-event",
+      runId,
+      conversationId,
+      messageId: `${conversationId}-inbound`,
+      correlationId: `corr-${conversationId}`,
+      sequenceNo: 1,
+      eventFamily: "node",
+      eventName: "started",
+      status: "running",
+      actorName: "supervisor_agent",
+      nodeId: "dispatch.supervisor_agent",
+      createdAt: time,
+      source: "mock_runtime",
+      payload: { phase: "dispatch" },
+    };
+    let started = false;
+    await page.route(`**/runs/${runId}/execution`, (route) => route.fulfill({
+      json: {
+        run: {
+          id: runId,
+          conversationId,
+          status: started ? "running" : "pending",
+        },
+        projection: started ? {
+          architectureMode: "centralized_orchestration",
+          runStatus: "running",
+          activeActorName: "supervisor_agent",
+          architectureView: { actors: {} },
+        } : null,
+        executionEvents: started ? [executionEvent] : [],
+      },
+    }));
+
+    await page.goto(`/?conversationId=${conversationId}`);
+    await page.getByTestId("flow-toggle").click();
+    await expect(page.getByTestId("chat-flow-panel")).toContainText("Aguardando os primeiros eventos");
+    await expect.poll(async () => page.evaluate(() => window.EventSource.name)).toBe("ControlledEventSource");
+
+    // The dedicated stream is created only after the initial snapshot is applied.
+    started = true;
+    await expect(async () => {
+      await page.evaluate((event) => window.dispatchEvent(new CustomEvent("test-live-run", { detail: event })), executionEvent);
+      await expect(page.getByTestId("runtime-visual-centralized")).toBeVisible({ timeout: 400 });
+    }).toPass();
   });
 });

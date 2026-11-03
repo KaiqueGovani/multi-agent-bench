@@ -106,8 +106,9 @@ export function RunExecutionPanel({
   const toolCallCount = readMetricNumber(projection?.metrics, "toolCallCount");
   const handoffCount = readMetricNumber(projection?.metrics, "handoffCount");
   const eventCount = readMetricNumber(projection?.metrics, "eventCount");
-  const activeActorName =
-    projection?.activeActorName ?? activeEvent?.actorName ?? "runtime";
+  const activeActorName = run?.status === "running"
+    ? projection?.activeActorName ?? activeEvent?.actorName ?? null
+    : null;
   const currentPhase = projection?.currentPhase ?? "dispatch";
   const panelTitle =
     variant === "technical" ? "Monitor técnico do runtime" : "Acompanhamento da execução";
@@ -244,7 +245,7 @@ export function RunExecutionPanel({
 
                   <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                     <SummaryMetric icon={Route} label="Status" value={formatStatusLabel(run?.status)} />
-                    <SummaryMetric icon={Bot} label="Agente atual" value={formatActorLabel(activeActorName)} />
+                    <SummaryMetric icon={Bot} label="Agente atual" value={activeActorName ? formatActorLabel(activeActorName) : "—"} />
                     <SummaryMetric icon={Clock3} label="Fase" value={formatPhaseLabel(currentPhase)} />
                     <SummaryMetric icon={Timer} label="Latência" value={formatDuration(run?.totalDurationMs)} />
                   </div>
@@ -255,7 +256,7 @@ export function RunExecutionPanel({
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
                       <RuntimeVisual
-                        activeActorName={activeActorName}
+                        activeActorName={activeActorName ?? "runtime"}
                         architectureMode={architectureMode}
                         actors={actors}
                         executionEvents={executionEvents}

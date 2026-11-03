@@ -1,9 +1,10 @@
 "use client";
 
 import type * as React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
+  ArrowDown,
   AlertTriangle,
   Bot,
   BrainCircuit,
@@ -16,33 +17,29 @@ import {
   MessageCircle,
   MessageSquareReply,
   Paperclip,
-  PanelRightClose,
-  PanelRightOpen,
   Radio,
+  Wrench,
   ShieldCheck,
   UserCheck,
   XCircle,
   type LucideIcon
 } from "lucide-react";
 
+import { formatActorLabel, formatArchitectureLabel } from "@/components/runtime/presentation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import type {
   ArchitectureMode,
   JsonValue,
   ProcessingEvent,
-  ProcessingEventType,
   ProcessingStatus
 } from "@/lib/types";
 
 interface EventTimelineProps {
   events: ProcessingEvent[];
   connectionStatus: string;
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
   architectureMode: ArchitectureMode;
   reviewPanel?: React.ReactNode;
 }
@@ -55,6 +52,26 @@ const statusVariants: Record<string, BadgeProps["variant"]> = {
   pending: "muted",
   waiting: "warning"
 };
+
+const statusLabels: Record<ProcessingStatus, string> = {
+  completed: "Concluído",
+  running: "Em execução",
+  failed: "Falhou",
+  human_review_required: "Revisão humana",
+  pending: "Pendente",
+  waiting: "Aguardando"
+};
+
+const eventTime = new Intl.DateTimeFormat("pt-BR", {
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit"
+});
+
+const dateTime = new Intl.DateTimeFormat("pt-BR", {
+  dateStyle: "short",
+  timeStyle: "medium"
+});
 
 const itemAccentStyles: Record<ProcessingStatus, string> = {
   completed: "border-l-emerald-700",
@@ -83,6 +100,20 @@ const connectionLabels: Record<string, string> = {
   reconnecting: "reconectando"
 };
 
+const payloadLabels: Record<string, string> = {
+  toolName: "Ferramenta",
+  reason: "Motivo",
+  route: "Rota",
+  handledBy: "Atendido por",
+  targetActor: "Destino",
+  reviewRequired: "Revisão humana",
+  contentText: "Resposta",
+  filename: "Arquivo",
+  mimeType: "Tipo de arquivo",
+  totalTokens: "Tokens",
+  error: "Erro"
+};
+
 type TimelineDetailMode = "summary" | "detailed";
 
 interface TimelineFilters {
@@ -107,30 +138,28 @@ export function EventTimeline({
   architectureMode,
   events,
   connectionStatus,
-  isOpen,
-  onOpenChange,
   reviewPanel
 }: EventTimelineProps) {
-  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const [followLatest, setFollowLatest] = useState(true);
   const [detailMode, setDetailMode] = useState<TimelineDetailMode>("summary");
-  const [expandedEventIds, setExpandedEventIds] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<TimelineFilters>(initialFilters);
+  const liveEventIds = useMemo(() => findLiveEventIds(events), [events]);
   const filterOptions = useMemo(() => buildFilterOptions(events), [events]);
   const filteredEvents = useMemo(
-    () => events.filter((event) => matchesFilters(event, filters, events)),
+    () => events.filter((event) => matchesFilters(event, filters)),
     [events, filters]
   );
-  const counters = useMemo(() => summarizeEvents(filteredEvents), [filteredEvents]);
-  const totalCounters = useMemo(() => summarizeEvents(events), [events]);
-  const activeEvent = useMemo(
-    () => [...filteredEvents].reverse().find((event) => isEventCurrentlyActive(event, filteredEvents)),
-    [filteredEvents]
-  );
+  const liveCount = filteredEvents.filter((event) => liveEventIds.has(event.id)).length;
   const hasActiveFilters = Object.values(filters).some((value) => value !== "all");
+  const latestEventId = filteredEvents.at(-1)?.id;
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: "end" });
-  }, [filteredEvents.length]);
+  useLayoutEffect(() => {
+    const viewport = viewportRef.current;
+    if (viewport && followLatest) {
+      viewport.scrollTop = viewport.scrollHeight;
+    }
+  }, [detailMode, filteredEvents.length, followLatest, latestEventId]);
 
   function updateFilter(key: keyof TimelineFilters, value: string) {
     setFilters((current) => ({ ...current, [key]: value }));
@@ -139,106 +168,71 @@ export function EventTimeline({
   function resetFilters() {
     setFilters(initialFilters);
     setDetailMode("summary");
-    setExpandedEventIds(new Set());
-  }
-
-  function toggleEventPayload(eventId: string) {
-    setExpandedEventIds((current) => {
-      const next = new Set(current);
-      if (next.has(eventId)) {
-        next.delete(eventId);
-      } else {
-        next.add(eventId);
-      }
-      return next;
-    });
   }
 
   return (
-    <aside
-      className={`overflow-hidden border-t bg-card lg:flex lg:min-h-0 lg:max-h-none lg:flex-col lg:border-l lg:border-t-0 ${
-        isOpen ? "flex min-h-[240px] max-h-[42vh] flex-col" : "hidden lg:flex"
-      }`}
+    <section
+      aria-labelledby="activity-title"
+      className="flex min-h-0 flex-1 flex-col bg-background"
+      data-testid="activity-panel"
     >
-      <div className="border-b px-3 py-3">
-        <div className="flex items-center justify-between gap-3">
-          {isOpen ? (
-            <div className="min-w-0">
-              <h2 className="flex items-center gap-2 text-sm font-semibold">
-                <Activity className="h-4 w-4 text-primary" />
-                Eventos
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                {totalCounters.total === 0
-                  ? `Timeline operacional - ${formatArchitectureMode(architectureMode)}`
-                  : `${counters.total} de ${totalCounters.total} eventos - ${counters.running} em execução`}
-              </p>
-            </div>
-          ) : null}
-          <button
-            aria-label={isOpen ? "Fechar painel de eventos" : "Abrir painel de eventos"}
-            className="hidden h-8 w-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:inline-flex"
-            onClick={() => onOpenChange(!isOpen)}
-            type="button"
+      <div className="shrink-0 border-b bg-card">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-3 py-3 sm:px-5">
+          <div className="min-w-0">
+            <h2 id="activity-title" className="flex items-center gap-2 text-sm font-semibold">
+              <Activity aria-hidden="true" className="h-4 w-4 text-primary" />
+              Atividade da conversa
+            </h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {events.length === 0
+                ? formatArchitectureLabel(architectureMode)
+                : `${filteredEvents.length} de ${events.length} eventos · ${liveCount} ${liveCount === 1 ? "etapa ativa" : "etapas ativas"}`}
+            </p>
+          </div>
+          <Badge
+            aria-live="polite"
+            className="gap-1"
+            variant={connectionVariants[connectionStatus] ?? "muted"}
           >
-            {isOpen ? (
-              <PanelRightClose className="h-4 w-4" />
-            ) : (
-              <PanelRightOpen className="h-4 w-4" />
-            )}
-          </button>
-          {isOpen ? (
-            <Badge className="gap-1" variant={connectionVariants[connectionStatus] ?? "muted"}>
-              <ConnectionIcon status={connectionStatus} />
-              {connectionLabels[connectionStatus] ?? connectionStatus}
-            </Badge>
+            <ConnectionIcon status={connectionStatus} />
+            {connectionLabels[connectionStatus] ?? connectionStatus}
+          </Badge>
+          {events.length > 0 ? (
+            <TimelineFiltersPanel
+              detailMode={detailMode}
+              filters={filters}
+              followLatest={followLatest}
+              hasActiveFilters={hasActiveFilters}
+              onDetailModeChange={setDetailMode}
+              onFilterChange={updateFilter}
+              onFollowChange={setFollowLatest}
+              onReset={resetFilters}
+              options={filterOptions}
+            />
           ) : null}
         </div>
-        {!isOpen ? (
-          <div className="mt-4 hidden items-center justify-center [writing-mode:vertical-rl] lg:flex">
-            <span className="text-xs font-medium text-muted-foreground">
-              Eventos
-            </span>
-            {counters.total > 0 ? (
-              <Badge className="mt-3 [writing-mode:horizontal-tb]">
-                {counters.total}
-              </Badge>
-            ) : null}
-          </div>
-        ) : null}
-        {isOpen && counters.total > 0 ? (
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            <Metric icon={Activity} label="total" value={counters.total} />
-            <Metric className="text-sky-700" icon={Loader2} label="ativos" value={counters.running} />
-            <Metric className="text-emerald-700" icon={CheckCircle2} label="concl." value={counters.completed} />
-          </div>
-        ) : null}
-        {isOpen && events.length > 0 ? (
-          <TimelineFiltersPanel
-            detailMode={detailMode}
-            filters={filters}
-            hasActiveFilters={hasActiveFilters}
-            onDetailModeChange={setDetailMode}
-            onFilterChange={updateFilter}
-            onReset={resetFilters}
-            options={filterOptions}
-          />
-        ) : null}
-        {isOpen && activeEvent ? (
-          <ThinkingIndicator
-            actorName={activeEvent.actorName}
-            eventType={activeEvent.eventType}
-          />
-        ) : null}
       </div>
-      {isOpen && reviewPanel ? (
-        <div className="border-b bg-card">{reviewPanel}</div>
+      {reviewPanel ? (
+        <div className="max-h-[32vh] shrink-0 overflow-y-auto border-b bg-card">{reviewPanel}</div>
       ) : null}
-      {isOpen ? (
-        <div className="min-h-0 flex-1 overflow-y-auto p-3">
+      <div
+        aria-label="Histórico de eventos"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-5"
+        data-testid="activity-scroll"
+        onScroll={(event) => {
+          const { clientHeight, scrollHeight, scrollTop } = event.currentTarget;
+          if (scrollHeight - scrollTop - clientHeight > 24) setFollowLatest(false);
+        }}
+        ref={viewportRef}
+        role="region"
+        tabIndex={0}
+      >
+        <div className="mx-auto max-w-6xl">
           {events.length === 0 ? (
             <Alert>
-              <AlertDescription>Nenhum evento ainda.</AlertDescription>
+              <AlertDescription>
+                Os eventos aparecem aqui quando uma mensagem é processada.
+              </AlertDescription>
             </Alert>
           ) : filteredEvents.length === 0 ? (
             <Alert>
@@ -247,231 +241,227 @@ export function EventTimeline({
               </AlertDescription>
             </Alert>
           ) : (
-            <ol className="relative space-y-3 border-l pl-4">
-              {filteredEvents.map((event) => {
-                const payloadSummary = summarizePayload(event);
-                const EventIcon = eventIcon(event.eventType);
-                const eventSource = getEventSource(event);
-                const eventRunId = getEventRunId(event);
-                const isPayloadExpanded = expandedEventIds.has(event.id);
-                const visualStatus = getVisualStatus(event, filteredEvents);
-
-                return (
-                  <li className="relative" key={event.id}>
-                    <span className={eventDotClass(visualStatus)} />
-                    <Card className={`${eventCardAccent(event, visualStatus)} border-l-4 shadow-none`}>
-                      <CardHeader className="p-3 pb-1">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex min-w-0 gap-2">
-                            <EventIcon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                            <div className="min-w-0">
-                              <CardTitle className="break-words">
-                                {event.eventType}
-                              </CardTitle>
-                              {event.actorName ? (
-                                <p className="text-xs text-muted-foreground">
-                                  {event.actorName}
-                                </p>
-                              ) : null}
-                            </div>
-                          </div>
-                          <Badge
-                          className="shrink-0 gap-1"
-                          variant={statusVariants[visualStatus] ?? "muted"}
-                        >
-                            <StatusIcon status={visualStatus} />
-                            {visualStatus}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="grid gap-1 p-3 pt-1 text-xs text-muted-foreground">
-                        <p>
-                          {new Date(event.createdAt).toLocaleTimeString("pt-BR")}
-                          {typeof event.durationMs === "number"
-                            ? ` - ${event.durationMs} ms`
-                            : ""}
-                        </p>
-                        <p>
-                          {event.messageId
-                            ? `Mensagem ${shortId(event.messageId)}`
-                            : "Sem mensagem"}
-                          {` - Corr. ${shortId(event.correlationId)}`}
-                        </p>
-                        {detailMode === "detailed" ? (
-                          <div className="flex flex-wrap gap-2 pt-1">
-                            <EventMetaBadge label="run" value={eventRunId ? shortId(eventRunId) : "n/a"} />
-                            <EventMetaBadge label="origem" value={eventSource} />
-                            <EventMetaBadge label="ator" value={event.actorName ?? "n/a"} />
-                          </div>
-                        ) : null}
-                        {payloadSummary ? (
-                          <p className="break-words text-foreground/80">
-                            {payloadSummary}
-                          </p>
-                        ) : null}
-                        <div className="pt-1">
-                          <Button
-                            className="h-7 px-2 text-[11px]"
-                            onClick={() => toggleEventPayload(event.id)}
-                            type="button"
-                            variant="ghost"
-                          >
-                            <ChevronDown
-                              className={`h-3.5 w-3.5 transition-transform ${
-                                isPayloadExpanded ? "rotate-180" : ""
-                              }`}
-                            />
-                            Payload
-                          </Button>
-                        </div>
-                        {isPayloadExpanded ? (
-                          <pre className="max-h-52 overflow-auto rounded-md border bg-muted/40 p-2 text-[11px] text-foreground">
-                            {JSON.stringify(event.payload, null, 2)}
-                          </pre>
-                        ) : null}
-                      </CardContent>
-                    </Card>
-                    {isActiveStatus(visualStatus) ? (
-                      <div className="ml-3 mt-2">
-                        <InlineThinking actorName={event.actorName} />
-                      </div>
-                    ) : null}
-                  </li>
-                );
-              })}
+            <ol className="relative space-y-2 border-l pl-3 sm:pl-4">
+              {filteredEvents.map((event) => (
+                <EventRow
+                  detailed={detailMode === "detailed"}
+                  event={event}
+                  isLive={liveEventIds.has(event.id)}
+                  key={event.id}
+                  onExpand={() => setFollowLatest(false)}
+                />
+              ))}
             </ol>
           )}
-          <div ref={bottomRef} />
         </div>
-      ) : null}
-    </aside>
+      </div>
+    </section>
+  );
+}
+
+function EventRow({
+  detailed,
+  event,
+  isLive,
+  onExpand,
+}: {
+  detailed: boolean;
+  event: ProcessingEvent;
+  isLive: boolean;
+  onExpand: () => void;
+}) {
+  const payloadId = useId();
+  const [isExpanded, setIsExpanded] = useState(false);
+  const eventName = getEventName(event);
+  const EventIcon = eventIcon(eventName);
+  const eventRunId = getEventRunId(event);
+  const architecture = readPayloadString(event.payload.architectureMode);
+  const runtimeMode = readPayloadString(event.payload.runtimeMode);
+  const payloadSummary = summarizePayload(event);
+  const historical = !isLive && isActiveStatus(event.status);
+  const variant = historical ? "muted" : statusVariants[event.status];
+  const statusLabel = historical ? "Registrado" : statusLabels[event.status];
+
+  return (
+    <li className="relative" data-testid="activity-event">
+      <span aria-hidden="true" className={eventDotClass(historical ? "pending" : event.status)} />
+      <Card className={`${eventCardAccent(event, historical ? "pending" : event.status)} border-l-4 shadow-none`}>
+        <CardHeader className="p-3 pb-1">
+          <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+            <div className="flex min-w-0 gap-2">
+              <EventIcon aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <div className="min-w-0">
+                <CardTitle className="break-all text-sm">{eventName}</CardTitle>
+                {event.actorName ? (
+                  <p className="break-words text-xs text-muted-foreground" title={event.actorName}>
+                    {formatActorLabel(event.actorName)}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+            <Badge className="shrink-0 gap-1" variant={variant}>
+              <StatusIcon isLive={isLive} status={event.status} />
+              {statusLabel}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="grid min-w-0 gap-1 p-3 pt-1 text-xs text-muted-foreground">
+          <div className="flex flex-wrap gap-x-2 gap-y-1">
+            <time dateTime={event.createdAt} title={dateTime.format(new Date(event.createdAt))}>
+              {eventTime.format(new Date(event.createdAt))}
+            </time>
+            {typeof event.durationMs === "number" ? <span>{event.durationMs} ms</span> : null}
+            {event.messageId ? <span title={event.messageId}>Mensagem {shortId(event.messageId)}</span> : null}
+            {eventRunId ? <span title={eventRunId}>Execução {shortId(eventRunId)}</span> : null}
+          </div>
+          {detailed ? (
+            <div className="flex flex-wrap gap-2 py-1">
+              {eventRunId ? <EventMetaBadge label="execução" value={eventRunId} /> : null}
+              <EventMetaBadge label="correlação" value={event.correlationId} />
+              <EventMetaBadge label="origem" value={getEventSource(event)} />
+              <EventMetaBadge label="status original" value={event.status} />
+              {architecture ? <EventMetaBadge label="arquitetura" value={formatArchitectureLabel(architecture)} /> : null}
+              {runtimeMode ? <EventMetaBadge label="modo" value={runtimeMode === "mock" ? "Simulado" : runtimeMode} /> : null}
+              {typeof event.payload.sequenceNo === "number" ? (
+                <EventMetaBadge label="sequência" value={String(event.payload.sequenceNo)} />
+              ) : null}
+            </div>
+          ) : null}
+          {payloadSummary ? (
+            <p className="break-words text-foreground/80">{payloadSummary}</p>
+          ) : null}
+          <div>
+            <Button
+              aria-controls={payloadId}
+              aria-expanded={isExpanded}
+              aria-label={`Dados do evento ${eventName}`}
+              className="h-7 gap-1 px-1 text-xs"
+              onClick={() => {
+                if (!isExpanded) onExpand();
+                setIsExpanded(!isExpanded);
+              }}
+              type="button"
+              variant="ghost"
+            >
+              <ChevronDown aria-hidden="true" className={`h-3.5 w-3.5 motion-safe:transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+              Dados do evento
+            </Button>
+            <div hidden={!isExpanded} id={payloadId}>
+              {isExpanded ? (
+                <pre
+                  aria-label={`JSON de ${eventName}`}
+                  className="max-h-52 overflow-auto rounded-md border bg-muted/40 p-2 text-[11px] text-foreground"
+                  tabIndex={0}
+                >
+                  {JSON.stringify(event.payload, null, 2)}
+                </pre>
+              ) : null}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </li>
   );
 }
 
 function TimelineFiltersPanel({
   detailMode,
   filters,
+  followLatest,
   hasActiveFilters,
   onDetailModeChange,
   onFilterChange,
+  onFollowChange,
   onReset,
   options
 }: {
   detailMode: TimelineDetailMode;
   filters: TimelineFilters;
+  followLatest: boolean;
   hasActiveFilters: boolean;
   onDetailModeChange: (mode: TimelineDetailMode) => void;
   onFilterChange: (key: keyof TimelineFilters, value: string) => void;
+  onFollowChange: (value: boolean) => void;
   onReset: () => void;
   options: ReturnType<typeof buildFilterOptions>;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const filtersId = useId();
+  const selectors: Array<[keyof TimelineFilters, string, typeof options.runIds]> = [
+    ["runId", "Execução", options.runIds],
+    ["eventType", "Tipo", options.eventTypes],
+    ["actorName", "Ator", options.actorNames],
+    ["status", "Status registrado", options.statuses],
+    ["messageId", "Mensagem", options.messageIds],
+    ["source", "Origem", options.sources]
+  ];
 
   return (
-    <div className="mt-3 rounded-md border bg-background p-3">
-      <div className="flex items-center justify-between gap-2">
-        <button
-          className="flex min-w-0 flex-1 items-center gap-2 text-left text-xs font-medium"
+    <div className="w-full min-w-0">
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          aria-controls={filtersId}
+          aria-expanded={isExpanded}
+          className="h-8 gap-2 px-2 text-xs"
           onClick={() => setIsExpanded((current) => !current)}
           type="button"
+          variant="outline"
         >
-          <Filter className="h-3.5 w-3.5 shrink-0 text-primary" />
-          <span>Filtros</span>
+          <Filter aria-hidden="true" className="h-3.5 w-3.5 text-primary" />
+          Filtros
           {hasActiveFilters ? <Badge variant="info">ativos</Badge> : null}
-          {detailMode === "detailed" ? (
-            <Badge variant="outline">detalhado</Badge>
-          ) : null}
-        </button>
-        <div className="flex items-center gap-1">
-          <Button
-            className="h-7 px-2 text-[11px]"
-            disabled={!hasActiveFilters && detailMode === "summary"}
-            onClick={onReset}
-            type="button"
-            variant="ghost"
-          >
-            Limpar
+          <ChevronDown aria-hidden="true" className={`h-3.5 w-3.5 ${isExpanded ? "rotate-180" : ""}`} />
+        </Button>
+        {hasActiveFilters || detailMode === "detailed" ? (
+          <Button className="h-8 px-2 text-xs" onClick={onReset} type="button" variant="ghost">
+            Limpar filtros
           </Button>
-          <Button
-            aria-label={
-              isExpanded
-                ? "Recolher filtros de eventos"
-                : "Expandir filtros de eventos"
-            }
-            className="h-7 w-7"
-            onClick={() => setIsExpanded((current) => !current)}
-            size="icon"
-            type="button"
-            variant="ghost"
-          >
-            <ChevronDown
-              className={`h-3.5 w-3.5 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+        ) : null}
+        <Button
+          aria-pressed={followLatest}
+          className="ml-auto h-8 shrink-0 gap-1.5 px-2 text-xs"
+          onClick={() => onFollowChange(!followLatest)}
+          title="Rolar automaticamente até o evento mais recente"
+          type="button"
+          variant={followLatest ? "secondary" : "outline"}
+        >
+          <ArrowDown aria-hidden="true" className="h-3.5 w-3.5" />
+          Acompanhar ao vivo
+        </Button>
+      </div>
+      <div hidden={!isExpanded} id={filtersId}>
+        <div className="mt-2 grid max-h-[30dvh] grid-cols-2 gap-2 overflow-y-auto rounded-md border bg-background p-3 sm:grid-cols-3 lg:grid-cols-6">
+          {selectors.map(([key, label, values]) => (
+            <FilterSelect
+              key={key}
+              label={label}
+              onChange={(value) => onFilterChange(key, value)}
+              options={values}
+              value={filters[key]}
             />
-          </Button>
+          ))}
+          <div className="col-span-full flex gap-1" aria-label="Nível de detalhe" role="group">
+            <Button
+              aria-pressed={detailMode === "summary"}
+              className="h-7 px-2 text-xs"
+              onClick={() => onDetailModeChange("summary")}
+              type="button"
+              variant={detailMode === "summary" ? "secondary" : "ghost"}
+            >
+              Resumo
+            </Button>
+            <Button
+              aria-pressed={detailMode === "detailed"}
+              className="h-7 px-2 text-xs"
+              onClick={() => onDetailModeChange("detailed")}
+              type="button"
+              variant={detailMode === "detailed" ? "secondary" : "ghost"}
+            >
+              Metadados
+            </Button>
+          </div>
         </div>
       </div>
-      {isExpanded ? (
-        <div className="mt-2 grid gap-2">
-          <div className="grid grid-cols-2 gap-2">
-            <FilterSelect
-            label="run"
-            onChange={(value) => onFilterChange("runId", value)}
-            options={options.runIds}
-            value={filters.runId}
-          />
-            <FilterSelect
-            label="tipo"
-            onChange={(value) => onFilterChange("eventType", value)}
-            options={options.eventTypes}
-            value={filters.eventType}
-          />
-            <FilterSelect
-            label="ator"
-            onChange={(value) => onFilterChange("actorName", value)}
-            options={options.actorNames}
-            value={filters.actorName}
-          />
-            <FilterSelect
-            label="status"
-            onChange={(value) => onFilterChange("status", value)}
-            options={options.statuses}
-            value={filters.status}
-          />
-            <FilterSelect
-            label="mensagem"
-            onChange={(value) => onFilterChange("messageId", value)}
-            options={options.messageIds}
-            value={filters.messageId}
-          />
-            <FilterSelect
-            label="origem"
-            onChange={(value) => onFilterChange("source", value)}
-            options={options.sources}
-            value={filters.source}
-          />
-          </div>
-          <div className="grid grid-cols-2 rounded-md border p-1">
-            <button
-            className={`rounded px-2 py-1 text-xs ${
-              detailMode === "summary" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
-            }`}
-            onClick={() => onDetailModeChange("summary")}
-            type="button"
-          >
-              Resumo
-            </button>
-            <button
-            className={`rounded px-2 py-1 text-xs ${
-              detailMode === "detailed" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
-            }`}
-            onClick={() => onDetailModeChange("detailed")}
-            type="button"
-          >
-              Detalhado
-            </button>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -488,7 +478,7 @@ function FilterSelect({
   value: string;
 }) {
   return (
-    <label className="grid gap-1">
+    <label className="grid min-w-0 gap-1">
       <span className="text-[11px] font-medium uppercase text-muted-foreground">
         {label}
       </span>
@@ -510,21 +500,21 @@ function FilterSelect({
 
 function EventMetaBadge({ label, value }: { label: string; value: string }) {
   return (
-    <Badge className="gap-1" variant="outline">
+    <Badge className="max-w-full gap-1 [overflow-wrap:anywhere]" variant="outline">
       <span className="text-muted-foreground">{label}</span>
-      {value}
+      <span className="min-w-0">{value}</span>
     </Badge>
   );
 }
 
 function buildFilterOptions(events: ProcessingEvent[]) {
   return {
-    actorNames: uniqueOptions(events.map((event) => event.actorName ?? null)),
-    eventTypes: uniqueOptions(events.map((event) => event.eventType)),
+    actorNames: uniqueOptions(events.map((event) => event.actorName ?? null), formatActorLabel),
+    eventTypes: uniqueOptions(events.map(getEventName)),
     messageIds: uniqueOptions(events.map((event) => event.messageId ?? null), shortId),
     runIds: uniqueOptions(events.map((event) => getEventRunId(event)), shortId),
     sources: uniqueOptions(events.map((event) => getEventSource(event))),
-    statuses: uniqueOptions(events.map((event) => getVisualStatus(event, events)))
+    statuses: uniqueOptions(events.map((event) => event.status), (value) => statusLabels[value as ProcessingStatus])
   };
 }
 
@@ -540,18 +530,17 @@ function uniqueOptions(
 function matchesFilters(
   event: ProcessingEvent,
   filters: TimelineFilters,
-  allEvents: ProcessingEvent[],
 ): boolean {
   if (filters.runId !== "all" && getEventRunId(event) !== filters.runId) {
     return false;
   }
-  if (filters.eventType !== "all" && event.eventType !== filters.eventType) {
+  if (filters.eventType !== "all" && getEventName(event) !== filters.eventType) {
     return false;
   }
   if (filters.actorName !== "all" && event.actorName !== filters.actorName) {
     return false;
   }
-  if (filters.status !== "all" && getVisualStatus(event, allEvents) !== filters.status) {
+  if (filters.status !== "all" && event.status !== filters.status) {
     return false;
   }
   if (filters.messageId !== "all" && event.messageId !== filters.messageId) {
@@ -588,81 +577,11 @@ function eventCardAccent(
   return itemAccentStyles[visualStatus] ?? "border-l-border";
 }
 
-function formatArchitectureMode(mode: ArchitectureMode): string {
-  const labels: Record<ArchitectureMode, string> = {
-    all_architectures: "Comparação das arquiteturas",
-    centralized_orchestration: "Orquestração centralizada",
-    decentralized_swarm: "Swarm descentralizado",
-    structured_workflow: "Workflow estruturado"
-  };
-  return labels[mode];
-}
-
-function Metric({
-  className,
-  icon: Icon,
-  label,
-  value
-}: {
-  className?: string;
-  icon: LucideIcon;
-  label: string;
-  value: number;
-}) {
-  return (
-    <Card className="shadow-none">
-      <CardContent className="p-2 text-center">
-        <div className="flex items-center justify-center gap-1">
-          <Icon className={`h-3.5 w-3.5 ${className ?? ""}`} />
-          <p className={`text-sm font-semibold ${className ?? ""}`}>{value}</p>
-        </div>
-        <p className="text-[11px] text-muted-foreground">{label}</p>
-      </CardContent>
-    </Card>
-  );
-}
-
-function ThinkingIndicator({
-  actorName,
-  eventType
-}: {
-  actorName: string | null | undefined;
-  eventType: string;
-}) {
-  return (
-    <div className="mt-3 rounded-md border bg-background p-3">
-      <div className="flex items-center gap-2 text-xs font-medium">
-        <Loader2 className="h-4 w-4 animate-spin text-sky-700" />
-        <span>{actorName ?? "runtime"} pensando</span>
-        <Badge variant="info">{eventType}</Badge>
-      </div>
-      <div className="mt-3 space-y-2">
-        <Skeleton className="h-2 w-11/12" />
-        <Skeleton className="h-2 w-8/12" />
-      </div>
-    </div>
-  );
-}
-
-function InlineThinking({ actorName }: { actorName: string | null | undefined }) {
-  return (
-    <div className="flex items-center gap-2 rounded-md border border-dashed bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-      <Loader2 className="h-3.5 w-3.5 animate-spin text-sky-700" />
-      <span>{actorName ?? "runtime"} ainda processando</span>
-      <span className="flex gap-1" aria-hidden="true">
-        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-sky-700 [animation-delay:-0.2s]" />
-        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-sky-700 [animation-delay:-0.1s]" />
-        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-sky-700" />
-      </span>
-    </div>
-  );
-}
-
-function StatusIcon({ status }: { status: ProcessingStatus }) {
+function StatusIcon({ isLive, status }: { isLive: boolean; status: ProcessingStatus }) {
   const Icon =
     status === "completed"
       ? CheckCircle2
-      : status === "running"
+      : status === "running" && isLive
         ? Loader2
         : status === "failed"
           ? XCircle
@@ -672,25 +591,38 @@ function StatusIcon({ status }: { status: ProcessingStatus }) {
 
   return (
     <Icon
-      className={`h-3.5 w-3.5 ${status === "running" ? "animate-spin" : ""}`}
+      aria-hidden="true"
+      className={`h-3.5 w-3.5 ${status === "running" && isLive ? "motion-safe:animate-spin" : ""}`}
     />
   );
 }
 
 function ConnectionIcon({ status }: { status: string }) {
   if (status === "open") {
-    return <Radio className="h-3.5 w-3.5" />;
+    return <Radio aria-hidden="true" className="h-3.5 w-3.5" />;
   }
   if (status === "error") {
-    return <XCircle className="h-3.5 w-3.5" />;
+    return <XCircle aria-hidden="true" className="h-3.5 w-3.5" />;
   }
   if (status === "connecting" || status === "reconnecting") {
-    return <Loader2 className="h-3.5 w-3.5 animate-spin" />;
+    return <Loader2 aria-hidden="true" className="h-3.5 w-3.5 motion-safe:animate-spin" />;
   }
-  return <Clock3 className="h-3.5 w-3.5" />;
+  return <Clock3 aria-hidden="true" className="h-3.5 w-3.5" />;
+}
+
+function getEventName(event: ProcessingEvent): string {
+  const family = readPayloadString(event.payload.eventFamily);
+  const name = readPayloadString(event.payload.eventName);
+  return name && (family === "tool" || family === "model") ? `${family}.${name}` : event.eventType;
 }
 
 function eventIcon(eventType: string): LucideIcon {
+  if (eventType.startsWith("tool.")) {
+    return Wrench;
+  }
+  if (eventType.startsWith("model.")) {
+    return BrainCircuit;
+  }
   if (eventType.startsWith("message.")) {
     return MessageCircle;
   }
@@ -725,63 +657,25 @@ function isActiveStatus(status: ProcessingStatus): boolean {
   return status === "running" || status === "waiting" || status === "pending";
 }
 
-function isTerminalStatus(status: ProcessingStatus): boolean {
-  return (
-    status === "completed"
-    || status === "failed"
-    || status === "human_review_required"
+function findLiveEventIds(events: ProcessingEvent[]): Set<string> {
+  const latestOperations = new Set<string>();
+  const terminalRuns = new Set(
+    events.filter(isRunTerminalEvent).map((event) => getEventRunId(event) ?? event.correlationId)
   );
-}
+  const liveEventIds = new Set<string>();
 
-function isEventCurrentlyActive(
-  event: ProcessingEvent,
-  allEvents: ProcessingEvent[],
-): boolean {
-  if (!isActiveStatus(event.status)) {
-    return false;
+  // Events arrive in chronological order from the conversation hook.
+  for (let i = events.length - 1; i >= 0; i -= 1) {
+    const event = events[i];
+    const scope = getEventRunId(event) ?? event.correlationId;
+    const operationKey = `${scope}:${getOperationKey(event)}`;
+    if (!terminalRuns.has(scope) && !latestOperations.has(operationKey) && isActiveStatus(event.status)) {
+      liveEventIds.add(event.id);
+    }
+    latestOperations.add(operationKey);
   }
 
-  for (const candidate of allEvents) {
-    if (candidate.id === event.id) {
-      continue;
-    }
-    if (!isAfter(candidate, event)) {
-      continue;
-    }
-    if (!belongsToSameRun(candidate, event)) {
-      continue;
-    }
-    if (isRunTerminalEvent(candidate)) {
-      return false;
-    }
-  }
-
-  const operationKey = getOperationKey(event);
-  for (const candidate of allEvents) {
-    if (candidate.id === event.id) {
-      continue;
-    }
-    if (getOperationKey(candidate) !== operationKey) {
-      continue;
-    }
-    if (!isAfter(candidate, event)) {
-      continue;
-    }
-    if (isTerminalStatus(candidate.status) || isActiveStatus(candidate.status)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function getVisualStatus(
-  event: ProcessingEvent,
-  allEvents: ProcessingEvent[],
-): ProcessingStatus {
-  if (isActiveStatus(event.status) && !isEventCurrentlyActive(event, allEvents)) {
-    return "completed";
-  }
-  return event.status;
+  return liveEventIds;
 }
 
 function eventDotClass(status: ProcessingStatus): string {
@@ -796,65 +690,25 @@ function eventDotClass(status: ProcessingStatus): string {
             ? "bg-amber-700"
             : "bg-muted-foreground";
 
-  return `absolute -left-[22px] top-4 h-3 w-3 rounded-full border-2 border-card ${color}`;
-}
-
-function summarizeEvents(events: ProcessingEvent[]) {
-  return events.reduce(
-    (accumulator, event) => {
-      const visualStatus = getVisualStatus(event, events);
-      accumulator.total += 1;
-      if (visualStatus === "running" || visualStatus === "waiting" || visualStatus === "pending") {
-        accumulator.running += 1;
-      }
-      if (visualStatus === "completed") {
-        accumulator.completed += 1;
-      }
-      return accumulator;
-    },
-    { completed: 0, running: 0, total: 0 }
-  );
+  return `absolute -left-[18px] top-4 h-3 w-3 rounded-full border-2 border-card sm:-left-[22px] ${color}`;
 }
 
 function summarizePayload(event: ProcessingEvent): string {
-  const preferredKeys = [
-    "reason",
-    "route",
-    "handledBy",
-    "reviewRequired",
-    "totalDurationMs",
-    "runtimeMode",
-    "architectureMode",
-    "contentText"
-  ];
-
-  const parts = preferredKeys
-    .filter((key) => event.payload[key] !== undefined)
-    .map((key) => `${formatPayloadKey(key)}: ${formatPayloadValue(event.payload[key])}`);
-
-  if (parts.length > 0) {
-    return truncate(parts.join(" - "), 180);
-  }
-
-  const fallback = Object.entries(event.payload)
-    .slice(0, 3)
-    .map(([key, value]) => `${formatPayloadKey(key)}: ${formatPayloadValue(value)}`);
-
-  return truncate(fallback.join(" - "), 180);
-}
-
-function formatPayloadKey(key: string): string {
-  return key.replace(/([A-Z])/g, " $1").toLowerCase();
+  const parts = Object.entries(payloadLabels).flatMap(([key, label]) => {
+    const value = formatPayloadValue(event.payload[key]);
+    return value ? [`${label}: ${value}`] : [];
+  });
+  return truncate(parts.join(" · "), 180);
 }
 
 function formatPayloadValue(value: JsonValue | undefined): string {
-  if (value === undefined) {
-    return "";
-  }
   if (typeof value === "string") {
-    return value;
+    return value.trim();
   }
-  return JSON.stringify(value);
+  if (typeof value === "boolean") {
+    return value ? "Sim" : "Não";
+  }
+  return typeof value === "number" ? String(value) : "";
 }
 
 function shortId(id: string): string {
@@ -869,52 +723,44 @@ function truncate(value: string, maxLength: number): string {
 }
 
 function getOperationKey(event: ProcessingEvent): string {
-  const nodeId = readPayloadString(event.payload.nodeId);
-  if (nodeId) {
-    return `${event.correlationId}:node:${nodeId}`;
-  }
+  const { payload } = event;
+  const family = readPayloadString(payload.eventFamily);
+  const actor = event.actorName ?? "runtime";
+  const nodeId = readPayloadString(payload.nodeId);
+  const invocation = readPayloadString(payload.agentInvocationId) ?? readPayloadString(payload.callId);
 
-  const runId = getEventRunId(event);
-  if (event.actorName) {
-    return `${runId ?? event.correlationId}:actor:${event.actorName}`;
+  if (family === "tool") {
+    return `tool:${readPayloadString(payload.toolCallId) ?? readPayloadString(payload.toolName) ?? actor}`;
   }
-
+  if (family === "model") {
+    return `model:${readPayloadString(payload.callId) ?? invocation ?? actor}`;
+  }
   if (event.eventType.startsWith("processing.")) {
-    return `${runId ?? event.correlationId}:processing`;
+    return "processing";
   }
   if (event.eventType.startsWith("response.")) {
-    return `${runId ?? event.correlationId}:response`;
+    return "response";
   }
   if (event.eventType.startsWith("review.")) {
-    return `${runId ?? event.correlationId}:review`;
+    return "review";
   }
   if (event.eventType.startsWith("handoff.")) {
-    return `${runId ?? event.correlationId}:handoff:${readPayloadString(event.payload.targetActor) ?? "unknown"}`;
+    return `handoff:${readPayloadString(payload.targetActor) ?? actor}`;
   }
-  return `${runId ?? event.correlationId}:${event.eventType}`;
-}
-
-function isAfter(left: ProcessingEvent, right: ProcessingEvent): boolean {
-  const timeDifference =
-    new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime();
-  return timeDifference === 0 ? left.id > right.id : timeDifference > 0;
-}
-
-function belongsToSameRun(left: ProcessingEvent, right: ProcessingEvent): boolean {
-  const leftRunId = getEventRunId(left);
-  const rightRunId = getEventRunId(right);
-  if (leftRunId && rightRunId) {
-    return leftRunId === rightRunId;
+  if (event.eventType.startsWith("actor.")) {
+    return `actor:${invocation ?? nodeId ?? actor}`;
   }
-  return left.correlationId === right.correlationId;
+  return event.eventType.replace(/\.(started|completed)$/, "");
 }
 
 function isRunTerminalEvent(event: ProcessingEvent): boolean {
   return (
     event.eventType === "processing.completed"
-    || event.eventType === "response.final"
     || event.eventType === "review.required"
-    || event.status === "failed"
-    || event.status === "human_review_required"
+    || (event.status === "failed" && (
+      event.payload.eventFamily === "run"
+      || event.payload.finalOutcome != null
+      || event.actorName === "ai_runtime"
+    ))
   );
 }

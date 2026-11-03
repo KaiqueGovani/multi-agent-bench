@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   getRunComparisonContext,
@@ -8,111 +8,132 @@ import {
 } from "@/lib/api/client";
 import { openRunExecutionStream } from "@/lib/sse/events";
 import type {
-  Run,
   RunComparisonContextResponse,
   RunExecutionEvent,
-  RunExecutionProjection,
+  RunExecutionResponse,
 } from "@/lib/types";
 
 type ConnectionStatus = "idle" | "connecting" | "open" | "closed" | "error" | "reconnecting";
 
-export function useRunExecution(runId: string | null) {
-  const [run, setRun] = useState<Run | null>(null);
-  const [projection, setProjection] = useState<RunExecutionProjection | null>(null);
-  const [executionEvents, setExecutionEvents] = useState<RunExecutionEvent[]>([]);
+const PROJECTION_REFRESH_DELAY_MS = 100;
+
+export function useRunExecution(runId: string | null, { loadComparison = true } = {}) {
+  const [execution, setExecution] = useState<RunExecutionResponse | null>(null);
+  const [streamed, setStreamed] = useState<{ runId: string; events: RunExecutionEvent[] } | null>(null);
   const [comparisonContext, setComparisonContext] = useState<RunComparisonContextResponse | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("idle");
-  const [error, setError] = useState<string | null>(null);
-  const lastSequenceRef = useRef(0);
+  const [failure, setFailure] = useState<{ runId: string; message: string } | null>(null);
 
   useEffect(() => {
-    if (!runId) {
-      setRun(null);
-      setProjection(null);
-      setExecutionEvents([]);
-      setComparisonContext(null);
-      setConnectionStatus("idle");
-      return;
-    }
-    const activeRunId = runId;
+    setFailure(null);
+    setConnectionStatus(runId ? "connecting" : "idle");
+    if (!runId) return;
 
+    const activeRunId = runId;
     let source: EventSource | null = null;
     let cancelled = false;
-    setError(null);
+    let timer: number | undefined;
+    let refreshing = false;
+    let refreshRequested = false;
+    let needsReconnectRefresh = false;
 
-    async function load() {
-      try {
-        const refreshExecution = async () => {
-          const execution = await getRunExecution(activeRunId);
-          if (cancelled) {
-            return execution;
-          }
-          setRun(execution.run);
-          setProjection(execution.projection ?? null);
-          setExecutionEvents(execution.executionEvents);
-          lastSequenceRef.current = execution.executionEvents.at(-1)?.sequenceNo ?? lastSequenceRef.current;
-          return execution;
-        };
-
-        const [execution, comparison] = await Promise.all([
-          refreshExecution(),
-          getRunComparisonContext(activeRunId),
-        ]);
-        if (cancelled) {
-          return;
-        }
-        setRun(execution.run);
-        setProjection(execution.projection ?? null);
-        setExecutionEvents(execution.executionEvents);
-        setComparisonContext(comparison);
-        lastSequenceRef.current = execution.executionEvents.at(-1)?.sequenceNo ?? 0;
-
-        source = openRunExecutionStream(
-          activeRunId,
-          (event) => {
-            setExecutionEvents((current) => mergeExecutionEvents(current, [event]));
-            lastSequenceRef.current = event.sequenceNo;
-            if (
-              event.eventFamily === "response"
-              || event.eventFamily === "run"
-              || event.eventFamily === "review"
-              || event.sequenceNo % 2 === 0
-            ) {
-              void refreshExecution();
-            }
-          },
-          setConnectionStatus,
-          { lastSequenceNo: lastSequenceRef.current },
-        );
-      } catch (caught) {
-        if (!cancelled) {
-          setError(caught instanceof Error ? caught.message : "Falha ao carregar execução");
-        }
+    function scheduleRefresh() {
+      refreshRequested = true;
+      if (!refreshing && timer === undefined) {
+        timer = window.setTimeout(() => {
+          timer = undefined;
+          void refreshExecution();
+        }, PROJECTION_REFRESH_DELAY_MS);
       }
     }
 
-    void load();
+    async function refreshExecution(): Promise<RunExecutionResponse | null> {
+      refreshRequested = false;
+      refreshing = true;
+      try {
+        const snapshot = await getRunExecution(activeRunId);
+        if (!cancelled) {
+          setExecution(snapshot);
+          setFailure(null);
+        }
+        return snapshot;
+      } catch (caught) {
+        if (!cancelled) {
+          setFailure({
+            runId: activeRunId,
+            message: caught instanceof Error ? caught.message : "Falha ao carregar execução",
+          });
+        }
+        return null;
+      } finally {
+        refreshing = false;
+        if (!cancelled && refreshRequested) scheduleRefresh();
+      }
+    }
+
+    // A failed comparison request must not block the execution or its stream.
+    if (loadComparison) {
+      void getRunComparisonContext(activeRunId).then((comparison) => {
+        if (!cancelled) setComparisonContext(comparison);
+      }).catch(() => {});
+    }
+
+    void refreshExecution().then((snapshot) => {
+      if (cancelled) return;
+      needsReconnectRefresh = !snapshot;
+      source = openRunExecutionStream(
+        activeRunId,
+        (event) => {
+          if (cancelled || event.runId !== activeRunId) return;
+          setStreamed((current) => ({
+            runId: activeRunId,
+            events: mergeExecutionEvents(current?.runId === activeRunId ? current.events : [], [event]),
+          }));
+          // The server can re-publish the final event after committing the run status.
+          scheduleRefresh();
+        },
+        (status) => {
+          if (cancelled) return;
+          setConnectionStatus(status);
+          if (status === "reconnecting" || status === "error") needsReconnectRefresh = true;
+          if (status === "open" && needsReconnectRefresh) {
+            needsReconnectRefresh = false;
+            scheduleRefresh();
+          }
+        },
+        { lastSequenceNo: snapshot?.executionEvents.at(-1)?.sequenceNo },
+      );
+    });
 
     return () => {
       cancelled = true;
       source?.close();
-      setConnectionStatus("closed");
+      if (timer !== undefined) window.clearTimeout(timer);
     };
-  }, [runId]);
+  }, [loadComparison, runId]);
 
-  const activeEvent = useMemo(
-    () => [...executionEvents].reverse().find((event) => event.status === "running"),
-    [executionEvents],
-  );
+  const currentExecution = execution?.run.id === runId ? execution : null;
+  const executionEvents = useMemo(() => mergeExecutionEvents(
+    currentExecution?.executionEvents ?? [],
+    streamed?.runId === runId ? streamed.events : [],
+  ), [currentExecution, runId, streamed]);
+
+  const activeActor = currentExecution?.projection?.activeActorName;
+  const latestActorEvent = activeActor
+    ? executionEvents.findLast((event) => event.actorName === activeActor)
+    : executionEvents.at(-1);
+  const activeEvent = currentExecution?.run.status === "running" && latestActorEvent?.status === "running"
+    ? latestActorEvent
+    : undefined;
 
   return {
     activeEvent,
-    comparisonContext,
+    comparisonContext: comparisonContext?.run.id === runId ? comparisonContext : null,
     connectionStatus,
-    error,
+    error: failure?.runId === runId ? failure.message : null,
     executionEvents,
-    projection,
-    run,
+    projection: currentExecution?.projection ?? null,
+    run: currentExecution?.run ?? null,
   };
 }
 

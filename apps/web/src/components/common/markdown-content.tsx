@@ -63,7 +63,7 @@ export function MarkdownContent({
         {content}
       </ReactMarkdown>
       {isStreaming ? (
-        <Loader2 className="ml-2 inline-block h-3 w-3 animate-spin" aria-label="Streaming" />
+        <Loader2 className="ml-2 inline-block h-3 w-3 motion-safe:animate-spin" aria-label="Resposta em andamento" />
       ) : null}
     </div>
   );

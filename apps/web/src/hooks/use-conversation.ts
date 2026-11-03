@@ -6,7 +6,6 @@ import {
   createConversation,
   getConversation,
   getConversationEvents,
-  getRunExecution,
   listConversations,
   listOpenReviewTasks,
   resolveReviewTask as resolveReviewTaskRequest,
@@ -23,8 +22,7 @@ import type {
   ProcessingEvent,
   ReviewTask,
   ReviewTaskStatus,
-  Run,
-  RunExecutionResponse
+  Run
 } from "@/lib/types";
 
 type ConnectionStatus = "idle" | "connecting" | "open" | "closed" | "error" | "reconnecting";
@@ -49,17 +47,14 @@ export function useConversation(
   const [error, setError] = useState<string | null>(null);
   const activeConversationIdRef = useRef<string | null>(null);
   const lastEventIdRef = useRef<string | null>(null);
+  const detailRequestRef = useRef(0);
+  const appliedDetailRequestRef = useRef(0);
 
   /** Tracks when the last refreshConversationDetail was triggered, for debouncing. */
   const lastRefreshTsRef = useRef(0);
 
   /** Tracks streaming message runIds with creation timestamps for timeout cleanup. */
   const streamingTimestampsRef = useRef(new Map<string, number>());
-
-  /** Live run execution state for the visual flow panel. */
-  const [runExecution, setRunExecution] = useState<RunExecutionResponse | null>(null);
-  const runExecLastFetchRef = useRef(0);
-  const runExecPendingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const refreshConversations = useCallback(async () => {
     try {
@@ -70,21 +65,6 @@ export function useConversation(
       setError(caught instanceof Error ? caught.message : "Falha ao atualizar conversas");
       return [];
     }
-  }, []);
-
-  /** Throttled fetch for run execution projection (at most once per 1500ms, with trailing). */
-  const fetchRunExecution = useCallback((runId: string) => {
-    const THROTTLE_MS = 1500;
-    const now = Date.now();
-    if (now - runExecLastFetchRef.current < THROTTLE_MS) {
-      if (runExecPendingRef.current) clearTimeout(runExecPendingRef.current);
-      runExecPendingRef.current = setTimeout(() => fetchRunExecution(runId), THROTTLE_MS);
-      return;
-    }
-    runExecLastFetchRef.current = now;
-    getRunExecution(runId)
-      .then((res) => setRunExecution(res))
-      .catch(() => {});
   }, []);
 
   const activeArchitectureMode = useMemo<ArchitectureMode>(() => {
@@ -104,6 +84,8 @@ export function useConversation(
   }, []);
 
   const loadConversation = useCallback(async (id: string) => {
+    const request = ++detailRequestRef.current;
+    appliedDetailRequestRef.current = request;
     setError(null);
     setIsLoadingConversation(true);
     activeConversationIdRef.current = id;
@@ -114,12 +96,11 @@ export function useConversation(
     setEvents([]);
     setRuns([]);
     setReviewTasks([]);
-    setRunExecution(null);
     lastEventIdRef.current = null;
 
     try {
       const detail = await getConversation(id);
-      if (activeConversationIdRef.current !== id) {
+      if (activeConversationIdRef.current !== id || request < appliedDetailRequestRef.current) {
         return;
       }
       setConversation(detail.conversation);
@@ -130,7 +111,7 @@ export function useConversation(
       setReviewTasks(detail.reviewTasks);
       lastEventIdRef.current = getLastEventId(detail.events);
     } catch (caught) {
-      if (activeConversationIdRef.current === id) {
+      if (activeConversationIdRef.current === id && request >= appliedDetailRequestRef.current) {
         setError(caught instanceof Error ? caught.message : "Falha ao carregar conversa");
       }
     } finally {
@@ -141,11 +122,14 @@ export function useConversation(
   }, []);
 
   const refreshConversationDetail = useCallback(async (id: string) => {
+    if (activeConversationIdRef.current !== id) return null;
+    const request = ++detailRequestRef.current;
     try {
       const detail = await getConversation(id);
-      if (activeConversationIdRef.current !== id) {
+      if (activeConversationIdRef.current !== id || request < appliedDetailRequestRef.current) {
         return null;
       }
+      appliedDetailRequestRef.current = request;
       setConversation(detail.conversation);
       // Replace messages but keep any optimistic/streaming messages whose
       // persisted outbound counterpart hasn't landed yet. We use the
@@ -180,7 +164,7 @@ export function useConversation(
       void refreshOpenReviewTasks();
       return detail;
     } catch (caught) {
-      if (activeConversationIdRef.current === id) {
+      if (activeConversationIdRef.current === id && request >= appliedDetailRequestRef.current) {
         setError(caught instanceof Error ? caught.message : "Falha ao atualizar conversa");
       }
       return null;
@@ -217,6 +201,7 @@ export function useConversation(
   }, []);
 
   const startConversation = useCallback(async () => {
+    appliedDetailRequestRef.current = ++detailRequestRef.current;
     setError(null);
     activeConversationIdRef.current = null;
     lastEventIdRef.current = null;
@@ -227,7 +212,6 @@ export function useConversation(
     setEvents([]);
     setRuns([]);
     setReviewTasks([]);
-    setRunExecution(null);
     setConnectionStatus("idle");
   }, []);
 
@@ -408,9 +392,12 @@ export function useConversation(
             ? event.payload.architectureMode
             : null;
 
-          // --- Live projection fetch (throttled) ---
-          if (payloadRunId) {
-            fetchRunExecution(payloadRunId);
+          if (event.eventType === "processing.started" && event.messageId) {
+            setMessages((current) => current.map((message) =>
+              message.id === event.messageId && message.status === "accepted"
+                ? { ...message, status: "processing" }
+                : message,
+            ));
           }
 
           if (
@@ -431,7 +418,12 @@ export function useConversation(
             }));
           }
 
-          if (event.eventType === "response.final" || event.eventType === "processing.completed") {
+          if (
+            event.eventType === "response.final"
+            || event.eventType === "processing.completed"
+            || event.eventType === "actor.failed"
+            || event.eventType === "review.required"
+          ) {
             // Don't remove the streaming bubble here. The persisted outbound
             // message lands via refreshConversationDetail, which then drops
             // the streaming twin (matched by runtimeRunId). Removing here
@@ -478,25 +470,8 @@ export function useConversation(
       isCancelled = true;
       setConnectionStatus("closed");
       source?.close();
-      // Clear any pending trailing projection fetch to avoid post-unmount state updates.
-      if (runExecPendingRef.current) {
-        clearTimeout(runExecPendingRef.current);
-        runExecPendingRef.current = null;
-      }
     };
-  }, [conversationId, debouncedRefreshDetail, fetchRunExecution, refreshConversationDetail, refreshEvents]);
-
-  // Fetch run execution projection when runs change (initial load / new run)
-  useEffect(() => {
-    if (runs.length === 0) {
-      setRunExecution(null);
-      return;
-    }
-    const preferredRun = pickConversationFlowRun(runs);
-    if (preferredRun) {
-      fetchRunExecution(preferredRun.id);
-    }
-  }, [runs, fetchRunExecution]);
+  }, [conversationId, debouncedRefreshDetail, refreshConversationDetail, refreshEvents]);
 
   const attachmentsByMessage = useMemo(() => {
     return attachments.reduce<Record<string, Attachment[]>>((accumulator, attachment) => {
@@ -524,7 +499,6 @@ export function useConversation(
     openReviewTasks,
     reviewTasks,
     refreshConversations,
-    runExecution,
     runs,
     sendMessage,
     selectConversation,
@@ -559,7 +533,16 @@ function upsertStreamingMessage({
   status: Message["status"];
 }): Message[] {
   const streamingId = "streaming-" + runId;
+  if (messages.some((message) =>
+    message.direction === "outbound" && message.id !== streamingId
+      && readRuntimeRunId(message.metadata) === runId,
+  )) {
+    return messages;
+  }
   const existing = messages.findIndex((m) => m.id === streamingId);
+  if (existing >= 0 && messages[existing].status === "completed" && status !== "completed") {
+    return messages;
+  }
   const existingMetadata = existing >= 0 ? messages[existing].metadata : null;
   const metadata = {
     ...(existingMetadata && typeof existingMetadata === "object" ? existingMetadata : {}),
@@ -592,13 +575,6 @@ function upsertStreamingMessage({
   ];
 }
 
-function pickConversationFlowRun(runs: Run[]): Run | null {
-  const canonicalRun = [...runs]
-    .reverse()
-    .find((run) => run.experiment?.comparisonOnly !== true);
-  return canonicalRun ?? runs.at(-1) ?? null;
-}
-
 function isArchitectureMode(value: unknown): value is ArchitectureMode {
   return (
     value === "all_architectures"
@@ -627,7 +603,19 @@ function mergeEvents(
   return Array.from(byId.values()).sort((left, right) => {
     const timeDifference =
       new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime();
-    return timeDifference === 0 ? left.id.localeCompare(right.id) : timeDifference;
+    if (timeDifference !== 0) return timeDifference;
+    // Date truncates the API's fractional seconds to milliseconds.
+    const leftFraction = left.createdAt.match(/\.(\d+)/)?.[1].padEnd(9, "0") ?? "000000000";
+    const rightFraction = right.createdAt.match(/\.(\d+)/)?.[1].padEnd(9, "0") ?? "000000000";
+    if (leftFraction !== rightFraction) return leftFraction.localeCompare(rightFraction);
+    const leftRun = typeof left.payload.runId === "string" ? left.payload.runId : "";
+    const rightRun = typeof right.payload.runId === "string" ? right.payload.runId : "";
+    if (leftRun !== rightRun) return leftRun.localeCompare(rightRun);
+    const leftSequence = left.payload.sequenceNo;
+    const rightSequence = right.payload.sequenceNo;
+    return (typeof leftSequence === "number" ? leftSequence : 0)
+      - (typeof rightSequence === "number" ? rightSequence : 0)
+      || left.id.localeCompare(right.id);
   });
 }
 
