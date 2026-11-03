@@ -149,24 +149,30 @@ export function RunExecutionPanel({
             <div className="flex flex-wrap items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
               <h2 className="text-sm font-semibold">{panelTitle}</h2>
-              <Badge variant="outline">{formatArchitectureLabel(architectureMode)}</Badge>
+              <Badge variant="outline">
+                {formatArchitectureLabel(architectureMode)}
+              </Badge>
               <Badge variant={connectionStatus === "open" ? "success" : "warning"}>
                 {connectionStatus}
               </Badge>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">{panelDescription}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {panelDescription}
+            </p>
           </div>
 
           {variant === "user" ? (
-            <Badge variant="outline" className="text-xs">modo usuário</Badge>
+            <Badge variant="outline" className="text-xs">
+              modo usuário
+            </Badge>
           ) : null}
         </motion.div>
 
         {/* Tab bar */}
         {!hideTabs ? (
-        <div className="flex items-center gap-1 rounded-lg border bg-muted/40 p-1">
-          {tabs.map((tab) => (
-            <button
+          <div className="flex items-center gap-1 rounded-lg border bg-muted/40 p-1">
+            {tabs.map((tab) => (
+              <button
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
@@ -176,10 +182,10 @@ export function RunExecutionPanel({
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+                {tab.label}
+              </button>
+            ))}
+          </div>
         ) : null}
 
         {/* Tab content panels */}
@@ -212,17 +218,21 @@ export function RunExecutionPanel({
 
                     <div className="flex flex-wrap items-center gap-2">
                       <select
+                        aria-label="Execução selecionada"
                         className="h-9 rounded-md border bg-background px-3 text-sm"
                         onChange={(event) => onSelectRun(event.target.value)}
                         value={selectedRunId ?? ""}
                       >
                         {runs.map((candidate) => (
                           <option key={candidate.id} value={candidate.id}>
-                            execução {shortId(candidate.id)} - {formatStatusLabel(candidate.status)}
+                            execução {shortId(candidate.id)} -{" "}
+                            {formatStatusLabel(candidate.status)}
                           </option>
                         ))}
                       </select>
-                      {variant === "technical" ? <Badge variant="outline">modo técnico</Badge> : null}
+                      {variant === "technical" ? (
+                        <Badge variant="outline">modo técnico</Badge>
+                      ) : null}
                     </div>
                   </div>
 
@@ -287,7 +297,9 @@ export function RunExecutionPanel({
             >
               <Card className="border-primary/15 shadow-none">
                 <CardHeader className="p-4 pb-2">
-                  <CardTitle>{variant === "technical" ? "Atividade de runtime" : "Atividade recente"}</CardTitle>
+                  <CardTitle>
+                    {variant === "technical" ? "Atividade de runtime" : "Atividade recente"}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-2 p-4 pt-0">
                   {executionEvents.length === 0 ? (
@@ -344,7 +356,11 @@ export function RunExecutionPanel({
                         type="button"
                         variant="outline"
                       >
-                        {isReplayPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                        {isReplayPlaying ? (
+                          <Pause className="h-4 w-4" />
+                        ) : (
+                          <Play className="h-4 w-4" />
+                        )}
                         Replay
                       </Button>
                       <Badge variant="outline">
@@ -358,10 +374,12 @@ export function RunExecutionPanel({
                             {replayEvent.eventFamily}.{replayEvent.eventName}
                           </p>
                           <p className="mt-1 text-xs text-muted-foreground">
-                            {formatActorLabel(replayEvent.actorName ?? "runtime")} · {formatStatusLabel(replayEvent.status)}
+                            {formatActorLabel(replayEvent.actorName ?? "runtime")}{" "}
+                            · {formatStatusLabel(replayEvent.status)}
                           </p>
                           <p className="mt-3 text-xs text-muted-foreground">
-                            seq {replayEvent.sequenceNo} · {replayEvent.nodeId ?? "no-node"}
+                            seq {replayEvent.sequenceNo} ·{" "}
+                            {replayEvent.nodeId ?? "no-node"}
                           </p>
                         </>
                       ) : (
@@ -398,10 +416,13 @@ export function RunExecutionPanel({
                               </Badge>
                             </div>
                             <p className="mt-1 text-muted-foreground">
-                              {formatActorLabel(event.actorName ?? "runtime")} · seq {event.sequenceNo}
+                              {formatActorLabel(event.actorName ?? "runtime")} ·
+                              seq {event.sequenceNo}
                             </p>
                             {event.toolName ? (
-                              <p className="mt-1 text-muted-foreground">tool {event.toolName}</p>
+                              <p className="mt-1 text-muted-foreground">
+                                tool {event.toolName}
+                              </p>
                             ) : null}
                           </div>
                         ))
@@ -415,19 +436,25 @@ export function RunExecutionPanel({
                   </CardHeader>
                   <CardContent className="grid gap-3 p-3 text-xs">
                     <div className="grid gap-2">
-                      {(comparisonContext?.architectureDistribution ?? []).map((entry) => (
-                        <div className="rounded-md border bg-background p-3" key={entry.key}>
-                          <p className="font-medium">{formatArchitectureLabel(entry.key)}</p>
-                          <p className="mt-1 text-muted-foreground">
-                            {entry.count} execuções · média {formatDuration(entry.averageRunDurationMs)}
-                          </p>
-                        </div>
-                      ))}
+                      {(comparisonContext?.architectureDistribution ?? []).map(
+                        (entry) => (
+                          <div className="rounded-md border bg-background p-3" key={entry.key}>
+                            <p className="font-medium">
+                              {formatArchitectureLabel(entry.key)}
+                            </p>
+                            <p className="mt-1 text-muted-foreground">
+                              {entry.count} execuções · média{" "}
+                              {formatDuration(entry.averageRunDurationMs)}
+                            </p>
+                          </div>
+                        ),
+                      )}
                     </div>
                     <div className="rounded-md border bg-background p-3">
                       <p className="font-medium">Execuções relacionadas</p>
                       <p className="mt-1 text-muted-foreground">
-                        {(comparisonContext?.peerRuns ?? []).length} execuções relacionadas ao mesmo cenário ou arquitetura.
+                        {(comparisonContext?.peerRuns ?? []).length} execuções
+                        relacionadas ao mesmo cenário ou arquitetura.
                       </p>
                     </div>
                   </CardContent>
@@ -533,7 +560,9 @@ function InfoRow({
     <div className="flex items-center gap-2 rounded-md border bg-background px-3 py-2">
       <Icon className="h-3.5 w-3.5 text-primary" />
       <span className="text-muted-foreground">{label}</span>
-      <span className="ml-auto truncate font-medium text-foreground">{value}</span>
+      <span className="ml-auto truncate font-medium text-foreground">
+        {value}
+      </span>
     </div>
   );
 }

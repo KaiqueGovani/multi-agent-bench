@@ -54,11 +54,12 @@ class RuntimeExecutor:
                 return execute_comparison_v43(ctx, architecture)
             from app.architectures.comparison_v44 import PROTOCOL_VERSION as V44, execute_comparison_v44
             if protocol == V44:
-                return execute_comparison_v44(ctx, architecture)
+                source_profile = getattr(self.request.experiment, "comparisonSourceProfile", "controlled-research")
+                return execute_comparison_v44(ctx, architecture, source_profile=source_profile)
             raise ValueError(f"Unknown comparison protocol: {protocol}")
         if self.settings.enable_live_llm:
-            from app.architectures.comparison import execute_comparison
-            return execute_comparison(ctx, architecture, source_profile="application")
+            from app.architectures.comparison_v44 import execute_comparison_v44
+            return execute_comparison_v44(ctx, architecture, source_profile="application")
         try:
             executor = get_executor(architecture)
         except KeyError:

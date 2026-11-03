@@ -45,6 +45,7 @@ export function MessageComposer({
   const [text, setText] = useState("");
   const [attachments, setAttachments] = useState<SelectedAttachment[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [fileInputKey, setFileInputKey] = useState(0);
   const formRef = useRef<HTMLFormElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -70,11 +71,22 @@ export function MessageComposer({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!canSubmit) {
+    if (!canSubmit || disabled || isSending) {
       return;
     }
     const currentText = text;
     const currentFiles = attachments.map((attachment) => attachment.file);
+    setSendError(null);
+    try {
+      await onSend(currentText, currentFiles);
+    } catch (caught) {
+      setSendError(
+        caught instanceof Error
+          ? caught.message
+          : "Falha ao enviar. Seu rascunho foi preservado.",
+      );
+      return;
+    }
     for (const attachment of attachments) {
       if (attachment.previewUrl) {
         URL.revokeObjectURL(attachment.previewUrl);
@@ -83,7 +95,6 @@ export function MessageComposer({
     setText("");
     setAttachments([]);
     setFileInputKey((current) => current + 1);
-    await onSend(currentText, currentFiles);
   }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -169,7 +180,9 @@ export function MessageComposer({
                   </Button>
                   <div className="p-2">
                     <p className="truncate text-xs">{attachment.file.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{formatBytes(attachment.file.size)}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {formatBytes(attachment.file.size)}
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -181,6 +194,12 @@ export function MessageComposer({
           <Alert className="mb-2 py-2" variant="warning">
             <AlertDescription>{fileError}</AlertDescription>
           </Alert>
+        ) : null}
+        {sendError ? (
+          <p role="alert" className="mb-2 text-sm text-destructive">
+            Envio não concluído. O texto e os anexos foram preservados para
+            tentar novamente.
+          </p>
         ) : null}
 
         <div className="rounded-lg border bg-background p-3">
@@ -215,7 +234,7 @@ export function MessageComposer({
           </div>
 
           <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-stretch gap-2">
-          <Input
+            <Input
             accept={ACCEPTED_FILE_TYPES.join(",")}
             className="hidden"
             disabled={disabled || isSending}
@@ -225,44 +244,47 @@ export function MessageComposer({
             ref={fileInputRef}
             type="file"
           />
-          <Button
-            className="h-full min-h-20 self-stretch px-3"
-            disabled={disabled || isSending}
-            onClick={() => fileInputRef.current?.click()}
-            type="button"
-            variant="outline"
-          >
-            <Paperclip className="h-4 w-4" />
-            <span className="hidden sm:inline">Anexar</span>
-          </Button>
-          <Textarea
-            className="min-h-20 resize-none text-sm"
-            data-testid="message-composer-input"
-            disabled={disabled || isSending}
-            onKeyDown={handleKeyDown}
-            placeholder={disabled ? "Crie uma conversa para enviar mensagens" : "Digite sua mensagem"}
-            rows={3}
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-          />
-          <Button
-            className="h-full min-h-20 self-stretch px-3"
-            disabled={disabled || isSending || !canSubmit}
-            type="submit"
-          >
-            {isSending ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="hidden sm:inline">Enviando</span>
-              </>
-            ) : (
-              <>
-                <Send className="h-4 w-4" />
-                <span className="hidden sm:inline">Enviar</span>
-              </>
-            )}
-          </Button>
-        </div>
+            <Button
+              aria-label="Anexar arquivos"
+              className="h-full min-h-20 self-stretch px-3"
+              disabled={disabled || isSending}
+              onClick={() => fileInputRef.current?.click()}
+              type="button"
+              variant="outline"
+            >
+              <Paperclip className="h-4 w-4" />
+              <span className="hidden sm:inline">Anexar</span>
+            </Button>
+            <Textarea
+              aria-label="Mensagem"
+              className="min-h-20 resize-none text-sm"
+              data-testid="message-composer-input"
+              disabled={disabled || isSending}
+              onKeyDown={handleKeyDown}
+              placeholder={disabled ? "Crie uma conversa para enviar mensagens" : "Digite sua mensagem"}
+              rows={3}
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+            />
+            <Button
+              aria-label={isSending ? "Enviando mensagem" : "Enviar mensagem"}
+              className="h-full min-h-20 self-stretch px-3"
+              disabled={disabled || isSending || !canSubmit}
+              type="submit"
+            >
+              {isSending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="hidden sm:inline">Enviando</span>
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4" />
+                  <span className="hidden sm:inline">Enviar</span>
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </form>

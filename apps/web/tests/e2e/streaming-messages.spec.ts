@@ -3,16 +3,30 @@ import { expect, test } from "@playwright/test";
 import { installMockEventSource, mockFrontendApi, mockIds } from "./support/mock-runtime-fixtures";
 
 test.describe("P1 — Streaming messages in chat UI", () => {
-  test("user message appears immediately on send (optimistic)", async ({ page }) => {
+  test("user message appears immediately on send (optimistic)", async ({
+    page,
+  }) => {
     await installMockEventSource(page);
     await mockFrontendApi(page);
 
     await page.goto(`/?conversationId=${mockIds.swarmConversation}`);
-    await expect(page.getByTestId("message-list")).toContainText("Tem dipirona em estoque?");
+    await expect(page.getByTestId("message-list")).toContainText(
+      "Tem dipirona em estoque?",
+    );
 
     // Start a new conversation to test optimistic message
     await page.getByRole("button", { name: "Nova conversa" }).click();
     await expect(page.getByTestId("message-list-empty")).toBeVisible();
+    // Hold acceptance so the assertion measures the optimistic state, before
+    // the static fixture's unrelated persisted response replaces it.
+    let release!: () => void;
+    const accepted = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route("**/messages", async (route) => {
+      await accepted;
+      await route.fallback();
+    });
 
     // Type and send a message
     await page.getByTestId("message-composer-input").fill("Mensagem otimista de teste");
@@ -20,6 +34,7 @@ test.describe("P1 — Streaming messages in chat UI", () => {
 
     // The optimistic message should appear immediately (before SSE)
     await expect(page.getByTestId("message-list")).toContainText("Mensagem otimista de teste");
+    release();
   });
 
   test("streaming indicator appears during response.partial events", async ({ page }) => {

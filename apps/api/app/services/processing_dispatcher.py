@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.tracing import build_baggage, build_traceparent
-from app.db.models import AttachmentModel, MessageModel, RunModel
+from app.db.models import AttachmentModel, ConversationModel, MessageModel, RunModel
 from app.db.session import SessionLocal
 from app.runtime.mock import MockProcessingRuntime
 from app.schemas.domain import (
@@ -62,6 +62,13 @@ class ProcessingDispatcher:
                 run_id=run_id,
             )
             return
+
+        if effective_mode == "real":
+            with SessionLocal() as db:
+                run_model = db.get(RunModel, run_id)
+                if run_model and (run_model.experiment_json or {}).get("comparisonProtocol"):
+                    RunService(db).fail_run(run_id, reason="Real runtime is not configured; mock fallback is disabled")
+                    return
 
         self._dispatch_mock(
             conversation_id=conversation_id,
@@ -283,6 +290,7 @@ class ProcessingDispatcher:
             latest_message=self._message_snapshot(message_model),
             conversation_history=self._conversation_history(
                 run_model.conversation_id,
+                through_message=message_model,
                 architecture_mode=run_model.experiment_json.get(
                     "architectureKey",
                     self._settings.default_architecture_mode,
@@ -300,13 +308,23 @@ class ProcessingDispatcher:
         conversation_id: UUID,
         *,
         architecture_mode: str | None,
+        through_message: MessageModel | None = None,
     ) -> list[RuntimeMessageSnapshot]:
         with SessionLocal() as db:
+            conversation = db.get(ConversationModel, conversation_id)
+            metadata = (conversation.metadata_json or {}) if conversation else {}
+            history_limit = self._settings.runtime_history_window_messages
+            if metadata.get("source") == "whatsapp_web":
+                # The reviewed prefix and subsequent turns share a bounded
+                # context budget; the standard web-chat window is only eight.
+                history_limit = 200
+            query = db.query(MessageModel).filter(MessageModel.conversation_id == conversation_id)
+            if through_message is not None:
+                query = query.filter(MessageModel.created_at_server <= through_message.created_at_server)
             models = (
-                db.query(MessageModel)
-                .filter(MessageModel.conversation_id == conversation_id)
+                query
                 .order_by(MessageModel.created_at_server.desc(), MessageModel.id.desc())
-                .limit(self._settings.runtime_history_window_messages * 4)
+                .limit(history_limit * 4)
                 .all()
             )
             ordered = [
@@ -314,7 +332,7 @@ class ProcessingDispatcher:
                 for model in reversed(models)
                 if self._belongs_to_runtime_history(model, architecture_mode)
             ]
-            windowed = ordered[-self._settings.runtime_history_window_messages:]
+            windowed = ordered[-history_limit:]
             return [self._message_snapshot(model, db=db) for model in windowed]
 
     def _belongs_to_runtime_history(
@@ -328,6 +346,8 @@ class ProcessingDispatcher:
             return False
 
         metadata = message_model.metadata_json or {}
+        if metadata.get("importedHistory") is True:
+            return True
         message_architecture = metadata.get("architectureMode")
         if message_architecture:
             return message_architecture == architecture_mode

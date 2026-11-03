@@ -44,6 +44,9 @@ test.describe("visual validation after UX improvements", () => {
 
     const toggle = page.locator("button[aria-label*='Modo de execução']");
     await expect(toggle).toBeVisible();
+    // Real is the configured default; switch explicitly to the simulated mode.
+    await expect(toggle).toContainText("Real indisponível");
+    await toggle.click();
     await expect(toggle).toContainText("Simulado");
 
     await page.screenshot({ path: "test-results/visual-03-execution-toggle.png" });

@@ -40,3 +40,5 @@ calibration=var/reports/v44-local/judge-calibration
 ```
 
 Para coletar novamente as 600 unidades, o responsável pela pesquisa usa o catálogo, o manifesto histórico e o pacote de calibração restritos. O coletor congela os insumos com `--plan-only`. `scripts/validate_comparison_v44_pilot.py` libera o manifesto principal após o piloto. Em seguida, o coletor retoma com `--resume`, `scripts/parallel_judge.py` despacha o julgamento e as rechecagens, e `scripts/analyze_automated_pilots.py` consolida a evidência. `scripts/analyze_comparison_v44.py` exporta os resultados sanitizados e aceita `--writer-zip` para empacotar o relatório.
+
+O commit `d85d40770d64d50a040d7f4859a1460dde5eb0f1` preserva os 35 arquivos-fonte do manifesto v4.4 com os hashes da coleta. A integração posterior seleciona a v4.4 como padrão do chat live e usa os adaptadores de aplicação.

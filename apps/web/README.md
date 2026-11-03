@@ -34,6 +34,14 @@ Override with:
 NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
 ```
 
+## Published experiment
+
+Run `npm ci` and `npm run dev` from `apps/web`, then open
+[the v4.4 comparison](http://localhost:3000/research/comparison-v44).
+The page reads the 600 sanitized records and summary tables from
+`research-data/results/architectural-comparison-v44` in the repository.
+The published comparison runs with only the frontend.
+
 ## Current scope
 
 - Create a web chat conversation.

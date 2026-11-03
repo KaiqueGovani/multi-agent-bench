@@ -103,6 +103,9 @@ export function DashboardWorkspace() {
 
     let cancelled = false;
     setIsLoadingConversation(true);
+    setSelectedConversation(null);
+    setSelectedRunId(null);
+    setError(null);
 
     void getConversation(selectedConversationId)
       .then((detail) => {
@@ -176,20 +179,31 @@ export function DashboardWorkspace() {
             <div className="flex flex-wrap items-center gap-2">
               <BarChart3 className="h-5 w-5 text-primary" />
               <h1 className="text-lg font-semibold">Dashboard operacional</h1>
-              {generatedAt ? <Badge variant="outline">{generatedAt}</Badge> : null}
+              {generatedAt ? (
+                <Badge variant="outline">{generatedAt}</Badge>
+              ) : null}
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
-              Visão operacional das conversas, revisões e execução técnica do runtime.
+              Visão operacional das conversas, revisões e execução técnica do
+              runtime.
             </p>
           </div>
-          <Link
+          <div className="flex gap-2">
+            <Link
+              href="/research"
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+            >
+              Resultados da pesquisa
+            </Link>
+            <Link
             className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
             data-testid="dashboard-back-to-chat"
             href={selectedConversationId ? `/?conversationId=${selectedConversationId}` : "/"}
           >
-            <ArrowLeft className="h-4 w-4" />
-            Voltar ao chat
-          </Link>
+              <ArrowLeft className="h-4 w-4" />
+              Voltar ao chat
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -220,15 +234,17 @@ export function DashboardWorkspace() {
               />
             </section>
 
-            <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-              <div className="grid gap-4">
+            <section className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+              <div className="grid min-w-0 grid-cols-1 gap-4">
                 <Card className="shadow-none">
                   <CardHeader className="p-4 pb-2">
                     <CardTitle>Conversas em acompanhamento</CardTitle>
                   </CardHeader>
-                  <CardContent className="grid gap-3 p-4 pt-0">
+                  <CardContent className="grid min-w-0 grid-cols-1 gap-3 p-4 pt-0">
                     {metrics.conversations.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">Nenhuma conversa registrada.</p>
+                      <p className="text-sm text-muted-foreground">
+                        Nenhuma conversa registrada.
+                      </p>
                     ) : (
                       metrics.conversations.map((conversation) => (
                         <ConversationRow
@@ -271,7 +287,7 @@ export function DashboardWorkspace() {
                 </div>
               </div>
 
-              <div className="grid gap-4">
+              <div className="grid min-w-0 grid-cols-1 gap-4">
                 <ReviewQueue
                   onOpenConversation={(conversationId) => selectConversation(conversationId)}
                   onResolveReviewTask={handleResolveReviewTask}
@@ -282,21 +298,23 @@ export function DashboardWorkspace() {
                   <CardHeader className="p-4 pb-2">
                     <CardTitle>Monitor técnico da conversa</CardTitle>
                   </CardHeader>
-                  <CardContent className="grid gap-3 p-4 pt-0">
+                  <CardContent className="grid min-w-0 grid-cols-1 gap-3 p-4 pt-0">
                     {isLoadingConversation ? (
                       <p className="text-sm text-muted-foreground">
                         Carregando detalhes da conversa selecionada...
                       </p>
                     ) : !selectedConversation || selectedConversation.runs.length === 0 ? (
                       <p className="text-sm text-muted-foreground">
-                        Selecione uma conversa com execução registrada para inspecionar o runtime.
+                        Selecione uma conversa com execução registrada para
+                        inspecionar o runtime.
                       </p>
                     ) : (
                       <>
                         <div className="rounded-xl border bg-card/80 p-3">
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge variant="outline">
-                              conversa {shortId(selectedConversation.conversation.id)}
+                              conversa{" "}
+                              {shortId(selectedConversation.conversation.id)}
                             </Badge>
                             <Badge variant="outline">
                               {selectedConversation.runs.length} execuções
@@ -306,7 +324,8 @@ export function DashboardWorkspace() {
                             </Badge>
                           </div>
                           <p className="mt-2 text-sm text-muted-foreground">
-                            Use esta área para acompanhar os detalhes técnicos fora da superfície principal do chat.
+                            Use esta área para acompanhar os detalhes técnicos
+                            fora da superfície principal do chat.
                           </p>
                         </div>
                         <RunExecutionPanel
@@ -373,7 +392,9 @@ function DistributionCard({
           values.map((item) => (
             <div className="grid gap-1.5" key={item.key}>
               <div className="flex items-center justify-between gap-2">
-                <span className="min-w-0 truncate font-medium">{formatDistributionKey(item.key)}</span>
+                <span className="min-w-0 truncate font-medium">
+                  {formatDistributionKey(item.key)}
+                </span>
                 <span className="text-muted-foreground">
                   {item.count}
                   {item.averageRunDurationMs ? ` · ${formatDuration(item.averageRunDurationMs)}` : ""}
@@ -429,7 +450,9 @@ function ConversationRow({
       </button>
       <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
         <span>{conversation.runCount} execuções</span>
-        {conversation.latestRunId ? <span>run {shortId(conversation.latestRunId)}</span> : null}
+        {conversation.latestRunId ? (
+          <span>run {shortId(conversation.latestRunId)}</span>
+        ) : null}
         <span>{formatDate(conversation.updatedAt)}</span>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
@@ -458,6 +481,15 @@ function ReviewQueue({
   reviewTasks: ReviewTask[];
 }) {
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [pending, setPending] = useState<Record<string, boolean>>({});
+  const pendingRef = useRef(new Set<string>());
+  async function resolve(id: string, status: "resolved" | "cancelled" | "in_review", note: string) {
+    if (pendingRef.current.has(id)) return;
+    pendingRef.current.add(id);
+    setPending(current => ({ ...current, [id]: true }));
+    try { await onResolveReviewTask(id, status, note); }
+    finally { pendingRef.current.delete(id); setPending(current => ({ ...current, [id]: false })); }
+  }
   const excerptCacheRef = useRef(new Map<string, Message[]>());
   const [excerpts, setExcerpts] = useState<Record<string, Message[] | "loading" | "error">>({});
 
@@ -489,9 +521,11 @@ function ReviewQueue({
       <CardHeader className="p-4 pb-2">
         <CardTitle>Fila de revisão humana</CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-3 p-4 pt-0">
+      <CardContent className="grid min-w-0 grid-cols-1 gap-3 p-4 pt-0">
         {reviewTasks.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhuma revisão aberta no momento.</p>
+          <p className="text-sm text-muted-foreground">
+            Nenhuma revisão aberta no momento.
+          </p>
         ) : (
           reviewTasks.map((task) => {
             const note = notes[task.id] ?? "";
@@ -502,7 +536,8 @@ function ReviewQueue({
                   <div className="min-w-0">
                     <p className="text-sm font-semibold">{task.reason}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      conversa {shortId(task.conversationId)} · mensagem {shortId(task.messageId)} · {formatDate(task.createdAt)}
+                      conversa {shortId(task.conversationId)} · mensagem{" "}
+                      {shortId(task.messageId)} · {formatDate(task.createdAt)}
                     </p>
                   </div>
                   <Badge variant="warning">{task.status}</Badge>
@@ -513,7 +548,9 @@ function ReviewQueue({
                       <Loader2 className="h-3 w-3 animate-spin" />
                     </p>
                   ) : excerpt === "error" ? (
-                    <p className="truncate text-xs text-muted-foreground">Sem contexto disponível</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      Sem contexto disponível
+                    </p>
                   ) : Array.isArray(excerpt) ? (
                     excerpt.map((m) => (
                       <p className="truncate text-xs text-muted-foreground" key={m.id}>
@@ -523,6 +560,7 @@ function ReviewQueue({
                   ) : null}
                 </div>
                 <textarea
+                  aria-label={`Observação da revisão ${task.id}`}
                   className="mt-3 min-h-20 w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   onChange={(event) =>
                     setNotes((current) => ({ ...current, [task.id]: event.target.value }))
@@ -533,7 +571,10 @@ function ReviewQueue({
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button
                     className="text-xs"
-                    onClick={() => void onResolveReviewTask(task.id, "resolved", note)}
+                    disabled={pending[task.id]}
+                    onClick={() =>
+                      void resolve(task.id, "resolved", note)
+                    }
                     size="sm"
                     type="button"
                   >
@@ -542,7 +583,10 @@ function ReviewQueue({
                   </Button>
                   <Button
                     className="text-xs"
-                    onClick={() => void onResolveReviewTask(task.id, "cancelled", note)}
+                    disabled={pending[task.id]}
+                    onClick={() =>
+                      void resolve(task.id, "cancelled", note)
+                    }
                     size="sm"
                     type="button"
                     variant="destructive"
@@ -552,7 +596,10 @@ function ReviewQueue({
                   </Button>
                   <Button
                     className="text-xs"
-                    onClick={() => void onResolveReviewTask(task.id, "in_review", note)}
+                    disabled={pending[task.id]}
+                    onClick={() =>
+                      void resolve(task.id, "in_review", note)
+                    }
                     size="sm"
                     type="button"
                     variant="outline"

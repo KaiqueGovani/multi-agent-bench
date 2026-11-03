@@ -18,6 +18,24 @@ See [dataset recovery and handoff instructions](research-data/whatsapp-v1.1/READ
 for the schema, local recovery procedure, and current experimental limitations.
 Decryption keys are held separately and are never committed.
 
+### Latest experiment
+
+The [v4.4 report](research-data/results/architectural-comparison-v44/RELATORIO.md)
+and [600 per-attempt records](research-data/results/architectural-comparison-v44/units.csv)
+are versioned in the repository. Open the interactive comparison from a fresh
+checkout with Node.js and npm:
+
+```sh
+npm ci --prefix apps/web
+make research-results
+```
+
+Open [the v4.4 viewer](http://127.0.0.1:3000/research/comparison-v44). The
+frontend reads the published artifacts directly from the checkout. The
+[protocol](experiments/architectural-comparison-v44/README.md)
+describes the collection and [the results index](research-data/results/README.md)
+separates the experimental versions.
+
 This repository hosts the **undergraduate thesis (TCC)** project focused on building a multi-agent system for intelligent pharmacy customer service. The primary research goal is to **compare coordination architectures** between agents in an experimental, observable environment.
 
 ### Current Phase: Proof of Concept
@@ -29,14 +47,14 @@ The POC establishes the foundational interaction and observability layer:
 - ✅ **Conversation Persistence** — Messages, attachments, and events stored in PostgreSQL
 - ✅ **Mock Runtime** — Simulated agent processing for end-to-end flow validation
 - ✅ **External Agent Runtime Contract** — `chat-api` can now dispatch runs to a separate runtime service
-- ✅ **Channel-Agnostic Architecture** — Designed for future WhatsApp integration
+- ✅ **Channel-Agnostic Architecture** — Reviewed WhatsApp Web capture via the [Chrome extension](docs/demo/whatsapp.md)
+- ✅ **Live Agent Runtime and Research Comparisons** — Strands agents, Bedrock, and versioned benchmarks
 - ✅ **Observability Ready** — Correlation IDs, tracing, and structured event logging
 
 ### Out of Scope (For Now)
 
-- Real agent logic and LLM integrations
 - Clinical decision rules and pharmaceutical automation
-- Experimental architecture comparisons
+- Clinical validation and direct sending to WhatsApp contacts
 
 ---
 

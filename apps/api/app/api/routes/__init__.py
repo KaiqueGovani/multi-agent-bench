@@ -10,6 +10,7 @@ from app.api.routes import (
     messages,
     reviews,
     runs,
+    whatsapp,
 )
 from app.core.security import verify_api_key
 
@@ -46,6 +47,7 @@ api_router.include_router(
     tags=["integrations"],
     dependencies=protected_dependencies,
 )
+api_router.include_router(whatsapp.router, tags=["whatsapp"], dependencies=protected_dependencies)
 api_router.include_router(
     attachments.router,
     prefix="/attachments",

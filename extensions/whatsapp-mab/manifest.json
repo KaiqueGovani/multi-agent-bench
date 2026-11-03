@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "MAB · Assistente de atendimento",
+  "version": "0.3.5",
+  "description": "Gere uma sugestão do MAB diretamente abaixo de uma mensagem recebida no WhatsApp Web.",
+  "minimum_chrome_version": "102",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1/*",
+    "http://localhost/*"
+  ],
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Ativar sugestões MAB nas mensagens recebidas"
+  },
+  "options_page": "options.html",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'"
+  }
+}

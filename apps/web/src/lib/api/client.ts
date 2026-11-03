@@ -33,13 +33,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     });
   } catch {
     throw new Error(
-      `Could not reach API at ${API_BASE_URL}. Check that the API is running and CORS allows this web origin.`
+      "Não foi possível acessar o serviço. Verifique se a API está disponível e tente novamente.",
     );
   }
 
   if (!response.ok) {
     const detail = await readError(response);
-    throw new Error(detail || `Request failed with status ${response.status}`);
+    throw new Error(detail || `Falha na solicitação (HTTP ${response.status})`);
   }
 
   return response.json() as Promise<T>;
@@ -47,14 +47,20 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 async function readError(response: Response): Promise<string> {
   try {
-    const body = (await response.json()) as { detail?: string };
+    const body = (await response.json()) as {
+      detail?: string | { msg: string }[];
+    };
     if (body.detail) {
-      return `${body.detail} (HTTP ${response.status})`;
+      const detail =
+        typeof body.detail === "string"
+          ? body.detail
+          : body.detail.map((item) => item.msg).join("; ");
+      return `${detail} (HTTP ${response.status})`;
     }
   } catch {
     // Fall through to the generic status message.
   }
-  return `Request failed with status ${response.status}`;
+  return `Falha na solicitação (HTTP ${response.status})`;
 }
 
 export function getApiBaseUrl(): string {
@@ -139,7 +145,8 @@ export function sendMessage(
   text: string,
   files: File[],
   architectureMode: ArchitectureMode,
-  executionMode: ExecutionMode = "real"
+  executionMode: ExecutionMode = "real",
+  comparisonProtocol?: string
 ): Promise<SendMessageResponse> {
   const body = new FormData();
   body.append("conversationId", conversationId);
@@ -150,6 +157,7 @@ export function sendMessage(
     "metadata_json",
     JSON.stringify({
       ...getClientMetadata(architectureMode, executionMode),
+      ...(comparisonProtocol ? { comparisonProtocol } : {}),
       fileCount: files.length,
       fileTypes: files.map((file) => file.type),
       fileSizes: files.map((file) => file.size)

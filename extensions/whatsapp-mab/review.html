@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MAB · Revisar conversa</title><link rel="stylesheet" href="review.css">
+</head>
+<body>
+  <main>
+    <header><span class="brand">MAB</span><div><p class="eyebrow">ASSISTENTE DE ATENDIMENTO</p><h1>Da conversa à sugestão de resposta</h1></div></header>
+    <p class="intro">Confira o trecho do WhatsApp, escolha a solicitação e abra a resposta no MAB. Você continua responsável pela revisão e pelo envio ao cliente.</p>
+    <div id="status" role="status" aria-live="polite" hidden></div>
+    <div id="error" role="alert" hidden></div>
+    <section id="capture-panel" hidden>
+      <div class="section-title"><div><p class="eyebrow">1 · REVISAR CONTEXTO</p><h2 id="chat-title"></h2></div><button id="discard" class="subtle" type="button">Descartar captura</button></div>
+      <p class="notice">A captura contém somente mensagens carregadas na conversa aberta. Role o WhatsApp até o histórico necessário e capture novamente se faltar contexto. Confira os papéis: mensagens recebidas são tratadas como cliente; enviadas, como atendente. Grupos e trechos encaminhados exigem revisão manual.</p>
+      <p id="capture-summary" class="muted"></p>
+      <p class="help">Desmarque mensagens desnecessárias, corrija os textos e selecione a última solicitação do cliente. Mensagens posteriores a ela não serão enviadas. Imagens, PDFs e áudios não são lidos.</p>
+      <button id="only-target" type="button" class="subtle">Somente a solicitação selecionada</button>
+      <button id="include-all" type="button" class="subtle">Incluir contexto novamente</button>
+      <div id="messages"></div>
+      <section class="settings">
+        <div><p class="eyebrow">2 · ESCOLHER EXECUÇÃO</p><h2>Como processar este trecho?</h2></div>
+        <div class="grid">
+          <label>Arquitetura<select id="architecture"><option value="centralized_orchestration">Centralizada</option><option value="structured_workflow">Workflow</option><option value="decentralized_swarm">Swarm</option><option value="all_architectures">Comparar as três arquiteturas</option></select></label>
+          <label>Modo<select id="runtime"><option value="real">Real · modelo via Bedrock</option><option value="mock">Simulado · sem chamada ao modelo</option></select></label>
+        </div>
+        <p id="mode-note" class="help">No modo real, o trecho revisado será enviado pelo runtime ao modelo configurado no Bedrock. Ele produz uma sugestão usando fontes controladas do protótipo.</p>
+        <details><summary>Conexão com o MAB local</summary><div class="grid connection">
+          <label>API local<input id="api-base" type="url" value="http://127.0.0.1:8000" required></label>
+          <label>Interface MAB<input id="web-base" type="url" value="http://127.0.0.1:3100" required></label>
+          <label class="wide">Chave da API do MAB<input id="api-key" type="password" autocomplete="off" placeholder="Chave local configurada na API"></label>
+        </div><p class="help">Use a chave local do MAB. A chave Bedrock fica somente no servidor. Esta chave e a captura permanecem apenas na sessão do Chrome.</p></details>
+        <label class="consent"><input id="reviewed" type="checkbox"> Revisei o trecho e autorizo seu envio ao MAB local e, no modo real, ao modelo configurado.</label>
+        <div class="actions"><button id="submit" type="button">Processar e abrir no MAB</button><button id="retry" type="button" class="secondary" hidden>Abrir conversa importada</button><button id="new-run" type="button" class="subtle" hidden>Nova execução</button></div>
+        <p class="help">Nenhuma mensagem será enviada ao WhatsApp. A resposta abre no MAB para revisão e cópia.</p>
+      </section>
+    </section>
+    <footer>Captura manual · conexão local · nenhuma coleta em segundo plano</footer>
+  </main>
+  <script type="module" src="review.js"></script>
+</body></html>

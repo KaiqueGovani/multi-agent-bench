@@ -16,7 +16,7 @@ import {
   X,
   type LucideIcon
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,10 @@ export function ConversationInspector({
 }: ConversationInspectorProps) {
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
   const [copiedValue, setCopiedValue] = useState<string | null>(null);
+  const [copyError, setCopyError] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onOpenChange);
+  onCloseRef.current = onOpenChange;
   const latestRun = runs.at(-1) ?? null;
   const totals = useMemo(
     () => ({
@@ -75,16 +79,41 @@ export function ConversationInspector({
     if (!isOpen) {
       return;
     }
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusable = () =>
+      Array.from(
+        dialogRef.current?.querySelectorAll<HTMLElement>(
+          "button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex='0']",
+        ) ?? [],
+      ).filter((el) => el.getClientRects().length > 0);
+    focusable()[0]?.focus();
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        onOpenChange(false);
+        onCloseRef.current(false);
+      } else if (event.key === "Tab") {
+        const items = focusable();
+        const first = items[0],
+          last = items.at(-1);
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
       }
     }
 
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onOpenChange]);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, [isOpen]);
 
   if (!isOpen) {
     return null;
@@ -94,13 +123,21 @@ export function ConversationInspector({
     if (!value) {
       return;
     }
-    await navigator.clipboard.writeText(value);
-    setCopiedValue(value);
-    window.setTimeout(() => setCopiedValue(null), 1200);
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopyError(null);
+      setCopiedValue(value);
+      window.setTimeout(() => setCopiedValue(null), 1200);
+    } catch {
+      setCopyError(
+        "Não foi possível copiar. Selecione o valor e copie manualmente.",
+      );
+    }
   }
 
   return (
     <div
+      ref={dialogRef}
       aria-labelledby="conversation-inspector-title"
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-6"
@@ -126,6 +163,7 @@ export function ConversationInspector({
             </p>
           </div>
           <Button
+            aria-label="Fechar inspeção"
             onClick={() => onOpenChange(false)}
             size="sm"
             type="button"
@@ -137,6 +175,11 @@ export function ConversationInspector({
         </div>
 
         <div className="grid min-h-0 gap-3 overflow-y-auto p-3 sm:p-4">
+          {copyError ? (
+            <p role="alert" className="text-sm text-destructive">
+              {copyError}
+            </p>
+          ) : null}
           <div className="grid gap-3 xl:grid-cols-[1fr_1fr]">
             <Card className="shadow-none">
               <CardHeader className="p-3 pb-1">
@@ -197,15 +240,15 @@ export function ConversationInspector({
             <Metric icon={ShieldAlert} label="revisões" value={totals.reviewTasks} />
           </div>
 
-        <Card className="shadow-none">
-          <CardHeader className="p-3 pb-1">
-            <CardTitle className="flex items-center gap-2">
-              <Boxes className="h-4 w-4" />
-              Entidades
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid items-start gap-3 p-3 text-xs lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
-            <EntityList
+          <Card className="shadow-none">
+            <CardHeader className="p-3 pb-1">
+              <CardTitle className="flex items-center gap-2">
+                <Boxes className="h-4 w-4" />
+                Entidades
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid items-start gap-3 p-3 text-xs lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
+              <EntityList
               copiedValue={copiedValue}
               items={messages.map((message) => ({
                 id: message.id,
@@ -215,7 +258,7 @@ export function ConversationInspector({
               onCopy={copyValue}
               title="Mensagens"
             />
-            <EntityList
+              <EntityList
               copiedValue={copiedValue}
               items={attachments.map((attachment) => ({
                 id: attachment.id,
@@ -225,7 +268,7 @@ export function ConversationInspector({
               onCopy={copyValue}
               title="Anexos"
             />
-            <EntityList
+              <EntityList
               copiedValue={copiedValue}
               items={reviewTasks.map((task) => ({
                 id: task.id,
@@ -235,59 +278,61 @@ export function ConversationInspector({
               onCopy={copyValue}
               title="Revisões"
             />
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-none">
-          <CardHeader className="p-3 pb-1">
-            <CardTitle className="flex items-center gap-2">
-              <Clipboard className="h-4 w-4" />
-              Eventos e payloads
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-2 p-3 text-xs">
-            {events.length === 0 ? (
-              <p className="text-muted-foreground">Nenhum evento registrado.</p>
-            ) : (
-              events.map((event) => (
-                <div className="rounded-md border bg-background" key={event.id}>
-                  <button
+          <Card className="shadow-none">
+            <CardHeader className="p-3 pb-1">
+              <CardTitle className="flex items-center gap-2">
+                <Clipboard className="h-4 w-4" />
+                Eventos e payloads
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-2 p-3 text-xs">
+              {events.length === 0 ? (
+                <p className="text-muted-foreground">
+                  Nenhum evento registrado.
+                </p>
+              ) : (
+                events.map((event) => (
+                  <div className="rounded-md border bg-background" key={event.id}>
+                    <button
                     className="flex w-full items-center justify-between gap-3 p-2 text-left"
                     onClick={() =>
                       setExpandedEventId((current) => current === event.id ? null : event.id)
                     }
                     type="button"
                   >
-                    <span className="min-w-0 truncate">
-                      {event.eventType} / {event.status}
-                    </span>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <Badge variant="outline">{shortId(event.id)}</Badge>
-                      <ChevronDown className="h-4 w-4" />
-                    </div>
-                  </button>
-                  {expandedEventId === event.id ? (
-                    <div className="border-t p-2">
-                      <Field
+                      <span className="min-w-0 truncate">
+                        {event.eventType} / {event.status}
+                      </span>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Badge variant="outline">{shortId(event.id)}</Badge>
+                        <ChevronDown className="h-4 w-4" />
+                      </div>
+                    </button>
+                    {expandedEventId === event.id ? (
+                      <div className="border-t p-2">
+                        <Field
                         copied={copiedValue === event.id}
                         label="event_id"
                         onCopy={() => copyValue(event.id)}
                         value={event.id}
                       />
-                      <Field
+                        <Field
                         copied={copiedValue === event.correlationId}
                         label="correlation_id"
                         onCopy={() => copyValue(event.correlationId)}
                         value={event.correlationId}
                       />
-                      <JsonBlock title="payload_json" value={event.payload} />
-                    </div>
-                  ) : null}
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+                        <JsonBlock title="payload_json" value={event.payload} />
+                      </div>
+                    ) : null}
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
         </div>
       </section>
     </div>
@@ -307,13 +352,16 @@ function Field({
 }) {
   return (
     <div className="grid gap-1">
-      <span className="text-[11px] font-medium uppercase text-muted-foreground">{label}</span>
+      <span className="text-[11px] font-medium uppercase text-muted-foreground">
+        {label}
+      </span>
       <div className="flex min-w-0 items-center gap-2">
         <code className="min-w-0 flex-1 truncate rounded bg-muted px-2 py-1">
           {value ?? "n/a"}
         </code>
         {onCopy ? (
           <Button
+            aria-label={copied ? `${label} copiado` : `Copiar ${label}`}
             className="h-7 w-7"
             disabled={!value}
             onClick={onCopy}
@@ -321,7 +369,11 @@ function Field({
             type="button"
             variant="outline"
           >
-            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+            {copied ? (
+                  <Check className="h-3.5 w-3.5" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" />
+                )}
           </Button>
         ) : null}
       </div>
@@ -364,12 +416,15 @@ function EntityList({
         items.map((item) => (
           <div className="min-w-0 overflow-hidden rounded-md border bg-background p-2" key={item.id}>
             <p className="min-w-0 truncate font-medium">{item.title}</p>
-            <p className="min-w-0 truncate text-[11px] text-muted-foreground">{item.meta}</p>
+            <p className="min-w-0 truncate text-[11px] text-muted-foreground">
+              {item.meta}
+            </p>
             <div className="mt-2 flex min-w-0 items-center gap-2">
               <code className="min-w-0 flex-1 truncate rounded bg-muted px-2 py-1">
                 {item.id}
               </code>
               <Button
+                aria-label={`Copiar identificador ${item.id}`}
                 className="h-7 w-7"
                 onClick={() => onCopy(item.id)}
                 size="icon"

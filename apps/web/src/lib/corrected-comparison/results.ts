@@ -93,7 +93,7 @@ function canonicalValue(value: unknown): unknown {
   return value;
 }
 
-function assertNoPrivateFields(value: unknown, artifactName?: string, trail: string[] = []): void {
+export function assertNoPrivateFields(value: unknown, artifactName?: string, trail: string[] = []): void {
   const approved = artifactName === "provenance.json" && trail.length === 1 ? approvedProvenanceMetadata[trail[0]] : undefined;
   if (approved) {
     if (createHash("sha256").update(JSON.stringify(canonicalValue(value))).digest("hex") !== approved) throw new Error("Static provenance metadata differs from the frozen public definition");
@@ -120,7 +120,7 @@ async function boundedFile(base: string, relative: string): Promise<Buffer> {
   return readFile(target);
 }
 
-async function inventory(base: string): Promise<Inventory> {
+export async function inventory(base: string): Promise<Inventory> {
   const parsed = object(JSON.parse((await boundedFile(base, "FILES.json")).toString("utf8")));
   const result: Inventory = {};
   for (const [name, value] of Object.entries(parsed)) {
@@ -131,7 +131,7 @@ async function inventory(base: string): Promise<Inventory> {
   return result;
 }
 
-async function verifiedFile(base: string, relative: string, files: Inventory): Promise<Buffer> {
+export async function verifiedFile(base: string, relative: string, files: Inventory): Promise<Buffer> {
   const entry = files[relative];
   if (!entry) throw new Error("Artifact is absent from the final inventory");
   const data = await boundedFile(base, relative);
@@ -162,24 +162,24 @@ export function parseComparisonCsv(text: string): Record<string, string>[] {
   });
 }
 
-function number(value: unknown, nullable = false): number | null {
+export function number(value: unknown, nullable = false): number | null {
   if (nullable && value === null) return null;
   if (typeof value !== "number" || !Number.isFinite(value) || value < 0) throw new Error("Invalid quantitative measurement");
   return value;
 }
 
-function count(value: unknown, maximum = 200): number {
+export function count(value: unknown, maximum = 200): number {
   const result = number(value);
   if (!Number.isInteger(result) || result! > maximum) throw new Error("Invalid quantitative denominator");
   return result!;
 }
 
-function architecture(value: unknown): ComparisonArchitecture {
+export function architecture(value: unknown): ComparisonArchitecture {
   if (!COMPARISON_ARCHITECTURES.includes(value as ComparisonArchitecture)) throw new Error("Invalid architecture");
   return value as ComparisonArchitecture;
 }
 
-function summary(value: unknown): ComparisonSummary {
+export function summary(value: unknown): ComparisonSummary {
   const source = object(value);
   const result: JsonRecord = { architecture: architecture(source.architecture) };
   const fields = ["planned", "technical_successes", "architectural_compliant", "architectural_violations", "architectural_unknown", "task_successes", "task_failures", "task_unknown", "content_successes", "content_evaluable", "mandatory_evidence_applicable", "mandatory_evidence_compliant", "mandatory_evidence_evaluable", "judge_schema_valid", "judge_internally_inconsistent", "judge_valid_assessment", "judge_invalid_or_missing"];
@@ -190,7 +190,7 @@ function summary(value: unknown): ComparisonSummary {
   return typed;
 }
 
-function validateUnits(text: string): JsonRecord[] {
+export function validateUnits(text: string): JsonRecord[] {
   const units = text.trim().split("\n").filter(Boolean).map((line) => object(JSON.parse(line)));
   const combinations = new Set<string>(), unitIds = new Set<string>();
   const scenarios = new Map<string, number>();

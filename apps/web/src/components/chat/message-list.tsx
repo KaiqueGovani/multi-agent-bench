@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getAttachmentUrl } from "@/lib/api/client";
 import { MarkdownContent } from "@/components/common/markdown-content";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,8 @@ import {
   Bot,
   CheckCircle2,
   Clock3,
+  Copy,
+  Check,
   FileText,
   Image as ImageIcon,
   Loader2,
@@ -29,6 +31,18 @@ export function MessageList({
   isLoading = false
 }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copyError, setCopyError] = useState<string | null>(null);
+
+  async function copyResponse(message: Message) {
+    try {
+      await navigator.clipboard.writeText(formatMessageContent(message.contentText));
+      setCopiedId(message.id);
+      setCopyError(null);
+    } catch {
+      setCopyError("Não foi possível copiar. Selecione o texto da resposta para copiar manualmente.");
+    }
+  }
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -74,6 +88,8 @@ export function MessageList({
       {messages.map((message) => {
         const isInbound = message.direction === "inbound";
         const isStreaming = message.id.startsWith("streaming-");
+        const isImported = message.metadata?.importedHistory === true;
+        const author = isImported ? (isInbound ? "Cliente · WhatsApp" : "Atendente · WhatsApp") : (isInbound ? "Usuário" : "Resposta sugerida pelo MAB");
         return (
           <article
             data-testid={`message-${message.id}`}
@@ -92,7 +108,7 @@ export function MessageList({
             <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 {isInbound ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
-                {isInbound ? "Usuário" : "Sistema"}
+                {author}
               </span>
               <Badge className="gap-1" variant="outline">
                 <MessageStatusIcon status={message.status} />
@@ -150,8 +166,19 @@ export function MessageList({
                 </div>
               ) : null}
             </div>
-            <div className="mt-1 text-xs text-muted-foreground">
-              {message.createdAtServer ? new Date(message.createdAtServer).toLocaleTimeString("pt-BR") : ""}
+            <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+              <span>{(message.createdAtClient || message.createdAtServer) ? new Date(message.createdAtClient || message.createdAtServer).toLocaleTimeString("pt-BR") : ""}</span>
+              {!isInbound && !isImported && !isStreaming && message.contentText ? (
+                <button
+                  type="button"
+                  aria-label="Copiar resposta"
+                  className="inline-flex items-center gap-1 rounded px-1 py-1 hover:text-foreground focus-visible:outline focus-visible:outline-2"
+                  onClick={() => void copyResponse(message)}
+                >
+                  {copiedId === message.id ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  <span role="status">{copiedId === message.id ? "Copiada" : "Copiar resposta"}</span>
+                </button>
+              ) : null}
             </div>
             </div>
             {isInbound ? (
@@ -162,6 +189,7 @@ export function MessageList({
           </article>
         );
       })}
+      {copyError ? <p role="alert" className="text-sm text-destructive">{copyError}</p> : null}
       <div ref={bottomRef} />
     </div>
   );

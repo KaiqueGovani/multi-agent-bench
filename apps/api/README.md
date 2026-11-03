@@ -1,5 +1,51 @@
 # POC API
 
+## Reviewed WhatsApp Web import
+
+`POST /integrations/whatsapp/import` accepts a reviewed capture from the local
+Chrome extension, using the same `X-API-Key` as the other protected routes:
+
+```json
+{
+  "source": "whatsapp_web",
+  "captureId": "9ba8cbb3-d29f-4726-86c6-32c176708f9c",
+  "chatTitle": "Conversation for demonstration",
+  "targetSourceId": "message-2",
+  "messages": [
+    {"sourceId": "message-1", "role": "attendant", "text": "Como podemos ajudar?"},
+    {"sourceId": "message-2", "role": "customer", "text": "Qual é o horário?"}
+  ],
+  "architectureMode": "centralized_orchestration",
+  "runtimeMode": "real"
+}
+```
+
+The server persists only the prefix through the selected customer message, in
+capture order. Historical messages do not trigger execution. The selected target
+creates one run per requested architecture (`all_architectures` creates three).
+Successful responses include `conversationId`, `messageId`, `runId`, `runIds`,
+`importedMessageCount` and `reused`. Reusing the same capture UUID and prefix is
+idempotent across API restarts; changing its content or architecture requires a new
+UUID and otherwise returns HTTP 409. Persistence is atomic and needs no migration.
+
+Captures allow at most 200 text messages, 8000 characters per message and 64000
+characters overall. Optional `timestamp` values must contain a timezone. The
+source identifier and customer/attendant role are retained in message metadata.
+Media contents are not extracted by this endpoint. The runtime receives imported
+attendant history in every architecture, with a 200-message bound and a snapshot
+ending at the current target, so future or sibling responses cannot leak into it.
+
+Real mode checks runtime readiness and selects `architectural-comparison-v4.4`
+with the application source adapters. An unavailable live runtime returns HTTP 503.
+Mock mode is explicitly selectable for local development. Captures and runs are
+application demo data, separate from the frozen research results. This integration
+does not send messages to WhatsApp contacts; generated text remains a draft for
+the attendant. Chrome extension origins are allowed by CORS only when an API key
+is configured, and all such requests still require that key. The Bedrock key
+belongs solely in the agent runtime environment, never in extension settings.
+
+Local tests: `uv run pytest tests/test_whatsapp_import.py -q` from `apps/api`.
+
 FastAPI backend for the pharmacy multi-agent POC.
 
 ## Scope

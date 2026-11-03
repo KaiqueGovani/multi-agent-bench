@@ -24,6 +24,9 @@ def create_app() -> FastAPI:
             if origin.strip()
         ],
         allow_credentials=True,
+        # Extension access still requires the configured X-API-Key. Without a
+        # key, arbitrary extensions must not gain cross-origin access.
+        allow_origin_regex=r"chrome-extension://[a-p]{32}" if settings.api_key else None,
         allow_methods=["*"],
         allow_headers=["*"],
     )

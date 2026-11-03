@@ -196,9 +196,13 @@ export function EventTimeline({
         </div>
         {!isOpen ? (
           <div className="mt-4 hidden items-center justify-center [writing-mode:vertical-rl] lg:flex">
-            <span className="text-xs font-medium text-muted-foreground">Eventos</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              Eventos
+            </span>
             {counters.total > 0 ? (
-              <Badge className="mt-3 [writing-mode:horizontal-tb]">{counters.total}</Badge>
+              <Badge className="mt-3 [writing-mode:horizontal-tb]">
+                {counters.total}
+              </Badge>
             ) : null}
           </div>
         ) : null}
@@ -228,55 +232,59 @@ export function EventTimeline({
         ) : null}
       </div>
       {isOpen && reviewPanel ? (
-        <div className="border-b bg-card">
-          {reviewPanel}
-        </div>
+        <div className="border-b bg-card">{reviewPanel}</div>
       ) : null}
       {isOpen ? (
         <div className="min-h-0 flex-1 overflow-y-auto p-3">
-        {events.length === 0 ? (
-          <Alert>
-            <AlertDescription>Nenhum evento ainda.</AlertDescription>
-          </Alert>
-        ) : filteredEvents.length === 0 ? (
-          <Alert>
-            <AlertDescription>Nenhum evento corresponde aos filtros atuais.</AlertDescription>
-          </Alert>
-        ) : (
-          <ol className="relative space-y-3 border-l pl-4">
-            {filteredEvents.map((event) => {
-              const payloadSummary = summarizePayload(event);
-              const EventIcon = eventIcon(event.eventType);
-              const eventSource = getEventSource(event);
-              const eventRunId = getEventRunId(event);
-              const isPayloadExpanded = expandedEventIds.has(event.id);
-              const visualStatus = getVisualStatus(event, filteredEvents);
+          {events.length === 0 ? (
+            <Alert>
+              <AlertDescription>Nenhum evento ainda.</AlertDescription>
+            </Alert>
+          ) : filteredEvents.length === 0 ? (
+            <Alert>
+              <AlertDescription>
+                Nenhum evento corresponde aos filtros atuais.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <ol className="relative space-y-3 border-l pl-4">
+              {filteredEvents.map((event) => {
+                const payloadSummary = summarizePayload(event);
+                const EventIcon = eventIcon(event.eventType);
+                const eventSource = getEventSource(event);
+                const eventRunId = getEventRunId(event);
+                const isPayloadExpanded = expandedEventIds.has(event.id);
+                const visualStatus = getVisualStatus(event, filteredEvents);
 
-              return (
-                <li className="relative" key={event.id}>
-                  <span className={eventDotClass(visualStatus)} />
-                  <Card className={`${eventCardAccent(event, visualStatus)} border-l-4 shadow-none`}>
-                    <CardHeader className="p-3 pb-1">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex min-w-0 gap-2">
-                          <EventIcon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                          <div className="min-w-0">
-                            <CardTitle className="break-words">{event.eventType}</CardTitle>
-                          {event.actorName ? (
-                            <p className="text-xs text-muted-foreground">{event.actorName}</p>
-                          ) : null}
+                return (
+                  <li className="relative" key={event.id}>
+                    <span className={eventDotClass(visualStatus)} />
+                    <Card className={`${eventCardAccent(event, visualStatus)} border-l-4 shadow-none`}>
+                      <CardHeader className="p-3 pb-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex min-w-0 gap-2">
+                            <EventIcon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                            <div className="min-w-0">
+                              <CardTitle className="break-words">
+                                {event.eventType}
+                              </CardTitle>
+                              {event.actorName ? (
+                                <p className="text-xs text-muted-foreground">
+                                  {event.actorName}
+                                </p>
+                              ) : null}
+                            </div>
                           </div>
-                        </div>
-                        <Badge
+                          <Badge
                           className="shrink-0 gap-1"
                           variant={statusVariants[visualStatus] ?? "muted"}
                         >
-                          <StatusIcon status={visualStatus} />
-                          {visualStatus}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="grid gap-1 p-3 pt-1 text-xs text-muted-foreground">
+                            <StatusIcon status={visualStatus} />
+                            {visualStatus}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="grid gap-1 p-3 pt-1 text-xs text-muted-foreground">
                         <p>
                           {new Date(event.createdAt).toLocaleTimeString("pt-BR")}
                           {typeof event.durationMs === "number"
@@ -297,7 +305,9 @@ export function EventTimeline({
                           </div>
                         ) : null}
                         {payloadSummary ? (
-                          <p className="break-words text-foreground/80">{payloadSummary}</p>
+                          <p className="break-words text-foreground/80">
+                            {payloadSummary}
+                          </p>
                         ) : null}
                         <div className="pt-1">
                           <Button
@@ -319,19 +329,19 @@ export function EventTimeline({
                             {JSON.stringify(event.payload, null, 2)}
                           </pre>
                         ) : null}
-                    </CardContent>
-                  </Card>
-                  {isActiveStatus(visualStatus) ? (
-                    <div className="ml-3 mt-2">
-                      <InlineThinking actorName={event.actorName} />
-                    </div>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ol>
-        )}
-        <div ref={bottomRef} />
+                      </CardContent>
+                    </Card>
+                    {isActiveStatus(visualStatus) ? (
+                      <div className="ml-3 mt-2">
+                        <InlineThinking actorName={event.actorName} />
+                      </div>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+          <div ref={bottomRef} />
         </div>
       ) : null}
     </aside>
@@ -368,7 +378,9 @@ function TimelineFiltersPanel({
           <Filter className="h-3.5 w-3.5 shrink-0 text-primary" />
           <span>Filtros</span>
           {hasActiveFilters ? <Badge variant="info">ativos</Badge> : null}
-          {detailMode === "detailed" ? <Badge variant="outline">detalhado</Badge> : null}
+          {detailMode === "detailed" ? (
+            <Badge variant="outline">detalhado</Badge>
+          ) : null}
         </button>
         <div className="flex items-center gap-1">
           <Button
@@ -381,6 +393,11 @@ function TimelineFiltersPanel({
             Limpar
           </Button>
           <Button
+            aria-label={
+              isExpanded
+                ? "Recolher filtros de eventos"
+                : "Expandir filtros de eventos"
+            }
             className="h-7 w-7"
             onClick={() => setIsExpanded((current) => !current)}
             size="icon"
@@ -394,66 +411,66 @@ function TimelineFiltersPanel({
         </div>
       </div>
       {isExpanded ? (
-      <div className="mt-2 grid gap-2">
-        <div className="grid grid-cols-2 gap-2">
-          <FilterSelect
+        <div className="mt-2 grid gap-2">
+          <div className="grid grid-cols-2 gap-2">
+            <FilterSelect
             label="run"
             onChange={(value) => onFilterChange("runId", value)}
             options={options.runIds}
             value={filters.runId}
           />
-          <FilterSelect
+            <FilterSelect
             label="tipo"
             onChange={(value) => onFilterChange("eventType", value)}
             options={options.eventTypes}
             value={filters.eventType}
           />
-          <FilterSelect
+            <FilterSelect
             label="ator"
             onChange={(value) => onFilterChange("actorName", value)}
             options={options.actorNames}
             value={filters.actorName}
           />
-          <FilterSelect
+            <FilterSelect
             label="status"
             onChange={(value) => onFilterChange("status", value)}
             options={options.statuses}
             value={filters.status}
           />
-          <FilterSelect
+            <FilterSelect
             label="mensagem"
             onChange={(value) => onFilterChange("messageId", value)}
             options={options.messageIds}
             value={filters.messageId}
           />
-          <FilterSelect
+            <FilterSelect
             label="origem"
             onChange={(value) => onFilterChange("source", value)}
             options={options.sources}
             value={filters.source}
           />
-        </div>
-        <div className="grid grid-cols-2 rounded-md border p-1">
-          <button
+          </div>
+          <div className="grid grid-cols-2 rounded-md border p-1">
+            <button
             className={`rounded px-2 py-1 text-xs ${
               detailMode === "summary" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
             }`}
             onClick={() => onDetailModeChange("summary")}
             type="button"
           >
-            Resumo
-          </button>
-          <button
+              Resumo
+            </button>
+            <button
             className={`rounded px-2 py-1 text-xs ${
               detailMode === "detailed" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
             }`}
             onClick={() => onDetailModeChange("detailed")}
             type="button"
           >
-            Detalhado
-          </button>
+              Detalhado
+            </button>
+          </div>
         </div>
-      </div>
       ) : null}
     </div>
   );
@@ -472,7 +489,9 @@ function FilterSelect({
 }) {
   return (
     <label className="grid gap-1">
-      <span className="text-[11px] font-medium uppercase text-muted-foreground">{label}</span>
+      <span className="text-[11px] font-medium uppercase text-muted-foreground">
+        {label}
+      </span>
       <select
         className="h-8 min-w-0 rounded-md border bg-background px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
         onChange={(event) => onChange(event.target.value)}
@@ -545,7 +564,9 @@ function matchesFilters(
 }
 
 function getEventRunId(event: ProcessingEvent): string | null {
-  return readPayloadString(event.payload.runId) ?? readPayloadString(event.payload.run_id);
+  return (
+    readPayloadString(event.payload.runId) ?? readPayloadString(event.payload.run_id)
+  );
 }
 
 function getEventSource(event: ProcessingEvent): string {

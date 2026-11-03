@@ -166,7 +166,10 @@ benchmark-live:
 # .env region/model (a short-term Bedrock credential is scoped to its region).
 # Explicit command-line/environment overrides are still honored.
 RESEARCH_ENV_UNSET := $(if $(filter command line environment,$(origin AWS_REGION)),,-u AWS_REGION) $(if $(filter command line environment,$(origin BEDROCK_MODEL_ID)),,-u BEDROCK_MODEL_ID)
-.PHONY: research-pilot research-pilot-plan research-pilot-judge
+.PHONY: research-results research-pilot research-pilot-plan research-pilot-judge
+research-results:
+	cd apps/web && env -u AWS_BEARER_TOKEN_BEDROCK npm run dev -- --hostname 127.0.0.1 --port $(WEB_PORT)
+
 research-pilot:
 	cd apps/agent-runtime && env $(RESEARCH_ENV_UNSET) uv run --no-sync python ../../scripts/run_research_pilot.py $(PILOT_ARGS)
 

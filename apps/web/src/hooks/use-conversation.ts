@@ -29,7 +29,10 @@ import type {
 
 type ConnectionStatus = "idle" | "connecting" | "open" | "closed" | "error" | "reconnecting";
 
-export function useConversation(architectureMode: ArchitectureMode, executionMode: ExecutionMode = "real") {
+export function useConversation(
+  architectureMode: ArchitectureMode,
+  executionMode: ExecutionMode = "real",
+) {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -295,7 +298,12 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
         // Insert optimistic message BEFORE the POST
         setMessages((prev) => [...prev, optimisticMsg]);
 
-        await sendMultipartMessage(targetConversationId, text.trim(), files, activeArchitectureMode, executionMode);
+        await sendMultipartMessage(
+          targetConversationId, text.trim(), files, activeArchitectureMode, executionMode,
+          conversation?.metadata.source === "whatsapp_web" && executionMode === "real"
+            ? "architectural-comparison-v4.1"
+            : typeof conversation?.metadata.comparisonProtocol === "string" ? conversation.metadata.comparisonProtocol : undefined,
+        );
         await refreshConversationDetail(targetConversationId);
         
         // For all_architectures mode, add more frequent refreshes to catch parallel runs
@@ -321,6 +329,8 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
         // Remove optimistic message on error
         setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
         setError(caught instanceof Error ? caught.message : "Falha ao enviar mensagem");
+        // Let the composer retain its draft and attachment previews after rejection.
+        throw caught;
       } finally {
         setIsCreatingConversation(false);
         setIsSending(false);
@@ -330,10 +340,12 @@ export function useConversation(architectureMode: ArchitectureMode, executionMod
       activeArchitectureMode,
       architectureMode,
       conversationId,
+      conversation?.metadata.comparisonProtocol,
+      conversation?.metadata.source,
       executionMode,
       refreshConversationDetail,
       refreshConversations
-    ]
+    ],
   );
 
   useEffect(() => {

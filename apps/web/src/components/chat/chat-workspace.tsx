@@ -71,7 +71,8 @@ export function ChatWorkspace() {
   const [executionMode, setExecutionMode] = useState<ExecutionMode>("real");
   const [runtimeStatus, setRuntimeStatus] = useState<RuntimeHealthStatus | null>(null);
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("conversa");
-  const [isFlowOpen, setIsFlowOpen] = useState<boolean>(() => typeof window !== "undefined" && window.localStorage.getItem("chat-flow-open") === "true");
+  const [isFlowOpen, setIsFlowOpen] = useState(false);
+  const [flowStorageReady, setFlowStorageReady] = useState(false);
   const [dismissedError, setDismissedError] = useState<string | null>(null);
   const {
     attachments,
@@ -118,6 +119,14 @@ export function ChatWorkspace() {
     selectedFlowRunId,
   });
 
+  useEffect(() => {
+    if (conversation?.metadata.source !== "whatsapp_web") return;
+    const mode = conversation.metadata.runtimeMode;
+    if (mode === "mock" || mode === "real") setExecutionMode(mode);
+    const architecture = conversation.metadata.architectureMode;
+    if (isArchitectureMode(architecture)) setArchitectureMode(architecture);
+  }, [conversation?.id]);
+
   function handleStartDraftConversation() {
     setIsDraftConversation(true);
     router.replace("/", { scroll: false });
@@ -129,8 +138,21 @@ export function ChatWorkspace() {
   }
 
   useEffect(() => {
+    try {
+      setIsFlowOpen(localStorage.getItem("chat-flow-open") === "true");
+    } catch {
+      /* Storage can be unavailable. */
+    }
+    setFlowStorageReady(true);
+  }, []);
+  useEffect(() => {
+    if (!flowStorageReady) return;
+    try {
     localStorage.setItem("chat-flow-open", String(isFlowOpen));
-  }, [isFlowOpen]);
+  } catch {
+      /* Continue without persistence. */
+    }
+  }, [isFlowOpen, flowStorageReady]);
 
   useEffect(() => {
     let cancelled = false;
@@ -269,9 +291,12 @@ export function ChatWorkspace() {
       ) : null}
 
       <section className="flex min-w-0 flex-col overflow-hidden">
-        <header className="flex min-h-16 items-center gap-3 border-b bg-card px-3 py-2 shadow-sm sm:px-4">
+        <header className="flex min-h-16 flex-wrap items-center gap-3 border-b bg-card px-3 py-2 shadow-sm sm:px-4">
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <Button
+              aria-label={
+                isHistoryOpen ? "Fechar histórico" : "Abrir histórico"
+              }
               className="shrink-0 lg:hidden"
               data-testid="history-toggle"
               onClick={() => setIsHistoryOpen((current) => !current)}
@@ -290,9 +315,11 @@ export function ChatWorkspace() {
                 <h1 className="truncate text-base font-semibold">
                   Atendimento farmacêutico POC
                 </h1>
-              {conversationId ? (
-                <Badge variant="outline">{formatArchitectureLabel(architectureMode)}</Badge>
-              ) : null}
+                {conversationId ? (
+                  <Badge variant="outline">
+                    {formatArchitectureLabel(architectureMode)}
+                  </Badge>
+                ) : null}
                 <HeaderContextTooltip
                   architectureMode={architectureMode}
                   executionMode={executionMode}
@@ -304,7 +331,7 @@ export function ChatWorkspace() {
               </p>
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex w-full shrink-0 items-center justify-between gap-2 sm:w-auto sm:justify-start">
             <Button
               aria-label={isFlowOpen ? "Esconder fluxo" : "Mostrar fluxo"}
               aria-pressed={isFlowOpen}
@@ -317,6 +344,7 @@ export function ChatWorkspace() {
               <Workflow className="h-4 w-4" />
             </Button>
             <Button
+              aria-label="Inspeção"
               disabled={!hasActiveConversation}
               onClick={() => setIsInspectorOpen(true)}
               size="sm"
@@ -346,6 +374,7 @@ export function ChatWorkspace() {
               </Link>
             ) : null}
             <Link
+              aria-label="Dashboard operacional"
               className={cn(buttonVariants({ size: "sm", variant: "outline" }))}
               data-testid="dashboard-link"
               href={conversationId ? `/dashboard?conversationId=${conversationId}` : "/dashboard"}
@@ -354,6 +383,7 @@ export function ChatWorkspace() {
               <span className="hidden sm:inline">Dashboard</span>
             </Link>
             <Button
+              aria-label="Nova conversa"
               disabled={isCreatingConversation}
               onClick={handleStartDraftConversation}
               size="sm"
@@ -375,12 +405,13 @@ export function ChatWorkspace() {
         </header>
 
         {/* Workspace tab bar */}
-        <nav className="flex items-center gap-1 border-b bg-card/80 px-3 py-1.5">
+        <nav className="flex flex-wrap items-center gap-1 border-b bg-card/80 px-3 py-1.5">
           {workspaceTabs.map((tab) => (
             <button
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
+              aria-current={activeTab === tab.key ? "page" : undefined}
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                 activeTab === tab.key
                   ? "bg-background text-foreground shadow-sm"
@@ -390,6 +421,12 @@ export function ChatWorkspace() {
               {tab.label}
             </button>
           ))}
+          <Link
+            href="/research"
+            className="ml-auto rounded-md px-2 py-1.5 text-sm font-medium text-primary focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Pesquisa
+          </Link>
         </nav>
 
         {error && error !== dismissedError ? (
@@ -419,6 +456,13 @@ export function ChatWorkspace() {
           runs={runs}
         />
 
+        {conversation?.metadata.source === "whatsapp_web" ? (
+          <div className="border-b bg-emerald-50 px-5 py-2 text-sm text-emerald-950" role="status" data-testid="whatsapp-import-banner">
+            <strong>Conversa importada do WhatsApp</strong> · trecho revisado até a solicitação selecionada.
+            <span className="block text-xs">Sugestão do protótipo com fontes controladas de FAQ e estoque. Revise e copie para o atendimento; o MAB não envia mensagens ao contato.</span>
+          </div>
+        ) : null}
+
         {/* Tab content — flex-1 + overflow-hidden ensures the parent fills remaining space */}
         <div className="flex flex-1 flex-col overflow-hidden">
           {activeTab === "conversa" ? (
@@ -426,7 +470,9 @@ export function ChatWorkspace() {
               <div className="flex flex-1 flex-col overflow-hidden bg-background">
                 {isMultiArchitecture ? (
                   <div className="flex items-center gap-2 border-b bg-card/60 px-3 py-2">
-                    <span className="text-xs text-muted-foreground">Arquitetura:</span>
+                    <span className="text-xs text-muted-foreground">
+                      Arquitetura:
+                    </span>
                     <ArchitectureFlowPicker
                       runs={flowRuns}
                       selectedRunId={selectedFlowRunId}
@@ -521,7 +567,6 @@ export function ChatWorkspace() {
           ) : null}
         </div>
       </section>
-
     </main>
   );
 }
@@ -580,6 +625,7 @@ function ConversationHistory({
             </Button>
           ) : null}
           <button
+            aria-label={isOpen ? "Recolher histórico" : "Expandir histórico"}
             className="hidden h-8 w-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:inline-flex"
             onClick={() => onOpenChange(!isOpen)}
             type="button"
@@ -600,7 +646,9 @@ function ConversationHistory({
         >
           <span className="text-xs font-medium">Conversas</span>
           {conversations.length > 0 ? (
-            <Badge className="[writing-mode:horizontal-tb]">{conversations.length}</Badge>
+            <Badge className="[writing-mode:horizontal-tb]">
+              {conversations.length}
+            </Badge>
           ) : null}
         </button>
       ) : (
@@ -767,26 +815,31 @@ function ReviewPanel({
         </div>
       </div>
       {isExpanded ? (
-      <div className="mt-3 space-y-3">
-        {reviewTasks.map((task) => {
-          const isOpen = task.status === "open" || task.status === "in_review";
-          const isPending = pending === task.id;
-          const taskError = errors[task.id];
+        <div className="mt-3 space-y-3">
+          {reviewTasks.map((task) => {
+            const isOpen = task.status === "open" || task.status === "in_review";
+            const isPending = pending === task.id;
+            const taskError = errors[task.id];
 
-          return (
-            <div className="rounded-md border bg-background p-3" key={task.id}>
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-xs font-medium" id={`${task.id}-reason`}>{task.reason}</p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">
-                    Mensagem {shortId(task.messageId)} - {formatUpdatedAt(task.createdAt)}
-                  </p>
+            return (
+              <div className="rounded-md border bg-background p-3" key={task.id}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium" id={`${task.id}-reason`}>
+                      {task.reason}
+                    </p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Mensagem {shortId(task.messageId)} -{" "}
+                      {formatUpdatedAt(task.createdAt)}
+                    </p>
+                  </div>
+                  <Badge variant={isOpen ? "warning" : "success"}>
+                    {task.status}
+                  </Badge>
                 </div>
-                <Badge variant={isOpen ? "warning" : "success"}>{task.status}</Badge>
-              </div>
-              {isOpen && onResolve ? (
-                <div className="mt-2 space-y-2">
-                  <Textarea
+                {isOpen && onResolve ? (
+                  <div className="mt-2 space-y-2">
+                    <Textarea
                     aria-describedby={`${task.id}-reason`}
                     aria-label="Nota da revisão"
                     className="min-h-16 text-xs"
@@ -796,11 +849,11 @@ function ReviewPanel({
                     placeholder="Observação opcional"
                     value={notes[task.id] ?? ""}
                   />
-                  {taskError ? (
+                    {taskError ? (
                     <p className="text-xs text-destructive">{taskError}</p>
                   ) : null}
-                  <div className="flex flex-wrap gap-2">
-                    <Button
+                    <div className="flex flex-wrap gap-2">
+                      <Button
                       aria-label="Aprovar"
                       className="text-xs"
                       data-testid={`review-approve-${task.id}`}
@@ -809,9 +862,9 @@ function ReviewPanel({
                       size="sm"
                       type="button"
                     >
-                      Aprovar
-                    </Button>
-                    <Button
+                        Aprovar
+                      </Button>
+                      <Button
                       aria-label="Rejeitar"
                       className="text-xs"
                       data-testid={`review-reject-${task.id}`}
@@ -821,9 +874,9 @@ function ReviewPanel({
                       type="button"
                       variant="destructive"
                     >
-                      Rejeitar
-                    </Button>
-                    <Button
+                        Rejeitar
+                      </Button>
+                      <Button
                       aria-label="Manter em revisão"
                       className="text-xs"
                       data-testid={`review-keep-${task.id}`}
@@ -833,23 +886,23 @@ function ReviewPanel({
                       type="button"
                       variant="outline"
                     >
-                      Manter em revisão
-                    </Button>
+                        Manter em revisão
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ) : isOpen ? (
-                <p className="mt-2 text-[11px] text-amber-800">
-                  Um profissional está avaliando a resposta.
-                </p>
-              ) : task.resolvedAt ? (
-                <p className="mt-2 text-[11px] text-muted-foreground">
-                  Resolvida em {formatUpdatedAt(task.resolvedAt)}
-                </p>
-              ) : null}
-            </div>
-          );
-        })}
-      </div>
+                ) : isOpen ? (
+                  <p className="mt-2 text-[11px] text-amber-800">
+                    Um profissional está avaliando a resposta.
+                  </p>
+                ) : task.resolvedAt ? (
+                  <p className="mt-2 text-[11px] text-muted-foreground">
+                    Resolvida em {formatUpdatedAt(task.resolvedAt)}
+                  </p>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
       ) : null}
     </div>
   );
@@ -867,7 +920,13 @@ function ExecutionModeToggle({
   const isMock = executionMode === "mock";
   const isChecking = !isMock && !runtimeStatus;
   const isReady = !isMock && Boolean(runtimeStatus?.ready);
-  const label = isMock ? "Simulado" : isChecking ? "Verificando" : isReady ? "LLM ativo" : "LLM off";
+  const label = isMock
+    ? "Simulado"
+    : isChecking
+      ? "Verificando"
+      : isReady
+        ? "Real disponível"
+        : "Real indisponível";
   return (
     <button
       aria-label={`Modo de execução: ${label}`}
@@ -912,7 +971,10 @@ function HeaderContextTooltip({
           <p className="font-medium">Contexto da conversa</p>
           <div className="grid gap-1 text-muted-foreground">
             <p>Plataforma: web chat</p>
-            <p>Runtime: {executionMode === "real" ? "agent runtime" : "mock runtime"}</p>
+            <p>
+              Runtime:{" "}
+              {executionMode === "real" ? "agent runtime" : "mock runtime"}
+            </p>
             <p>LLM: {formatRuntimeStatus(runtimeStatus)}</p>
             {llm ? <p>Modelo: {llm.modelId}</p> : null}
             {runtimeStatus?.error ? <p>Erro: {runtimeStatus.error}</p> : null}
@@ -975,7 +1037,9 @@ function ArchitectureFlowPicker({
           >
             <ArchitectureIcon mode={architecture} />
             <span>{formatArchitectureLabel(architecture)}</span>
-            <span className="text-[11px] text-muted-foreground">run {shortId(run.id)}</span>
+            <span className="text-[11px] text-muted-foreground">
+              run {shortId(run.id)}
+            </span>
           </button>
         );
       })}
@@ -1012,12 +1076,18 @@ function ChatRuntimeVisual({
   })();
 
   if (architectureMode === "structured_workflow") {
-    return <WorkflowFlow activeActorName={activeActorName} executionEvents={executionEvents} runStatus={runStatus} stages={stages} />;
+    return (
+      <WorkflowFlow activeActorName={activeActorName} executionEvents={executionEvents} runStatus={runStatus} stages={stages} />
+    );
   }
   if (architectureMode === "decentralized_swarm") {
-    return <SwarmFlow activeActorName={activeActorName} actors={actors} executionEvents={executionEvents} handoffs={handoffs} runStatus={runStatus} />;
+    return (
+      <SwarmFlow activeActorName={activeActorName} actors={actors} executionEvents={executionEvents} handoffs={handoffs} runStatus={runStatus} />
+    );
   }
-  return <CentralizedFlow activeActorName={activeActorName} actors={actors} executionEvents={executionEvents} runStatus={runStatus} />;
+  return (
+    <CentralizedFlow activeActorName={activeActorName} actors={actors} executionEvents={executionEvents} runStatus={runStatus} />
+  );
 }
 
 function ArchitectureIcon({ mode }: { mode: ArchitectureMode }) {
@@ -1183,7 +1253,7 @@ function filterMessagesForArchitecture({
     }
   }
   return messages.filter((message) => {
-    if (message.direction === "inbound") {
+    if (message.direction === "inbound" || message.metadata?.importedHistory === true) {
       return true;
     }
     if (message.id.startsWith("streaming-")) {

@@ -128,7 +128,7 @@ function ComparisonChartsSection({
   comparisons: { architectureMode: string; execution: ReturnType<typeof useRunExecution>; run: Run | null }[];
 }) {
   const { radarData, barData } = useMemo(() => {
-    const getRunMetrics = (item: typeof comparisons[0]) => {
+    const getRunMetrics = (item: (typeof comparisons)[0]) => {
       const proj = item.execution.projection;
       const run = item.run;
       const metrics = proj?.metrics as Record<string, unknown> | undefined;
@@ -285,7 +285,9 @@ function ArchitectureRunColumn({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {run ? (
-            <Badge variant={statusVariant(run.status)}>{formatStatusLabel(run.status)}</Badge>
+            <Badge variant={statusVariant(run.status)}>
+              {formatStatusLabel(run.status)}
+            </Badge>
           ) : (
             <Badge variant="outline">sem dados</Badge>
           )}
@@ -431,11 +433,13 @@ function Metric({
 }) {
   return (
     <div className="rounded-xl border bg-card/50 px-3 py-3">
-      <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+      <dt className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
         <Icon className="h-3.5 w-3.5 shrink-0" />
-        <dt className="truncate">{label}</dt>
-      </div>
-      <dd className="mt-1 truncate text-sm font-medium text-foreground">{value}</dd>
+        <span className="truncate">{label}</span>
+      </dt>
+      <dd className="mt-1 truncate text-sm font-medium text-foreground">
+        {value}
+      </dd>
     </div>
   );
 }
@@ -443,14 +447,20 @@ function Metric({
 function MetadataRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="grid gap-1">
-      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
       <p className="text-sm text-foreground">{value}</p>
     </div>
   );
 }
 
 function SectionTitle({ title }: { title: string }) {
-  return <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{title}</p>;
+  return (
+    <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+      {title}
+    </p>
+  );
 }
 
 function buildLatestByArchitecture(runs: Run[]) {
