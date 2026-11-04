@@ -22,6 +22,8 @@ O desfecho primário preserva o sucesso de tarefa composto da v4.2. As tabelas m
 
 A partir da raiz do checkout, instale o frontend com `npm ci --prefix apps/web` e execute `make research-results`. Abra [a comparação v4.4](http://127.0.0.1:3000/research/comparison-v44) para explorar as tabelas e as figuras. A visualização lê os arquivos versionados da [coleta publicada](../../research-data/results/architectural-comparison-v44/README.md).
 
+A [auditoria agregada das repetições](AUDITORIA-REPETICOES.md) registra as diferenças observadas entre aprovações e reprovações dentro do mesmo cenário e arquitetura.
+
 ## Rodar o piloto sintético
 
 Com o ambiente do runtime instalado por `uv sync --all-extras` em `apps/agent-runtime` e a credencial do Bedrock configurada localmente, use os comandos abaixo a partir da raiz. Escolha diretórios de saída novos. A calibração usa as referências sintéticas versionadas.

@@ -44,6 +44,7 @@ tcc_privado.sqlite*
 candidatos_revisao.sqlite*
 avaliacao_privada/
 /research-data/local/
+/experiments/pilot-v1/cases.json
 
 # Test artifacts
 test-results/
