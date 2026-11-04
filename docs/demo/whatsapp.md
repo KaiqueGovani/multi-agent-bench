@@ -43,6 +43,8 @@ A captura inclui apenas o que o WhatsApp renderizou; não exporta a conversa com
 
 ## Validação
 
+Consulte as [capturas e gravações da demonstração](presentation/README.md) e o [registro da validação local](VALIDATION.md).
+
 ```sh
 (cd apps/api && .venv/bin/python -m pytest -q)
 (cd apps/agent-runtime && .venv/bin/python -m pytest -q)

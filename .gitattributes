@@ -6,3 +6,4 @@ research-data/results/architectural-comparison-v44/*.csv -text -whitespace
 # Matplotlib emits intentional whitespace in generated SVG path data.
 research-data/results/agents-as-tools-v42/figures/*.svg -whitespace
 research-data/results/architectural-comparison-v44/figures/*.svg -whitespace
+docs/demo/presentation/*.pdf binary

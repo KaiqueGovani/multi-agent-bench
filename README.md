@@ -306,6 +306,7 @@ Available scenarios:
 | [UI.md](docs/poc/UI.md) | Frontend design patterns |
 | [AI_EVENTS.md](docs/poc/AI_EVENTS.md) | External AI service integration |
 | [PAYLOADS.md](packages/contracts/PAYLOADS.md) | API payload reference |
+| [Practical demonstration](docs/demo/presentation/README.md) | Screenshots and videos of the WhatsApp extension, execution monitor, and research viewer |
 
 ---
 
