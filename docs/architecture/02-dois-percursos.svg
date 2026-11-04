@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1580" height="820" viewBox="0 0 1580 820" role="img" aria-labelledby="title desc">
+<title id="title">Dois percursos, um núcleo de agentes</title>
+<desc id="desc">A interface web acessa a API transacional, que usa PostgreSQL e armazenamento de anexos e chama o núcleo. Na coleta v4.4, o coletor lê os cenários, invoca o núcleo diretamente em subprocessos e grava respostas, eventos e consumo em arquivos. O núcleo usa ferramentas de FAQ, estoque e descritores de anexos e integra Amazon Bedrock para inferência.</desc>
+<defs>
+<marker id="app-end" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 1 L 9 5 L 0 9 Z" fill="#1e5b9c"/></marker>
+<marker id="app-start" viewBox="0 0 10 10" refX="1.5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 10 1 L 1 5 L 10 9 Z" fill="#1e5b9c"/></marker>
+<marker id="research-end" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 1 L 9 5 L 0 9 Z" fill="#0e6b55"/></marker>
+<marker id="research-start" viewBox="0 0 10 10" refX="1.5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 10 1 L 1 5 L 10 9 Z" fill="#0e6b55"/></marker>
+<marker id="neutral-end" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 1 L 9 5 L 0 9 Z" fill="#657991"/></marker>
+<marker id="neutral-start" viewBox="0 0 10 10" refX="1.5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 10 1 L 1 5 L 10 9 Z" fill="#657991"/></marker>
+</defs>
+<g font-family="Arial, Liberation Sans, sans-serif">
+<rect x="0" y="0" width="1580" height="820" rx="0" fill="#ffffff" stroke="none" stroke-width="1"/>
+<text x="46" y="54" font-size="17" font-weight="700" text-anchor="start" letter-spacing="2.2" fill="#1e5b9c">ARQUITETURA DA PLATAFORMA</text>
+<text x="46" y="104" font-size="45" font-weight="700" text-anchor="start" letter-spacing="0" fill="#142b44">Dois percursos, um núcleo de agentes</text>
+<text x="47" y="139" font-size="22" font-weight="400" text-anchor="start" letter-spacing="0" fill="#445872">Da interação na aplicação à coleta experimental direta da v4.4</text>
+<rect x="46" y="172" width="650" height="250" rx="15" fill="#eff5fc" stroke="#c4d7ec" stroke-width="1"/>
+<rect x="46" y="444" width="650" height="250" rx="15" fill="#edf8f4" stroke="#bdddd2" stroke-width="1"/>
+<rect x="730" y="172" width="400" height="522" rx="15" fill="#142b44" stroke="none" stroke-width="1"/>
+<rect x="1165" y="172" width="369" height="522" rx="15" fill="#f4f7fa" stroke="#d3dce6" stroke-width="1"/>
+<text x="70" y="210" font-size="20" font-weight="700" text-anchor="start" letter-spacing="0.6" fill="#1e5b9c">01   APLICAÇÃO INTERATIVA</text>
+<text x="70" y="236" font-size="18" font-weight="400" text-anchor="start" letter-spacing="0" fill="#445872">Atendimento no navegador</text>
+<rect x="70" y="253" width="265" height="80" rx="9" fill="#ffffff" stroke="#c8d5e1" stroke-width="1"/>
+<rect x="70" y="267" width="4" height="52" rx="2" fill="#1e5b9c" stroke="none" stroke-width="1"/>
+<text x="88" y="284" font-size="23" font-weight="700" text-anchor="start" letter-spacing="0" fill="#142b44">Interface web</text>
+<text x="88" y="311" font-size="18" font-weight="400" text-anchor="start" letter-spacing="0" fill="#445872">Next.js e React</text>
+<rect x="371" y="253" width="298" height="80" rx="9" fill="#ffffff" stroke="#c8d5e1" stroke-width="1"/>
+<rect x="371" y="267" width="4" height="52" rx="2" fill="#1e5b9c" stroke="none" stroke-width="1"/>
+<text x="389" y="284" font-size="23" font-weight="700" text-anchor="start" letter-spacing="0" fill="#142b44">API transacional</text>
+<text x="389" y="311" font-size="18" font-weight="400" text-anchor="start" letter-spacing="0" fill="#445872">FastAPI · HTTP e SSE</text>
+<path d="M 340 293 H 366" fill="none" stroke="#1e5b9c" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" marker-start="url(#app-start)" marker-end="url(#app-end)"/>
+<path d="M 674 293 H 724" fill="none" stroke="#1e5b9c" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" marker-start="url(#app-start)" marker-end="url(#app-end)"/>
+<path d="M 518 337 V 350" fill="none" stroke="#1e5b9c" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#app-end)"/>
+<rect x="371" y="352" width="298" height="55" rx="8" fill="#ffffff" stroke="#c4d7ec" stroke-width="1"/>
+<text x="387" y="377" font-size="20" font-weight="700" text-anchor="start" letter-spacing="0" fill="#142b44">Persistência e anexos</text>
+<text x="387" y="400" font-size="16" font-weight="400" text-anchor="start" letter-spacing="0" fill="#445872">PostgreSQL · local ou S3/MinIO</text>
+<text x="70" y="482" font-size="20" font-weight="700" text-anchor="start" letter-spacing="0.6" fill="#0e6b55">02   COLETA EXPERIMENTAL v4.4</text>
+<text x="70" y="508" font-size="18" font-weight="400" text-anchor="start" letter-spacing="0" fill="#445872">Execução direta pelo coletor local</text>
+<rect x="70" y="525" width="265" height="80" rx="9" fill="#ffffff" stroke="#c8d5e1" stroke-width="1"/>
+<rect x="70" y="539" width="4" height="52" rx="2" fill="#0e6b55" stroke="none" stroke-width="1"/>
+<text x="88" y="556" font-size="23" font-weight="700" text-anchor="start" letter-spacing="0" fill="#142b44">Arquivos de entrada</text>
+<text x="88" y="583" font-size="18" font-weight="400" text-anchor="start" letter-spacing="0" fill="#445872">Cenários e parâmetros</text>
+<rect x="371" y="525" width="298" height="80" rx="9" fill="#ffffff" stroke="#c8d5e1" stroke-width="1"/>
+<rect x="371" y="539" width="4" height="52" rx="2" fill="#0e6b55" stroke="none" stroke-width="1"/>
+<text x="389" y="556" font-size="23" font-weight="700" text-anchor="start" letter-spacing="0" fill="#142b44">Coletor local</text>
+<text x="389" y="583" font-size="18" font-weight="400" text-anchor="start" letter-spacing="0" fill="#445872">Subprocessos e medição</text>
+<path d="M 340 565 H 366" fill="none" stroke="#0e6b55" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#research-end)"/>
+<path d="M 674 565 H 724" fill="none" stroke="#0e6b55" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" marker-start="url(#research-start)" marker-end="url(#research-end)"/>
+<path d="M 518 609 V 622" fill="none" stroke="#0e6b55" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#research-end)"/>
+<rect x="371" y="624" width="298" height="55" rx="8" fill="#ffffff" stroke="#bdddd2" stroke-width="1"/>
+<text x="387" y="649" font-size="20" font-weight="700" text-anchor="start" letter-spacing="0" fill="#142b44">Arquivos de saída</text>
+<text x="387" y="672" font-size="16" font-weight="400" text-anchor="start" letter-spacing="0" fill="#445872">Respostas · eventos · consumo</text>
+<text x="754" y="211" font-size="17" font-weight="700" text-anchor="start" letter-spacing="1.5" fill="#c2daef">PONTO COMUM</text>
+<text x="754" y="256" font-size="35" font-weight="700" text-anchor="start" letter-spacing="0" fill="#ffffff">Núcleo dos agentes</text>
+<text x="754" y="286" font-size="21" font-weight="400" text-anchor="start" letter-spacing="0" fill="#d3e2ee">Python e Strands Agents</text>
+<rect x="754" y="315" width="352" height="1" rx="0" fill="#51677d" stroke="none" stroke-width="1"/>
+<rect x="754" y="337" width="352" height="70" rx="8" fill="#233e59" stroke="#395672" stroke-width="1"/>
+<text x="770" y="364" font-size="24" font-weight="700" text-anchor="start" letter-spacing="0" fill="#ffffff">Centralizada</text>
+<text x="770" y="388" font-size="17" font-weight="400" text-anchor="start" letter-spacing="0" fill="#e0eaf2">Supervisor chama especialistas</text>
+<rect x="754" y="420" width="352" height="70" rx="8" fill="#233e59" stroke="#395672" stroke-width="1"/>
+<text x="770" y="447" font-size="24" font-weight="700" text-anchor="start" letter-spacing="0" fill="#ffffff">Workflow</text>
+<text x="770" y="471" font-size="17" font-weight="400" text-anchor="start" letter-spacing="0" fill="#e0eaf2">Roteamento e etapas estruturadas</text>
+<rect x="754" y="503" width="352" height="70" rx="8" fill="#233e59" stroke="#395672" stroke-width="1"/>
+<text x="770" y="530" font-size="24" font-weight="700" text-anchor="start" letter-spacing="0" fill="#ffffff">Swarm</text>
+<text x="770" y="554" font-size="17" font-weight="400" text-anchor="start" letter-spacing="0" fill="#e0eaf2">Delegações entre especialistas</text>
+<text x="754" y="631" font-size="19" font-weight="400" text-anchor="start" letter-spacing="0" fill="#e0eaf2">Três formas de coordenar agentes</text>
+<text x="1189" y="210" font-size="19" font-weight="700" text-anchor="start" letter-spacing="0.4" fill="#142b44">DEPENDÊNCIAS DO NÚCLEO</text>
+<rect x="1189" y="253" width="321" height="76" rx="8" fill="#ffffff" stroke="#d4dfe9" stroke-width="1"/>
+<text x="1205" y="278" font-size="20" font-weight="700" text-anchor="start" letter-spacing="0" fill="#142b44">Amazon Bedrock</text>
+<text x="1205" y="301" font-size="16" font-weight="400" text-anchor="start" letter-spacing="0" fill="#445872">Inferência dos modelos</text>
+<path d="M 1135 292 H 1184" fill="none" stroke="#657991" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" marker-start="url(#neutral-start)" marker-end="url(#neutral-end)"/>
+<rect x="1189" y="397" width="321" height="228" rx="9" fill="#ffffff" stroke="#d4dfe9" stroke-width="1"/>
+<text x="1205" y="431" font-size="22" font-weight="700" text-anchor="start" letter-spacing="0" fill="#142b44">Ferramentas de domínio</text>
+<text x="1205" y="458" font-size="18" font-weight="400" text-anchor="start" letter-spacing="0" fill="#445872">FAQ, estoque e descritores</text>
+<rect x="1205" y="474" width="289" height="1" rx="0" fill="#dbe3ec" stroke="none" stroke-width="1"/>
+<text x="1205" y="505" font-size="18" font-weight="700" text-anchor="start" letter-spacing="0" fill="#1e5b9c">Aplicação</text>
+<text x="1205" y="529" font-size="17" font-weight="400" text-anchor="start" letter-spacing="0" fill="#445872">Adaptadores locais da POC</text>
+<text x="1205" y="563" font-size="18" font-weight="700" text-anchor="start" letter-spacing="0" fill="#0e6b55">Pesquisa</text>
+<text x="1205" y="587" font-size="17" font-weight="400" text-anchor="start" letter-spacing="0" fill="#445872">Fontes controladas</text>
+<path d="M 1135 509 H 1184" fill="none" stroke="#657991" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" marker-start="url(#neutral-start)" marker-end="url(#neutral-end)"/>
+<rect x="46" y="723" width="1488" height="60" rx="9" fill="#f4f7fa" stroke="#d3dce6" stroke-width="1"/>
+<text x="65" y="760" font-size="20" font-weight="700" text-anchor="start" letter-spacing="0" fill="#0e6b55">Fronteira da coleta</text>
+<text x="258" y="760" font-size="20" font-weight="400" text-anchor="start" letter-spacing="0" fill="#142b44">A medição das 600 tentativas v4.4 segue o percurso direto do coletor e do núcleo.</text>
+</g>
+</svg>

@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="945" viewBox="0 0 1360 945" role="img" aria-labelledby="title desc">
+<title id="title">O que a coleta v4.4 mede</title><desc id="desc">A figura separa a aplicação interativa do percurso experimental e destaca a latência do núcleo dentro da latência do coletor.</desc>
+<defs>
+  <marker id="arrow-blue" viewBox="0 0 12 12" refX="10.5" refY="6" markerWidth="11" markerHeight="11" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M1 1L11 6L1 11Z" fill="#1e597a"/></marker>
+  <marker id="arrow-teal" viewBox="0 0 12 12" refX="10.5" refY="6" markerWidth="11" markerHeight="11" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M1 1L11 6L1 11Z" fill="#17634f"/></marker>
+  <marker id="arrow-slate" viewBox="0 0 12 12" refX="10.5" refY="6" markerWidth="11" markerHeight="11" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M1 1L11 6L1 11Z" fill="#526b76"/></marker>
+</defs>
+<rect width="1360" height="945" fill="white"/>
+<g font-family="Arial, Helvetica, sans-serif" fill="#102f3c">
+<text x="34" y="62" font-size="42" font-weight="700" fill="#102f3c" text-anchor="start">O que a coleta v4.4 mede</text>
+<text x="35" y="99" font-size="26" font-weight="400" fill="#385362" text-anchor="start">40 cenários × 5 repetições × 3 arquiteturas = 600 tentativas</text>
+<rect x="34" y="131" width="1292" height="201" rx="18" fill="#edf5f9" stroke="#bfd6e3" stroke-width="1.5"/>
+<text x="58" y="173" font-size="21" font-weight="700" fill="#1e597a" text-anchor="start">APLICAÇÃO INTERATIVA  /  FORA DAS MEDIÇÕES</text>
+<path d="M312 249 H350" fill="none" stroke="#1e597a" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow-blue)" marker-start="url(#arrow-blue)"/>
+<path d="M581 249 H619" fill="none" stroke="#1e597a" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow-blue)" marker-start="url(#arrow-blue)"/>
+<path d="M905 249 H944" fill="none" stroke="#1e597a" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow-blue)" marker-start="url(#arrow-blue)"/>
+<rect x="58" y="197" width="254" height="100" rx="12" fill="#fff" stroke="#bdcdd4" stroke-width="1.5"/>
+<rect x="59" y="209" width="4" height="76" rx="2" fill="#1e597a"/>
+<text x="78" y="235" font-size="26" font-weight="700" fill="#102f3c" text-anchor="start">Interface web</text>
+<text x="78" y="267" font-size="22" font-weight="400" fill="#385362" text-anchor="start">Next.js e React</text>
+<rect x="350" y="197" width="231" height="100" rx="12" fill="#fff" stroke="#bdcdd4" stroke-width="1.5"/>
+<rect x="351" y="209" width="4" height="76" rx="2" fill="#1e597a"/>
+<text x="370" y="235" font-size="24" font-weight="700" fill="#102f3c" text-anchor="start">API transacional</text>
+<text x="370" y="267" font-size="20" font-weight="400" fill="#385362" text-anchor="start">FastAPI · HTTP/SSE</text>
+<rect x="619" y="197" width="286" height="100" rx="12" fill="#fff" stroke="#bdcdd4" stroke-width="1.5"/>
+<rect x="620" y="209" width="4" height="76" rx="2" fill="#1e597a"/>
+<text x="639" y="235" font-size="26" font-weight="700" fill="#102f3c" text-anchor="start">Runtime via HTTP</text>
+<text x="639" y="267" font-size="22" font-weight="400" fill="#385362" text-anchor="start">Núcleo de agentes</text>
+<rect x="944" y="197" width="358" height="100" rx="12" fill="#fff" stroke="#bdcdd4" stroke-width="1.5"/>
+<rect x="945" y="209" width="4" height="76" rx="2" fill="#1e597a"/>
+<text x="964" y="235" font-size="26" font-weight="700" fill="#102f3c" text-anchor="start">Bedrock no modo real</text>
+<text x="964" y="267" font-size="22" font-weight="400" fill="#385362" text-anchor="start">Inferência dos modelos</text>
+<text x="58" y="321" font-size="21" font-weight="400" fill="#385362" text-anchor="start">A API persiste em PostgreSQL e usa armazenamento de anexos local ou S3/MinIO.</text>
+<text x="35" y="377" font-size="21" font-weight="700" fill="#17634f" text-anchor="start">COLETA DIRETA  /  UM SUBPROCESSO POR TENTATIVA</text>
+<rect x="266" y="402" width="808" height="414" rx="18" fill="#edf7f2" stroke="#6ea791" stroke-width="2"/>
+<text x="290" y="441" font-size="29" font-weight="700" fill="#17634f" text-anchor="start">Latência do coletor</text>
+<text x="290" y="472" font-size="23" font-weight="400" fill="#385362" text-anchor="start">Do lançamento do subprocesso à conclusão do arquivo de resultado.</text>
+<rect x="290" y="496" width="760" height="228" rx="12" fill="#fff" stroke="#78aa96" stroke-width="2"/>
+<text x="312" y="533" font-size="28" font-weight="700" fill="#17634f" text-anchor="start">Latência do núcleo</text>
+<text x="312" y="565" font-size="23" font-weight="400" fill="#385362" text-anchor="start">RuntimeExecutor + registro local de eventos</text>
+<path d="M237 595 H266" fill="none" stroke="#17634f" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow-teal)"/>
+<path d="M1074 595 H1110" fill="none" stroke="#17634f" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow-teal)"/>
+<rect x="313" y="586" width="219" height="52" rx="7" fill="#edf7f2" stroke="#c0d8ce" stroke-width="1.5"/>
+<text x="422.5" y="620" font-size="23" font-weight="700" fill="#17634f" text-anchor="middle">Centralizada</text>
+<rect x="547" y="586" width="216" height="52" rx="7" fill="#edf7f2" stroke="#c0d8ce" stroke-width="1.5"/>
+<text x="655.0" y="620" font-size="23" font-weight="700" fill="#17634f" text-anchor="middle">Workflow</text>
+<rect x="778" y="586" width="244" height="52" rx="7" fill="#edf7f2" stroke="#c0d8ce" stroke-width="1.5"/>
+<text x="900.0" y="620" font-size="23" font-weight="700" fill="#17634f" text-anchor="middle">Swarm</text>
+<text x="312" y="675" font-size="23" font-weight="700" fill="#102f3c" text-anchor="start">Ferramentas controladas</text>
+<text x="312" y="705" font-size="21" font-weight="400" fill="#385362" text-anchor="start">FAQ, estoque e descritores</text>
+<text x="733" y="675" font-size="23" font-weight="700" fill="#102f3c" text-anchor="start">Amazon Bedrock</text>
+<text x="733" y="705" font-size="21" font-weight="400" fill="#385362" text-anchor="start">Inferência dos modelos</text>
+<text x="290" y="760" font-size="22" font-weight="400" fill="#385362" text-anchor="start">O coletor inclui a inicialização do processo e a escrita local.</text>
+<text x="290" y="792" font-size="22" font-weight="400" fill="#385362" text-anchor="start">A espera pela admissão na onda fica fora da latência.</text>
+<rect x="34" y="552" width="203" height="123" rx="12" fill="#fff" stroke="#bdcdd4" stroke-width="1.5"/>
+<rect x="35" y="564" width="4" height="99" rx="2" fill="#17634f"/>
+<text x="54" y="590" font-size="26" font-weight="700" fill="#102f3c" text-anchor="start">Entrada</text>
+<text x="54" y="622" font-size="22" font-weight="400" fill="#385362" text-anchor="start">Cenário e</text>
+<text x="54" y="649" font-size="22" font-weight="400" fill="#385362" text-anchor="start">parâmetros</text>
+<rect x="1110" y="552" width="216" height="123" rx="12" fill="#fff" stroke="#bdcdd4" stroke-width="1.5"/>
+<rect x="1111" y="564" width="4" height="99" rx="2" fill="#17634f"/>
+<text x="1130" y="590" font-size="26" font-weight="700" fill="#102f3c" text-anchor="start">Saída</text>
+<text x="1130" y="622" font-size="22" font-weight="400" fill="#385362" text-anchor="start">Resposta, eventos</text>
+<text x="1130" y="649" font-size="22" font-weight="400" fill="#385362" text-anchor="start">e consumo</text>
+<path d="M34 853 H1326" fill="none" stroke="#526b76" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="34" y="895" font-size="26" font-weight="700" fill="#102f3c" text-anchor="start">Julgamento cego após a geração</text>
+<text x="467" y="895" font-size="23" font-weight="400" fill="#385362" text-anchor="start">Etapa separada, com registro próprio de tempo e consumo.</text>
+</g>
+</svg>

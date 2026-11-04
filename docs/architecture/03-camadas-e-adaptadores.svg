@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="960" viewBox="0 0 1560 960" role="img" aria-labelledby="title desc">
+<title id="title">Camadas e pontos de adaptação</title>
+<desc id="desc">A interface web e a extensão WhatsApp Web usam a API da aplicação. O coletor de cenários e parâmetros invoca o núcleo em subprocessos. O núcleo compartilha as estratégias de coordenação e acessa fontes de domínio e inferência Bedrock. A aplicação persiste dados em PostgreSQL e anexos em disco ou S3 compatível. O coletor salva os registros de pesquisa em arquivos.</desc>
+<defs>
+<marker id="app-end" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 1 L 9 5 L 0 9 Z" fill="#335f86"/></marker>
+<marker id="app-start" viewBox="0 0 10 10" refX="1.5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 10 1 L 1 5 L 10 9 Z" fill="#335f86"/></marker>
+<marker id="research-end" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 1 L 9 5 L 0 9 Z" fill="#276e5a"/></marker>
+<marker id="research-start" viewBox="0 0 10 10" refX="1.5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 10 1 L 1 5 L 10 9 Z" fill="#276e5a"/></marker>
+<marker id="neutral-end" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 1 L 9 5 L 0 9 Z" fill="#6b7c84"/></marker>
+<marker id="neutral-start" viewBox="0 0 10 10" refX="1.5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 10 1 L 1 5 L 10 9 Z" fill="#6b7c84"/></marker>
+</defs>
+<g font-family="Arial, Liberation Sans, sans-serif">
+<rect x="0" y="0" width="1560" height="960" rx="0" fill="#faf9f6" stroke="none" stroke-width="1"/>
+<text x="48" y="49" font-size="17" font-weight="700" text-anchor="start" letter-spacing="2.0" fill="#193f55">MAPA DE RESPONSABILIDADES</text>
+<text x="48" y="95" font-size="45" font-weight="700" text-anchor="start" letter-spacing="0" fill="#172f3d">Camadas e pontos de adaptação</text>
+<text x="48" y="130" font-size="22" font-weight="400" text-anchor="start" letter-spacing="0" fill="#4a5a62">Cada percurso tem sua própria entrada, adaptação e persistência.</text>
+<rect x="224" y="152" width="603" height="38" rx="5" fill="#e4edf4" stroke="none" stroke-width="1"/>
+<rect x="853" y="152" width="658" height="38" rx="5" fill="#e5f0e9" stroke="none" stroke-width="1"/>
+<text x="242" y="178" font-size="19" font-weight="700" text-anchor="start" letter-spacing="0.6" fill="#335f86">APLICAÇÃO INTERATIVA</text>
+<text x="872" y="178" font-size="19" font-weight="700" text-anchor="start" letter-spacing="0.6" fill="#276e5a">COLETA EXPERIMENTAL v4.4</text>
+<rect x="48" y="205" width="1462" height="1" rx="0" fill="#d7d8d2" stroke="none" stroke-width="1"/>
+<rect x="48" y="329" width="1462" height="1" rx="0" fill="#d7d8d2" stroke="none" stroke-width="1"/>
+<rect x="48" y="483" width="1462" height="1" rx="0" fill="#d7d8d2" stroke="none" stroke-width="1"/>
+<rect x="48" y="688" width="1462" height="1" rx="0" fill="#d7d8d2" stroke="none" stroke-width="1"/>
+<text x="48" y="237" font-size="16" font-weight="700" text-anchor="start" letter-spacing="1" fill="#60757e">01</text>
+<text x="48" y="266" font-size="22" font-weight="700" text-anchor="start" letter-spacing="0" fill="#172f3d">Entradas</text>
+<text x="48" y="362" font-size="16" font-weight="700" text-anchor="start" letter-spacing="1" fill="#60757e">02</text>
+<text x="48" y="391" font-size="22" font-weight="700" text-anchor="start" letter-spacing="0" fill="#172f3d">Adaptação</text>
+<text x="48" y="517" font-size="16" font-weight="700" text-anchor="start" letter-spacing="1" fill="#60757e">03</text>
+<text x="48" y="546" font-size="22" font-weight="700" text-anchor="start" letter-spacing="0" fill="#172f3d">Execução</text>
+<text x="48" y="722" font-size="16" font-weight="700" text-anchor="start" letter-spacing="1" fill="#60757e">04</text>
+<text x="48" y="751" font-size="22" font-weight="700" text-anchor="start" letter-spacing="0" fill="#172f3d">Dados e</text>
+<text x="48" y="778" font-size="22" font-weight="700" text-anchor="start" letter-spacing="0" fill="#172f3d">serviços</text>
+<rect x="224" y="225" width="291" height="78" rx="9" fill="#ffffff" stroke="#c8d5e1" stroke-width="1"/>
+<rect x="224" y="239" width="4" height="50" rx="2" fill="#335f86" stroke="none" stroke-width="1"/>
+<text x="242" y="256" font-size="23" font-weight="700" text-anchor="start" letter-spacing="0" fill="#142b44">Interface web</text>
+<text x="242" y="283" font-size="18" font-weight="400" text-anchor="start" letter-spacing="0" fill="#445872">Next.js e React</text>
+<rect x="536" y="225" width="291" height="78" rx="9" fill="#ffffff" stroke="#c8d5e1" stroke-width="1"/>
+<rect x="536" y="239" width="4" height="50" rx="2" fill="#335f86" stroke="none" stroke-width="1"/>
+<text x="554" y="256" font-size="23" font-weight="700" text-anchor="start" letter-spacing="0" fill="#142b44">WhatsApp Web</text>
+<text x="554" y="283" font-size="18" font-weight="400" text-anchor="start" letter-spacing="0" fill="#445872">Extensão · importação revisada</text>
+<rect x="853" y="225" width="658" height="78" rx="9" fill="#ffffff" stroke="#c8d5e1" stroke-width="1"/>
+<rect x="853" y="239" width="4" height="50" rx="2" fill="#276e5a" stroke="none" stroke-width="1"/>
+<text x="871" y="256" font-size="23" font-weight="700" text-anchor="start" letter-spacing="0" fill="#142b44">Cenários e parâmetros</text>
+<text x="871" y="283" font-size="18" font-weight="400" text-anchor="start" letter-spacing="0" fill="#445872">Arquivos de entrada</text>
+<path d="M 370 307 V 346" fill="none" stroke="#335f86" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" marker-start="url(#app-start)" marker-end="url(#app-end)"/>
+<path d="M 682 307 V 346" fill="none" stroke="#335f86" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#app-end)"/>
+<path d="M 1182 307 V 346" fill="none" stroke="#276e5a" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#research-end)"/>
+<rect x="224" y="350" width="603" height="89" rx="9" fill="#ffffff" stroke="#c8d5e1" stroke-width="1"/>
+<rect x="224" y="364" width="4" height="61" rx="2" fill="#335f86" stroke="none" stroke-width="1"/>
+<text x="242" y="381" font-size="23" font-weight="700" text-anchor="start" letter-spacing="0" fill="#142b44">API transacional</text>
+<text x="242" y="408" font-size="18" font-weight="400" text-anchor="start" letter-spacing="0" fill="#445872">FastAPI · mensagens, persistência e eventos SSE</text>
+<rect x="853" y="350" width="658" height="89" rx="9" fill="#ffffff" stroke="#c8d5e1" stroke-width="1"/>
+<rect x="853" y="364" width="4" height="61" rx="2" fill="#276e5a" stroke="none" stroke-width="1"/>
+<text x="871" y="381" font-size="23" font-weight="700" text-anchor="start" letter-spacing="0" fill="#142b44">Coletor local</text>
+<text x="871" y="408" font-size="18" font-weight="400" text-anchor="start" letter-spacing="0" fill="#445872">Invocação em subprocessos e registro da medição</text>
+<path d="M 539 443 V 498" fill="none" stroke="#335f86" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" marker-start="url(#app-start)" marker-end="url(#app-end)"/>
+<path d="M 1170 443 V 498" fill="none" stroke="#276e5a" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" marker-start="url(#research-start)" marker-end="url(#research-end)"/>
+<path d="M 248 443 V 714" fill="none" stroke="#335f86" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#app-end)" stroke-dasharray="7 5"/>
+<path d="M 1487 443 V 714" fill="none" stroke="#276e5a" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#research-end)" stroke-dasharray="7 5"/>
+<text x="552" y="471" font-size="16" font-weight="700" text-anchor="start" letter-spacing="0" fill="#335f86">HTTP</text>
+<text x="1184" y="471" font-size="16" font-weight="700" text-anchor="start" letter-spacing="0" fill="#276e5a">Chamada direta</text>
+<rect x="305" y="503" width="1115" height="153" rx="10" fill="#edf1f2" stroke="#aebec4" stroke-width="1"/>
+<text x="329" y="538" font-size="31" font-weight="700" text-anchor="start" letter-spacing="0" fill="#193f55">Núcleo dos agentes</text>
+<text x="329" y="569" font-size="20" font-weight="400" text-anchor="start" letter-spacing="0" fill="#4a5a62">Python e Strands Agents</text>
+<rect x="329" y="586" width="326" height="47" rx="6" fill="#ffffff" stroke="#c5d0d2" stroke-width="1"/>
+<text x="341" y="614" font-size="18" font-weight="700" text-anchor="start" letter-spacing="0" fill="#193f55">Centralizada</text>
+<text x="461" y="614" font-size="16" font-weight="400" text-anchor="start" letter-spacing="0" fill="#4a5a62">Supervisor e especialistas</text>
+<rect x="669" y="586" width="346" height="47" rx="6" fill="#ffffff" stroke="#c5d0d2" stroke-width="1"/>
+<text x="681" y="614" font-size="18" font-weight="700" text-anchor="start" letter-spacing="0" fill="#193f55">Workflow</text>
+<text x="781" y="614" font-size="16" font-weight="400" text-anchor="start" letter-spacing="0" fill="#4a5a62">Roteamento e etapas</text>
+<rect x="1029" y="586" width="367" height="47" rx="6" fill="#ffffff" stroke="#c5d0d2" stroke-width="1"/>
+<text x="1041" y="614" font-size="18" font-weight="700" text-anchor="start" letter-spacing="0" fill="#193f55">Swarm</text>
+<text x="1108" y="614" font-size="16" font-weight="400" text-anchor="start" letter-spacing="0" fill="#4a5a62">Delegações entre especialistas</text>
+<path d="M 717 660 V 714" fill="none" stroke="#6b7c84" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" marker-start="url(#neutral-start)" marker-end="url(#neutral-end)"/>
+<path d="M 1076 660 V 714" fill="none" stroke="#6b7c84" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" marker-start="url(#neutral-start)" marker-end="url(#neutral-end)"/>
+<rect x="224" y="718" width="308" height="128" rx="8" fill="#ffffff" stroke="#cdd5d3" stroke-width="1"/>
+<text x="239" y="748" font-size="21" font-weight="700" text-anchor="start" letter-spacing="0" fill="#335f86">Persistência da aplicação</text>
+<text x="239" y="774" font-size="17" font-weight="700" text-anchor="start" letter-spacing="0" fill="#40565f">PostgreSQL</text>
+<text x="239" y="797" font-size="17" font-weight="400" text-anchor="start" letter-spacing="0" fill="#40565f">Conversas e eventos</text>
+<text x="239" y="820" font-size="17" font-weight="400" text-anchor="start" letter-spacing="0" fill="#40565f">Anexos em disco ou S3/MinIO</text>
+<rect x="547" y="718" width="334" height="128" rx="8" fill="#ffffff" stroke="#cdd5d3" stroke-width="1"/>
+<text x="562" y="748" font-size="21" font-weight="700" text-anchor="start" letter-spacing="0" fill="#193f55">Ferramentas de domínio</text>
+<text x="562" y="774" font-size="17" font-weight="700" text-anchor="start" letter-spacing="0" fill="#40565f">FAQ, estoque e descritores</text>
+<text x="562" y="797" font-size="17" font-weight="400" text-anchor="start" letter-spacing="0" fill="#40565f">Aplicação · adaptadores locais</text>
+<text x="562" y="820" font-size="17" font-weight="400" text-anchor="start" letter-spacing="0" fill="#40565f">Pesquisa · fontes controladas</text>
+<rect x="896" y="718" width="266" height="128" rx="8" fill="#ffffff" stroke="#cdd5d3" stroke-width="1"/>
+<text x="911" y="748" font-size="21" font-weight="700" text-anchor="start" letter-spacing="0" fill="#193f55">Inferência</text>
+<text x="911" y="774" font-size="17" font-weight="700" text-anchor="start" letter-spacing="0" fill="#40565f">Amazon Bedrock</text>
+<text x="911" y="797" font-size="17" font-weight="400" text-anchor="start" letter-spacing="0" fill="#40565f">Chamadas aos modelos</text>
+<rect x="1177" y="718" width="334" height="128" rx="8" fill="#ffffff" stroke="#cdd5d3" stroke-width="1"/>
+<text x="1192" y="748" font-size="21" font-weight="700" text-anchor="start" letter-spacing="0" fill="#276e5a">Registros da coleta</text>
+<text x="1192" y="774" font-size="17" font-weight="700" text-anchor="start" letter-spacing="0" fill="#40565f">Arquivos de saída</text>
+<text x="1192" y="797" font-size="17" font-weight="400" text-anchor="start" letter-spacing="0" fill="#40565f">Respostas, eventos e consumo</text>
+<rect x="48" y="873" width="1463" height="1" rx="0" fill="#d7d8d2" stroke="none" stroke-width="1"/>
+<text x="48" y="913" font-size="19" font-weight="700" text-anchor="start" letter-spacing="0" fill="#276e5a">Fronteira experimental</text>
+<text x="279" y="913" font-size="20" font-weight="400" text-anchor="start" letter-spacing="0" fill="#324953">O coletor, o núcleo e seus registros definem o percurso medido nas 600 tentativas.</text>
+</g>
+</svg>

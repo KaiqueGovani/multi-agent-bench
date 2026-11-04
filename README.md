@@ -122,42 +122,13 @@ npm run dev
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         Web Chat (Next.js)                          │
-│                    Text + Image Input / Event Timeline              │
-└───────────────────────────────┬─────────────────────────────────────┘
-                                │ HTTP Multipart / SSE
-                                ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                      Web Chat Adapter                               │
-│              Normalizes channel-specific payloads                   │
-└───────────────────────────────┬─────────────────────────────────────┘
-                                │ NormalizedInboundMessage
-                                ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                      Application Layer                              │
-│         Conversation Management / Message Processing                │
-├─────────────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────┐  │
-│  │  Services   │  │  Runtime    │  │   Storage   │  │  Streaming │  │
-│  │             │  │ Hand-off    │  │   Adapter   │  │   (SSE)    │  │
-│  └─────────────┘  └─────────────┘  └─────────────┘  └────────────┘  │
-└───────────────────────────────┬─────────────────────────────────────┘
-                                │
-        ┌───────────────────────┼───────────────────────┐
-        ▼                       ▼                       ▼
-┌───────────────┐      ┌───────────────┐      ┌───────────────┐
-│  PostgreSQL   │      │  MinIO / S3   │      │  Future:      │
-│  Persistence  │      │  Attachments  │      │  WhatsApp     │
-└───────────────┘      └───────────────┘      └───────────────┘
-                                │
-                                ▼
-                    ┌──────────────────────────┐
-                    │ Agent Runtime (Strands)  │
-                    │ Bedrock / OTEL / Callbacks│
-                    └──────────────────────────┘
-```
+The interactive application and the v4.4 collector share the agent runtime.
+The experimental collector invokes it directly and writes local results.
+
+![Interactive application and experimental collection paths](docs/architecture/02-dois-percursos.png)
+
+The [architecture gallery](docs/architecture/README.md) includes five views of
+the system and a separate technology stack diagram, each available as SVG and PNG.
 
 ### Key Design Decisions
 
