@@ -47,7 +47,8 @@ class RunService:
         trace_id: str | None = None,
         status: RunStatus = RunStatus.PENDING,
     ) -> Run:
-        conversation = self._db.get(ConversationModel, conversation_id)
+        conversation = self._db.scalar(select(ConversationModel).where(
+            ConversationModel.id == conversation_id).with_for_update())
         if conversation is None:
             raise RunValidationError("Conversation not found")
         message = self._db.get(MessageModel, message_id)

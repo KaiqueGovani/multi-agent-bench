@@ -51,7 +51,8 @@ class MessageService:
         if inbound.conversation_id is None:
             raise MessageValidationError("Conversation is required")
 
-        conversation = self._db.get(ConversationModel, inbound.conversation_id)
+        conversation = self._db.scalar(select(ConversationModel).where(
+            ConversationModel.id == inbound.conversation_id).with_for_update())
         if conversation is None:
             raise MessageValidationError("Conversation not found")
 

@@ -45,6 +45,7 @@ class AttachmentStatus(StrEnum):
 
 class ProcessingEventType(StrEnum):
     CONVERSATION_CREATED = "conversation.created"
+    CONVERSATION_UPDATED = "conversation.updated"
     MESSAGE_RECEIVED = "message.received"
     ATTACHMENT_UPLOAD_STARTED = "attachment.upload.started"
     ATTACHMENT_UPLOAD_COMPLETED = "attachment.upload.completed"

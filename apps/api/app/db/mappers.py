@@ -39,6 +39,7 @@ from app.schemas.enums import (
 def conversation_to_schema(model: ConversationModel) -> Conversation:
     return Conversation(
         id=model.id,
+        title=(model.metadata_json or {}).get("title"),
         channel=ChannelType(model.channel),
         created_at=model.created_at,
         updated_at=model.updated_at,

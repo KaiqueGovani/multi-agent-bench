@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.observability import get_request_id
@@ -18,6 +18,19 @@ from app.services.messages import MessageService
 from app.services.runs import RunService
 
 router = APIRouter()
+
+
+@router.delete("/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_conversation(conversation_id: UUID, db: Session = Depends(get_db_session)) -> Response:
+    try:
+        deleted = ConversationService(db).delete_conversation(conversation_id)
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=503,
+                            detail="Não foi possível excluir todos os dados. Tente novamente.") from None
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("", response_model=CreateConversationResponse, status_code=status.HTTP_201_CREATED)

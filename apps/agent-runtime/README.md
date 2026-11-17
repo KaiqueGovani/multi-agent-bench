@@ -25,6 +25,14 @@ The default local model target is:
 us.anthropic.claude-haiku-4-5-20251001-v1:0
 ```
 
+## Conversation titles
+
+The API calls authenticated `POST /conversations/title` with a first-message
+`text` to create a short Portuguese title using the current provider/model.
+Naming is separate from instrumented agent execution and has an eight-second
+deadline. It returns a short fallback if live inference is disabled or fails.
+The API owns the durable once-per-conversation claim and title persistence.
+
 ## Updating LLM settings while running
 
 The app reads `GET /settings/llm` and updates `PUT /settings/llm` with a JSON body

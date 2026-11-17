@@ -3,11 +3,13 @@ from queue import Empty
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
 
 from app.core.security import verify_ai_service_secret
 from app.db import get_db_session
+from app.db.models import ConversationModel
 from app.schemas.api import CompleteRunRequest, RunComparisonContextResponse, RunExecutionResponse
 from app.schemas.domain import Run
 from app.schemas.enums import ProcessingEventType, ProcessingStatus, RunStatus
@@ -133,6 +135,10 @@ def complete_run(
             detail="Run not found",
         )
 
+    if db.scalar(select(ConversationModel).where(
+        ConversationModel.id == existing_run.conversation_id).with_for_update()) is None:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
     updated_run = run_service.complete_run(
         run_id,
         status=request.status,
@@ -156,6 +162,11 @@ def complete_run(
     execution_service.publish_latest_event(run_id)
 
     if not bool((existing_run.experiment.model_extra or {}).get("comparisonOnly")):
+        # Completion commits release the earlier lock; recheck before appending
+        # the public event in case deletion happened between those commits.
+        if db.scalar(select(ConversationModel).where(
+            ConversationModel.id == updated_run.conversation_id).with_for_update()) is None:
+            raise HTTPException(status_code=404, detail="Conversation not found")
         event_type, event_status = _event_for_run_status(updated_run.status)
         EventService(db).record_event(
             conversation_id=updated_run.conversation_id,

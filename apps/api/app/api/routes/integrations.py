@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.security import verify_ai_service_secret
 from app.db import get_db_session
-from app.db.models import MessageModel, RunModel
+from app.db.models import ConversationModel, MessageModel, RunModel
 from app.schemas.api import IngestProcessingEventRequest, IngestRunExecutionEventRequest
 from app.schemas.domain import ProcessingEvent, RunExecutionEvent
-from app.services import ConversationService
 from app.services.events import EventService
 from app.services.run_execution import RunExecutionService
 
@@ -23,7 +23,8 @@ def ingest_ai_event(
     request: IngestProcessingEventRequest,
     db: Session = Depends(get_db_session),
 ) -> ProcessingEvent:
-    conversation = ConversationService(db).get_conversation(request.conversation_id)
+    conversation = db.scalar(select(ConversationModel).where(
+        ConversationModel.id == request.conversation_id).with_for_update())
     if conversation is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -98,7 +99,8 @@ def ingest_ai_run_event(
     request: IngestRunExecutionEventRequest,
     db: Session = Depends(get_db_session),
 ) -> RunExecutionEvent:
-    conversation = ConversationService(db).get_conversation(request.conversation_id)
+    conversation = db.scalar(select(ConversationModel).where(
+        ConversationModel.id == request.conversation_id).with_for_update())
     if conversation is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

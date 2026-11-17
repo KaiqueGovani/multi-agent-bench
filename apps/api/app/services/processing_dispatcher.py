@@ -31,6 +31,7 @@ from app.schemas.enums import MessageStatus, ProcessingEventType, ProcessingStat
 from app.services.events import EventService
 from app.services.run_execution import RunExecutionService
 from app.services.runs import RunService
+from app.services.conversation_titles import ConversationTitleService
 
 
 class ProcessingDispatcher:
@@ -49,6 +50,8 @@ class ProcessingDispatcher:
         effective_mode = self._settings.runtime_mode
         with SessionLocal() as db:
             message = db.get(MessageModel, message_id)
+            if message is None:
+                return
             if message and isinstance(message.metadata_json, dict):
                 msg_mode = message.metadata_json.get("runtimeMode") or message.metadata_json.get("runtime_mode")
                 if msg_mode in ("mock", "real"):
@@ -82,21 +85,18 @@ class ProcessingDispatcher:
         *,
         dispatches: list[dict[str, UUID]],
     ) -> None:
-        if len(dispatches) <= 1:
-            for item in dispatches:
-                self.dispatch(
-                    conversation_id=item["conversation_id"],
-                    message_id=item["message_id"],
-                    correlation_id=item["correlation_id"],
-                    run_id=item["run_id"],
-                )
+        if not dispatches:
             return
 
         run_ids = [str(d["run_id"])[:8] for d in dispatches]
         logger.info("[PARALLEL] Starting %d dispatches in parallel: %s", len(dispatches), run_ids)
         start_time = time.perf_counter()
 
-        with ThreadPoolExecutor(max_workers=len(dispatches)) as executor:
+        with ThreadPoolExecutor(max_workers=len(dispatches) + 1) as executor:
+            title = executor.submit(
+                ConversationTitleService(session_factory=SessionLocal).generate_for_first_run,
+                conversation_id=dispatches[0]["conversation_id"], message_id=dispatches[0]["message_id"],
+            )
             futures = [
                 executor.submit(
                     self.dispatch,
@@ -109,6 +109,11 @@ class ProcessingDispatcher:
             ]
             for future in futures:
                 future.result()
+            # Naming errors cannot turn an accepted run into a failed chat.
+            try:
+                title.result()
+            except Exception:
+                logger.warning("Conversation title could not be stored")
 
         elapsed_ms = int((time.perf_counter() - start_time) * 1000)
         logger.info("[PARALLEL] All %d dispatches completed in %dms", len(dispatches), elapsed_ms)
@@ -267,6 +272,8 @@ class ProcessingDispatcher:
                         RunService(db).set_model_configuration(run_id, provider=provider, model_name=model)
         except (HTTPError, URLError, OSError, RuntimeError) as exc:
             with SessionLocal() as db:
+                if db.get(ConversationModel, conversation_id) is None or db.get(RunModel, run_id) is None:
+                    return
                 RunService(db).fail_run(run_id, reason=str(exc))
                 EventService(db).record_event(
                     conversation_id=conversation_id,

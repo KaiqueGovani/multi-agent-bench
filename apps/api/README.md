@@ -166,6 +166,23 @@ loopback requests without an `Origin` header, such as the local API proxy. A
 configured key does not verify its validity with its provider; the next live
 request confirms whether it is accepted.
 
+## Conversation names and deletion
+
+The first run names its conversation using the selected model. Naming happens
+in parallel with dispatch and is excluded from run latency and token metrics.
+Only one title is generated per conversation, including multi-architecture
+turns. If naming is unavailable, a short message-based title is kept instead.
+Existing untitled conversations are named on their next dispatch, using their
+first run's message as the seed; simply opening a conversation makes no model call.
+The title is returned in conversation details/lists and published through the
+`conversation.updated` event.
+
+`DELETE /conversations/{id}` permanently removes the conversation, messages,
+runs, execution events/projections, processing events, reviews, and attachment
+objects. Late callbacks return 404. Deleting a conversation does not cancel a
+provider request already in progress, but its result cannot recreate the data.
+Storage failures keep database references so cleanup can be retried.
+
 ## Storage
 
 The default attachment storage provider is `local`. To use MinIO locally, start

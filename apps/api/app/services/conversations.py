@@ -1,17 +1,21 @@
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.adapters.storage import LocalStorageAdapter, S3CompatibleStorageAdapter
 from app.db.mappers import conversation_to_schema, review_task_to_schema
 from app.db.models import (
     ConversationModel,
+    AttachmentModel,
     MessageModel,
     ProcessingEventModel,
     ReviewTaskModel,
     RunModel,
+    RunExecutionEventModel,
+    RunExecutionProjectionModel,
 )
 from app.schemas.api import ConversationSummary, CreateConversationRequest
 from app.schemas.domain import Conversation, ReviewTask
@@ -84,6 +88,51 @@ class ConversationService:
             return None
         return conversation_to_schema(conversation)
 
+    def delete_conversation(self, conversation_id: UUID) -> bool:
+        # Serialize against title/message creation. Bulk deletes leave cascading
+        # foreign keys in charge rather than ORM relationships setting IDs null.
+        conversation = self._db.scalar(select(ConversationModel).where(
+            ConversationModel.id == conversation_id).with_for_update())
+        if conversation is None:
+            return False
+        message_ids = select(MessageModel.id).where(MessageModel.conversation_id == conversation_id)
+        attachments = self._db.scalars(select(AttachmentModel).where(
+            AttachmentModel.message_id.in_(message_ids))).all()
+        deletions = []
+        for attachment in attachments:
+            expected = f"attachments/{conversation_id}/{attachment.message_id}/{attachment.id}-"
+            if not attachment.storage_key.startswith(expected):
+                raise ValueError("Attachment storage key does not belong to this conversation")
+            metadata = attachment.metadata_json or {}
+            provider = metadata.get("storageProvider") or self._settings.storage_provider
+            if provider == "local":
+                adapter = LocalStorageAdapter()
+                adapter.resolve(attachment.storage_key, reject_symlinks=True)  # Validate every path first.
+            elif provider in {"s3", "minio"}:
+                adapter = S3CompatibleStorageAdapter(bucket=metadata.get("storageBucket"))
+                if ".." in attachment.storage_key.split("/"):
+                    raise ValueError("Invalid attachment storage key")
+            else:
+                raise ValueError("Unknown attachment storage provider")
+            deletions.append((adapter, attachment.storage_key))
+
+        # Missing objects are harmless on retry. On storage failure no database
+        # rows are committed, preserving the keys needed to retry cleanup.
+        for adapter, key in deletions:
+            adapter.delete(key)
+        for model in (RunExecutionEventModel, RunExecutionProjectionModel, ReviewTaskModel,
+                      ProcessingEventModel, RunModel):
+            self._db.execute(delete(model).where(model.conversation_id == conversation_id),
+                             execution_options={"synchronize_session": False})
+        self._db.execute(delete(AttachmentModel).where(AttachmentModel.message_id.in_(message_ids)),
+                         execution_options={"synchronize_session": False})
+        self._db.execute(delete(MessageModel).where(MessageModel.conversation_id == conversation_id),
+                         execution_options={"synchronize_session": False})
+        self._db.execute(delete(ConversationModel).where(ConversationModel.id == conversation_id),
+                         execution_options={"synchronize_session": False})
+        self._db.commit()
+        return True
+
     def list_conversation_summaries(self, *, limit: int = 30) -> list[ConversationSummary]:
         statement = (
             select(ConversationModel)
@@ -131,6 +180,7 @@ class ConversationService:
 
         return ConversationSummary(
             conversation_id=model.id,
+            title=(model.metadata_json or {}).get("title"),
             status=ConversationStatus(model.status),
             channel=model.channel,
             architecture_mode=(model.metadata_json or {}).get("architectureMode"),

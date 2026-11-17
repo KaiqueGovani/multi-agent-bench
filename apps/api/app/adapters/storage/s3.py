@@ -8,9 +8,9 @@ from app.core.config import get_settings
 class S3CompatibleStorageAdapter:
     provider = "s3"
 
-    def __init__(self) -> None:
+    def __init__(self, *, bucket: str | None = None) -> None:
         settings = get_settings()
-        self._bucket = settings.storage_bucket
+        self._bucket = bucket or settings.storage_bucket
         self._client = self._create_client(settings)
 
     def save(
@@ -38,6 +38,11 @@ class S3CompatibleStorageAdapter:
             raise ValueError("Invalid storage key")
         response = self._client.get_object(Bucket=self._bucket, Key=storage_key)
         return response["Body"].read()
+
+    def delete(self, storage_key: str) -> None:
+        if storage_key.startswith("/") or ".." in storage_key.split("/"):
+            raise ValueError("Invalid storage key")
+        self._client.delete_object(Bucket=self._bucket, Key=storage_key)
 
     @staticmethod
     def _create_client(settings):

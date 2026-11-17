@@ -71,6 +71,7 @@ class OperationalMetadata(ApiModel):
 
 class Conversation(ApiModel):
     id: UUID
+    title: str | None = None
     channel: ChannelType
     created_at: datetime
     updated_at: datetime

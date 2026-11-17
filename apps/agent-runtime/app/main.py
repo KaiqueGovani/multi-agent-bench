@@ -5,6 +5,7 @@ import json
 import logging
 import secrets
 from threading import Lock
+import asyncio
 
 from fastapi import FastAPI, HTTPException, Request, Response, status
 
@@ -13,6 +14,7 @@ from app.core.config import Settings, get_settings
 from app.core.models import AnthropicModel, get_api_key, get_model_id
 from app.schemas.runtime import HealthResponse, LlmModelListResponse, LlmRuntimeStatus, RuntimeDispatchRequest, RuntimeDispatchResponse
 from app.services.execution import RuntimeExecutionService
+from app.services.conversation_titles import generate_title
 from app.services.model_discovery import discover_models, ModelDiscoveryError
 from app.telemetry.setup import configure_logging, configure_telemetry
 
@@ -88,6 +90,22 @@ def create_app() -> FastAPI:
             authorized = authorized and "origin" not in request.headers
         if not authorized:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Runtime settings access denied.")
+
+    @application.post("/conversations/title")
+    async def conversation_title(request: Request, response: Response) -> dict[str, str]:
+        authorize_settings(request)
+        try:
+            payload = json.loads(await request.body())
+        except (ValueError, UnicodeDecodeError):
+            raise HTTPException(status_code=400, detail="A conversation message is required.") from None
+        text = payload.get("text") if isinstance(payload, dict) else None
+        if not isinstance(text, str) or not text.strip() or len(text) > 2000:
+            raise HTTPException(status_code=400, detail="A conversation message is required.")
+        response.headers["Cache-Control"] = "no-store"
+        try:
+            return await asyncio.wait_for(asyncio.to_thread(generate_title, text, current_settings()), timeout=8)
+        except TimeoutError:
+            return {"title": " ".join(text.split()[:8])[:80], "source": "fallback"}
 
     async def read_settings_payload(request: Request, detail: str) -> dict:
         # Parse explicitly so validation errors never include the submitted secret.

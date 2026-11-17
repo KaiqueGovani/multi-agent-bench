@@ -28,3 +28,6 @@ class StorageAdapter(Protocol):
 
     def read(self, storage_key: str) -> bytes:
         ...
+
+    def delete(self, storage_key: str) -> None:
+        ...

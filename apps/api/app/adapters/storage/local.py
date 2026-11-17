@@ -36,14 +36,32 @@ class LocalStorageAdapter:
     def read(self, storage_key: str) -> bytes:
         return self.resolve(storage_key).read_bytes()
 
-    def resolve(self, storage_key: str) -> Path:
+    def delete(self, storage_key: str) -> None:
+        path = self.resolve(storage_key, reject_symlinks=True)
+        path.unlink(missing_ok=True)
+        base = self._base_path.resolve()
+        for directory in path.parents:
+            if directory == base:
+                break
+            try:
+                directory.rmdir()
+            except OSError:
+                break
+
+    def resolve(self, storage_key: str, *, reject_symlinks: bool = False) -> Path:
         relative_path = Path(storage_key)
         if relative_path.is_absolute() or ".." in relative_path.parts:
             raise ValueError("Invalid storage key")
+        if reject_symlinks:
+            candidate = self._base_path
+            for part in relative_path.parts:
+                candidate = candidate / part
+                if candidate.is_symlink():
+                    raise ValueError("Invalid storage key")
         path = self._base_path / relative_path
         resolved_base = self._base_path.resolve()
         resolved_path = path.resolve()
-        if not str(resolved_path).startswith(str(resolved_base)):
+        if not resolved_path.is_relative_to(resolved_base):
             raise ValueError("Invalid storage key")
         return resolved_path
 

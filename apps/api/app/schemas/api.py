@@ -62,6 +62,7 @@ class ConversationDetailResponse(ApiModel):
 
 class ConversationSummary(ApiModel):
     conversation_id: UUID
+    title: str | None = None
     status: ConversationStatus
     channel: ChannelType
     architecture_mode: str | None = None
@@ -97,6 +98,7 @@ class DashboardDistributionItem(ApiModel):
 
 class DashboardConversationItem(ApiModel):
     conversation_id: UUID
+    title: str | None = None
     status: ConversationStatus
     updated_at: datetime
     latest_run_id: UUID | None = None
