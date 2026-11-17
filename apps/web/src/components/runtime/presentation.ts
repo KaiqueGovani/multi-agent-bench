@@ -1,4 +1,5 @@
 import type { ArchitectureMode } from "@/lib/types";
+import { ORCHESTRATOR_LABEL, formatDisplayTerminology } from "@/lib/ui-terminology";
 
 const ARCHITECTURE_LABELS: Record<ArchitectureMode, string> = {
   all_architectures: "Comparação das arquiteturas",
@@ -18,14 +19,17 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const ACTOR_LABELS: Record<string, string> = {
-  supervisor: "Agente Supervisor",
+  supervisor: ORCHESTRATOR_LABEL,
+  orchestrator: ORCHESTRATOR_LABEL,
+  orquestrador: ORCHESTRATOR_LABEL,
+  orchestrator_agent: ORCHESTRATOR_LABEL,
   faq: "Agente FAQ",
   stock: "Agente de Estoque",
   attachments: "Agente de Anexos",
   router: "Agente Roteador",
   coordinator: "Par Inicial (Swarm)",
   synthesizer: "Agente de Síntese",
-  supervisor_agent: "Agente Supervisor",
+  supervisor_agent: ORCHESTRATOR_LABEL,
   faq_agent: "Agente FAQ",
   stock_agent: "Agente de Estoque",
   image_intake_agent: "Agente de Anexos",
@@ -78,7 +82,7 @@ export function formatActorLabel(actorName: string | null | undefined): string {
   if (!actorName) {
     return "Runtime";
   }
-  return ACTOR_LABELS[actorName] ?? humanizeToken(actorName);
+  return ACTOR_LABELS[actorName.toLowerCase()] ?? humanizeToken(actorName);
 }
 
 export function formatPhaseLabel(phase: string | null | undefined): string {
@@ -89,9 +93,9 @@ export function formatPhaseLabel(phase: string | null | undefined): string {
 }
 
 function humanizeToken(value: string): string {
-  return value
+  return formatDisplayTerminology(value
     .replaceAll(".", " ")
     .replaceAll("_", " ")
     .trim()
-    .replace(/\b\w/g, (match) => match.toUpperCase());
+    .replace(/\b\w/g, (match) => match.toUpperCase()));
 }

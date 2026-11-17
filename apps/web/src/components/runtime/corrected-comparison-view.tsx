@@ -1,8 +1,9 @@
 import React from "react";
 import type { ComparisonArchitecture, CorrectedComparisonData } from "@/lib/corrected-comparison/results";
+import { ORCHESTRATOR_LABEL } from "@/lib/ui-terminology";
 
 const labels: Record<ComparisonArchitecture, string> = {
-  centralized_orchestration: "Supervisor + especialistas",
+  centralized_orchestration: `${ORCHESTRATOR_LABEL} + especialistas`,
   structured_workflow: "Workflow estruturado",
   decentralized_swarm: "Swarm descentralizado",
 };
@@ -19,7 +20,7 @@ export function CorrectedComparisonView({ data }: { data: CorrectedComparisonDat
       <header className="space-y-3 border-b pb-5">
         <a className="text-sm text-primary underline underline-offset-4" href="/">Voltar ao atendimento</a>
         <h1 className="text-2xl font-semibold tracking-tight">Comparação arquitetural corrigida · v4.2</h1>
-        <p className="max-w-4xl text-sm text-muted-foreground">A condição centralizada usa um supervisor que consulta agentes especialistas como ferramentas e produz a resposta final. Workflow e swarm compõem o mesmo lote novo.</p>
+        <p className="max-w-4xl text-sm text-muted-foreground">A condição centralizada usa um Orquestrador que consulta agentes especialistas como ferramentas e produz a resposta final. Workflow e swarm compõem o mesmo lote novo.</p>
       </header>
 
       {data.state === "pending" ? (

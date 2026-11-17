@@ -52,44 +52,44 @@
     "bytes": 705
   },
   "figures/01_sucesso.png": {
-    "sha256": "e93eece3507a2e5b04db221044cfdab0117ea32e52e9c0a5f3bc02f32f06d6d2",
-    "bytes": 42730
+    "sha256": "072b267117b379bf6432312095c4913b352fb5ab60ab552112ebe49655eba16e",
+    "bytes": 43322
   },
   "figures/01_sucesso.svg": {
-    "sha256": "8b1bf68105945853b0d18aa359a91639df222a85a17242e6d4d95c150cc10a53",
-    "bytes": 8360
+    "sha256": "6a957bfeb996db4e56164b025a6ad4664f5d59c0bdede691260a7a53e008c4ce",
+    "bytes": 8362
   },
   "figures/02_latencia_custo_sucesso.png": {
-    "sha256": "47594450c60e1247087b1c80813d6d0130ca2ef1cc2b6dfe7044605ae6ede439",
-    "bytes": 120919
+    "sha256": "2f0feea56aa83ee5ae743cff538c63abd46ad2a47064ff3dbadcefa02e8ecc21",
+    "bytes": 124553
   },
   "figures/02_latencia_custo_sucesso.svg": {
-    "sha256": "b58fd41d038eeaf3de54332a4bf931db8660845ab999f5c15c08fa668c183fa8",
-    "bytes": 24442
+    "sha256": "9ccf1ed91b572462783fd2d9cf7bf0ba1a50ece59b26905ae2b213d54693a54e",
+    "bytes": 24439
   },
   "figures/03_categorias.png": {
-    "sha256": "eb5ee17dfaf6bf43e50eda4735d59ad429dd0677ade9c655784138731e7ab2c4",
-    "bytes": 77658
+    "sha256": "9f64993df4da0a8b304dd4e9e4742f9f50392b2c7c1bbd3b93dde5db1a4a2871",
+    "bytes": 77995
   },
   "figures/03_categorias.svg": {
-    "sha256": "5ad9f560136dde584d043b6ccb5142e97558c5bf19e16f07c7919b907ce40a97",
-    "bytes": 13755
+    "sha256": "612b5e551ff24c309227eac76a7f93ea07ae44b92128b9e5f486f95369015acd",
+    "bytes": 13757
   },
   "figures/04_consistencia.png": {
-    "sha256": "fe5e035f549775511487948b1083e5689231f1a81fda1e8f5f9267b993b81c53",
-    "bytes": 67061
+    "sha256": "3e9864147321417295345c69a4bb35ba9c0073e42e4c5d17179ce351153b2e84",
+    "bytes": 67371
   },
   "figures/04_consistencia.svg": {
-    "sha256": "9d35e7bc98cb1e69b6520016ac7f6ceaa86e789f43f562d7312937df06ad63e9",
-    "bytes": 11157
+    "sha256": "eab17e75c01cfc312b8fea3208ee63ef5e76adbcb5b62cf48ea0b1714bffcfe4",
+    "bytes": 11159
   },
   "figures/05_falhas.png": {
-    "sha256": "bcf28603598c05a5f32498f27c6b10b95f2aec0f28548cc27ce9d340831d396b",
-    "bytes": 65006
+    "sha256": "4cf9bba3b178470a9c0db12493732f6ee1fffe34ee8c7c104f0eb755fa4ad809",
+    "bytes": 65318
   },
   "figures/05_falhas.svg": {
-    "sha256": "49b89d36e770a8a0ad32ceadb79a5c2daaa1742befdbbf13605f10d5eda66c15",
-    "bytes": 13255
+    "sha256": "d8bee1e4484a36a35cd903939a6e6035f0e5ca7cf443d5085fdc85900ba17eaf",
+    "bytes": 13257
   },
   "historical-comparison.csv": {
     "sha256": "365aec99a8ea35970664558fa6be5b849aacb5c42d94c1d1d58204cede64f4f5",

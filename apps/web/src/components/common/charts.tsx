@@ -18,6 +18,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { formatDisplayTerminology } from "@/lib/ui-terminology";
 
 const COLORS = ["#2563eb", "#7c3aed", "#059669", "#d97706", "#dc2626", "#6366f1"];
 
@@ -291,7 +292,7 @@ function formatLabel(value: string): string {
     "image/webp": "WebP",
     "application/pdf": "PDF",
   };
-  return LABEL_MAP[value] ?? value.replaceAll("_", " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return LABEL_MAP[value] ?? formatDisplayTerminology(value.replaceAll("_", " ").replace(/\b\w/g, (c) => c.toUpperCase()));
 }
 
 function distributionColor(key: string, index: number): string {

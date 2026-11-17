@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 
 import { formatActorLabel, formatArchitectureLabel } from "@/components/runtime/presentation";
+import { formatDisplayTerminology } from "@/lib/ui-terminology";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -291,9 +292,9 @@ function EventRow({
             <div className="flex min-w-0 gap-2">
               <EventIcon aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
               <div className="min-w-0">
-                <CardTitle className="break-all text-sm">{eventName}</CardTitle>
+                <CardTitle className="break-all text-sm">{formatDisplayTerminology(eventName)}</CardTitle>
                 {event.actorName ? (
-                  <p className="break-words text-xs text-muted-foreground" title={event.actorName}>
+                  <p className="break-words text-xs text-muted-foreground" title={formatActorLabel(event.actorName)}>
                     {formatActorLabel(event.actorName)}
                   </p>
                 ) : null}
@@ -510,7 +511,7 @@ function EventMetaBadge({ label, value }: { label: string; value: string }) {
 function buildFilterOptions(events: ProcessingEvent[]) {
   return {
     actorNames: uniqueOptions(events.map((event) => event.actorName ?? null), formatActorLabel),
-    eventTypes: uniqueOptions(events.map(getEventName)),
+    eventTypes: uniqueOptions(events.map(getEventName), formatDisplayTerminology),
     messageIds: uniqueOptions(events.map((event) => event.messageId ?? null), shortId),
     runIds: uniqueOptions(events.map((event) => getEventRunId(event)), shortId),
     sources: uniqueOptions(events.map((event) => getEventSource(event))),

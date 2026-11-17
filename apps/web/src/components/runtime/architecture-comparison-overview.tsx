@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRunExecution } from "@/hooks/use-run-execution";
 import type { ArchitectureMode, JsonObject, Run, RunExecutionEvent } from "@/lib/types";
+import { formatDisplayTerminology } from "@/lib/ui-terminology";
 
 interface ArchitectureComparisonOverviewProps {
   runs: Run[];
@@ -639,11 +640,11 @@ function humanizeToken(value: string): string {
   if (TOOL_NAME_MAP[lower]) {
     return TOOL_NAME_MAP[lower];
   }
-  return value
+  return formatDisplayTerminology(value
     .replaceAll("-", " ")
     .replaceAll("_", " ")
     .trim()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+    .replace(/\b\w/g, (char) => char.toUpperCase()));
 }
 
 function formatDuration(value: number | null | undefined): string {

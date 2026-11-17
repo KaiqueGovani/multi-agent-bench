@@ -24,6 +24,7 @@ import { createPortal } from "react-dom";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { observedAgentGraph } from "@/components/runtime/observed-agent-graph";
 import type { RunExecutionEvent } from "@/lib/types";
+import { ORCHESTRATOR_LABEL, formatDisplayTerminology } from "@/lib/ui-terminology";
 
 // ---------------------------------------------------------------------------
 // Shared types
@@ -77,7 +78,7 @@ function AgentEventTimeline({ events }: { events: RunExecutionEvent[] }) {
             >
               <EventDot family={event.eventFamily} status={event.status} />
               <span className="min-w-0 flex-1 truncate font-medium">
-                {event.eventFamily}.{event.eventName}
+                {formatDisplayTerminology(`${event.eventFamily}.${event.eventName}`)}
               </span>
               {event.toolName ? (
                 <Badge variant="outline" className="text-[9px] px-1 py-0">
@@ -410,9 +411,9 @@ const AgentNode = memo(function AgentNode({ data }: NodeProps<Node<AgentNodeData
               <div className="flex items-center justify-between gap-3 border-b px-3 py-2">
                 <div className="min-w-0">
                   <p className="truncate text-xs font-semibold" title={actorName}>{actorName}</p>
-                  <span className="block truncate text-[11px] text-muted-foreground" title={nodeId ?? undefined}>
+                  <span className="block truncate text-[11px] text-muted-foreground" title={nodeId ? formatDisplayTerminology(nodeId) : undefined}>
                     {eventCount} {eventCount === 1 ? "evento" : "eventos"}
-                    {nodeId ? ` · ${nodeId}` : ""}
+                    {nodeId ? ` · ${formatDisplayTerminology(nodeId)}` : ""}
                   </span>
                 </div>
                 <button
@@ -663,14 +664,17 @@ function FlowWrapper({
 // ---------------------------------------------------------------------------
 
 const AGENT_NAME_MAP: Record<string, string> = {
-  supervisor: "Supervisor",
+  supervisor: ORCHESTRATOR_LABEL,
+  orchestrator: ORCHESTRATOR_LABEL,
+  orquestrador: ORCHESTRATOR_LABEL,
+  orchestrator_agent: ORCHESTRATOR_LABEL,
   faq: "FAQ",
   stock: "Estoque",
   attachments: "Anexos",
   router: "Roteador",
   coordinator: "Iniciador",
   synthesizer: "Sintetizador",
-  supervisor_agent: "Supervisor",
+  supervisor_agent: ORCHESTRATOR_LABEL,
   faq_agent: "FAQ",
   stock_agent: "Estoque",
   image_intake_agent: "Imagem",
@@ -715,11 +719,11 @@ const TOOL_LABEL_MAP: Record<string, string> = {
 };
 
 function formatToolLabel(name: string): string {
-  return TOOL_LABEL_MAP[name] ?? name;
+  return TOOL_LABEL_MAP[name] ?? formatDisplayTerminology(name);
 }
 
 function formatAgentName(name: string): string {
-  return AGENT_NAME_MAP[name] ?? name;
+  return AGENT_NAME_MAP[name.toLowerCase()] ?? formatDisplayTerminology(name);
 }
 
 function statusBadgeVariant(status: string): BadgeProps["variant"] {
@@ -908,7 +912,7 @@ export function CentralizedFlow({
 
     const nodes: Node<AgentNodeData>[] = [
       makeNode(
-        "supervisor_agent", "Agente Supervisor", "orquestra e roteia",
+        "supervisor_agent", ORCHESTRATOR_LABEL, "orquestra e roteia",
         supStatus, !terminal, 0, 130, "info", getNodeId(sup), undefined, supEvents,
       ),
       ...specialists.map((s) => {

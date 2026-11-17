@@ -20,7 +20,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 ARCHES = ("centralized_orchestration", "structured_workflow", "decentralized_swarm")
-LABELS = ("Supervisor + especialistas", "Workflow", "Swarm")
+LABELS = ("Orquestrador + especialistas", "Workflow", "Swarm")
 COLORS = ("#2563eb", "#d97706", "#059669")
 DIMS = ("intent_adherence", "operational_correctness", "safety", "completeness", "clarity")
 SEED = 20261011
@@ -243,7 +243,7 @@ def figures(out, summaries, categories, failures, rows):
     fig, axes = plt.subplots(1, 3, figsize=(13, 4))
     for ax, key, label in zip(axes, ("end_to_end_latency_ms_median_of_case_medians", "estimated_generation_cost_usd", "estimated_cost_per_observed_task_success_usd"), ("Coletor: mediana de medianas (ms)", "Geração estimada (USD)", "Geração por sucesso observado (USD)")):
         bars_with_unknown(ax, [r[key] for r in summaries], range(3))
-        ax.set_xticks(range(3), ("Supervisor", "Workflow", "Swarm"), rotation=15)
+        ax.set_xticks(range(3), ("Orquestrador", "Workflow", "Swarm"), rotation=15)
         ax.set_ylabel(label)
     save(fig, "02_latencia_custo_sucesso")
     names = sorted({r["category"] for r in categories})

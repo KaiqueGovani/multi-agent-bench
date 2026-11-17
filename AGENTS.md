@@ -26,3 +26,7 @@ Quando for solicitado criar commits neste repositorio, use mensagens claras, em 
 ## Push
 
 Envie as alteracoes verificadas para `main` por padrao. Use outra branch como destino apenas quando o usuario pedir explicitamente.
+
+## Terminologia da interface
+
+Use **Orquestrador** para o agente de orquestracao em rotulos, descricoes e graficos da interface. Preserve os identificadores tecnicos e os dados originais dos experimentos.

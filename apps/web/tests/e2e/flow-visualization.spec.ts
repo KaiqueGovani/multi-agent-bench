@@ -71,9 +71,9 @@ test.describe("flow visualization improvements", () => {
     await expect(responseNode).toBeVisible();
     await expect(responseNode).toContainText("resp");
 
-    // Supervisor node should show event count
-    const supervisorNode = page.getByTestId("runtime-visual-centralized").locator(".react-flow__node").filter({ hasText: "Supervisor" });
-    await expect(supervisorNode).toBeVisible();
+    // The orchestrator label is consistent with the other UI surfaces.
+    const orchestratorNode = page.getByTestId("runtime-visual-centralized").locator(".react-flow__node").filter({ hasText: "Orquestrador" });
+    await expect(orchestratorNode).toBeVisible();
   });
 
   test("flow panel shows architecture picker for multi-architecture runs", async ({ page }) => {

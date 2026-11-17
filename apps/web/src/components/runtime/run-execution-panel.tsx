@@ -24,6 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CentralizedFlow, SwarmFlow, WorkflowFlow } from "@/components/runtime/architecture-flow";
 import { formatActorLabel, formatArchitectureLabel, formatPhaseLabel, formatStatusLabel } from "@/components/runtime/presentation";
 import { useRunExecution } from "@/hooks/use-run-execution";
+import { formatDisplayTerminology } from "@/lib/ui-terminology";
 import type {
   ArchitectureMode,
   JsonObject,
@@ -324,7 +325,7 @@ export function RunExecutionPanel({
                             {formatActorLabel(event.actorName ?? "runtime")}
                           </span>
                           <span className="ml-auto text-muted-foreground">
-                            {event.eventFamily}.{event.eventName}
+                            {formatDisplayTerminology(`${event.eventFamily}.${event.eventName}`)}
                           </span>
                         </motion.div>
                       ))
@@ -372,7 +373,7 @@ export function RunExecutionPanel({
                       {replayEvent ? (
                         <>
                           <p className="font-medium text-foreground">
-                            {replayEvent.eventFamily}.{replayEvent.eventName}
+                            {formatDisplayTerminology(`${replayEvent.eventFamily}.${replayEvent.eventName}`)}
                           </p>
                           <p className="mt-1 text-xs text-muted-foreground">
                             {formatActorLabel(replayEvent.actorName ?? "runtime")}{" "}
@@ -380,7 +381,7 @@ export function RunExecutionPanel({
                           </p>
                           <p className="mt-3 text-xs text-muted-foreground">
                             seq {replayEvent.sequenceNo} ·{" "}
-                            {replayEvent.nodeId ?? "no-node"}
+                            {formatDisplayTerminology(replayEvent.nodeId ?? "no-node")}
                           </p>
                         </>
                       ) : (
@@ -410,7 +411,7 @@ export function RunExecutionPanel({
                           <div className="rounded-md border bg-background p-3" key={event.id}>
                             <div className="flex items-center justify-between gap-2">
                               <span className="font-medium">
-                                {event.eventFamily}.{event.eventName}
+                                {formatDisplayTerminology(`${event.eventFamily}.${event.eventName}`)}
                               </span>
                               <Badge variant={statusBadgeVariant(event.status)}>
                                 {formatStatusLabel(event.status)}

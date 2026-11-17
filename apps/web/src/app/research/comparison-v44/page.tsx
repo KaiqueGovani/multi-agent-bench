@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { loadComparisonV44, V44_FIGURES } from "@/lib/corrected-comparison/v44-results";
+import { ORCHESTRATOR_LABEL } from "@/lib/ui-terminology";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Comparação arquitetural v4.4 · MAB" };
 
 const labels = {
-  centralized_orchestration: "Supervisor + especialistas",
+  centralized_orchestration: `${ORCHESTRATOR_LABEL} + especialistas`,
   structured_workflow: "Workflow estruturado",
   decentralized_swarm: "Swarm com handoffs",
 };
@@ -34,7 +35,7 @@ export default async function ComparisonV44Page() {
           <Link href="/research/comparison-v42" className={link}>Histórico v4.2</Link>
         </nav>
         <h1 className="text-2xl font-semibold tracking-tight">Comparação arquitetural v4.4</h1>
-        <p className="max-w-4xl text-sm text-muted-foreground">Supervisor com agentes especialistas como ferramentas, workflow estruturado e swarm com coordenador, handoffs entre especialistas e síntese central, comparados nos mesmos cenários derivados de conversas do WhatsApp.</p>
+        <p className="max-w-4xl text-sm text-muted-foreground">Orquestrador com agentes especialistas como ferramentas, workflow estruturado e swarm com coordenador, handoffs entre especialistas e síntese central, comparados nos mesmos cenários derivados de conversas do WhatsApp.</p>
       </header>
 
       {data.state === "pending" ? (

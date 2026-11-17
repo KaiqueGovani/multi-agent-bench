@@ -69,7 +69,7 @@ test("actual specialist and its returned text are shown without a fabricated syn
   // same toolCallId and the completed record must not inflate the node badge.
   await expect(flow.locator(".react-flow__node").filter({ hasText: "Estoque" })).toContainText("1 tool");
   await expect(flow.locator(".react-flow__node").filter({ hasText: "Estoque" })).not.toContainText("2 tool");
-  await expect(flow.locator(".react-flow__node").filter({ hasText: "Supervisor" })).toContainText("1 tool");
+  await expect(flow.locator(".react-flow__node").filter({ hasText: "Orquestrador" })).toContainText("1 tool");
   await flow.locator(".react-flow__node").filter({ hasText: "Estoque" }).hover();
   await page.getByRole("button", { name: "agent.completed" }).click();
   await expect(page.getByText("Consulta controlada: dipirona, 17 frascos.", { exact: true })).toBeVisible();
@@ -83,4 +83,17 @@ test("actual specialist and its returned text are shown without a fabricated syn
   await page.keyboard.press("Escape");
   await expect(page.getByRole("region", { name: "Eventos de Estoque" })).toHaveCount(0);
   await expect(trigger).toBeFocused();
+
+  // The observed trace uses "supervisor", while legacy processing events use
+  // "supervisor_agent". Both render the same label without changing filter IDs.
+  await page.getByRole("button", { name: "Atividade", exact: true }).click();
+  const activity = page.getByTestId("activity-panel");
+  await expect(activity.getByTestId("activity-event").getByText("Orquestrador", { exact: true })).toBeVisible();
+  await expect(activity).not.toContainText("Supervisor");
+  await activity.getByRole("button", { name: "Filtros", exact: true }).click();
+  const actor = activity.getByRole("combobox", { name: "Ator", exact: true });
+  await expect(actor.getByRole("option", { name: "Orquestrador", exact: true })).toHaveAttribute("value", "supervisor_agent");
+  await actor.selectOption("supervisor_agent");
+  await expect(activity.getByTestId("activity-event")).toHaveCount(1);
+  await expect(activity.getByTestId("activity-event")).toContainText("Orquestrador");
 });

@@ -5,6 +5,8 @@ import { BarChart3, Download, ShieldCheck } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MarkdownContent } from "@/components/common/markdown-content";
+import { formatActorLabel } from "@/components/runtime/presentation";
+import { formatDisplayTerminology } from "@/lib/ui-terminology";
 import {
   labels,
   dimensions,
@@ -954,8 +956,8 @@ export function ResearchWorkspace() {
                                       >
                                         <p className="text-sm font-medium">
                                           #{e.sequence} ·{" "}
-                                          {e.actorName ?? "Delegação"} ·{" "}
-                                          {e.eventFamily}.{e.eventName}
+                                          {e.actorName ? formatActorLabel(e.actorName) : "Delegação"} ·{" "}
+                                          {e.eventFamily}.{formatDisplayTerminology(e.eventName)}
                                         </p>
                                         <p className="mt-1 text-xs text-muted-foreground">
                                           {e.recorded_at} · {e.status}
@@ -978,8 +980,8 @@ export function ResearchWorkspace() {
                                       >
                                         <summary className="cursor-pointer text-sm font-medium">
                                           #{e.sequence} ·{" "}
-                                          {e.toolName ?? e.actorName} ·{" "}
-                                          {e.eventName} · {e.status}
+                                          {e.toolName ?? formatActorLabel(e.actorName)} ·{" "}
+                                          {formatDisplayTerminology(e.eventName)} · {e.status}
                                         </summary>
                                         <JsonView value={e.payload} />
                                       </details>
@@ -1012,7 +1014,7 @@ export function ResearchWorkspace() {
                                   >
                                     <summary className="cursor-pointer break-words text-sm">
                                       #{e.sequence} · {e.eventFamily}.
-                                      {e.eventName} · {e.actorName ?? "runtime"}{" "}
+                                      {formatDisplayTerminology(e.eventName)} · {formatActorLabel(e.actorName)}{" "}
                                       · {e.status}
                                     </summary>
                                     <p className="mt-2 text-xs">
