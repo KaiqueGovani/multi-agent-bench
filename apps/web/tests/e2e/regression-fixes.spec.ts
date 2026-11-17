@@ -485,8 +485,9 @@ test.describe("Regression — SwarmFlow settles when run completes (bug #4)", ()
     // After the fix, no edges should be animated when the run is terminal,
     // regardless of whether handoff event statuses were left at "running".
     await expect(flow.locator("[data-edge-motion]")).toHaveCount(0);
-    // Completed endpoints alone do not prove a direct handoff.
+    // The complete roster remains visible, but completed endpoints alone do
+    // not add an unobserved direct handoff to the graph.
     const unobserved = flow.getByTestId("rf__edge-swarm_coordinator-swarm_synthesizer");
-    await expect(unobserved.locator('[data-edge-state="idle"]')).toHaveCount(1);
+    await expect(unobserved).toHaveCount(0);
   });
 });

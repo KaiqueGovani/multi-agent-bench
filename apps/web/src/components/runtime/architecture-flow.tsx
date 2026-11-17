@@ -9,6 +9,7 @@ import {
   Position,
   BaseEdge,
   getBezierPath,
+  getSmoothStepPath,
   type EdgeProps,
   useReactFlow,
   useStore,
@@ -449,7 +450,7 @@ function AnimatedEdge(props: EdgeProps) {
   const markerPrefix = data?.markerPrefix;
   const reduceMotion = useReducedMotion();
 
-  const [bezierPath, labelX, labelY] = getBezierPath({
+  const [bezierPath, bezierLabelX, bezierLabelY] = getBezierPath({
     sourceX,
     sourceY,
     sourcePosition,
@@ -463,22 +464,36 @@ function AnimatedEdge(props: EdgeProps) {
     ? `M ${sourceX},${sourceY} C ${sourceX + offset},${sourceY + bend} ${targetX - offset},${targetY + bend} ${targetX},${targetY}`
     : bezierPath;
 
+  const workflow = data?.workflow === true;
+  const workflowBypass = workflow && data?.bypass === true;
+  const routeOffset = typeof data?.lane === "number" ? 34 + data.lane * 18 : 34;
+  const laneY = Math.min(sourceY, targetY) - routeOffset;
+  const corner = 8;
+  const [stepPath, stepLabelX, stepLabelY] = getSmoothStepPath({
+    sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition,
+    borderRadius: 8, offset: 12,
+  });
+  const bypassPath = `M ${sourceX},${sourceY} L ${sourceX},${laneY + corner} Q ${sourceX},${laneY} ${sourceX + Math.sign(targetX - sourceX) * corner},${laneY} L ${targetX - Math.sign(targetX - sourceX) * corner},${laneY} Q ${targetX},${laneY} ${targetX},${laneY + corner} L ${targetX},${targetY}`;
+  const renderedPath = workflow ? workflowBypass ? bypassPath : stepPath : edgePath;
+  const labelX = workflow ? workflowBypass ? (sourceX + targetX) / 2 : stepLabelX : bezierLabelX;
+  const labelY = workflow ? workflowBypass ? laneY : stepLabelY : bezierLabelY;
+
   const color = EDGE_COLORS[state];
   const strokeWidth = state === "active" ? 2.5 : state === "recent" ? 2 : state === "settled" ? 1.6 : 1;
   const animated = !reduceMotion && state === "active";
 
   return (
-    <g data-edge-state={state}>
+    <g data-edge-state={state} data-edge-route={workflow ? workflowBypass ? "workflow-bypass" : "workflow-forward" : undefined}>
       {label ? <title>{label}</title> : null}
       <BaseEdge
-        path={edgePath}
+        path={renderedPath}
         style={{
           stroke: data?.sequence ? "#64748b" : color,
           strokeWidth: data?.sequence ? 1.4 : strokeWidth,
           opacity: data?.sequence ? 0.8 : state === "idle" ? 0.6 : 0.9,
           strokeDasharray: data?.sequence ? "5 5" : undefined,
         }}
-        markerEnd={`url(#${markerPrefix}-marker-${state})`}
+        markerEnd={`url(#${markerPrefix}-marker-${data?.sequence ? "sequence" : state})`}
         label={typeof data?.labelText === "string" ? data.labelText : undefined}
         labelX={labelX}
         labelY={labelY - 10}
@@ -489,7 +504,7 @@ function AnimatedEdge(props: EdgeProps) {
       />
       {animated && (
         <path
-          d={edgePath}
+          d={renderedPath}
           fill="none"
           stroke="#60a5fa"
           strokeWidth={4}
@@ -515,18 +530,19 @@ function EdgeMarkerDefs({ prefix }: { prefix: string }) {
   return (
     <svg className="absolute h-0 w-0">
       <defs>
-        {(["active", "recent", "settled", "idle"] as EdgeState[]).map((state) => (
+        {(["active", "recent", "settled", "idle", "sequence"] as const).map((state) => (
           <marker
             key={state}
             id={`${prefix}-marker-${state}`}
             viewBox="0 0 10 10"
-            refX="8"
+            refX="10"
             refY="5"
-            markerWidth="6"
-            markerHeight="6"
+            markerWidth="8"
+            markerHeight="8"
+            markerUnits="userSpaceOnUse"
             orient="auto-start-reverse"
           >
-            <path d="M 0 0 L 10 5 L 0 10 z" fill={EDGE_COLORS[state]} />
+            <path d="M 0 0 L 10 5 L 0 10 z" fill={state === "sequence" ? "#64748b" : EDGE_COLORS[state]} />
           </marker>
         ))}
       </defs>
@@ -677,6 +693,20 @@ const AGENT_NAME_MAP: Record<string, string> = {
   multimodal_agent: "Multimodal",
 };
 
+// Both runtime protocols expose these five peers. Positions are deliberately
+// independent of which subset ran, so the collaboration map stays familiar.
+const SWARM_ROSTER = [
+  { id: "coordinator", label: "Coordenador", aliases: ["swarm_coordinator", "coordinator_agent"], description: "Coordena a colaboração", x: 220, y: 110 },
+  { id: "faq", label: "FAQ", aliases: ["faq_specialist", "faq_agent"], description: "Informações de atendimento", x: 0, y: 0 },
+  { id: "stock", label: "Estoque", aliases: ["stock_specialist", "stock_agent"], description: "Disponibilidade e preços", x: 440, y: 0 },
+  { id: "attachments", label: "Anexos", aliases: ["image_specialist", "image_intake_agent", "attachments_specialist"], description: "Imagens e documentos", x: 0, y: 220 },
+  { id: "synthesizer", label: "Sintetizador", aliases: ["swarm_synthesizer", "synthesis_agent"], description: "Compõe a resposta final", x: 440, y: 220 },
+];
+
+function swarmRole(role: string) {
+  return SWARM_ROSTER.find((peer) => peer.id === role || peer.aliases.includes(role))?.id ?? role;
+}
+
 const TOOL_LABEL_MAP: Record<string, string> = {
   faq_lookup: "FAQ",
   stock_lookup: "Estoque",
@@ -786,6 +816,23 @@ function makeEdge(source: string, target: string, state: EdgeState): Edge {
     type: "animated",
     data: { state },
   };
+}
+
+function workflowConnections(nodes: Node<AgentNodeData>[], edges: Edge[]): Edge[] {
+  const byId = new Map(nodes.map((node, index) => [node.id, { node, index }]));
+  let lane = 0;
+  return edges.map((edge) => {
+    const source = byId.get(edge.source);
+    const target = byId.get(edge.target);
+    if (!source || !target) return edge;
+    const bypass = target.index - source.index !== 1;
+    return {
+      ...edge,
+      sourceHandle: bypass ? "top-out" : undefined,
+      targetHandle: bypass ? "top-in" : undefined,
+      data: { ...edge.data, workflow: true, bypass, lane: bypass ? lane++ : 0 },
+    };
+  });
 }
 
 function edgeStateFromEvents(
@@ -972,7 +1019,8 @@ export function WorkflowFlow({
 
     const edges: Edge[] = nodes.slice(0, -1).map((n, i) => {
       const next = nodes[i + 1];
-      return makeEdge(n.id, next.id, edgeStateFromEvents(executionEvents, n.id, next.id, terminal, altNameMap));
+      const edge = makeEdge(n.id, next.id, edgeStateFromEvents(executionEvents, n.id, next.id, terminal, altNameMap));
+      return { ...edge, data: { ...edge.data, sequence: true } };
     });
     // Optional stages stay visible. When the execution bypasses them, draw the
     // observed path between the last executed stage and the next executed one.
@@ -985,18 +1033,18 @@ export function WorkflowFlow({
         edges.push({
           ...makeEdge(previous.id, current.id, current.data.status === "running" ? "active" : "settled"),
           label: "Fluxo entre etapas executadas",
-          data: { state: current.data.status === "running" ? "active" : "settled", bypass: true },
+          data: { state: current.data.status === "running" ? "active" : "settled", bypass: true, sequence: true },
         });
       }
     }
 
-    return { nodes, edges };
+    return { nodes, edges: workflowConnections(nodes, edges) };
   }, [activeActorName, executionEvents, runStatus, stages]);
 
   if (usesObservedAgentTrace(executionEvents)) {
     return <ObservedAgentFlow architecture="workflow" executionEvents={executionEvents} runStatus={runStatus} testId="runtime-visual-workflow" />;
   }
-  return <FlowWrapper nodes={nodes} edges={edges} testId="runtime-visual-workflow" height={210} />;
+  return <FlowWrapper nodes={nodes} edges={edges} testId="runtime-visual-workflow" height={300} />;
 }
 
 // ---------------------------------------------------------------------------
@@ -1021,32 +1069,29 @@ export function SwarmFlow({
     const terminal = isTerminalRunStatus(runStatus);
     const eventsByActor = groupEventsByActor(executionEvents);
 
-    const peerDefs: Array<{ id: string; altNames: string[]; desc: string; x: number; y: number }> = [
-      { id: "swarm_coordinator", altNames: ["coordinator_agent"], desc: "abre a colaboração", x: 80, y: 0 },
-      { id: "faq_specialist", altNames: ["faq_agent"], desc: "FAQ", x: 320, y: 0 },
-      { id: "stock_specialist", altNames: ["stock_agent"], desc: "estoque", x: 0, y: 152 },
-      { id: "image_specialist", altNames: ["image_intake_agent"], desc: "imagem", x: 400, y: 152 },
-      { id: "swarm_synthesizer", altNames: [], desc: "síntese", x: 200, y: 282 },
-    ];
+    const peerDefs = SWARM_ROSTER.map((peer) => ({
+      id: peer.aliases[0], altNames: [peer.id, ...peer.aliases.slice(1)],
+      desc: peer.description, label: peer.label, x: peer.x, y: peer.y,
+    }));
 
     const nodes: Node<AgentNodeData>[] = peerDefs.map((peer) => {
       const actor = findActor(peer.id) ?? peer.altNames.map((alt) => findActor(alt)).find(Boolean);
-      const resolvedName = actor ? (getActorName(actor) ?? peer.id) : peer.id;
       const isActive = peer.id === activeActorName || peer.altNames.includes(activeActorName);
       const agentEvents =
         eventsByActor.get(peer.id) ??
         peer.altNames.map((alt) => eventsByActor.get(alt)).find(Boolean) ??
         [];
-      const status = graphNodeStatus(actor ? getStatus(actor, terminal) : terminal ? "not_invoked" : "pending", agentEvents, isActive, terminal);
+      const invoked = agentEvents.length > 0 || Boolean(actor && getStatus(actor, terminal) !== "pending");
+      const status = invoked ? graphNodeStatus(actor ? getStatus(actor, terminal) : "pending", agentEvents, isActive, terminal) : "not_invoked";
       return makeNode(
         peer.id,
-        formatAgentName(resolvedName),
+        peer.label,
         peer.desc,
         status,
         !terminal,
         peer.x,
         peer.y,
-        actor ? undefined : "muted",
+        invoked ? undefined : "muted",
         getNodeId(actor),
         undefined,
         agentEvents,
@@ -1100,38 +1145,17 @@ export function SwarmFlow({
       }
     }
 
-    // Always render the canonical swarm topology so the structure is visible,
-    // and elevate edges that match an observed handoff to "active/recent/settled".
-    const canonicalEdges: Array<[string, string]> = [
-      ["swarm_coordinator", "faq_specialist"],
-      ["swarm_coordinator", "stock_specialist"],
-      ["swarm_coordinator", "image_specialist"],
-      ["faq_specialist", "swarm_synthesizer"],
-      ["stock_specialist", "swarm_synthesizer"],
-      ["image_specialist", "swarm_synthesizer"],
-      ["swarm_coordinator", "swarm_synthesizer"],
-    ];
-
     const edgeMap = new Map<string, Edge>();
-    for (const [from, to] of canonicalEdges) {
-      const pair = `${from}->${to}`;
-      if (!observedHandoffs.has(pair)) {
-        edgeMap.set(pair, makeEdge(from, to, "idle"));
-        continue;
-      }
-      const state = edgeStateFromEvents(executionEvents, from, to, terminal, swarmAltNames);
-      edgeMap.set(pair, makeEdge(from, to, state === "idle" ? "settled" : state));
-    }
-
-    // Add any observed peer-to-peer handoff that isn't part of the canonical layout
-    // (e.g. faq_specialist -> stock_specialist in a chained delegation).
+    const byId = new Map(nodes.map((node) => [node.id, node]));
+    // Available peers stay visible, but a connecting line still requires a
+    // recorded handoff. Neutral roster entries never imply an invocation.
     for (const pair of observedHandoffs) {
       if (edgeMap.has(pair)) continue;
       const [from, to] = pair.split("->");
       if (!from || !to) continue;
       const state = edgeStateFromEvents(executionEvents, from, to, terminal, swarmAltNames);
       const finalState: EdgeState = state === "idle" ? "settled" : state;
-      edgeMap.set(pair, makeEdge(from, to, finalState));
+      edgeMap.set(pair, { ...makeEdge(from, to, finalState), ...connectionHandles(byId.get(from)!, byId.get(to)!) });
     }
 
     return { nodes, edges: Array.from(edgeMap.values()) };
@@ -1166,7 +1190,21 @@ function ObservedAgentFlow({ architecture, executionEvents, runStatus, testId }:
 }) {
   const terminal = isTerminalRunStatus(runStatus);
   const { nodes, edges, height } = useMemo(() => {
-    const graph = observedAgentGraph(executionEvents, terminal);
+    const observed = observedAgentGraph(executionEvents, terminal);
+    const graph = architecture === "swarm" ? {
+      agents: [
+        ...SWARM_ROSTER.map((peer) => {
+          const matching = observed.agents.filter((agent) => swarmRole(agent.role) === peer.id);
+          return {
+            role: peer.id,
+            status: matching.at(-1)?.status ?? "not_invoked",
+            events: matching.flatMap((agent) => agent.events).sort((a, b) => a.sequenceNo - b.sequenceNo),
+          };
+        }),
+        ...observed.agents.filter((agent) => !SWARM_ROSTER.some((peer) => peer.id === swarmRole(agent.role))),
+      ],
+      links: observed.links.map((link) => ({ ...link, from: swarmRole(link.from), to: swarmRole(link.to) })),
+    } : observed;
     const root = graph.agents.find(({ role }) => architecture === "swarm"
       ? /coordinator|iniciador/.test(role)
       : /supervisor/.test(role)) ?? graph.agents[0];
@@ -1175,11 +1213,9 @@ function ObservedAgentFlow({ architecture, executionEvents, runStatus, testId }:
     if (architecture === "workflow") {
       graph.agents.forEach(({ role }, index) => positions.set(role, { x: index * 244, y: 0 }));
     } else if (architecture === "swarm") {
-      if (root) positions.set(root.role, { x: 232, y: 142 });
-      peers.forEach(({ role }, index) => {
-        const angle = peers.length === 1 ? 0 : peers.length === 2 ? [-150, -30][index] : -90 + index * 360 / peers.length;
-        const radians = angle * Math.PI / 180;
-        positions.set(role, { x: 232 + Math.cos(radians) * 230, y: 142 + Math.sin(radians) * 140 });
+      graph.agents.forEach(({ role }, index) => {
+        const peer = SWARM_ROSTER.find((candidate) => candidate.id === role);
+        positions.set(role, peer ? { x: peer.x, y: peer.y } : { x: 660, y: (index - SWARM_ROSTER.length) * 148 });
       });
     } else {
       if (root) positions.set(root.role, { x: 0, y: Math.max(0, peers.length - 1) * 74 });
@@ -1187,14 +1223,15 @@ function ObservedAgentFlow({ architecture, executionEvents, runStatus, testId }:
     }
     const nodes = graph.agents.map((agent) => {
       const position = positions.get(agent.role) ?? { x: 0, y: 0 };
+      const peer = architecture === "swarm" ? SWARM_ROSTER.find((candidate) => candidate.id === agent.role) : undefined;
       const description = architecture === "workflow"
         ? `Etapa ${graph.agents.indexOf(agent) + 1} · execução registrada`
-        : agent === root && architecture === "swarm" && /coordinator|iniciador/.test(agent.role)
-          ? "Inicia a colaboração"
+        : peer
+          ? peer.description
           : agent === root && /supervisor/.test(agent.role) ? "Coordena os especialistas" : "Agente acionado";
-      return makeNode(agent.role, formatAgentName(agent.role), description,
+      return makeNode(agent.role, peer?.label ?? formatAgentName(agent.role), description,
         agent.status, !terminal, position.x, position.y,
-        undefined, agent.events.find((event) => event.nodeId)?.nodeId, undefined, agent.events);
+        agent.status === "not_invoked" ? "muted" : undefined, agent.events.find((event) => event.nodeId)?.nodeId, undefined, agent.events);
     });
     const byId = new Map(nodes.map((node) => [node.id, node]));
     // A reply on the same relationship is a result of that call, not a second
@@ -1237,15 +1274,15 @@ function ObservedAgentFlow({ architecture, executionEvents, runStatus, testId }:
         });
       }
     }
-    const height = architecture === "workflow" ? 218 : architecture === "swarm" ? 360 : Math.max(230, Math.min(500, peers.length * 148 + 48));
-    return { nodes, edges, height };
+    const height = architecture === "workflow" ? 300 : architecture === "swarm" ? 340 : Math.max(230, Math.min(500, peers.length * 148 + 48));
+    return { nodes, edges: architecture === "workflow" ? workflowConnections(nodes, edges) : edges, height };
   }, [architecture, executionEvents, terminal]);
   return (
     <div className="min-w-0 max-w-full" data-testid="observed-agent-flow" data-layout={architecture}>
       {nodes.length ? (
         <>
           <p className="px-2 py-1 text-xs leading-relaxed text-muted-foreground">
-            {architecture === "workflow" ? "Etapas em ordem de execução. Linhas tracejadas indicam sequência; linhas contínuas, comunicação registrada." : "Agentes e conexões registrados na execução. Retornos aparecem na mesma conexão."}
+            {architecture === "workflow" ? "Etapas em ordem de execução. Linhas tracejadas indicam sequência; linhas contínuas, comunicação registrada." : architecture === "swarm" ? "Todos os agentes disponíveis. Cinza: não acionado; cores: execução registrada. As linhas mostram apenas comunicações registradas." : "Agentes e conexões registrados na execução. Retornos aparecem na mesma conexão."}
           </p>
           <FlowWrapper nodes={nodes} edges={edges} testId={testId} height={height} />
         </>

@@ -90,6 +90,8 @@ the selected run; **Mais recente** resumes following new requests.
 Flow views use the observed agents and communications: centralized fan-out,
 horizontal workflow, and a radial swarm. Returns share their original connection;
 dashed workflow links indicate execution order rather than a recorded message.
+The swarm keeps its full agent roster in fixed positions, with uncalled agents
+in gray. Workflow communication that skips a step passes above the cards.
 Use the zoom controls, drag the graph, or select **Ajustar** to fit it again.
 
 Conversation titles are generated once from the initial request. The trash action
