@@ -9,7 +9,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from app.core.security import verify_ai_service_secret
 from app.db import get_db_session
-from app.db.models import ConversationModel
+from app.db.models import ConversationModel, RunModel
 from app.schemas.api import CompleteRunRequest, RunComparisonContextResponse, RunExecutionResponse
 from app.schemas.domain import Run
 from app.schemas.enums import ProcessingEventType, ProcessingStatus, RunStatus
@@ -18,6 +18,7 @@ from app.services.events import EventService
 from app.services.event_bus import run_execution_bus
 from app.services.run_execution import RunExecutionService
 from app.services.runs import RunService
+from app.services.reviews import ReviewService
 
 router = APIRouter()
 
@@ -149,6 +150,7 @@ def complete_run(
         human_review_required=request.human_review_required,
         final_outcome=request.final_outcome,
         summary=request.summary,
+        commit=False,
     )
     if updated_run is None:
         raise HTTPException(
@@ -157,6 +159,10 @@ def complete_run(
         )
 
     execution_service = RunExecutionService(db)
+    review_task = None
+    if updated_run.status == RunStatus.HUMAN_REVIEW_REQUIRED or updated_run.human_review_required:
+        model = db.get(RunModel, run_id)
+        review_task = ReviewService(db).ensure_run_review(model)
     execution_service.sync_run_completion(run_id)
     db.commit()
     execution_service.publish_latest_event(run_id)
@@ -182,6 +188,7 @@ def complete_run(
                 "externalRunId": updated_run.external_run_id,
                 "traceId": updated_run.trace_id,
                 "finalOutcome": updated_run.final_outcome,
+                **({"reviewTaskId": str(review_task.id)} if review_task is not None else {}),
                 "summary": updated_run.summary.model_dump(
                     by_alias=True,
                     mode="json",

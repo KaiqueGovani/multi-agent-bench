@@ -20,6 +20,7 @@ import {
   Plus,
   Loader2,
   Search,
+  ShieldAlert,
   Trash2,
   Workflow,
   X
@@ -30,7 +31,7 @@ import { ConversationInspector } from "@/components/inspection/conversation-insp
 import { CentralizedFlow, SwarmFlow, WorkflowFlow } from "@/components/runtime/architecture-flow";
 import { ArchitectureComparisonOverview } from "@/components/runtime/architecture-comparison-overview";
 import { LlmSettings } from "@/components/runtime/llm-settings";
-import { formatArchitectureLabel as formatArchitectureLabelText } from "@/components/runtime/presentation";
+import { formatArchitectureLabel as formatArchitectureLabelText, formatStatusLabel } from "@/components/runtime/presentation";
 import { RunSelector } from "@/components/runtime/run-selector";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
@@ -106,6 +107,10 @@ export function ChatWorkspace() {
     : "lg:grid-cols-1";
   const requestedConversationId = searchParams.get("conversationId");
   const hasActiveConversation = Boolean(conversationId);
+  const pendingConversationReviews = reviewTasks.filter((task) => task.status === "open" || task.status === "in_review");
+  const hasPendingReview = pendingConversationReviews.length > 0;
+  const isUnderReview = pendingConversationReviews.some((task) => task.status === "in_review");
+  const reviewQueueHref = conversationId ? `/dashboard?conversationId=${conversationId}#review-queue` : "/dashboard#review-queue";
   const orderedRuns = [...runs].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime() || a.id.localeCompare(b.id));
   const latestRun = orderedRuns.at(-1);
   const latestPeers = buildLatestArchitectureRuns(orderedRuns.filter((run) => run.messageId === latestRun?.messageId));
@@ -248,7 +253,7 @@ export function ChatWorkspace() {
 
       <section className="flex min-h-0 min-w-0 flex-col overflow-hidden">
         <header className="flex min-h-16 flex-wrap items-center gap-3 border-b bg-card px-3 py-2 shadow-sm sm:px-4">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="flex min-w-[min(100%,20rem)] flex-1 items-center gap-3">
             <Button
               aria-label={
                 isHistoryOpen ? "Fechar histórico" : "Abrir histórico"
@@ -268,23 +273,20 @@ export function ChatWorkspace() {
             </Button>
             <div className="min-w-0 flex-1">
               <div className="flex min-w-0 items-center gap-2">
-                <h1 className="truncate text-base font-semibold" title={conversation?.title || undefined}>
+                <h1 className="min-w-0 flex-1 truncate text-base font-semibold" title={conversation?.title || undefined}>
                   {conversation?.title || "Atendimento farmacêutico POC"}
                 </h1>
-                {conversationId ? (
-                  <Badge variant="outline">
-                    {formatArchitectureLabel(architectureMode)}
-                  </Badge>
-                ) : null}
                 <HeaderContextTooltip
                   architectureMode={architectureMode}
                   executionMode={executionMode}
                   runtimeStatus={runtimeStatus}
                 />
               </div>
-              <p className="truncate text-xs text-muted-foreground">
-                {conversationId ? `Conversa ${shortId(conversationId)}` : "Nenhuma conversa ativa"}
-              </p>
+              <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                <span>{conversationId ? `Conversa ${shortId(conversationId)}` : "Nenhuma conversa ativa"}</span>
+                {conversationId ? <Badge className="text-[11px]" variant="outline">{formatArchitectureLabel(architectureMode)}</Badge> : null}
+                {hasPendingReview ? <Badge className="gap-1" data-testid="conversation-review-status" variant="warning"><ShieldAlert aria-hidden="true" className="h-3 w-3" />{isUnderReview ? "Em revisão humana" : "Aguardando revisão humana"}</Badge> : null}
+              </div>
             </div>
           </div>
           <div className="flex w-full shrink-0 flex-wrap items-center justify-between gap-2 sm:w-auto sm:justify-start">
@@ -322,20 +324,16 @@ export function ChatWorkspace() {
                 <Trash2 aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
               </Button>
             ) : null}
-            {openReviewTasks.length > 0 ? (
-              <Link
-                aria-label={`Ver ${openReviewTasks.length} revisões abertas`}
-                className={cn(buttonVariants({ size: "sm", variant: "outline" }), "gap-1.5")}
-                data-testid="review-badge-link"
-                href="/dashboard"
-              >
-                <AlertTriangle className="h-4 w-4 text-amber-600" />
-                <span className="hidden sm:inline">Revisões</span>
-                <Badge aria-live="polite" variant="warning">
-                  {openReviewTasks.length}
-                </Badge>
-              </Link>
-            ) : null}
+            <Link
+              aria-label={`Fila de revisão humana: ${openReviewTasks.length} pendente${openReviewTasks.length === 1 ? "" : "s"}`}
+              className={cn(buttonVariants({ size: "sm", variant: "outline" }), "gap-1.5", openReviewTasks.length > 0 && "border-amber-300 bg-amber-50 text-amber-950 hover:bg-amber-100")}
+              data-testid="review-badge-link"
+              href={reviewQueueHref}
+            >
+              <ShieldAlert aria-hidden="true" className="h-4 w-4" />
+              <span className="hidden sm:inline">Fila de revisão</span>
+              {openReviewTasks.length > 0 ? <Badge aria-live="polite" variant="warning">{openReviewTasks.length}</Badge> : null}
+            </Link>
             <Link
               aria-label="Dashboard operacional"
               className={cn(buttonVariants({ size: "sm", variant: "outline" }))}
@@ -391,6 +389,24 @@ export function ChatWorkspace() {
             Pesquisa
           </Link>
         </nav>
+
+        {hasPendingReview ? (
+          <section aria-label="Encaminhamento para revisão humana" className="shrink-0 border-b border-amber-200 bg-amber-50 px-3 py-3 text-amber-950 sm:px-4" data-testid="human-review-banner" role="status">
+            <div className="grid items-start gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+              <div className="flex min-w-0 flex-1 items-start gap-2.5">
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-amber-200 bg-amber-100"><ShieldAlert aria-hidden="true" className="h-4 w-4 text-amber-700" /></span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold">{isUnderReview ? "Em revisão humana" : "Encaminhada para revisão humana"}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-amber-900">{isUnderReview ? "A avaliação está em andamento." : "A solicitação já está na fila."} A resposta sugerida aguarda uma decisão humana.</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {activeTab !== "atividade" ? <Button className="border-amber-300 bg-white/80 text-amber-950 hover:bg-amber-100" onClick={() => setActiveTab("atividade")} size="sm" type="button" variant="outline">Revisar aqui</Button> : null}
+                <Link className={cn(buttonVariants({ size: "sm", variant: "outline" }), "border-amber-300 bg-white/80 text-amber-950 hover:bg-amber-100")} href={reviewQueueHref}>Ver fila de revisão</Link>
+              </div>
+            </div>
+          </section>
+        ) : null}
 
         {selectedRun && activeTab !== "atividade" ? (
           <RunSelector
@@ -476,7 +492,7 @@ export function ChatWorkspace() {
                       aria-label="Fluxo da arquitetura"
                       className="min-w-0 shrink-0 border-b bg-muted/30 p-2"
                       data-testid="chat-flow-panel"
-                      style={{ minHeight: 260, maxHeight: 360, overflow: "auto" }}
+                      style={{ minHeight: hasPendingReview ? 160 : 260, maxHeight: 360, overflow: "auto" }}
                     >
                       <ChatRuntimeVisual
                         architectureMode={
@@ -508,6 +524,7 @@ export function ChatWorkspace() {
                     attachmentsByMessage={attachmentsByMessage}
                     isLoading={isLoadingConversation}
                     messages={filteredMessages}
+                    reviewTasks={reviewTasks}
                   />
                 </div>
               </div>
@@ -637,6 +654,7 @@ function ConversationHistory({
               {conversations.length}
             </Badge>
           ) : null}
+          {openReviewCount > 0 ? <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-1.5 py-1 text-amber-900 [writing-mode:horizontal-tb]" data-testid="history-review-attention" title={`${openReviewCount} revisões pendentes`}><ShieldAlert aria-hidden="true" className="h-3 w-3" /><span className="text-[10px] font-semibold">{openReviewCount}</span></span> : null}
         </button>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto p-2">
@@ -655,7 +673,7 @@ function ConversationHistory({
                       className={`w-full rounded-md border p-3 pr-9 text-left transition-colors ${
                         isActive
                           ? "border-primary bg-primary/10"
-                          : "border-border hover:bg-muted"
+                          : summary.reviewPending ? "border-amber-200 bg-amber-50/70 hover:bg-amber-100/70" : "border-border hover:bg-muted"
                       }`}
                       data-testid={`conversation-row-${summary.conversationId}`}
                       onClick={() => onSelectConversation(summary)}
@@ -676,7 +694,7 @@ function ConversationHistory({
                             reviewPending={summary.reviewPending}
                             status={summary.status}
                           />
-                          {summary.reviewPending ? "revisão" : summary.status}
+                          {summary.reviewPending ? "Revisão pendente" : formatStatusLabel(summary.status)}
                         </Badge>
                       </div>
                       <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">

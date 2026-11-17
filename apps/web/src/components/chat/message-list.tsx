@@ -4,7 +4,7 @@ import { MarkdownContent } from "@/components/common/markdown-content";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Attachment, Message } from "@/lib/types";
+import type { Attachment, Message, ReviewTask } from "@/lib/types";
 import {
   AlertTriangle,
   Bot,
@@ -16,6 +16,7 @@ import {
   Image as ImageIcon,
   Loader2,
   MessageCircle,
+  ShieldAlert,
   User
 } from "lucide-react";
 
@@ -23,6 +24,7 @@ interface MessageListProps {
   messages: Message[];
   attachmentsByMessage: Record<string, Attachment[]>;
   isLoading?: boolean;
+  reviewTasks?: ReviewTask[];
 }
 
 const MESSAGE_STATUS_LABELS: Record<Message["status"], string> = {
@@ -41,7 +43,8 @@ const MESSAGE_STATUS_LABELS: Record<Message["status"], string> = {
 export function MessageList({
   messages,
   attachmentsByMessage,
-  isLoading = false
+  isLoading = false,
+  reviewTasks = [],
 }: MessageListProps) {
   const listRef = useRef<HTMLDivElement | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -125,6 +128,28 @@ export function MessageList({
         const isInbound = message.direction === "inbound";
         const isStreaming = message.id.startsWith("streaming-");
         const isImported = message.metadata?.importedHistory === true;
+        const belongsToReviewedTurn = (task: ReviewTask) => {
+          if (task.messageId === message.id || task.messageId === message.metadata?.sourceMessageId) return true;
+          const reviewedMessage = messages.find((entry) => entry.id === task.messageId);
+          return reviewedMessage?.correlationId === message.correlationId;
+        };
+        const review = !isImported ? [...reviewTasks].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).find((task) => {
+          const reviewedRunId = task.metadata?.runtimeRunId;
+          if (!isInbound && typeof reviewedRunId === "string") {
+            return message.metadata?.runtimeRunId === reviewedRunId;
+          }
+          return belongsToReviewedTurn(task);
+        }) : undefined;
+        const comparisonReview = !isImported && !isInbound && !review && typeof message.metadata?.runtimeRunId === "string"
+          ? [...reviewTasks].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).find((task) => typeof task.metadata?.runtimeRunId === "string"
+            && task.metadata.runtimeRunId !== message.metadata.runtimeRunId && belongsToReviewedTurn(task))
+          : undefined;
+        const comparisonPending = comparisonReview?.status === "open" || comparisonReview?.status === "in_review";
+        const comparisonLabel = comparisonReview ? comparisonPending ? "Comparação · atendimento em revisão" : comparisonReview.status === "resolved" ? "Comparação · atendimento revisado" : "Comparação · atendimento não aprovado" : undefined;
+        const awaitingReview = review?.status === "open" || review?.status === "in_review";
+        const reviewApproved = review?.status === "resolved";
+        const reviewRejected = review?.status === "cancelled";
+        const reviewLabel = awaitingReview ? isInbound ? "Encaminhada para revisão" : "Aguardando revisão humana" : reviewApproved ? "Revisão aprovada" : reviewRejected ? "Revisão não aprovada" : undefined;
         const author = isImported ? (isInbound ? "Cliente · WhatsApp" : "Atendente · WhatsApp") : (isInbound ? "Usuário" : "Resposta sugerida pelo MAB");
         return (
           <article
@@ -146,18 +171,20 @@ export function MessageList({
                 {isInbound ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
                 {author}
               </span>
-              <Badge className="gap-1" data-status={message.status} variant="outline">
-                <MessageStatusIcon status={message.status} />
-                {MESSAGE_STATUS_LABELS[message.status]}
+              <Badge className="gap-1" data-status={awaitingReview ? "human_review_required" : message.status} data-review-context={comparisonReview?.status} data-testid={reviewLabel || comparisonLabel ? `message-review-status-${message.id}` : undefined} variant={awaitingReview || comparisonPending ? "warning" : reviewRejected ? "destructive" : reviewApproved ? "success" : comparisonReview ? "muted" : "outline"}>
+                {awaitingReview || comparisonPending ? <ShieldAlert aria-hidden="true" className="h-3.5 w-3.5" /> : reviewApproved ? <CheckCircle2 aria-hidden="true" className="h-3.5 w-3.5" /> : comparisonReview ? <MessageCircle aria-hidden="true" className="h-3.5 w-3.5" /> : <MessageStatusIcon status={message.status} />}
+                {reviewLabel ?? comparisonLabel ?? MESSAGE_STATUS_LABELS[message.status]}
               </Badge>
             </div>
             <div
               className={`min-w-0 max-w-full rounded-lg border px-4 py-3 text-sm leading-6 shadow-sm [overflow-wrap:anywhere] ${
                 isInbound
                   ? "border-primary bg-primary text-primary-foreground"
-                  : "bg-card text-card-foreground"
+                  : awaitingReview ? "border-amber-300 bg-amber-50/70 text-card-foreground" : reviewRejected ? "border-destructive/30 bg-destructive/5 text-card-foreground" : "bg-card text-card-foreground"
               }`}
             >
+              {!isInbound && awaitingReview ? <p className="mb-2 flex items-center gap-1.5 border-b border-amber-200 pb-2 text-xs font-medium leading-relaxed text-amber-900"><ShieldAlert aria-hidden="true" className="h-3.5 w-3.5 shrink-0" /> Sugestão ainda não aprovada por uma pessoa.</p> : null}
+              {!isInbound && reviewRejected ? <p className="mb-2 text-xs font-medium text-destructive">Esta sugestão não foi aprovada na revisão humana.</p> : null}
               <MarkdownContent
                 className="text-sm"
                 content={formatMessageContent(message.contentText)}

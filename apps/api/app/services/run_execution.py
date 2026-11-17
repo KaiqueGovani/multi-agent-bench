@@ -29,6 +29,7 @@ from app.schemas.enums import (
 )
 from app.services.event_bus import run_execution_bus
 from app.services.events import EventService
+from app.services.reviews import ReviewService
 
 
 def _read_int(mapping: JsonObject, *keys: str) -> int | None:
@@ -234,6 +235,8 @@ class RunExecutionService:
         run = self._db.get(RunModel, event.run_id)
         if run is None:
             return
+        if run.final_outcome in {"human_review_resolved", "human_review_cancelled"}:
+            return
         projection = self._db.get(RunExecutionProjectionModel, event.run_id)
         if projection is None:
             projection = RunExecutionProjectionModel(
@@ -357,9 +360,14 @@ class RunExecutionService:
         conversation = self._db.get(ConversationModel, event.conversation_id)
         if run is None or message is None or conversation is None:
             return
+        current_review = self._db.scalars(select(ReviewTaskModel).where(
+            ReviewTaskModel.message_id == event.message_id,
+        ).order_by(ReviewTaskModel.created_at.desc(), ReviewTaskModel.id.desc())).first()
+        if (current_review is not None and current_review.status in {ReviewTaskStatus.RESOLVED.value, ReviewTaskStatus.CANCELLED.value}) or run.final_outcome in {"human_review_resolved", "human_review_cancelled"}:
+            return
 
         now = datetime.now(UTC)
-        payload = event.payload_json or {}
+        payload = dict(event.payload_json or {})
 
         if event.event_family == "run" and event.event_name == "started":
             message.status = MessageStatus.PROCESSING.value
@@ -371,9 +379,6 @@ class RunExecutionService:
         if event.event_family == "review" and event.event_name == "required":
             review_task = self._ensure_review_task(event, payload)
             payload.setdefault("reviewTaskId", str(review_task.id))
-            message.status = MessageStatus.HUMAN_REVIEW_REQUIRED.value
-            conversation.status = ConversationStatus.HUMAN_REVIEW_REQUIRED.value
-            conversation.updated_at = now
 
         if event.event_family == "response" and event.event_name == "final":
             review_required = bool(payload.get("reviewRequired"))
@@ -390,7 +395,8 @@ class RunExecutionService:
                 "lastResponseMessageId": str(outbound_message.id),
             }
             if review_required:
-                message.status = MessageStatus.HUMAN_REVIEW_REQUIRED.value
+                task = self._ensure_review_task(event, payload)
+                payload.setdefault("reviewTaskId", str(task.id))
             else:
                 message.status = MessageStatus.COMPLETED.value
                 if conversation.status != ConversationStatus.HUMAN_REVIEW_REQUIRED.value:
@@ -406,8 +412,8 @@ class RunExecutionService:
                 "totalDurationMs": event.duration_ms,
             }
             if review_required:
-                message.status = MessageStatus.HUMAN_REVIEW_REQUIRED.value
-                conversation.status = ConversationStatus.HUMAN_REVIEW_REQUIRED.value
+                task = self._ensure_review_task(event, payload)
+                payload.setdefault("reviewTaskId", str(task.id))
             else:
                 if message.status != MessageStatus.HUMAN_REVIEW_REQUIRED.value:
                     message.status = MessageStatus.COMPLETED.value
@@ -422,10 +428,17 @@ class RunExecutionService:
             conversation.status = ConversationStatus.ERROR.value
             conversation.updated_at = now
 
+        if ReviewService(self._db).has_pending_reviews(conversation.id):
+            conversation.status = ConversationStatus.HUMAN_REVIEW_REQUIRED.value
+        if current_review is not None and current_review.status in {ReviewTaskStatus.OPEN.value, ReviewTaskStatus.IN_REVIEW.value}:
+            message.status = MessageStatus.HUMAN_REVIEW_REQUIRED.value
+            message.metadata_json = {**(message.metadata_json or {}), "reviewRequired": True,
+                                     "reviewTaskId": str(current_review.id)}
+        event.payload_json = payload
         self._db.flush()
 
     def _sync_comparison_outbound(self, event: RunExecutionEventModel) -> None:
-        payload = event.payload_json or {}
+        payload = dict(event.payload_json or {})
         review_required = bool(payload.get("reviewRequired"))
         outbound = self._ensure_outbound_message(
             event=event,
@@ -433,6 +446,7 @@ class RunExecutionService:
             review_required=review_required,
         )
         payload.setdefault("messageId", str(outbound.id))
+        event.payload_json = payload
 
     def _ensure_outbound_message(
         self,
@@ -494,43 +508,13 @@ class RunExecutionService:
         event: RunExecutionEventModel,
         payload: JsonObject,
     ) -> ReviewTaskModel:
-        statement = (
-            select(ReviewTaskModel)
-            .where(
-                ReviewTaskModel.conversation_id == event.conversation_id,
-                ReviewTaskModel.message_id == event.message_id,
-                ReviewTaskModel.status.in_(
-                    [ReviewTaskStatus.OPEN.value, ReviewTaskStatus.IN_REVIEW.value]
-                ),
-            )
-            .order_by(ReviewTaskModel.created_at.desc(), ReviewTaskModel.id.desc())
-            .limit(1)
+        run = self._db.get(RunModel, event.run_id)
+        task = ReviewService(self._db).ensure_run_review(
+            run, payload=payload, source=event.source or "ai_service",
         )
-        review_task = self._db.scalars(statement).first()
-        if review_task is not None:
-            review_task.metadata_json = {
-                **(review_task.metadata_json or {}),
-                "runtimeRunId": str(event.run_id),
-                "source": event.source or "ai_service",
-            }
-            self._db.flush()
-            return review_task
-
-        review_task = ReviewTaskModel(
-            id=uuid4(),
-            conversation_id=event.conversation_id,
-            message_id=event.message_id,
-            reason=str(payload.get("reason") or "Runtime requested human review."),
-            status=ReviewTaskStatus.OPEN.value,
-            metadata_json={
-                **payload,
-                "runtimeRunId": str(event.run_id),
-                "source": event.source or "ai_service",
-            },
-        )
-        self._db.add(review_task)
-        self._db.flush()
-        return review_task
+        # _sync_domain_state validates the run and only handles canonical runs.
+        assert task is not None
+        return task
 
     def _derive_public_event(self, event: RunExecutionEvent) -> None:
         # NOTE: ("actor", "message") is intentionally excluded from this mapping.

@@ -53,6 +53,8 @@ export function useConversation(
   const detailRequestRef = useRef(0);
   const appliedDetailRequestRef = useRef(0);
   const deletedConversationIdsRef = useRef(new Set<string>());
+  const summariesRequestRef = useRef(0);
+  const reviewsRequestRef = useRef(0);
 
   /** Tracks when the last refreshConversationDetail was triggered, for debouncing. */
   const lastRefreshTsRef = useRef(0);
@@ -61,13 +63,15 @@ export function useConversation(
   const streamingTimestampsRef = useRef(new Map<string, number>());
 
   const refreshConversations = useCallback(async () => {
+    const request = ++summariesRequestRef.current;
     try {
       const response = await listConversations();
+      if (request !== summariesRequestRef.current) return [];
       const summaries = response.conversations.filter((item) => !deletedConversationIdsRef.current.has(item.conversationId));
       setConversationSummaries(summaries);
       return summaries;
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Falha ao atualizar conversas");
+      if (request === summariesRequestRef.current) setError(caught instanceof Error ? caught.message : "Falha ao atualizar conversas");
       return [];
     }
   }, []);
@@ -78,13 +82,15 @@ export function useConversation(
   }, [architectureMode, conversation?.metadata.architectureMode]);
 
   const refreshOpenReviewTasks = useCallback(async () => {
+    const request = ++reviewsRequestRef.current;
     try {
       const response = await listOpenReviewTasks();
+      if (request !== reviewsRequestRef.current) return [];
       const tasks = response.reviewTasks.filter((item) => !deletedConversationIdsRef.current.has(item.conversationId));
       setOpenReviewTasks(tasks);
       return tasks;
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Falha ao atualizar revisões");
+      if (request === reviewsRequestRef.current) setError(caught instanceof Error ? caught.message : "Falha ao atualizar revisões");
       return [];
     }
   }, []);
@@ -131,7 +137,7 @@ export function useConversation(
     }
   }, []);
 
-  const refreshConversationDetail = useCallback(async (id: string) => {
+  const refreshConversationDetail = useCallback(async (id: string, refreshLists = true) => {
     if (activeConversationIdRef.current !== id) return null;
     const request = ++detailRequestRef.current;
     try {
@@ -170,8 +176,10 @@ export function useConversation(
       setRuns(detail.runs);
       setReviewTasks(detail.reviewTasks);
       lastEventIdRef.current = getLastEventId(detail.events) ?? lastEventIdRef.current;
-      void refreshConversations();
-      void refreshOpenReviewTasks();
+      if (refreshLists) {
+        void refreshConversations();
+        void refreshOpenReviewTasks();
+      }
       return detail;
     } catch (caught) {
       if (activeConversationIdRef.current === id && request >= appliedDetailRequestRef.current) {
@@ -363,6 +371,35 @@ export function useConversation(
     void refreshOpenReviewTasks();
   }, [refreshConversations, refreshOpenReviewTasks]);
 
+  // A reviewer may work in another tab. SSE updates the active conversation;
+  // focus and light polling keep the global queue and history current as well.
+  useEffect(() => {
+    let refreshing = false;
+    const refresh = async () => {
+      if (document.hidden || refreshing) return;
+      refreshing = true;
+      try {
+        const activeId = activeConversationIdRef.current;
+        await Promise.allSettled([
+          refreshConversations(),
+          refreshOpenReviewTasks(),
+          ...(activeId ? [refreshConversationDetail(activeId, false)] : []),
+        ]);
+      } finally {
+        refreshing = false;
+      }
+    };
+    const onFocus = () => { void refresh(); };
+    const interval = window.setInterval(onFocus, 15_000);
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [refreshConversationDetail, refreshConversations, refreshOpenReviewTasks]);
+
   // Streaming message timeout cleanup: every 10s, drop streaming messages older than 60s
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -418,6 +455,9 @@ export function useConversation(
           });
 
           if (event.eventType === "conversation.updated") {
+            debouncedRefreshDetail(conversationId, true);
+          }
+          if (event.payload?.source === "human_review") {
             debouncedRefreshDetail(conversationId, true);
           }
 
@@ -477,7 +517,8 @@ export function useConversation(
                 createdAt: event.createdAt,
                 messages: prev,
                 runId: payloadRunId,
-                status: "completed",
+                status: event.payload?.reviewRequired === true ? "human_review_required" : "completed",
+                reviewRequired: typeof event.payload?.reviewRequired === "boolean" ? event.payload.reviewRequired : undefined,
               }));
             }
             debouncedRefreshDetail(conversationId, true);
@@ -560,6 +601,7 @@ function upsertStreamingMessage({
   messages,
   runId,
   status,
+  reviewRequired,
 }: {
   architectureMode: ArchitectureMode | null;
   contentText: string;
@@ -569,6 +611,7 @@ function upsertStreamingMessage({
   messages: Message[];
   runId: string;
   status: Message["status"];
+  reviewRequired?: boolean;
 }): Message[] {
   const streamingId = "streaming-" + runId;
   if (messages.some((message) =>
@@ -578,13 +621,14 @@ function upsertStreamingMessage({
     return messages;
   }
   const existing = messages.findIndex((m) => m.id === streamingId);
-  if (existing >= 0 && messages[existing].status === "completed" && status !== "completed") {
+  if (existing >= 0 && ["completed", "human_review_required"].includes(messages[existing].status) && status === "processing") {
     return messages;
   }
   const existingMetadata = existing >= 0 ? messages[existing].metadata : null;
   const metadata = {
     ...(existingMetadata && typeof existingMetadata === "object" ? existingMetadata : {}),
     ...(architectureMode ? { architectureMode } : {}),
+    ...(typeof reviewRequired === "boolean" ? { reviewRequired } : {}),
     runtimeRunId: runId,
   };
   if (existing >= 0) {

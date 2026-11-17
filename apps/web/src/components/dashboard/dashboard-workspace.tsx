@@ -44,40 +44,73 @@ export function DashboardWorkspace() {
   const [reviewTasks, setReviewTasks] = useState<ReviewTask[]>([]);
   const selectedConversationId = searchParams.get("conversationId");
   const [error, setError] = useState<string | null>(null);
+  const errorSourceRef = useRef<"fetch" | "review" | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const refreshRef = useRef<() => Promise<void>>(async () => {});
+  const refreshVersionRef = useRef(0);
+  const reviewMutationsRef = useRef(new Set<string>());
 
   useEffect(() => {
     let cancelled = false;
+    let inFlight = false;
+    let refreshQueued = false;
     setIsLoading(true);
     setError(null);
 
     async function load() {
+      if (inFlight || reviewMutationsRef.current.size > 0) {
+        refreshQueued = true;
+        return;
+      }
+      inFlight = true;
+      refreshQueued = false;
+      const version = refreshVersionRef.current;
       try {
         const [metricsResponse, reviewsResponse] = await Promise.all([
           getDashboardMetrics(),
           listOpenReviewTasks(),
         ]);
-        if (cancelled) {
+        if (cancelled || version !== refreshVersionRef.current) {
           return;
         }
         setMetrics(metricsResponse);
         setReviewTasks(reviewsResponse.reviewTasks);
+        if (errorSourceRef.current === "fetch") {
+          errorSourceRef.current = null;
+          setError(null);
+        }
       } catch (caught) {
-        if (!cancelled) {
+        if (!cancelled && version === refreshVersionRef.current) {
+          errorSourceRef.current = "fetch";
           setError(caught instanceof Error ? caught.message : "Falha ao carregar dashboard");
         }
       } finally {
+        inFlight = false;
         if (!cancelled) {
           setIsLoading(false);
+          if (refreshQueued && reviewMutationsRef.current.size === 0) void load();
         }
       }
     }
 
+    refreshRef.current = load;
     void load();
+    const timer = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 15000);
+    const onFocus = () => { void load(); };
+    window.addEventListener("focus", onFocus);
     return () => {
       cancelled = true;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isLoading && metrics && window.location.hash === "#review-queue") {
+      const frame = requestAnimationFrame(() => document.getElementById("review-queue")?.scrollIntoView({ block: "start" }));
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [isLoading, Boolean(metrics)]);
 
   const generatedAt = useMemo(() => {
     if (!metrics?.generatedAt) {
@@ -96,22 +129,27 @@ export function DashboardWorkspace() {
     status: "resolved" | "cancelled" | "in_review",
     note: string,
   ) {
+    reviewMutationsRef.current.add(reviewTaskId);
+    refreshVersionRef.current += 1;
     try {
+      errorSourceRef.current = null;
       setError(null);
-      await resolveReviewTask(reviewTaskId, {
+      const updatedTask = await resolveReviewTask(reviewTaskId, {
         note: note.trim() || undefined,
         resolvedBy: "dashboard_operator",
         status,
       });
 
-      const [metricsResponse, reviewsResponse] = await Promise.all([
-        getDashboardMetrics(),
-        listOpenReviewTasks(),
-      ]);
-      setMetrics(metricsResponse);
-      setReviewTasks(reviewsResponse.reviewTasks);
+      setReviewTasks((current) => updatedTask.status === "open" || updatedTask.status === "in_review"
+        ? current.map((task) => task.id === updatedTask.id ? updatedTask : task)
+        : current.filter((task) => task.id !== updatedTask.id));
     } catch (caught) {
+      errorSourceRef.current = "review";
       setError(caught instanceof Error ? caught.message : "Falha ao resolver revisão");
+    } finally {
+      reviewMutationsRef.current.delete(reviewTaskId);
+      refreshVersionRef.current += 1;
+      await refreshRef.current();
     }
   }
 
@@ -176,6 +214,13 @@ export function DashboardWorkspace() {
                 value={formatDuration(metrics.totals.averageRunDurationMs)}
               />
             </section>
+
+            {reviewTasks.length > 0 ? (
+              <a className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 transition-colors hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-700" href="#review-queue" data-testid="dashboard-review-summary">
+                <span className="flex min-w-0 items-start gap-3"><ShieldAlert aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" /><span><strong className="block text-sm">{reviewTasks.length} {reviewTasks.length === 1 ? "solicitação aguarda" : "solicitações aguardam"} revisão humana</strong><span className="block text-xs leading-relaxed">Avalie as respostas sugeridas e registre a decisão na fila.</span></span></span>
+                <span className="text-xs font-semibold">Ir para a fila →</span>
+              </a>
+            ) : null}
 
             <section aria-label="Indicadores de execução" className="grid min-w-0 grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
               <Card className="min-w-0 shadow-none">
@@ -263,7 +308,7 @@ function ConversationRow({
 }) {
   return (
     <div
-      className="min-w-0 rounded-xl border bg-background p-3"
+      className={cn("min-w-0 rounded-xl border p-3", conversation.reviewPending ? "border-amber-200 bg-amber-50/60" : "bg-background")}
       data-testid={`dashboard-conversation-${conversation.conversationId}`}
     >
       <div>
@@ -277,7 +322,7 @@ function ConversationRow({
             </p>
           </div>
           <Badge variant={conversation.reviewPending ? "warning" : "outline"}>
-            {conversation.reviewPending ? "Revisão" : conversation.status === "active" ? "Ativa" : formatStatusLabel(conversation.status)}
+            {conversation.reviewPending ? "Revisão pendente" : conversation.status === "active" ? "Ativa" : formatStatusLabel(conversation.status)}
           </Badge>
         </div>
       </div>
@@ -320,36 +365,32 @@ function ReviewQueue({
     try { await onResolveReviewTask(id, status, note); }
     finally { pendingRef.current.delete(id); setPending(current => ({ ...current, [id]: false })); }
   }
-  const excerptCacheRef = useRef(new Map<string, Message[]>());
+  const excerptRequestsRef = useRef(new Set<string>());
   const [excerpts, setExcerpts] = useState<Record<string, Message[] | "loading" | "error">>({});
 
   const loadExcerpt = useCallback((conversationId: string) => {
-    if (excerptCacheRef.current.has(conversationId)) {
-      setExcerpts((prev) => ({ ...prev, [conversationId]: excerptCacheRef.current.get(conversationId)! }));
-      return;
-    }
+    if (excerptRequestsRef.current.has(conversationId)) return;
+    excerptRequestsRef.current.add(conversationId);
     setExcerpts((prev) => prev[conversationId] ? prev : { ...prev, [conversationId]: "loading" });
     getConversation(conversationId)
       .then((detail) => {
-        const lastTwo = detail.messages.slice(-2);
-        excerptCacheRef.current.set(conversationId, lastTwo);
-        setExcerpts((prev) => ({ ...prev, [conversationId]: lastTwo }));
+        setExcerpts((prev) => ({ ...prev, [conversationId]: detail.messages }));
       })
       .catch(() => {
         setExcerpts((prev) => ({ ...prev, [conversationId]: "error" }));
-      });
+      })
+      .finally(() => excerptRequestsRef.current.delete(conversationId));
   }, []);
 
   useEffect(() => {
-    for (const task of reviewTasks) {
-      loadExcerpt(task.conversationId);
-    }
+    for (const conversationId of new Set(reviewTasks.map((task) => task.conversationId))) loadExcerpt(conversationId);
   }, [reviewTasks, loadExcerpt]);
 
   return (
-    <Card className="shadow-none">
+    <Card aria-labelledby="review-queue-title" className="scroll-mt-28 shadow-none" data-testid="human-review-queue" id="review-queue" tabIndex={-1}>
       <CardHeader className="p-4 pb-2">
-        <CardTitle>Fila de revisão humana</CardTitle>
+        <div className="flex flex-wrap items-center justify-between gap-2"><CardTitle className="flex items-center gap-2" id="review-queue-title"><ShieldAlert aria-hidden="true" className="h-4 w-4 text-amber-700" />Fila de revisão humana</CardTitle><Badge variant={reviewTasks.length > 0 ? "warning" : "outline"}>{reviewTasks.length} {reviewTasks.length === 1 ? "pendente" : "pendentes"}</Badge></div>
+        <p className="text-xs leading-relaxed text-muted-foreground">Solicitações encaminhadas para avaliação. A sugestão do MAB aguarda a decisão de uma pessoa.</p>
       </CardHeader>
       <CardContent className="grid min-w-0 grid-cols-1 gap-3 p-4 pt-0">
         {reviewTasks.length === 0 ? (
@@ -360,8 +401,17 @@ function ReviewQueue({
           reviewTasks.map((task) => {
             const note = notes[task.id] ?? "";
             const excerpt = excerpts[task.conversationId];
+            const reviewedMessage = Array.isArray(excerpt) ? excerpt.find((message) => message.id === task.messageId) : undefined;
+            const reviewedRunId = task.metadata?.runtimeRunId;
+            const reviewContext = Array.isArray(excerpt) ? excerpt.filter((message) => {
+              if (message.id === task.messageId) return true;
+              if (message.direction !== "outbound") return false;
+              return typeof reviewedRunId === "string"
+                ? message.metadata?.runtimeRunId === reviewedRunId
+                : reviewedMessage?.correlationId === message.correlationId;
+            }) : [];
             return (
-              <div className="rounded-xl border bg-background p-3" key={task.id}>
+              <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-3" data-testid={`review-queue-task-${task.id}`} key={task.id}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="break-words text-sm font-semibold">{formatReviewReason(task.reason)}</p>
@@ -370,7 +420,7 @@ function ReviewQueue({
                       {shortId(task.messageId)} · {formatDate(task.createdAt)}
                     </p>
                   </div>
-                  <Badge variant="warning">{task.status === "open" ? "Aberta" : task.status === "in_review" ? "Em revisão" : formatStatusLabel(task.status)}</Badge>
+                  <Badge className="shrink-0 gap-1" variant="warning"><Clock3 aria-hidden="true" className="h-3 w-3" />{task.status === "open" ? "Aguardando revisão" : task.status === "in_review" ? "Em revisão" : formatStatusLabel(task.status)}</Badge>
                 </div>
                 <div className="mt-2 space-y-0.5">
                   {excerpt === "loading" ? (
@@ -382,11 +432,11 @@ function ReviewQueue({
                       Sem contexto disponível
                     </p>
                   ) : Array.isArray(excerpt) ? (
-                    excerpt.map((m) => (
+                    reviewContext.length ? reviewContext.map((m) => (
                       <p className="truncate text-xs text-muted-foreground" key={m.id}>
                         {m.direction === "inbound" ? "Cliente" : "Assistente"}: {m.contentText?.slice(0, 120)}
                       </p>
-                    ))
+                    )) : <p className="text-xs text-muted-foreground">Aguardando a resposta sugerida deste atendimento.</p>
                   ) : null}
                 </div>
                 <textarea

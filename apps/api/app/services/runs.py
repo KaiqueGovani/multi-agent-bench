@@ -126,10 +126,13 @@ class RunService:
         human_review_required: bool | None = None,
         final_outcome: str | None = None,
         summary: RunSummary | None = None,
+        commit: bool = True,
     ) -> Run | None:
         model = self._db.get(RunModel, run_id)
         if model is None:
             return None
+        if model.final_outcome in {"human_review_resolved", "human_review_cancelled"}:
+            return run_to_schema(model)
         model.status = status.value
         model.external_run_id = external_run_id or model.external_run_id
         model.trace_id = trace_id or model.trace_id
@@ -143,7 +146,10 @@ class RunService:
                 mode="json",
                 exclude_none=True,
             )
-        self._db.commit()
+        if commit:
+            self._db.commit()
+        else:
+            self._db.flush()
         self._db.refresh(model)
         return run_to_schema(model)
 
