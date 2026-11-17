@@ -20,6 +20,7 @@ import {
   Plus,
   Loader2,
   Search,
+  Trash2,
   Workflow,
   X
 } from "lucide-react";
@@ -30,7 +31,7 @@ import { CentralizedFlow, SwarmFlow, WorkflowFlow } from "@/components/runtime/a
 import { ArchitectureComparisonOverview } from "@/components/runtime/architecture-comparison-overview";
 import { LlmSettings } from "@/components/runtime/llm-settings";
 import { formatArchitectureLabel as formatArchitectureLabelText } from "@/components/runtime/presentation";
-import { RunExecutionPanel } from "@/components/runtime/run-execution-panel";
+import { RunSelector } from "@/components/runtime/run-selector";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -42,6 +43,7 @@ import type { ArchitectureMode, ConversationSummary, ExecutionMode, Message, Rev
 import { cn } from "@/lib/utils";
 import { MessageComposer } from "./message-composer";
 import { MessageList } from "./message-list";
+import { DeleteConversationDialog } from "./delete-conversation-dialog";
 
 type WorkspaceTab = "conversa" | "visao-geral" | "atividade";
 
@@ -65,10 +67,7 @@ export function ChatWorkspace() {
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [isDraftConversation, setIsDraftConversation] = useState(false);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
-  const [flowSelection, setFlowSelection] = useState<{
-    conversationId: string;
-    architecture: Exclude<ArchitectureMode, "all_architectures">;
-  } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const [architectureMode, setArchitectureMode] = useState<ArchitectureMode>(
     "all_architectures"
   );
@@ -82,9 +81,11 @@ export function ChatWorkspace() {
     attachments,
     attachmentsByMessage,
     connectionStatus,
+    composerKey,
     conversation,
     conversationId,
     conversationSummaries,
+    deleteConversation,
     error,
     events,
     isCreatingConversation,
@@ -104,12 +105,13 @@ export function ChatWorkspace() {
     : "lg:grid-cols-1";
   const requestedConversationId = searchParams.get("conversationId");
   const hasActiveConversation = Boolean(conversationId);
-  const flowRuns = buildLatestArchitectureRuns(runs);
-  const isMultiArchitecture = flowRuns.length > 1;
-  const selectedRun = flowRuns.find(
-    (run) => flowSelection?.conversationId === conversationId
-      && readArchitectureKey(run) === flowSelection?.architecture,
-  ) ?? flowRuns[0];
+  const orderedRuns = [...runs].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime() || a.id.localeCompare(b.id));
+  const latestRun = orderedRuns.at(-1);
+  const latestPeers = buildLatestArchitectureRuns(orderedRuns.filter((run) => run.messageId === latestRun?.messageId));
+  const selectedRun = runs.find((run) => run.id === selectedRunId) ?? latestPeers[0];
+  const comparisonRuns = selectedRun ? orderedRuns.filter((run) => run.messageId === selectedRun.messageId) : [];
+  const flowRuns = buildLatestArchitectureRuns(comparisonRuns);
+  const isMultiArchitecture = buildLatestArchitectureRuns(runs).length > 1;
   const selectedFlowRunId = selectedRun?.id ?? null;
   const selectedArchitectureKey = selectedRun ? readArchitectureKey(selectedRun) : null;
   const {
@@ -141,7 +143,6 @@ export function ChatWorkspace() {
     router.replace("/", { scroll: false });
     setIsInspectorOpen(false);
     setSelectedRunId(null);
-    setFlowSelection(null);
     void startConversation();
   }
 
@@ -177,7 +178,7 @@ export function ChatWorkspace() {
             reachable: false,
             ready: false,
             llm: null,
-            error: "API indisponivel",
+            error: "API indisponível",
           });
         }
       }
@@ -190,11 +191,7 @@ export function ChatWorkspace() {
     };
   }, [executionMode]);
 
-  useEffect(() => {
-    setSelectedRunId((current) =>
-      runs.some((run) => run.id === current) ? current : runs.at(-1)?.id ?? null,
-    );
-  }, [runs]);
+  useEffect(() => { setSelectedRunId(null); }, [conversationId]);
 
   useEffect(() => {
     if (isDraftConversation || !requestedConversationId || requestedConversationId === conversationId) {
@@ -231,6 +228,7 @@ export function ChatWorkspace() {
           openReviewCount={openReviewTasks.length}
           onCreateConversation={handleStartDraftConversation}
           onOpenChange={setIsHistoryOpen}
+          onDeleteConversation={(summary) => setDeleteTarget({ id: summary.conversationId, title: summary.title || `Conversa ${shortId(summary.conversationId)}` })}
           onSelectConversation={(summary) => {
             if (summary.conversationId === conversationId) {
               return;
@@ -269,8 +267,8 @@ export function ChatWorkspace() {
             </Button>
             <div className="min-w-0 flex-1">
               <div className="flex min-w-0 items-center gap-2">
-                <h1 className="truncate text-base font-semibold">
-                  Atendimento farmacêutico POC
+                <h1 className="truncate text-base font-semibold" title={conversation?.title || undefined}>
+                  {conversation?.title || "Atendimento farmacêutico POC"}
                 </h1>
                 {conversationId ? (
                   <Badge variant="outline">
@@ -284,7 +282,7 @@ export function ChatWorkspace() {
                 />
               </div>
               <p className="truncate text-xs text-muted-foreground">
-                {conversationId ? `Conversa ${conversationId}` : "Nenhuma conversa ativa"}
+                {conversationId ? `Conversa ${shortId(conversationId)}` : "Nenhuma conversa ativa"}
               </p>
             </div>
           </div>
@@ -317,6 +315,11 @@ export function ChatWorkspace() {
               runtimeStatus={runtimeStatus}
             />
             <LlmSettings onStatusChange={setRuntimeStatus} runtimeStatus={runtimeStatus} />
+            {conversationId ? (
+              <Button aria-label="Excluir conversa" onClick={() => setDeleteTarget({ id: conversationId, title: conversation?.title || `Conversa ${shortId(conversationId)}` })} size="icon" type="button" variant="ghost">
+                <Trash2 aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            ) : null}
             {openReviewTasks.length > 0 ? (
               <Link
                 aria-label={`Ver ${openReviewTasks.length} revisões abertas`}
@@ -387,6 +390,33 @@ export function ChatWorkspace() {
           </Link>
         </nav>
 
+        {selectedRun && activeTab !== "atividade" ? (
+          <RunSelector
+            isFollowingLatest={selectedRunId === null}
+            messages={messages}
+            onFollowLatest={() => setSelectedRunId(null)}
+            onSelect={setSelectedRunId}
+            runs={runs}
+            selectedRun={selectedRun}
+          />
+        ) : null}
+
+        {deleteTarget ? (
+          <DeleteConversationDialog
+            conversation={deleteTarget}
+            onClose={() => setDeleteTarget(null)}
+            onDelete={async (id) => {
+              await deleteConversation(id);
+              if (id === conversationId) {
+                setIsDraftConversation(true);
+                router.replace("/", { scroll: false });
+                setSelectedRunId(null);
+                setIsInspectorOpen(false);
+              }
+            }}
+          />
+        ) : null}
+
         {error && error !== dismissedError ? (
           <Alert className="rounded-none border-x-0 border-t-0 px-5 py-2" variant="destructive">
             <AlertDescription className="flex items-center justify-between gap-2">
@@ -426,23 +456,15 @@ export function ChatWorkspace() {
           {activeTab === "conversa" ? (
             <>
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
-                {isMultiArchitecture ? (
-                  <div className="flex items-center gap-2 border-b bg-card/60 px-3 py-2">
+                {flowRuns.length > 1 ? (
+                  <div className="flex min-w-0 flex-wrap items-center gap-2 border-b bg-card/60 px-3 py-2">
                     <span className="text-xs text-muted-foreground">
                       Arquitetura:
                     </span>
                     <ArchitectureFlowPicker
                       runs={flowRuns}
-                      selectedRunId={selectedFlowRunId}
-                      onSelectRun={(runId) => {
-                        const run = flowRuns.find((candidate) => candidate.id === runId);
-                        if (run) {
-                          setFlowSelection({
-                            conversationId: run.conversationId,
-                            architecture: readArchitectureKey(run),
-                          });
-                        }
-                      }}
+                      selectedRunId={flowRuns.find((run) => readArchitectureKey(run) === selectedArchitectureKey)?.id ?? null}
+                      onSelectRun={setSelectedRunId}
                     />
                   </div>
                 ) : null}
@@ -450,7 +472,7 @@ export function ChatWorkspace() {
                   flowProjection ? (
                     <div
                       aria-label="Fluxo da arquitetura"
-                      className="shrink-0 border-b bg-muted/30 p-2"
+                      className="min-w-0 shrink-0 border-b bg-muted/30 p-2"
                       data-testid="chat-flow-panel"
                       style={{ minHeight: 260, maxHeight: 360, overflow: "auto" }}
                     >
@@ -488,6 +510,7 @@ export function ChatWorkspace() {
                 </div>
               </div>
               <MessageComposer
+                key={composerKey}
                 architectureMode={architectureMode}
                 disabled={false}
                 isArchitectureLocked={hasActiveConversation}
@@ -499,24 +522,14 @@ export function ChatWorkspace() {
           ) : null}
 
           {activeTab === "visao-geral" ? (
-            <div className="flex-1 overflow-y-auto bg-background p-4">
+            <div className="min-w-0 flex-1 overflow-y-auto bg-background p-3 sm:p-4" data-testid="conversation-overview">
               {runs.length > 0 ? (
-                <div className="grid gap-4">
-                  {hasArchitectureComparison(runs, architectureMode) ? (
-                    <ArchitectureComparisonOverview runs={runs} />
-                  ) : (
-                    <RunExecutionPanel
-                      hideTabs
-                      onSelectRun={setSelectedRunId}
-                      runs={runs}
-                      selectedRunId={selectedRunId}
-                      variant="technical"
-                    />
-                  )}
+                <div className="grid min-w-0 gap-4">
+                  <ArchitectureComparisonOverview runs={comparisonRuns} selectedRunId={selectedFlowRunId} />
                 </div>
               ) : (
                 <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                  Nenhuma run ativa para exibir.
+                  Nenhuma execução disponível para exibir.
                 </div>
               )}
             </div>
@@ -550,6 +563,7 @@ function ConversationHistory({
   openReviewCount,
   onCreateConversation,
   onOpenChange,
+  onDeleteConversation,
   onSelectConversation
 }: {
   activeConversationId: string | null;
@@ -560,6 +574,7 @@ function ConversationHistory({
   openReviewCount: number;
   onCreateConversation: () => void;
   onOpenChange: (open: boolean) => void;
+  onDeleteConversation: (summary: ConversationSummary) => void;
   onSelectConversation: (summary: ConversationSummary) => void;
 }) {
   return (
@@ -633,9 +648,9 @@ function ConversationHistory({
                 const isActive = summary.conversationId === activeConversationId;
 
                 return (
-                  <li key={summary.conversationId}>
+                  <li className="group relative" key={summary.conversationId}>
                     <button
-                      className={`w-full rounded-md border p-3 text-left transition-colors ${
+                      className={`w-full rounded-md border p-3 pr-9 text-left transition-colors ${
                         isActive
                           ? "border-primary bg-primary/10"
                           : "border-border hover:bg-muted"
@@ -648,7 +663,7 @@ function ConversationHistory({
                         <div className="flex min-w-0 items-center gap-2">
                           <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
                           <span className="truncate text-sm font-medium">
-                            {shortId(summary.conversationId)}
+                            {summary.title || `Conversa ${shortId(summary.conversationId)}`}
                           </span>
                         </div>
                         <Badge
@@ -679,6 +694,14 @@ function ConversationHistory({
                           Carregando conversa
                         </div>
                       ) : null}
+                    </button>
+                    <button
+                      aria-label={`Excluir ${summary.title || `conversa ${shortId(summary.conversationId)}`}`}
+                      className="absolute right-1 top-2 rounded-md p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      onClick={() => onDeleteConversation(summary)}
+                      type="button"
+                    >
+                      <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
                     </button>
                   </li>
                 );
@@ -965,7 +988,7 @@ function formatRuntimeStatus(status: RuntimeHealthStatus | null): string {
     return "ativo, token configurado";
   }
   if (!status.reachable) {
-    return "runtime indisponivel";
+    return "runtime indisponível";
   }
   if (status.llm && !status.llm.tokenConfigured) {
     return "token ausente";
@@ -973,7 +996,7 @@ function formatRuntimeStatus(status: RuntimeHealthStatus | null): string {
   if (status.llm && !status.llm.enabled) {
     return "live LLM desligado";
   }
-  return "nao pronto";
+  return "não pronto";
 }
 
 function formatArchitectureMode(mode: ArchitectureMode): string {

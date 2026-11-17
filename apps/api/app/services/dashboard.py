@@ -112,12 +112,37 @@ class DashboardService:
         self,
         execution_events: list[RunExecutionEventModel],
     ) -> list[DashboardDistributionItem]:
-        counts: dict[str, int] = defaultdict(int)
+        # Lifecycle events describe a call; they are not separate invocations.
+        # Keep domain tools separate from agent wrappers and routing controls.
+        calls: set[tuple] = set()
+        legacy: dict[tuple, list[RunExecutionEventModel]] = defaultdict(list)
+        excluded = {"route_selection", "routeselection", "handoff_to_peer", "handoff"}
+        domain_tools = {"stock_lookup", "faq_lookup", "attachment_intake"}
         for event in execution_events:
-            if event.event_family != "tool":
+            if event.event_family != "tool" or not event.tool_name:
                 continue
-            key = event.tool_name or "unknown"
+            key = event.tool_name.strip().lower().replace(".", "_").replace("-", "_")
+            payload = event.payload_json or {}
+            if (key in excluded or key.endswith("specialist")
+                or payload.get("callKind") in {"specialist", "peer", "coordination"}
+                or (key not in domain_tools and payload.get("callKind") != "domain")):
+                continue
+            call_id = payload.get("toolCallId") or payload.get("callId")
+            if call_id:
+                calls.add((event.run_id, str(call_id), key))
+            else:
+                legacy[(event.run_id, event.actor_name, key)].append(event)
+
+        counts: dict[str, int] = defaultdict(int)
+        for _, _, key in calls:
             counts[key] += 1
+        for (_, _, key), events in legacy.items():
+            starts = [event for event in events if event.event_name == "started"]
+            if starts:
+                counts[key] += len(starts)
+            else:
+                # Older journals may only contain a terminal lookup event.
+                counts[key] += sum(event.status in {"completed", "failed"} for event in events)
         return [
             DashboardDistributionItem(key=key, count=count)
             for key, count in sorted(counts.items(), key=lambda item: (-item[1], item[0]))
@@ -151,6 +176,7 @@ class DashboardService:
         return [self._conversation_item(conversation) for conversation in conversations]
 
     def _conversation_item(self, conversation: ConversationModel) -> DashboardConversationItem:
+        title = (conversation.metadata_json or {}).get("title")
         latest_run = self._db.scalars(
             select(RunModel)
             .where(RunModel.conversation_id == conversation.id)
@@ -176,6 +202,7 @@ class DashboardService:
 
         return DashboardConversationItem(
             conversation_id=conversation.id,
+            title=title if isinstance(title, str) else None,
             status=ConversationStatus(conversation.status),
             updated_at=conversation.updated_at,
             latest_run_id=latest_run.id if latest_run else None,

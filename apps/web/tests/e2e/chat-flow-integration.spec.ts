@@ -49,7 +49,7 @@ test("complete chat flow: open app, select architecture, send message, receive r
     (req) => req.method() === "POST" && req.url().endsWith("/messages"),
   );
 
-  await page.locator("form button[type='submit']").click();
+  await page.getByRole("button", { name: "Enviar mensagem", exact: true }).click();
 
   await conversationCreatePromise;
   await messageCreatePromise;

@@ -10,11 +10,12 @@ import {
   BaseEdge,
   getBezierPath,
   type EdgeProps,
-  useNodesInitialized,
   useReactFlow,
   useStore,
+  getViewportForBounds,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { Maximize2, Minus, Plus } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { memo, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -320,6 +321,10 @@ const AgentNode = memo(function AgentNode({ data }: NodeProps<Node<AgentNodeData
         <Handle type="source" position={Position.Right} className="!bg-transparent !border-0 !w-0 !h-0" />
         <Handle id="reverse-in" type="target" position={Position.Right} className="!bg-transparent !border-0 !w-0 !h-0" />
         <Handle id="reverse-out" type="source" position={Position.Left} className="!bg-transparent !border-0 !w-0 !h-0" />
+        <Handle id="top-in" type="target" position={Position.Top} className="!bg-transparent !border-0 !w-0 !h-0" />
+        <Handle id="top-out" type="source" position={Position.Top} className="!bg-transparent !border-0 !w-0 !h-0" />
+        <Handle id="bottom-in" type="target" position={Position.Bottom} className="!bg-transparent !border-0 !w-0 !h-0" />
+        <Handle id="bottom-out" type="source" position={Position.Bottom} className="!bg-transparent !border-0 !w-0 !h-0" />
         <div className="flex items-center gap-2">
           <span
             className={`h-2.5 w-2.5 shrink-0 rounded-full ${
@@ -444,7 +449,7 @@ function AnimatedEdge(props: EdgeProps) {
   const markerPrefix = data?.markerPrefix;
   const reduceMotion = useReducedMotion();
 
-  const [bezierPath] = getBezierPath({
+  const [bezierPath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
     sourcePosition,
@@ -468,11 +473,19 @@ function AnimatedEdge(props: EdgeProps) {
       <BaseEdge
         path={edgePath}
         style={{
-          stroke: color,
-          strokeWidth,
-          opacity: state === "idle" ? 0.6 : 0.9,
+          stroke: data?.sequence ? "#64748b" : color,
+          strokeWidth: data?.sequence ? 1.4 : strokeWidth,
+          opacity: data?.sequence ? 0.8 : state === "idle" ? 0.6 : 0.9,
+          strokeDasharray: data?.sequence ? "5 5" : undefined,
         }}
         markerEnd={`url(#${markerPrefix}-marker-${state})`}
+        label={typeof data?.labelText === "string" ? data.labelText : undefined}
+        labelX={labelX}
+        labelY={labelY - 10}
+        labelStyle={{ fill: "#475569", fontSize: 10, fontWeight: 500 }}
+        labelBgStyle={{ fill: "#f8fafc", fillOpacity: 0.95 }}
+        labelBgPadding={[5, 3]}
+        labelBgBorderRadius={4}
       />
       {animated && (
         <path
@@ -527,16 +540,43 @@ function EdgeMarkerDefs({ prefix }: { prefix: string }) {
 
 const nodeTypes = { agent: AgentNode };
 const edgeTypes = { animated: AnimatedEdge };
-const flowFitOptions = { padding: 0.16, maxZoom: 1 };
+const flowFitOptions = { padding: 0.14, minZoom: 0.18, maxZoom: 1 };
+
+function FlowControls() {
+  const { getNodes, getNodesBounds, setViewport, zoomIn, zoomOut } = useReactFlow();
+  const width = useStore((state) => state.width);
+  const height = useStore((state) => state.height);
+  const fit = () => setViewport(getViewportForBounds(getNodesBounds(getNodes()), width, height, 0.18, 1, 0.14));
+  return (
+    <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5 rounded-md border bg-card/95 p-0.5 shadow-sm">
+      <button aria-label="Diminuir fluxo" className="flex h-9 w-9 items-center justify-center rounded text-muted-foreground hover:bg-muted focus-visible:outline-primary sm:h-7 sm:w-7" onClick={() => void zoomOut()} type="button"><Minus className="h-3.5 w-3.5" /></button>
+      <button aria-label="Ampliar fluxo" className="flex h-9 w-9 items-center justify-center rounded text-muted-foreground hover:bg-muted focus-visible:outline-primary sm:h-7 sm:w-7" onClick={() => void zoomIn()} type="button"><Plus className="h-3.5 w-3.5" /></button>
+      <button aria-label="Ajustar fluxo" className="flex h-9 items-center gap-1 rounded px-1.5 text-[11px] text-muted-foreground hover:bg-muted focus-visible:outline-primary sm:h-7" onClick={() => void fit()} type="button"><Maximize2 className="h-3.5 w-3.5" /><span>Ajustar</span></button>
+    </div>
+  );
+}
 
 function FitGraph({ topology }: { topology: string }) {
-  const { fitView } = useReactFlow();
-  const ready = useNodesInitialized();
+  const { getNodes, getNodesBounds, setViewport } = useReactFlow();
+  const ready = useStore((state) => state.nodeLookup.size > 0 && [...state.nodeLookup.values()]
+    .every((node) => Boolean(node.measured?.width && node.measured?.height)));
   const width = useStore((state) => state.width);
   const height = useStore((state) => state.height);
   useEffect(() => {
-    if (ready) void fitView(flowFitOptions);
-  }, [fitView, height, ready, topology, width]);
+    let frame = 0;
+    let settledFrame = 0;
+    if (ready && width > 0 && height > 0) {
+      // Read measured internal nodes: controlled input nodes intentionally do
+      // not receive ReactFlow's dimension changes. Refit when the frame resizes.
+      frame = requestAnimationFrame(() => {
+        settledFrame = requestAnimationFrame(() => {
+          const bounds = getNodesBounds(getNodes());
+          void setViewport(getViewportForBounds(bounds, width, height, 0.18, 1, 0.14));
+        });
+      });
+    }
+    return () => { cancelAnimationFrame(frame); cancelAnimationFrame(settledFrame); };
+  }, [getNodes, getNodesBounds, height, ready, setViewport, topology, width]);
   return null;
 }
 
@@ -562,17 +602,15 @@ function FlowWrapper({
   })), [edges, markerPrefix]);
   const topology = nodes.map(({ id, position }) => `${id}:${position.x},${position.y}`).join("|");
   return (
-    <div data-testid={testId}>
-      <p className="px-2 pt-1 text-xs text-muted-foreground sm:hidden">
-        Deslize horizontalmente para ver todas as etapas.
-      </p>
+    <div className="min-w-0 max-w-full" data-testid={testId}>
+      <p className="px-2 pb-1 text-[11px] text-muted-foreground sm:hidden">Use + para ampliar e arraste para explorar.</p>
       <div
         aria-label="Grafo da execução"
         role="region"
         tabIndex={0}
-        className="overflow-x-auto rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+        className="min-w-0 max-w-full overflow-hidden rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
       >
-        <div style={{ height }} className="relative min-w-[620px]">
+        <div style={{ height }} className="relative w-full min-w-0">
           <EdgeMarkerDefs prefix={markerPrefix} />
           <ReactFlow
             nodes={nodes}
@@ -587,13 +625,16 @@ function FlowWrapper({
             nodesFocusable={false}
             edgesFocusable={false}
             elementsSelectable={false}
-            panOnDrag={false}
+            panOnDrag
+            minZoom={0.18}
+            maxZoom={1.8}
             zoomOnScroll={false}
-            zoomOnPinch={false}
+            zoomOnPinch
             zoomOnDoubleClick={false}
             preventScrolling={false}
           >
             <FitGraph topology={topology} />
+            <FlowControls />
           </ReactFlow>
         </div>
       </div>
@@ -869,7 +910,7 @@ export function CentralizedFlow({
   }, [activeActorName, actors, executionEvents, runStatus]);
 
   if (usesObservedAgentTrace(executionEvents)) {
-    return <ObservedAgentFlow executionEvents={executionEvents} runStatus={runStatus} testId="runtime-visual-centralized" />;
+    return <ObservedAgentFlow architecture="centralized" executionEvents={executionEvents} runStatus={runStatus} testId="runtime-visual-centralized" />;
   }
   return <FlowWrapper nodes={nodes} edges={edges} testId="runtime-visual-centralized" height={360} />;
 }
@@ -953,7 +994,7 @@ export function WorkflowFlow({
   }, [activeActorName, executionEvents, runStatus, stages]);
 
   if (usesObservedAgentTrace(executionEvents)) {
-    return <ObservedAgentFlow executionEvents={executionEvents} runStatus={runStatus} testId="runtime-visual-workflow" />;
+    return <ObservedAgentFlow architecture="workflow" executionEvents={executionEvents} runStatus={runStatus} testId="runtime-visual-workflow" />;
   }
   return <FlowWrapper nodes={nodes} edges={edges} testId="runtime-visual-workflow" height={210} />;
 }
@@ -1097,7 +1138,7 @@ export function SwarmFlow({
   }, [activeActorName, actors, executionEvents, handoffs, runStatus]);
 
   if (usesObservedAgentTrace(executionEvents)) {
-    return <ObservedAgentFlow executionEvents={executionEvents} runStatus={runStatus} testId="runtime-visual-swarm" />;
+    return <ObservedAgentFlow architecture="swarm" executionEvents={executionEvents} runStatus={runStatus} testId="runtime-visual-swarm" />;
   }
   return <FlowWrapper nodes={nodes} edges={edges} testId="runtime-visual-swarm" />;
 }
@@ -1106,7 +1147,19 @@ function usesObservedAgentTrace(events: RunExecutionEvent[]) {
   return events.length === 0 || events.some((event) => event.eventFamily === "agent" || event.source === "ai_service");
 }
 
-function ObservedAgentFlow({ executionEvents, runStatus, testId }: {
+function connectionHandles(source: Node, target: Node) {
+  const dx = target.position.x - source.position.x;
+  const dy = target.position.y - source.position.y;
+  if (Math.abs(dx) >= Math.abs(dy) * 0.8) {
+    return dx >= 0 ? {} : { sourceHandle: "reverse-out", targetHandle: "reverse-in" };
+  }
+  return dy >= 0
+    ? { sourceHandle: "bottom-out", targetHandle: "top-in" }
+    : { sourceHandle: "top-out", targetHandle: "bottom-in" };
+}
+
+function ObservedAgentFlow({ architecture, executionEvents, runStatus, testId }: {
+  architecture: "centralized" | "workflow" | "swarm";
   executionEvents: RunExecutionEvent[];
   runStatus?: string | null;
   testId: string;
@@ -1114,38 +1167,86 @@ function ObservedAgentFlow({ executionEvents, runStatus, testId }: {
   const terminal = isTerminalRunStatus(runStatus);
   const { nodes, edges, height } = useMemo(() => {
     const graph = observedAgentGraph(executionEvents, terminal);
-    const columns = new Map<string, number>();
-    const rows = new Map<number, number>();
+    const root = graph.agents.find(({ role }) => architecture === "swarm"
+      ? /coordinator|iniciador/.test(role)
+      : /supervisor/.test(role)) ?? graph.agents[0];
+    const peers = graph.agents.filter((agent) => agent !== root);
+    const positions = new Map<string, { x: number; y: number }>();
+    if (architecture === "workflow") {
+      graph.agents.forEach(({ role }, index) => positions.set(role, { x: index * 244, y: 0 }));
+    } else if (architecture === "swarm") {
+      if (root) positions.set(root.role, { x: 232, y: 142 });
+      peers.forEach(({ role }, index) => {
+        const angle = peers.length === 1 ? 0 : peers.length === 2 ? [-150, -30][index] : -90 + index * 360 / peers.length;
+        const radians = angle * Math.PI / 180;
+        positions.set(role, { x: 232 + Math.cos(radians) * 230, y: 142 + Math.sin(radians) * 140 });
+      });
+    } else {
+      if (root) positions.set(root.role, { x: 0, y: Math.max(0, peers.length - 1) * 74 });
+      peers.forEach(({ role }, index) => positions.set(role, { x: 292, y: index * 148 }));
+    }
     const nodes = graph.agents.map((agent) => {
-      const parent = graph.links.find((link) => link.kind === "call" && link.to === agent.role && columns.has(link.from));
-      const column = parent ? (columns.get(parent.from) ?? 0) + 1 : 0;
-      const row = rows.get(column) ?? 0;
-      columns.set(agent.role, column);
-      rows.set(column, row + 1);
-      return makeNode(agent.role, formatAgentName(agent.role), parent ? "Especialista acionado" : "Agente acionado",
-        agent.status, !terminal, column * 238, row * 128,
+      const position = positions.get(agent.role) ?? { x: 0, y: 0 };
+      const description = architecture === "workflow"
+        ? `Etapa ${graph.agents.indexOf(agent) + 1} · execução registrada`
+        : agent === root && architecture === "swarm" && /coordinator|iniciador/.test(agent.role)
+          ? "Inicia a colaboração"
+          : agent === root && /supervisor/.test(agent.role) ? "Coordena os especialistas" : "Agente acionado";
+      return makeNode(agent.role, formatAgentName(agent.role), description,
+        agent.status, !terminal, position.x, position.y,
         undefined, agent.events.find((event) => event.nodeId)?.nodeId, undefined, agent.events);
     });
-    const edges = graph.links.map((link) => {
-      const isReturn = link.kind === "return";
-      const reverse = (columns.get(link.from) ?? 0) > (columns.get(link.to) ?? 0);
-      const state = link.status === "running" && !terminal ? "active" : isReturn ? "recent" : "settled";
+    const byId = new Map(nodes.map((node) => [node.id, node]));
+    // A reply on the same relationship is a result of that call, not a second
+    // crossing route. Keep its recorded evidence in the agent detail popover.
+    const connections = new Map<string, { from: string; to: string; status: string; returned: boolean; exchange: boolean; kind: "call" | "return" }>();
+    for (const link of graph.links) {
+      const key = [link.from, link.to].sort().join(":");
+      const previous = connections.get(key);
+      const reverse = previous && previous.from === link.to && previous.to === link.from;
+      if (!previous) connections.set(key, { ...link, returned: false, exchange: false });
+      else if (link.kind === "call" && previous.kind !== "call") {
+        connections.set(key, { ...link, returned: Boolean(reverse), exchange: false });
+      } else {
+        if (reverse && previous.kind === "call" && link.kind === "return") previous.returned = true;
+        if (reverse && previous.kind === "return" && link.kind === "return") previous.exchange = true;
+        if (link.status === "running") previous.status = "running";
+      }
+    }
+    const edges: Edge[] = [...connections.values()].map((link) => {
+      const state: EdgeState = link.status === "running" && !terminal ? "active" : "settled";
       return {
         ...makeEdge(link.from, link.to, state),
-        id: `${link.from}-${link.to}-${link.kind}`,
-        sourceHandle: reverse ? "reverse-out" : undefined,
-        targetHandle: reverse ? "reverse-in" : undefined,
-        label: isReturn ? "Retorno registrado" : "Invocação registrada",
-        data: { state, return: isReturn },
+        ...connectionHandles(byId.get(link.from)!, byId.get(link.to)!),
+        label: link.returned ? "Chamada e retorno registrados" : link.exchange ? "Comunicação registrada nos dois sentidos" : link.kind === "call" ? "Invocação registrada" : "Comunicação registrada",
+        data: { state, labelText: link.returned ? "retorno recebido" : link.exchange ? "troca de mensagens" : undefined },
       };
     });
-    return { nodes, edges, height: Math.max(220, Math.max(0, ...rows.values()) * 128 + 52) };
-  }, [executionEvents, terminal]);
+    // The workflow also exposes chronological order. Dashed connectors denote
+    // ordering only; they do not claim an agent-to-agent message was recorded.
+    if (architecture === "workflow") {
+      for (let index = 1; index < nodes.length; index++) {
+        const from = nodes[index - 1];
+        const to = nodes[index];
+        if (edges.some((edge) => edge.source === from.id && edge.target === to.id)) continue;
+        edges.push({
+          ...makeEdge(from.id, to.id, "idle"),
+          id: `${from.id}-${to.id}-sequence`,
+          label: "Ordem de execução, sem comunicação direta registrada",
+          data: { state: "idle", sequence: true },
+        });
+      }
+    }
+    const height = architecture === "workflow" ? 218 : architecture === "swarm" ? 360 : Math.max(230, Math.min(500, peers.length * 148 + 48));
+    return { nodes, edges, height };
+  }, [architecture, executionEvents, terminal]);
   return (
-    <div data-testid="observed-agent-flow">
+    <div className="min-w-0 max-w-full" data-testid="observed-agent-flow" data-layout={architecture}>
       {nodes.length ? (
         <>
-          <p className="px-2 pt-1 text-xs text-muted-foreground">Agentes e comunicações registrados na execução. Abra os eventos para conferir entradas, fontes e retornos.</p>
+          <p className="px-2 py-1 text-xs leading-relaxed text-muted-foreground">
+            {architecture === "workflow" ? "Etapas em ordem de execução. Linhas tracejadas indicam sequência; linhas contínuas, comunicação registrada." : "Agentes e conexões registrados na execução. Retornos aparecem na mesma conexão."}
+          </p>
           <FlowWrapper nodes={nodes} edges={edges} testId={testId} height={height} />
         </>
       ) : (

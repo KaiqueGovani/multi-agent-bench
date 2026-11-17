@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   createConversation,
+  deleteConversation as deleteConversationRequest,
   getConversation,
   getConversationEvents,
   listConversations,
@@ -45,10 +46,13 @@ export function useConversation(
   const [isLoadingConversation, setIsLoadingConversation] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [composerKey, setComposerKey] = useState(0);
+  const sendGenerationRef = useRef(0);
   const activeConversationIdRef = useRef<string | null>(null);
   const lastEventIdRef = useRef<string | null>(null);
   const detailRequestRef = useRef(0);
   const appliedDetailRequestRef = useRef(0);
+  const deletedConversationIdsRef = useRef(new Set<string>());
 
   /** Tracks when the last refreshConversationDetail was triggered, for debouncing. */
   const lastRefreshTsRef = useRef(0);
@@ -59,8 +63,9 @@ export function useConversation(
   const refreshConversations = useCallback(async () => {
     try {
       const response = await listConversations();
-      setConversationSummaries(response.conversations);
-      return response.conversations;
+      const summaries = response.conversations.filter((item) => !deletedConversationIdsRef.current.has(item.conversationId));
+      setConversationSummaries(summaries);
+      return summaries;
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Falha ao atualizar conversas");
       return [];
@@ -75,8 +80,9 @@ export function useConversation(
   const refreshOpenReviewTasks = useCallback(async () => {
     try {
       const response = await listOpenReviewTasks();
-      setOpenReviewTasks(response.reviewTasks);
-      return response.reviewTasks;
+      const tasks = response.reviewTasks.filter((item) => !deletedConversationIdsRef.current.has(item.conversationId));
+      setOpenReviewTasks(tasks);
+      return tasks;
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Falha ao atualizar revisões");
       return [];
@@ -84,6 +90,10 @@ export function useConversation(
   }, []);
 
   const loadConversation = useCallback(async (id: string) => {
+    sendGenerationRef.current += 1;
+    setComposerKey((current) => current + 1);
+    setIsSending(false);
+    setIsCreatingConversation(false);
     const request = ++detailRequestRef.current;
     appliedDetailRequestRef.current = request;
     setError(null);
@@ -195,12 +205,16 @@ export function useConversation(
       lastEventIdRef.current = getLastEventId(response) ?? lastEventIdRef.current;
       return response;
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Falha ao atualizar eventos");
+      if (activeConversationIdRef.current === id) setError(caught instanceof Error ? caught.message : "Falha ao atualizar eventos");
       return [];
     }
   }, []);
 
   const startConversation = useCallback(async () => {
+    sendGenerationRef.current += 1;
+    setComposerKey((current) => current + 1);
+    setIsSending(false);
+    setIsCreatingConversation(false);
     appliedDetailRequestRef.current = ++detailRequestRef.current;
     setError(null);
     activeConversationIdRef.current = null;
@@ -213,7 +227,17 @@ export function useConversation(
     setRuns([]);
     setReviewTasks([]);
     setConnectionStatus("idle");
+    streamingTimestampsRef.current.clear();
   }, []);
+
+  const deleteConversation = useCallback(async (id: string) => {
+    await deleteConversationRequest(id);
+    deletedConversationIdsRef.current.add(id);
+    setConversationSummaries((current) => current.filter((item) => item.conversationId !== id));
+    setOpenReviewTasks((current) => current.filter((item) => item.conversationId !== id));
+    if (activeConversationIdRef.current === id) await startConversation();
+    void refreshConversations();
+  }, [refreshConversations, startConversation]);
 
   const selectConversation = useCallback(
     async (id: string) => {
@@ -251,6 +275,7 @@ export function useConversation(
       }
       setIsSending(true);
       setError(null);
+      const generation = ++sendGenerationRef.current;
 
       // Build optimistic user message
       const optimisticId = "optimistic-" + crypto.randomUUID();
@@ -272,19 +297,22 @@ export function useConversation(
           setIsCreatingConversation(true);
           const created = await createConversation(architectureMode);
           targetConversationId = created.conversationId;
-          activeConversationIdRef.current = targetConversationId;
-          setConversationId(targetConversationId);
-          setIsCreatingConversation(false);
+          if (generation === sendGenerationRef.current) {
+            activeConversationIdRef.current = targetConversationId;
+            setConversationId(targetConversationId);
+            setIsCreatingConversation(false);
+          }
           // Update optimistic msg conversationId
           optimisticMsg.conversationId = targetConversationId;
         }
 
         // Insert optimistic message BEFORE the POST
-        setMessages((prev) => [...prev, optimisticMsg]);
+        if (generation === sendGenerationRef.current) setMessages((prev) => [...prev, optimisticMsg]);
 
         await sendMultipartMessage(
           targetConversationId, text.trim(), files, activeArchitectureMode, executionMode,
         );
+        if (generation !== sendGenerationRef.current) return;
         await refreshConversationDetail(targetConversationId);
         
         // For all_architectures mode, add more frequent refreshes to catch parallel runs
@@ -307,14 +335,17 @@ export function useConversation(
           }, 1600);
         }
       } catch (caught) {
+        if (generation !== sendGenerationRef.current) return;
         // Remove optimistic message on error
         setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
         setError(caught instanceof Error ? caught.message : "Falha ao enviar mensagem");
         // Let the composer retain its draft and attachment previews after rejection.
         throw caught;
       } finally {
-        setIsCreatingConversation(false);
-        setIsSending(false);
+        if (generation === sendGenerationRef.current) {
+          setIsCreatingConversation(false);
+          setIsSending(false);
+        }
       }
     },
     [
@@ -375,7 +406,7 @@ export function useConversation(
       source = openConversationEventStream(
         conversationId,
         (event) => {
-          if (activeConversationIdRef.current !== conversationId) {
+          if (isCancelled || activeConversationIdRef.current !== conversationId) {
             return;
           }
           if (event.conversationId !== conversationId) {
@@ -385,6 +416,10 @@ export function useConversation(
           setEvents((current) => {
             return mergeEventsForConversation(conversationId, current, [event]);
           });
+
+          if (event.eventType === "conversation.updated") {
+            debouncedRefreshDetail(conversationId, true);
+          }
 
           // --- Streaming assistant message handling ---
           const payloadRunId = typeof event.payload?.runId === "string" ? event.payload.runId : null;
@@ -449,6 +484,7 @@ export function useConversation(
           }
         },
         (status) => {
+          if (isCancelled || activeConversationIdRef.current !== conversationId) return;
           setConnectionStatus(status);
           if (status === "open") {
             void refreshEvents(conversationId);
@@ -487,9 +523,11 @@ export function useConversation(
     attachments,
     attachmentsByMessage,
     connectionStatus,
+    composerKey,
     conversation,
     conversationId,
     conversationSummaries,
+    deleteConversation,
     error,
     events,
     isCreatingConversation,

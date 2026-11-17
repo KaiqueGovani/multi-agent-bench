@@ -74,3 +74,24 @@ The published comparison runs with only the frontend.
 - Subscribe to SSE events for the active conversation.
 - Render persisted messages and operational events.
 - Render run-centric execution views backed by rich runtime projections.
+
+## Conversation and dashboard views
+
+The shared **Execução** picker lists every run, grouped by the user message that
+started it. Its selection stays the same when switching between **Conversa** and
+**Visão Geral**. The overview compares architectures for that message and marks
+the selected run; **Mais recente** resumes following new requests.
+
+Flow views use the observed agents and communications: centralized fan-out,
+horizontal workflow, and a radial swarm. Returns share their original connection;
+dashed workflow links indicate execution order rather than a recorded message.
+Use the zoom controls, drag the graph, or select **Ajustar** to fit it again.
+
+Conversation titles are generated once from the initial request. The trash action
+in the header or history asks for confirmation before permanently removing the
+conversation, messages, runs, events, reviews, and attachments. Failed deletion
+can be retried without discarding the current view.
+
+The dashboard separates run counts from latency in seconds. Its tool distribution
+counts domain tool invocations once, excluding routing and delegation between
+agents. Detailed events remain available through the chat's **Atividade** tab.

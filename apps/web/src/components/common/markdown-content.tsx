@@ -16,7 +16,7 @@ export function MarkdownContent({
   isStreaming = false,
 }: MarkdownContentProps) {
   return (
-    <div className={cn("break-words", className)} data-testid="markdown-content">
+    <div className={cn("min-w-0 break-words [overflow-wrap:anywhere]", className)} data-testid="markdown-content">
       <ReactMarkdown
         components={{
           a: ({ children, href }) => (
@@ -43,12 +43,12 @@ export function MarkdownContent({
           ol: ({ children }) => <ol className="my-2 list-decimal space-y-1 pl-5">{children}</ol>,
           p: ({ children }) => <p className="mb-3 whitespace-pre-wrap last:mb-0">{children}</p>,
           pre: ({ children }) => (
-            <pre className="my-2 overflow-x-auto rounded-md bg-black/10 p-3 text-xs leading-5">
+            <pre className="my-2 max-w-full overflow-x-auto rounded-md bg-black/10 p-3 text-xs leading-5">
               {children}
             </pre>
           ),
           table: ({ children }) => (
-            <div className="my-2 overflow-x-auto">
+            <div className="my-2 max-w-full overflow-x-auto">
               <table className="min-w-full border-collapse text-left text-xs">
                 {children}
               </table>

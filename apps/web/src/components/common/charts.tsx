@@ -54,17 +54,18 @@ export function DistributionBarChart({
 
   const chartData = data.map((item) => ({
     name: formatLabel(item.key),
+    key: item.key,
     quantidade: item.count,
-    latencia: item.averageRunDurationMs ? Math.round(item.averageRunDurationMs) : 0,
   }));
 
   return (
-    <div className="w-full">
+    <div className="min-w-0 w-full">
       <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
         {title}
       </p>
+      <div aria-hidden="true">
       <ResponsiveContainer height={180} width="100%">
-        <BarChart data={chartData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+        <BarChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" />
           <XAxis
             dataKey="name"
@@ -75,21 +76,22 @@ export function DistributionBarChart({
             textAnchor="end"
             height={50}
           />
-          <YAxis tick={{ fontSize: 11 }} className="fill-muted-foreground" />
+          <YAxis allowDecimals={false} tick={{ fontSize: 11 }} className="fill-muted-foreground" />
           <Tooltip
             contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(var(--border))" }}
-            formatter={(value, name) => [
-              name === "latencia" ? `${value} ms` : value,
-              name === "latencia" ? "Latência média" : "Quantidade",
-            ]}
+            formatter={(value) => [value, "Execuções"]}
           />
-          <Bar dataKey="quantidade" radius={[4, 4, 0, 0]}>
-            {chartData.map((_, index) => (
-              <Cell fill={COLORS[index % COLORS.length]} key={index} />
+          <Bar dataKey="quantidade" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+            {chartData.map((item, index) => (
+              <Cell fill={distributionColor(item.key, index)} key={item.key} />
             ))}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
+      </div>
+      <ul aria-label="Execuções por arquitetura" className="mt-2 grid gap-1 text-xs" data-testid="architecture-run-counts">
+        {chartData.map((item) => <li className="flex justify-between gap-3" key={item.key}><span>{item.name}</span><span className="font-medium tabular-nums">{item.quantidade}</span></li>)}
+      </ul>
     </div>
   );
 }
@@ -101,46 +103,79 @@ export function DistributionPieChart({
   data: DistributionItem[];
   title: string;
 }) {
-  if (data.length === 0) {
-    return (
-      <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
-        Sem dados disponíveis
-      </div>
-    );
-  }
-
-  const chartData = data.map((item) => ({
+  const chartData = data.filter((item) => item.count > 0).map((item) => ({
     name: formatLabel(item.key),
+    key: item.key,
     value: item.count,
   }));
+  const total = chartData.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <div className="w-full">
-      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        {title}
-      </p>
-      <ResponsiveContainer height={200} width="100%">
-        <PieChart>
-          <Pie
-            data={chartData}
-            cx="50%"
-            cy="50%"
-            innerRadius={40}
-            outerRadius={70}
-            paddingAngle={3}
-            dataKey="value"
-            label={({ name, percent }) => `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`}
-            labelLine={false}
-          >
-            {chartData.map((_, index) => (
-              <Cell fill={COLORS[index % COLORS.length]} key={index} />
+    <div className="min-w-0 w-full">
+      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{title}</p>
+      {chartData.length === 0 ? (
+        <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">Nenhuma chamada registrada.</div>
+      ) : (
+        <>
+          <div aria-hidden="true" className="mx-auto h-44 w-full max-w-[240px]">
+            <ResponsiveContainer height="100%" width="100%">
+              <PieChart accessibilityLayer={false}>
+                <Pie data={chartData} cx="50%" cy="50%" innerRadius={46} outerRadius={75} paddingAngle={2} dataKey="value" isAnimationActive={false} rootTabIndex={-1}>
+                  {chartData.map((item, index) => <Cell fill={COLORS[index % COLORS.length]} key={item.key} />)}
+                </Pie>
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(var(--border))" }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <ul aria-label="Legenda do uso de ferramentas" className="grid min-w-0 gap-2" data-testid="tool-usage-legend">
+            {chartData.map((item, index) => (
+              <li className="grid min-w-0 grid-cols-[10px_minmax(0,1fr)_auto] items-start gap-2 text-xs" key={item.key}>
+                <span aria-hidden="true" className="mt-1 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                <span className="break-words leading-relaxed">{item.name}</span>
+                <span className="whitespace-nowrap tabular-nums text-muted-foreground">{item.value} · {Math.round(item.value / total * 100)}%</span>
+              </li>
             ))}
-          </Pie>
-          <Tooltip
-            contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(var(--border))" }}
-          />
-        </PieChart>
-      </ResponsiveContainer>
+          </ul>
+          <p className="mt-3 border-t pt-2 text-xs text-muted-foreground">{total} {total === 1 ? "chamada no total" : "chamadas no total"}</p>
+        </>
+      )}
+    </div>
+  );
+}
+
+export function ArchitectureLatencyChart({ data, title }: { data: DistributionItem[]; title: string }) {
+  const measured = data.filter((item) => item.averageRunDurationMs != null).map((item) => ({
+    name: formatLabel(item.key),
+    key: item.key,
+    seconds: (item.averageRunDurationMs ?? 0) / 1000,
+    count: item.count,
+  }));
+  return (
+    <div className="min-w-0 w-full" data-testid="dashboard-latency-chart">
+      <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">{title}</p>
+      <p className="mb-2 text-xs text-muted-foreground">Tempo médio, em segundos.</p>
+      {measured.length === 0 ? (
+        <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">Sem duração registrada.</div>
+      ) : (
+        <>
+          <div aria-hidden="true">
+            <ResponsiveContainer height={180} width="100%">
+              <BarChart accessibilityLayer={false} data={measured} layout="vertical" margin={{ top: 4, right: 18, left: 0, bottom: 0 }}>
+                <CartesianGrid horizontal={false} strokeDasharray="3 3" className="stroke-border/40" />
+                <XAxis type="number" domain={[0, "auto"]} tick={{ fontSize: 10 }} tickFormatter={(value: number) => `${value.toLocaleString("pt-BR")} s`} />
+                <YAxis type="category" dataKey="name" width={78} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(var(--border))" }} formatter={(value) => [`${Number(value).toLocaleString("pt-BR", { maximumFractionDigits: 2 })} s`, "Latência média"]} />
+                <Bar dataKey="seconds" radius={[0, 4, 4, 0]} isAnimationActive={false}>
+                  {measured.map((item, index) => <Cell fill={distributionColor(item.key, index)} key={item.name} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <ul aria-label="Latência média por arquitetura" className="grid gap-1 text-xs">
+            {measured.map((item) => <li className="flex flex-wrap justify-between gap-x-3 gap-y-0.5" key={item.name}><span>{item.name}</span><span className="font-medium tabular-nums">{item.seconds.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} s</span></li>)}
+          </ul>
+        </>
+      )}
     </div>
   );
 }
@@ -193,9 +228,9 @@ export function ArchitectureRadarChart({
           axisLine={{ stroke: "hsl(var(--border))", strokeOpacity: 0.4 }}
         />
         <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
-        <Radar name="Centralizada" dataKey="centralized" stroke="#2563eb" strokeWidth={2.5} fill="#2563eb" fillOpacity={0.12} dot={{ r: 2.5 }} />
-        <Radar name="Swarm" dataKey="swarm" stroke="#059669" strokeWidth={2.5} fill="#059669" fillOpacity={0.12} dot={{ r: 2.5 }} />
-        <Radar name="Workflow" dataKey="workflow" stroke="#7c3aed" strokeWidth={2.5} fill="#7c3aed" fillOpacity={0.12} dot={{ r: 2.5 }} />
+        <Radar isAnimationActive={false} name="Centralizada" dataKey="centralized" stroke="#2563eb" strokeWidth={2.5} fill="#2563eb" fillOpacity={0.12} dot={{ r: 2.5 }} />
+        <Radar isAnimationActive={false} name="Swarm" dataKey="swarm" stroke="#059669" strokeWidth={2.5} fill="#059669" fillOpacity={0.12} dot={{ r: 2.5 }} />
+        <Radar isAnimationActive={false} name="Workflow" dataKey="workflow" stroke="#7c3aed" strokeWidth={2.5} fill="#7c3aed" fillOpacity={0.12} dot={{ r: 2.5 }} />
         <Legend wrapperStyle={{ fontSize: 12 }} />
         <Tooltip content={<RadarValueTooltip />} />
       </RadarChart>
@@ -219,7 +254,7 @@ export function ArchitectureBarComparison({
   }
 
   return (
-    <div className="w-full">
+    <div className="min-w-0 w-full">
       <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
         {title}
       </p>
@@ -230,9 +265,9 @@ export function ArchitectureBarComparison({
           <YAxis tick={{ fontSize: 11 }} className="fill-muted-foreground" />
           <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(var(--border))" }} />
           <Legend wrapperStyle={{ fontSize: 12 }} />
-          <Bar dataKey="centralizada" fill="#2563eb" radius={[3, 3, 0, 0]} />
-          <Bar dataKey="workflow" fill="#7c3aed" radius={[3, 3, 0, 0]} />
-          <Bar dataKey="swarm" fill="#059669" radius={[3, 3, 0, 0]} />
+          <Bar isAnimationActive={false} dataKey="centralizada" fill="#2563eb" radius={[3, 3, 0, 0]} />
+          <Bar isAnimationActive={false} dataKey="workflow" fill="#7c3aed" radius={[3, 3, 0, 0]} />
+          <Bar isAnimationActive={false} dataKey="swarm" fill="#059669" radius={[3, 3, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -257,4 +292,8 @@ function formatLabel(value: string): string {
     "application/pdf": "PDF",
   };
   return LABEL_MAP[value] ?? value.replaceAll("_", " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function distributionColor(key: string, index: number): string {
+  return ({ centralized_orchestration: COLORS[0], structured_workflow: COLORS[1], decentralized_swarm: COLORS[2] } as Record<string, string>)[key] ?? COLORS[index % COLORS.length];
 }

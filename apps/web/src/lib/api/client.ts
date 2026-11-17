@@ -45,6 +45,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(detail || `Falha na solicitação (HTTP ${response.status})`);
   }
 
+  if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 }
 
@@ -139,6 +140,10 @@ export function updateLlmSettings(settings: {
 
 export function getConversation(conversationId: string): Promise<ConversationDetailResponse> {
   return request<ConversationDetailResponse>(`/conversations/${conversationId}`);
+}
+
+export function deleteConversation(conversationId: string): Promise<void> {
+  return request<void>(`/conversations/${conversationId}`, { method: "DELETE" });
 }
 
 export function getConversationMessages(conversationId: string): Promise<MessageListResponse> {

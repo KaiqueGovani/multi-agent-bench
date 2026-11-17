@@ -60,7 +60,7 @@ test.describe("Regression — multi-architecture message visibility (bugs #2, #3
     // a fixture containing one inbound + three architecture-tagged outbound
     // messages. The filter under test must show only the outbound that
     // belongs to the selected architecture.
-    await page.route(/^https?:\/\/(127\.0\.0\.1|localhost):8000\/conversations\/[^/]+$/, async (route) => {
+    await page.route(/^https?:\/\/(127\.0\.0\.1|localhost):(?:8000|8100)\/conversations\/[^/]+$/, async (route) => {
       const url = new URL(route.request().url());
       if (!url.pathname.endsWith(conversationId)) {
         await route.continue();
@@ -107,7 +107,7 @@ test.describe("Regression — multi-architecture message visibility (bugs #2, #3
         status: 200,
       });
     });
-    await page.route(/^https?:\/\/(127\.0\.0\.1|localhost):8000\/runs\/[^/]+\/execution$/, async (route) => {
+    await page.route(/^https?:\/\/(127\.0\.0\.1|localhost):(?:8000|8100)\/runs\/[^/]+\/execution$/, async (route) => {
       const url = new URL(route.request().url());
       const runId = url.pathname.split("/")[2];
       const isCentral = runId === centralRunId;
@@ -262,7 +262,7 @@ test.describe("Regression — multi-architecture message visibility (bugs #2, #3
       summary: {},
     });
 
-    await page.route(/^https?:\/\/(127\.0\.0\.1|localhost):8000\/conversations\/[^/]+$/, async (route) => {
+    await page.route(/^https?:\/\/(127\.0\.0\.1|localhost):(?:8000|8100)\/conversations\/[^/]+$/, async (route) => {
       const body = {
         attachments: [],
         conversation: {
@@ -298,7 +298,7 @@ test.describe("Regression — multi-architecture message visibility (bugs #2, #3
       await route.fulfill({ body: JSON.stringify(body), contentType: "application/json", status: 200 });
     });
 
-    await page.route(/^https?:\/\/(127\.0\.0\.1|localhost):8000\/runs\/[^/]+\/execution$/, async (route) => {
+    await page.route(/^https?:\/\/(127\.0\.0\.1|localhost):(?:8000|8100)\/runs\/[^/]+\/execution$/, async (route) => {
       const runId = new URL(route.request().url()).pathname.split("/")[2];
       const architectureMode = runId === swarmRunId
         ? "decentralized_swarm"
@@ -386,7 +386,7 @@ test.describe("Regression — SwarmFlow settles when run completes (bug #4)", ()
     // already "completed". Before the fix this would render a blue,
     // animated edge (state = "active") because edgeStateFromEvents
     // ignored the terminal flag in the explicit-handoff branch.
-    await page.route(/^https?:\/\/(127\.0\.0\.1|localhost):8000\/runs\/[^/]+\/execution$/, async (route) => {
+    await page.route(/^https?:\/\/(127\.0\.0\.1|localhost):(?:8000|8100)\/runs\/[^/]+\/execution$/, async (route) => {
       const NOW = "2026-04-29T03:54:36.000Z";
       const runId = mockIds.swarmRun;
       const conversationId = mockIds.swarmConversation;

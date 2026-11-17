@@ -61,7 +61,8 @@ test("actual specialist and its returned text are shown without a fabricated syn
   const flow = page.getByTestId("runtime-visual-centralized");
   await expect(page.getByTestId("observed-agent-flow")).toBeVisible();
   await expect(flow.locator(".react-flow__node")).toHaveCount(2);
-  await expect(flow.locator(".react-flow__edge")).toHaveCount(2);
+  await expect(flow.locator(".react-flow__edge")).toHaveCount(1);
+  await expect(flow).toContainText("retorno recebido");
   await expect(flow).not.toContainText("Streamer");
   await expect(flow).not.toContainText("FAQ");
   // One tool lifecycle is one invocation. A duplicate started record with the

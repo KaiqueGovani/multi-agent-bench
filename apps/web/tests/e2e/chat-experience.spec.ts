@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { installMockEventSource, mockFrontendApi, mockIds } from "./support/mock-runtime-fixtures";
 
-test("keeps chat as the main surface and moves technical monitoring to dashboard", async ({ page }) => {
+test("keeps chat as the conversation surface and dashboard focused on operations", async ({ page }) => {
   await installMockEventSource(page);
   await mockFrontendApi(page);
 
@@ -29,8 +29,9 @@ test("keeps chat as the main surface and moves technical monitoring to dashboard
     timeout: 15_000,
   });
   await expect(page.getByTestId("dashboard-page")).toBeVisible();
-  await expect(page.getByTestId("runtime-panel-technical")).toBeVisible();
-  await expect(page.getByText("Monitor técnico do runtime")).toBeVisible();
+  await expect(page.getByTestId("runtime-panel-technical")).toHaveCount(0);
+  await expect(page.getByText("Conversas em acompanhamento", { exact: true })).toBeVisible();
+  await expect(page.getByText("Fila de revisão humana", { exact: true })).toBeVisible();
 });
 
 test("renders markdown in received chat messages", async ({ page }) => {

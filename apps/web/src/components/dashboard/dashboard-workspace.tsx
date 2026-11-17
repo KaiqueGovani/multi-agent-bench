@@ -15,13 +15,12 @@ import {
   Network,
   ShieldAlert,
   Timer,
-  XCircle,
   type LucideIcon,
 } from "lucide-react";
 
-import { DistributionBarChart, DistributionPieChart, ArchitectureBarComparison } from "@/components/common/charts";
-import { RunExecutionPanel } from "@/components/runtime/run-execution-panel";
+import { DistributionBarChart, DistributionPieChart, ArchitectureLatencyChart } from "@/components/common/charts";
 import { Badge } from "@/components/ui/badge";
+import { formatStatusLabel } from "@/components/runtime/presentation";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -31,9 +30,7 @@ import {
   resolveReviewTask,
 } from "@/lib/api/client";
 import type {
-  ConversationDetailResponse,
   DashboardConversationItem,
-  DashboardDistributionItem,
   DashboardMetricsResponse,
   Message,
   ReviewTask,
@@ -45,20 +42,9 @@ export function DashboardWorkspace() {
   const searchParams = useSearchParams();
   const [metrics, setMetrics] = useState<DashboardMetricsResponse | null>(null);
   const [reviewTasks, setReviewTasks] = useState<ReviewTask[]>([]);
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(
-    searchParams.get("conversationId"),
-  );
-  const [selectedConversation, setSelectedConversation] = useState<ConversationDetailResponse | null>(
-    null,
-  );
-  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+  const selectedConversationId = searchParams.get("conversationId");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingConversation, setIsLoadingConversation] = useState(false);
-
-  useEffect(() => {
-    setSelectedConversationId(searchParams.get("conversationId"));
-  }, [searchParams]);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,7 +62,6 @@ export function DashboardWorkspace() {
         }
         setMetrics(metricsResponse);
         setReviewTasks(reviewsResponse.reviewTasks);
-        setSelectedConversationId((current) => current ?? metricsResponse.conversations[0]?.conversationId ?? null);
       } catch (caught) {
         if (!cancelled) {
           setError(caught instanceof Error ? caught.message : "Falha ao carregar dashboard");
@@ -93,43 +78,6 @@ export function DashboardWorkspace() {
       cancelled = true;
     };
   }, []);
-
-  useEffect(() => {
-    if (!selectedConversationId) {
-      setSelectedConversation(null);
-      setSelectedRunId(null);
-      return;
-    }
-
-    let cancelled = false;
-    setIsLoadingConversation(true);
-    setSelectedConversation(null);
-    setSelectedRunId(null);
-    setError(null);
-
-    void getConversation(selectedConversationId)
-      .then((detail) => {
-        if (cancelled) {
-          return;
-        }
-        setSelectedConversation(detail);
-        setSelectedRunId(detail.runs.at(-1)?.id ?? null);
-      })
-      .catch((caught) => {
-        if (!cancelled) {
-          setError(caught instanceof Error ? caught.message : "Falha ao carregar conversa");
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setIsLoadingConversation(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedConversationId]);
 
   const generatedAt = useMemo(() => {
     if (!metrics?.generatedAt) {
@@ -149,6 +97,7 @@ export function DashboardWorkspace() {
     note: string,
   ) {
     try {
+      setError(null);
       await resolveReviewTask(reviewTaskId, {
         note: note.trim() || undefined,
         resolvedBy: "dashboard_operator",
@@ -166,13 +115,8 @@ export function DashboardWorkspace() {
     }
   }
 
-  function selectConversation(conversationId: string) {
-    setSelectedConversationId(conversationId);
-    router.replace(`/dashboard?conversationId=${conversationId}`, { scroll: false });
-  }
-
   return (
-    <main className="min-h-screen bg-background text-foreground" data-testid="dashboard-page">
+    <main className="min-h-screen min-w-0 bg-background text-foreground" data-testid="dashboard-page">
       <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4">
           <div className="min-w-0">
@@ -184,11 +128,10 @@ export function DashboardWorkspace() {
               ) : null}
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
-              Visão operacional das conversas, revisões e execução técnica do
-              runtime.
+              Conversas, revisões e indicadores de execução em um só lugar.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Link
               href="/research"
               className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
@@ -207,9 +150,9 @@ export function DashboardWorkspace() {
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4">
+      <div className="mx-auto flex min-w-0 max-w-7xl flex-col gap-4 px-3 py-4 sm:px-4">
         {error ? (
-          <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive" role="alert">
             {error}
           </div>
         ) : null}
@@ -222,7 +165,7 @@ export function DashboardWorkspace() {
           </Card>
         ) : metrics ? (
           <>
-            <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
               <MetricCard icon={MessageSquare} label="conversas" value={metrics.totals.conversations} />
               <MetricCard icon={Network} label="execuções" value={metrics.totals.runs} />
               <MetricCard icon={CheckCircle2} label="execuções concluídas" value={metrics.totals.runsCompleted} />
@@ -234,111 +177,51 @@ export function DashboardWorkspace() {
               />
             </section>
 
-            <section className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-              <div className="grid min-w-0 grid-cols-1 gap-4">
-                <Card className="shadow-none">
-                  <CardHeader className="p-4 pb-2">
-                    <CardTitle>Conversas em acompanhamento</CardTitle>
-                  </CardHeader>
-                  <CardContent className="grid min-w-0 grid-cols-1 gap-3 p-4 pt-0">
-                    {metrics.conversations.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        Nenhuma conversa registrada.
-                      </p>
-                    ) : (
-                      metrics.conversations.map((conversation) => (
-                        <ConversationRow
-                          conversation={conversation}
-                          isActive={conversation.conversationId === selectedConversationId}
-                          key={conversation.conversationId}
-                          onOpenChat={() => {
-                            router.push(`/?conversationId=${conversation.conversationId}`);
-                          }}
-                          onSelect={() => selectConversation(conversation.conversationId)}
-                        />
-                      ))
-                    )}
-                  </CardContent>
-                </Card>
+            <section aria-label="Indicadores de execução" className="grid min-w-0 grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+              <Card className="min-w-0 shadow-none">
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle>Comparação entre arquiteturas</CardTitle>
+                </CardHeader>
+                <CardContent className="grid min-w-0 gap-5 p-4 pt-0 sm:grid-cols-2">
+                  <DistributionBarChart data={metrics.byArchitecture} title="Execuções por arquitetura" />
+                  <ArchitectureLatencyChart data={metrics.byArchitecture} title="Comparação de latência entre arquiteturas" />
+                </CardContent>
+              </Card>
+              <Card className="min-w-0 shadow-none">
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle>Uso de ferramentas</CardTitle>
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    Cada chamada é contada uma vez. Roteamento e delegação entre agentes ficam fora desta distribuição.
+                  </p>
+                </CardHeader>
+                <CardContent className="min-w-0 p-4 pt-0">
+                  <DistributionPieChart data={metrics.byTool ?? []} title="Chamadas de ferramentas de domínio" />
+                </CardContent>
+              </Card>
+            </section>
 
-                <Card className="shadow-none">
-                  <CardHeader className="p-4 pb-2">
-                    <CardTitle>Visão geral das execuções</CardTitle>
-                  </CardHeader>
-                  <CardContent className="grid gap-6 p-4 pt-0 lg:grid-cols-2">
-                    <DistributionBarChart data={metrics.byArchitecture} title="Execuções por arquitetura" />
-                    <DistributionPieChart data={metrics.byTool ?? []} title="Uso de ferramentas" />
-                    {metrics.byArchitecture.length > 1 && (
-                      <div className="lg:col-span-2">
-                        <ArchitectureBarComparison
-                          data={buildArchitectureComparisonData(metrics.byArchitecture)}
-                          title="Comparação de latência entre arquiteturas"
-                        />
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <div className="grid gap-3 lg:grid-cols-2">
-                  <DistributionCard title="Arquiteturas" values={metrics.byArchitecture} />
-                  <DistributionCard title="Cenários" values={metrics.byScenario} />
-                  <DistributionCard title="Ferramentas" values={metrics.byTool ?? []} />
-                  <DistributionCard title="Anexos" values={metrics.byAttachmentType} />
-                </div>
-              </div>
-
-              <div className="grid min-w-0 grid-cols-1 gap-4">
-                <ReviewQueue
-                  onOpenConversation={(conversationId) => selectConversation(conversationId)}
-                  onResolveReviewTask={handleResolveReviewTask}
-                  reviewTasks={reviewTasks}
-                />
-
-                <Card className="shadow-none">
-                  <CardHeader className="p-4 pb-2">
-                    <CardTitle>Monitor técnico da conversa</CardTitle>
-                  </CardHeader>
-                  <CardContent className="grid min-w-0 grid-cols-1 gap-3 p-4 pt-0">
-                    {isLoadingConversation ? (
-                      <p className="text-sm text-muted-foreground">
-                        Carregando detalhes da conversa selecionada...
-                      </p>
-                    ) : !selectedConversation || selectedConversation.runs.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        Selecione uma conversa com execução registrada para
-                        inspecionar o runtime.
-                      </p>
-                    ) : (
-                      <>
-                        <div className="rounded-xl border bg-card/80 p-3">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge variant="outline">
-                              conversa{" "}
-                              {shortId(selectedConversation.conversation.id)}
-                            </Badge>
-                            <Badge variant="outline">
-                              {selectedConversation.runs.length} execuções
-                            </Badge>
-                            <Badge variant="outline">
-                              {selectedConversation.reviewTasks.length} revisões
-                            </Badge>
-                          </div>
-                          <p className="mt-2 text-sm text-muted-foreground">
-                            Use esta área para acompanhar os detalhes técnicos
-                            fora da superfície principal do chat.
-                          </p>
-                        </div>
-                        <RunExecutionPanel
-                          onSelectRun={setSelectedRunId}
-                          runs={selectedConversation.runs}
-                          selectedRunId={selectedRunId}
-                          variant="technical"
-                        />
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
+            <section className="grid min-w-0 grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+              <Card className="min-w-0 shadow-none">
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle>Conversas em acompanhamento</CardTitle>
+                </CardHeader>
+                <CardContent className="grid min-w-0 grid-cols-1 gap-3 p-4 pt-0">
+                  {metrics.conversations.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Nenhuma conversa registrada.</p>
+                  ) : metrics.conversations.map((conversation) => (
+                    <ConversationRow
+                      conversation={conversation}
+                      key={conversation.conversationId}
+                      onOpenChat={() => router.push(`/?conversationId=${conversation.conversationId}`)}
+                    />
+                  ))}
+                </CardContent>
+              </Card>
+              <ReviewQueue
+                onOpenConversation={(conversationId) => router.push(`/?conversationId=${conversationId}`)}
+                onResolveReviewTask={handleResolveReviewTask}
+                reviewTasks={reviewTasks}
+              />
             </section>
           </>
         ) : null}
@@ -358,57 +241,14 @@ function MetricCard({
 }) {
   return (
     <Card className="shadow-none">
-      <CardContent className="flex items-center gap-3 p-4">
-        <div className="rounded-xl bg-primary/10 p-3 text-primary">
+      <CardContent className="flex items-center gap-2 p-3 sm:gap-3 sm:p-4">
+        <div className="shrink-0 rounded-xl bg-primary/10 p-2 text-primary sm:p-3">
           <Icon className="h-5 w-5" />
         </div>
         <div className="min-w-0">
           <p className="text-lg font-semibold">{value}</p>
-          <p className="truncate text-xs text-muted-foreground">{label}</p>
+          <p className="text-xs leading-relaxed text-muted-foreground">{label}</p>
         </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function DistributionCard({
-  title,
-  values,
-}: {
-  title: string;
-  values: DashboardDistributionItem[];
-}) {
-  const max = Math.max(...values.map((value) => value.count), 1);
-
-  return (
-    <Card className="shadow-none">
-      <CardHeader className="p-4 pb-2">
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="grid gap-3 p-4 pt-0 text-xs">
-        {values.length === 0 ? (
-          <p className="text-muted-foreground">Sem dados.</p>
-        ) : (
-          values.map((item) => (
-            <div className="grid gap-1.5" key={item.key}>
-              <div className="flex items-center justify-between gap-2">
-                <span className="min-w-0 truncate font-medium">
-                  {formatDistributionKey(item.key)}
-                </span>
-                <span className="text-muted-foreground">
-                  {item.count}
-                  {item.averageRunDurationMs ? ` · ${formatDuration(item.averageRunDurationMs)}` : ""}
-                </span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-primary"
-                  style={{ width: `${Math.max(10, (item.count / max) * 100)}%` }}
-                />
-              </div>
-            </div>
-          ))
-        )}
       </CardContent>
     </Card>
   );
@@ -416,38 +256,31 @@ function DistributionCard({
 
 function ConversationRow({
   conversation,
-  isActive,
   onOpenChat,
-  onSelect,
 }: {
   conversation: DashboardConversationItem;
-  isActive: boolean;
   onOpenChat: () => void;
-  onSelect: () => void;
 }) {
   return (
     <div
-      className={cn(
-        "rounded-xl border p-3 transition-colors",
-        isActive ? "border-primary bg-primary/5" : "border-border bg-background",
-      )}
+      className="min-w-0 rounded-xl border bg-background p-3"
       data-testid={`dashboard-conversation-${conversation.conversationId}`}
     >
-      <button className="w-full text-left" onClick={onSelect} type="button">
+      <div>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">
-              Conversa {shortId(conversation.conversationId)}
+              {conversation.title || `Conversa ${shortId(conversation.conversationId)}`}
             </p>
             <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
               {conversation.lastMessage ?? "Sem mensagens"}
             </p>
           </div>
           <Badge variant={conversation.reviewPending ? "warning" : "outline"}>
-            {conversation.reviewPending ? "revisão" : conversation.status}
+            {conversation.reviewPending ? "Revisão" : conversation.status === "active" ? "Ativa" : formatStatusLabel(conversation.status)}
           </Badge>
         </div>
-      </button>
+      </div>
       <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
         <span>{conversation.runCount} execuções</span>
         {conversation.latestRunId ? (
@@ -456,9 +289,6 @@ function ConversationRow({
         <span>{formatDate(conversation.updatedAt)}</span>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button onClick={onSelect} size="sm" type="button" variant="outline">
-          Inspecionar
-        </Button>
         <Button onClick={onOpenChat} size="sm" type="button">
           Abrir chat
         </Button>
@@ -534,13 +364,13 @@ function ReviewQueue({
               <div className="rounded-xl border bg-background p-3" key={task.id}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold">{task.reason}</p>
+                    <p className="break-words text-sm font-semibold">{formatReviewReason(task.reason)}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       conversa {shortId(task.conversationId)} · mensagem{" "}
                       {shortId(task.messageId)} · {formatDate(task.createdAt)}
                     </p>
                   </div>
-                  <Badge variant="warning">{task.status}</Badge>
+                  <Badge variant="warning">{task.status === "open" ? "Aberta" : task.status === "in_review" ? "Em revisão" : formatStatusLabel(task.status)}</Badge>
                 </div>
                 <div className="mt-2 space-y-0.5">
                   {excerpt === "loading" ? (
@@ -554,7 +384,7 @@ function ReviewQueue({
                   ) : Array.isArray(excerpt) ? (
                     excerpt.map((m) => (
                       <p className="truncate text-xs text-muted-foreground" key={m.id}>
-                        {m.direction}: {m.contentText?.slice(0, 120)}
+                        {m.direction === "inbound" ? "Cliente" : "Assistente"}: {m.contentText?.slice(0, 120)}
                       </p>
                     ))
                   ) : null}
@@ -615,7 +445,7 @@ function ReviewQueue({
                     variant="outline"
                   >
                     <MessageSquare className="h-4 w-4" />
-                    Abrir no monitor
+                    Abrir conversa
                   </Button>
                 </div>
               </div>
@@ -628,8 +458,8 @@ function ReviewQueue({
 }
 
 function formatDuration(value: number | null | undefined): string {
-  if (!value) {
-    return "n/a";
+  if (value == null) {
+    return "Sem medição";
   }
   if (value < 1000) {
     return `${value} ms`;
@@ -650,59 +480,7 @@ function shortId(id: string): string {
   return id.slice(0, 8);
 }
 
-const DISTRIBUTION_KEY_LABELS: Record<string, string> = {
-  centralized_orchestration: "Orquestração Centralizada",
-  structured_workflow: "Workflow Estruturado",
-  decentralized_swarm: "Swarm Descentralizado",
-  all_architectures: "Todas as arquiteturas",
-  unknown: "Não classificado",
-  stock_lookup: "Consulta de estoque",
-  faq_lookup: "Consulta FAQ",
-  handoff_to_peer: "Handoff entre pares",
-  attachment_intake: "Análise de anexo",
-  multi_modal: "Multimodal",
-  stock_inquiry: "Consulta de estoque",
-  clinical_guidance: "Orientação clínica",
-  faq_inquiry: "Dúvida frequente (FAQ)",
-  general_inquiry: "Consulta geral",
-  attachment_analysis: "Análise de anexo",
-  "image/jpeg": "JPEG",
-  "image/png": "PNG",
-  "image/webp": "WebP",
-  "application/pdf": "PDF",
-};
 
-function formatDistributionKey(key: string): string {
-  if (DISTRIBUTION_KEY_LABELS[key]) {
-    return DISTRIBUTION_KEY_LABELS[key];
-  }
-  return key
-    .replaceAll("_", " ")
-    .replaceAll("-", " ")
-    .trim()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function buildArchitectureComparisonData(
-  byArchitecture: DashboardDistributionItem[],
-): { name: string; centralizada: number; workflow: number; swarm: number }[] {
-  const find = (key: string) => byArchitecture.find((item) => item.key === key);
-  const cent = find("centralized_orchestration");
-  const work = find("structured_workflow");
-  const swarm = find("decentralized_swarm");
-
-  return [
-    {
-      name: "Latência (ms)",
-      centralizada: Math.round(cent?.averageRunDurationMs ?? 0),
-      workflow: Math.round(work?.averageRunDurationMs ?? 0),
-      swarm: Math.round(swarm?.averageRunDurationMs ?? 0),
-    },
-    {
-      name: "Execuções",
-      centralizada: cent?.count ?? 0,
-      workflow: work?.count ?? 0,
-      swarm: swarm?.count ?? 0,
-    },
-  ];
+function formatReviewReason(reason: string): string {
+  return ({ validacao_clinica: "Validação clínica", clinical_guidance: "Orientação clínica" } as Record<string, string>)[reason] ?? reason.replaceAll("_", " ");
 }

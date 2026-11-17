@@ -103,29 +103,16 @@ test("UI03-chat-mobile-controles", async ({ page }) => {
   }
 });
 
-test("UI04-dashboard-falha-sem-contexto-antigo", async ({ page }) => {
+test("UI04-dashboard-abre-conversa-sem-monitor-aninhado", async ({ page }) => {
   await page.goto("/dashboard");
-  await expect(page.getByText("Monitor técnico da conversa")).toBeVisible();
-  await expect(
-    page.getByText("conversa 11111111", { exact: true }),
-  ).toBeVisible();
-  await page.route(
-    `**/conversations/${mockIds.workflowConversation}`,
-    (route) =>
-      route.fulfill({
-        status: 503,
-        contentType: "application/json",
-        body: JSON.stringify({ detail: "Conversa indisponível" }),
-      }),
-  );
+  await expect(page.getByText("Conversas em acompanhamento", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("runtime-panel-technical")).toHaveCount(0);
   await page
     .getByTestId(`dashboard-conversation-${mockIds.workflowConversation}`)
-    .getByRole("button", { name: "Inspecionar" })
+    .getByRole("button", { name: "Abrir chat" })
     .click();
-  await expect(page.getByText(/Conversa indisponível/)).toBeVisible();
-  await expect(
-    page.getByText("conversa 11111111", { exact: true }),
-  ).toHaveCount(before ? 1 : 0);
+  await expect(page).toHaveURL(new RegExp(`conversationId=${mockIds.workflowConversation}`));
+  await expect(page.getByTestId("message-list")).toContainText("Documento recebido");
 });
 
 test("UI07-fluxo-restaurado", async ({ page }) => {
@@ -193,10 +180,8 @@ test("UI11-acessibilidade-fluxos-originais", async ({ page }) => {
   });
   await page.keyboard.press("Escape");
   await page.goto("/dashboard");
-  await expect(page.getByText("Monitor técnico da conversa")).toBeVisible();
-  await expect(
-    page.getByText("conversa 11111111", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText("Conversas em acompanhamento", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("runtime-panel-technical")).toHaveCount(0);
   await page.waitForTimeout(1200); // Allow the existing entrance animation to settle before contrast measurement.
   reports.dashboard = await new AxeBuilder({ page }).analyze();
   fs.writeFileSync(
@@ -220,7 +205,7 @@ test("UI13-responsividade-chat-dashboard", async ({ page }) => {
     }
     await page.screenshot({ path: path.join(evidence, `UI13-chat-${width}.png`), fullPage: true });
     await page.goto("/dashboard");
-    await expect(page.getByText("Monitor técnico da conversa")).toBeVisible();
+    await expect(page.getByText("Conversas em acompanhamento", { exact: true })).toBeVisible();
     const overflow = await page.evaluate(() => Array.from(document.querySelectorAll("body *")).map(el => { const r = el.getBoundingClientRect(); return { tag: el.tagName, classes: el.className, width: r.width, right: r.right }; }).filter(r => r.right > innerWidth + 1 && r.width > 0));
     fs.writeFileSync(path.join(evidence, `UI13-overflow-${width}.json`), JSON.stringify(overflow, null, 2));
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

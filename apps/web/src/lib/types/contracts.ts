@@ -73,6 +73,7 @@ export type MessageStatus =
 
 export type ProcessingEventType =
   | "conversation.created"
+  | "conversation.updated"
   | "message.received"
   | "attachment.upload.started"
   | "attachment.upload.completed"
@@ -119,6 +120,7 @@ export type JsonObject = { [key: string]: JsonValue };
 
 export interface Conversation {
   id: string;
+  title?: string | null;
   channel: ChannelType;
   createdAt: string;
   updatedAt: string;
@@ -268,6 +270,7 @@ export interface DashboardDistributionItem {
 
 export interface DashboardConversationItem {
   conversationId: string;
+  title?: string | null;
   status: ConversationStatus;
   updatedAt: string;
   latestRunId?: string | null;
@@ -290,6 +293,7 @@ export interface DashboardMetricsResponse {
 
 export interface ConversationSummary {
   conversationId: string;
+  title?: string | null;
   status: ConversationStatus;
   channel: ChannelType;
   architectureMode?: string | null;
