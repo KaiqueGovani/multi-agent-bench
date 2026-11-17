@@ -126,6 +126,17 @@ class LlmRuntimeStatus(ApiModel):
     region: str
 
 
+class LlmModelOption(ApiModel):
+    id: str
+    name: str
+
+
+class LlmModelListResponse(ApiModel):
+    provider: Literal["bedrock", "anthropic"]
+    models: list[LlmModelOption]
+    source: Literal["provider", "catalog"]
+
+
 class HealthResponse(ApiModel):
     status: str
     service: str

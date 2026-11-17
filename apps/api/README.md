@@ -143,6 +143,15 @@ leave it blank to reuse that provider's key. Switching to a provider without a
 configured key is rejected by the runtime. `PUT /settings/bedrock` remains
 available for existing clients that only rotate the Bedrock key.
 
+Protected `POST /settings/llm/models` accepts
+`{"provider":"anthropic","apiKey":"..."}` and returns
+`{"provider":"anthropic","models":[{"id":"...","name":"..."}],"source":"provider"}`.
+Omit or leave the key blank to use the credential already held by that provider.
+Listing models does not change the active settings or perform inference.
+`source: "provider"` identifies a provider response; `source: "catalog"` identifies
+the Bedrock fallback catalog when discovery is unavailable and does not confirm
+that the key can access those models.
+
 Provider keys are never returned, logged, or saved to the database, browser
 storage, or `.env` files. New runs use the selection immediately, while runs
 already accepted keep their original provider, model, and key. The selected

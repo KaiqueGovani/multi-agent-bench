@@ -11,8 +11,9 @@ from fastapi import FastAPI, HTTPException, Request, Response, status
 from app.architectures.base import Agent, BedrockModel
 from app.core.config import Settings, get_settings
 from app.core.models import AnthropicModel, get_api_key, get_model_id
-from app.schemas.runtime import HealthResponse, LlmRuntimeStatus, RuntimeDispatchRequest, RuntimeDispatchResponse
+from app.schemas.runtime import HealthResponse, LlmModelListResponse, LlmRuntimeStatus, RuntimeDispatchRequest, RuntimeDispatchResponse
 from app.services.execution import RuntimeExecutionService
+from app.services.model_discovery import discover_models, ModelDiscoveryError
 from app.telemetry.setup import configure_logging, configure_telemetry
 
 logger = logging.getLogger(__name__)
@@ -155,6 +156,26 @@ def create_app() -> FastAPI:
             snapshot = settings
         response.headers["Cache-Control"] = "no-store"
         return llm_status(snapshot)
+
+    @application.post("/settings/llm/models", response_model=LlmModelListResponse)
+    async def list_llm_models(request: Request, response: Response) -> LlmModelListResponse:
+        authorize_settings(request)
+        detail = "A valid provider and API key are required."
+        payload = await read_settings_payload(request, detail)
+        provider, key = payload.get("provider"), payload.get("apiKey", "")
+        if isinstance(key, str):
+            key = key.strip()
+        if (not isinstance(provider, str) or provider not in {"bedrock", "anthropic"}
+            or not isinstance(key, str) or (key and not valid_value(key, maximum=16384))):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
+        snapshot = current_settings()
+        retained_key = snapshot.anthropic_api_key if provider == "anthropic" else snapshot.aws_bearer_token_bedrock
+        try:
+            listing = await discover_models(provider, key or retained_key, snapshot)
+        except ModelDiscoveryError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=exc.detail) from None
+        response.headers["Cache-Control"] = "no-store"
+        return listing
 
     @application.post("/runs", response_model=RuntimeDispatchResponse, status_code=status.HTTP_202_ACCEPTED)
     def create_run(

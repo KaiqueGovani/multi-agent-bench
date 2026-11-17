@@ -25,7 +25,7 @@ The default local model target is:
 us.anthropic.claude-haiku-4-5-20251001-v1:0
 ```
 
-## Updating the Bedrock key while running
+## Updating LLM settings while running
 
 The app reads `GET /settings/llm` and updates `PUT /settings/llm` with a JSON body
 such as `{"provider":"anthropic","modelId":"claude-haiku-4-5-20251001","apiKey":"..."}`.
@@ -39,6 +39,29 @@ check key validity with either provider; the next inference call does.
 
 `PUT /settings/bedrock` remains available with an `apiKey` JSON field. It updates
 the Bedrock credential without changing the active provider.
+
+`POST /settings/llm/models` accepts `{"provider":"anthropic","apiKey":"..."}`
+to load model choices without saving the key or changing the active settings.
+An omitted or blank key reuses that provider's configured credential. Anthropic
+requires a key and calls its read-only Models API. Bedrock uses a request-scoped
+bearer token to list active Anthropic inference profiles in the configured AWS
+region, with no mutation of process environment or fallback to IAM credentials.
+Both paths limit pagination and use an eight-second request deadline, without
+invoking a model.
+
+The response has `provider`, `models` (each with `id` and `name`) and `source`.
+`source=provider` identifies a live listing. If Bedrock has no key or discovery
+is denied/unavailable, `source=catalog` returns the current configured model and
+documented US profile choices for supported source regions. Catalog choices do
+not verify account permissions or entitlement; a custom model ID remains valid
+input. AWS API keys support Bedrock control-plane actions, but a key's IAM
+permissions can still deny listing.
+
+References: [Anthropic Models API](https://platform.claude.com/docs/en/api/python/models/list),
+[AWS API key support](https://docs.aws.amazon.com/bedrock/latest/userguide/api-keys-supported.html),
+[ListInferenceProfiles](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_ListInferenceProfiles.html),
+[Haiku 4.5 IDs](https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-haiku-4-5.html),
+and [Sonnet 4.5 IDs](https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-sonnet-4-5.html).
 
 Set the same `AI_SERVICE_SECRET` on the API and runtime to authorize updates
 through `X-AI-Service-Secret`. Without that secret, the runtime accepts updates
