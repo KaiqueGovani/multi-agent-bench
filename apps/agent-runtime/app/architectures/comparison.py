@@ -12,11 +12,13 @@ from pydantic import BaseModel, Field
 
 from botocore.config import Config
 from strands import Agent, tool
+from strands.models.anthropic import AnthropicModel
 from strands.models.bedrock import BedrockModel
 from strands.hooks import BeforeToolCallEvent, AfterToolCallEvent
 from strands.tools.executors.sequential import SequentialToolExecutor
 
 from app.architectures.base import _extract_strands_usage
+from app.core.models import get_model_id, model_kwargs
 from app.tools.domain_tools import normalize_text
 from app.tools.research_tools import faq_lookup, stock_lookup, attachment_intake
 
@@ -68,10 +70,12 @@ def snapshot(settings) -> dict:
     prompts = {role: DOMAIN_POLICY + "\n" + prompt for role, prompt in ROLE_PROMPTS.items()}
     prompts.update({role + "_peer": prompts[role] + PEER_INSTRUCTION for role in TOOLS})
     return {
-        "protocol": PROTOCOL_VERSION, "model_id": settings.bedrock_model_id,
-        "region": settings.aws_region, "temperature": settings.llm_temperature,
+        "protocol": PROTOCOL_VERSION, "model_provider": settings.model_provider,
+        "model_id": get_model_id(settings),
+        "region": settings.aws_region if settings.model_provider == "bedrock" else None,
+        "temperature": settings.llm_temperature,
         "max_tokens": settings.llm_max_tokens, "top_p": "omitted: temperature is used",
-        "stop_sequences": [], "streaming": False, "sdk_retries": 0,
+        "stop_sequences": [], "streaming": settings.model_provider == "anthropic", "sdk_retries": 0,
         "context_window_messages": "complete structured history", "attachment_context_policy":"stable aliases; runtime message IDs and retrieval URLs omitted", "max_handoffs": settings.runtime_max_handoffs,
         "max_model_calls": 20, "max_domain_tool_calls": 20,
         "min_supervisor_specialist_invocations": 1, "max_supervisor_specialist_invocations": MAX_SPECIALIST_INVOCATIONS,
@@ -81,7 +85,7 @@ def snapshot(settings) -> dict:
         "timeout_policy": "global attempt deadline; benchmark and API isolate child process; no surviving descendants",
         "sources_profile": "controlled-research",
         "tool_schema_hashes": {role: hashlib.sha256(json.dumps(t.tool_spec, sort_keys=True, ensure_ascii=False).encode()).hexdigest() for role,t in TOOLS.items()},
-        "specialist_definition_hashes": {role: hashlib.sha256(json.dumps({"prompt": prompts[role], "model": settings.bedrock_model_id, "temperature": settings.llm_temperature, "max_tokens": settings.llm_max_tokens, "schema": t.tool_spec},sort_keys=True,ensure_ascii=False).encode()).hexdigest() for role,t in TOOLS.items()},
+        "specialist_definition_hashes": {role: hashlib.sha256(json.dumps({"prompt": prompts[role], "model": get_model_id(settings), "temperature": settings.llm_temperature, "max_tokens": settings.llm_max_tokens, "schema": t.tool_spec},sort_keys=True,ensure_ascii=False).encode()).hexdigest() for role,t in TOOLS.items()},
         "timeout_seconds": settings.runtime_timeout_seconds,
         "domain_policy": DOMAIN_POLICY, "role_prompts": prompts,
         "prompt_hashes": {k: hashlib.sha256(v.encode()).hexdigest() for k, v in prompts.items()},
@@ -116,7 +120,7 @@ def reconcile_provider_usage(ctx):
     ctx.token_measurement_complete = complete
 
 
-class RecordedBedrockModel(BedrockModel):
+class RecordedModelMixin:
     """One ledger entry per physical request; nested SDK metrics are never summed."""
     def set_recorder(self, ctx, role):
         self.ctx, self.role = ctx, role
@@ -165,6 +169,14 @@ class RecordedBedrockModel(BedrockModel):
             reconcile_provider_usage(ctx)
 
 
+class RecordedBedrockModel(RecordedModelMixin, BedrockModel):
+    """Bedrock transport with provider-neutral physical-request accounting."""
+
+
+class RecordedAnthropicModel(RecordedModelMixin, AnthropicModel):
+    """Direct Anthropic transport using the same normalized event accounting."""
+
+
 class ControlledAgent:
     def __init__(self, ctx, role, tools, *, peer=False, system_prompt=None, model_factory=None, tool_events=None):
         self.ctx, self.role = ctx, role
@@ -173,14 +185,15 @@ class ControlledAgent:
             system_prompt = DOMAIN_POLICY + "\n" + ROLE_PROMPTS[role]
         if peer:
             system_prompt += PEER_INSTRUCTION
+        default_model_factory = RecordedAnthropicModel if ctx.settings.model_provider == "anthropic" else RecordedBedrockModel
+        provider_options = model_kwargs(
+            ctx.settings, stop_sequences=[], streaming=False,
+            boto_client_config=Config(connect_timeout=10, read_timeout=ctx.settings.runtime_timeout_seconds,
+                                      retries={"total_max_attempts": 1}),
+        )
         self.agent = Agent(
-            model=(model_factory or RecordedBedrockModel)(
-                model_id=ctx.settings.bedrock_model_id, region_name=ctx.settings.aws_region,
-                temperature=ctx.settings.llm_temperature, max_tokens=ctx.settings.llm_max_tokens,
-                stop_sequences=[], streaming=False,
-                boto_client_config=Config(connect_timeout=10, read_timeout=ctx.settings.runtime_timeout_seconds,
-                                          retries={"total_max_attempts": 1}),
-            ).set_recorder(ctx, role), system_prompt=system_prompt, tools=tools,
+            model=(model_factory or default_model_factory)(**provider_options).set_recorder(ctx, role),
+            system_prompt=system_prompt, tools=tools,
             hooks=[tool_events if tool_events is not None else ToolEvents(ctx, role)],
             callback_handler=None, tool_executor=SequentialToolExecutor(), retry_strategy=None,
             agent_id=self.agent_id, name=role,
@@ -367,7 +380,7 @@ def execute_comparison(ctx, architecture, *, source_profile="controlled-research
     configuration = (configuration_factory or snapshot)(ctx.settings)
     configuration["sources_profile"] = source_profile
     configuration["tool_schema_hashes"] = {role: hashlib.sha256(json.dumps(t.tool_spec, sort_keys=True, ensure_ascii=False).encode()).hexdigest() for role,t in tools.items()}
-    configuration["specialist_definition_hashes"] = {role: hashlib.sha256(json.dumps({"prompt":configuration["role_prompts"][role],"model":ctx.settings.bedrock_model_id,"temperature":ctx.settings.llm_temperature,"max_tokens":ctx.settings.llm_max_tokens,"schema":t.tool_spec},sort_keys=True,ensure_ascii=False).encode()).hexdigest() for role,t in tools.items()}
+    configuration["specialist_definition_hashes"] = {role: hashlib.sha256(json.dumps({"prompt":configuration["role_prompts"][role],"model":get_model_id(ctx.settings),"temperature":ctx.settings.llm_temperature,"max_tokens":ctx.settings.llm_max_tokens,"schema":t.tool_spec},sort_keys=True,ensure_ascii=False).encode()).hexdigest() for role,t in tools.items()}
     ctx.emit("experiment", "configuration", "completed", payload=configuration)
     if architecture == "centralized_orchestration":
         if central_executor is not None:

@@ -16,6 +16,7 @@ from typing import Any, Protocol
 from uuid import uuid4
 
 from app.core.config import Settings, get_settings
+from app.core.models import AnthropicModel, create_model
 from app.schemas.runtime import (
     IngestRunExecutionEventRequest,
     RuntimeDispatchRequest,
@@ -445,7 +446,7 @@ class ExecutionContext:
             return f"[modo mock] Nao encontrei {product} disponivel no estoque simulado da POC."
         return (
             f"[modo mock] Resposta fixa da arquitetura {architecture}. "
-            "Ative ENABLE_LIVE_LLM=true com AWS_BEARER_TOKEN_BEDROCK configurado "
+            "Ative ENABLE_LIVE_LLM=true com a chave do provedor selecionado configurada "
             "para respostas reais via LLM."
         )
 
@@ -511,16 +512,13 @@ class ExecutionContext:
             self.total_tokens = (self.total_tokens or 0) + input_tokens + output_tokens
 
     def invoke_live_agent(self, *, system_prompt: str, prompt: str) -> str | None:
-        """Call Strands Agent with Bedrock when ENABLE_LIVE_LLM is on."""
+        """Call Strands Agent with the selected provider when ENABLE_LIVE_LLM is on."""
         if not self.settings.enable_live_llm:
             return None
-        if Agent is None or BedrockModel is None:
+        if Agent is None or (AnthropicModel if self.settings.model_provider == "anthropic" else BedrockModel) is None:
             return None
         try:
-            model = BedrockModel(
-                model_id=self.settings.bedrock_model_id,
-                region_name=self.settings.aws_region,
-            )
+            model = create_model(self.settings)
             agent = Agent(model=model, system_prompt=system_prompt)
             result = agent(prompt)
             self.record_token_usage(result)
@@ -603,7 +601,7 @@ class ExecutionContext:
         """
         if not self.settings.enable_live_llm:
             return None
-        if Agent is None or BedrockModel is None:
+        if Agent is None or (AnthropicModel if self.settings.model_provider == "anthropic" else BedrockModel) is None:
             return None
 
         tool_calls: list[dict] = []
@@ -620,10 +618,7 @@ class ExecutionContext:
                     buffer.append(text_chunk)
 
         try:
-            model = BedrockModel(
-                model_id=self.settings.bedrock_model_id,
-                region_name=self.settings.aws_region,
-            )
+            model = create_model(self.settings)
             agent = Agent(
                 model=model,
                 system_prompt=system_prompt,
@@ -654,7 +649,7 @@ class ExecutionContext:
         tools: list | None = None,
         actor_name: str,
     ) -> Any | None:
-        """Create a Strands Agent with BedrockModel and tool-boundary hook instrumentation.
+        """Create a Strands Agent with the selected model and tool-boundary hook instrumentation.
 
         Returns None if live LLM is disabled or Strands is unavailable. The returned Agent,
         when invoked, emits `tool.started` / `tool.completed` events (via the same BeforeToolCallEvent
@@ -663,7 +658,7 @@ class ExecutionContext:
         """
         if not self.settings.enable_live_llm:
             return None
-        if Agent is None or BedrockModel is None:
+        if Agent is None or (AnthropicModel if self.settings.model_provider == "anthropic" else BedrockModel) is None:
             return None
 
         hook_provider = self._build_tool_hook_provider(actor_name)
@@ -679,10 +674,7 @@ class ExecutionContext:
                     buffer.append(text_chunk)
 
         try:
-            model = BedrockModel(
-                model_id=self.settings.bedrock_model_id,
-                region_name=self.settings.aws_region,
-            )
+            model = create_model(self.settings)
             agent = Agent(
                 model=model,
                 system_prompt=system_prompt,

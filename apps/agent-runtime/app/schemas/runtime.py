@@ -110,9 +110,14 @@ class RuntimeDispatchResponse(ApiModel):
     accepted: bool = True
     run_id: UUID
     status: Literal["accepted"] = "accepted"
+    model_provider: str | None = None
+    model_name: str | None = None
 
 
 class LlmRuntimeStatus(ApiModel):
+    provider: Literal["bedrock", "anthropic"] = "bedrock"
+    models: dict[str, str] = Field(default_factory=dict)
+    credentials_configured: dict[str, bool] = Field(default_factory=dict)
     enabled: bool
     token_configured: bool
     sdk_available: bool

@@ -55,7 +55,7 @@ def snapshot_v43(settings, *, source_profile="controlled-research"):
         role_prompts=prompts,
         prompt_hashes={role: hashlib.sha256(prompt.encode()).hexdigest() for role, prompt in prompts.items()},
         tool_schema_hashes={role: _hash(t.tool_spec) for role, t in domain_tools.items()},
-        specialist_definition_hashes={role: _hash({"prompt": prompts[role], "model": settings.bedrock_model_id,
+        specialist_definition_hashes={role: _hash({"prompt": prompts[role], "model": shared.get_model_id(settings),
             "temperature": settings.llm_temperature, "max_tokens": settings.llm_max_tokens, "schema": t.tool_spec})
             for role, t in domain_tools.items()},
         supervisor_specialist_tools=specialist_tool_specs,
@@ -71,7 +71,7 @@ def snapshot_v43(settings, *, source_profile="controlled-research"):
     return config
 
 
-class FirstToolBedrockModel(shared.RecordedBedrockModel):
+class FirstToolModelMixin:
     """Constrain only the supervisor's first physical request."""
 
     def __init__(self, *, first_tool_scope, **kwargs):
@@ -83,12 +83,20 @@ class FirstToolBedrockModel(shared.RecordedBedrockModel):
             tool_specs = [spec for spec in tool_specs or [] if spec["name"] in self.first_tool_scope]
             if not tool_specs:
                 raise RuntimeError("Required first specialist tools are unavailable")
-            # Converse documents `any` as mandatory use. A singleton scope
-            # enforces the attachment rule without model-specific named choice.
+            # Strands maps this normalized choice for both provider transports.
+            # A singleton scope enforces the required attachment specialist.
             kwargs["tool_choice"] = {"any": {}}
             self.first_tool_scope = None
         async for event in super().stream(messages, tool_specs, system_prompt, **kwargs):
             yield event
+
+
+class FirstToolBedrockModel(FirstToolModelMixin, shared.RecordedBedrockModel):
+    """Bedrock first-turn specialist enforcement."""
+
+
+class FirstToolAnthropicModel(FirstToolModelMixin, shared.RecordedAnthropicModel):
+    """Direct Anthropic first-turn specialist enforcement."""
 
 
 class VerifiedSpecialists(shared.SpecialistFactory):
@@ -252,7 +260,9 @@ def execute_comparison_v43(ctx, architecture, *, source_profile="controlled-rese
         ctx.emit("architecture", "first_tool_choice", "completed", actor_name="supervisor",
                  payload={"toolChoice": config["supervisor_first_tool_choice"], "allowedTools": scope})
         final = shared.ControlledAgent(ctx, "supervisor", shared.specialist_tools(ctx, factory, prompt),
-                                      model_factory=partial(FirstToolBedrockModel, first_tool_scope=scope))(prompt)
+                                      model_factory=partial(
+                                          FirstToolAnthropicModel if ctx.settings.model_provider == "anthropic" else FirstToolBedrockModel,
+                                          first_tool_scope=scope))(prompt)
         final_actor, route = "supervisor", "agent_selected"
         completed_roles = factory.completed_roles
     elif architecture == "structured_workflow":

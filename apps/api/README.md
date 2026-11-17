@@ -131,6 +131,32 @@ cd apps/api
 alembic upgrade head
 ```
 
+## Updating the LLM provider, model, and key while running
+
+Use the LLM settings control in the chat UI to switch between Amazon Bedrock
+and the direct Anthropic API, select a model, or replace an expired key without
+restarting. Protected `GET /settings/llm` reads the runtime's selected provider,
+models, and credential-presence flags. `PUT /settings/llm` accepts
+`{"provider":"anthropic","modelId":"claude-haiku-4-5","apiKey":"..."}` and forwards
+it to `AI_RUNTIME_URL`. The provider is `bedrock` or `anthropic`; omit `apiKey` or
+leave it blank to reuse that provider's key. Switching to a provider without a
+configured key is rejected by the runtime. `PUT /settings/bedrock` remains
+available for existing clients that only rotate the Bedrock key.
+
+Provider keys are never returned, logged, or saved to the database, browser
+storage, or `.env` files. New runs use the selection immediately, while runs
+already accepted keep their original provider, model, and key. The selected
+provider and model are recorded in each run's experiment metadata from the
+runtime's acceptance snapshot, across all input channels. Settings last until
+the runtime restarts; its environment supplies the startup configuration again
+after a restart.
+
+For a runtime on a different host, configure the same `AI_SERVICE_SECRET` on the
+API and runtime. Without that secret, the runtime permits key updates only from
+loopback requests without an `Origin` header, such as the local API proxy. A
+configured key does not verify its validity with its provider; the next live
+request confirms whether it is accepted.
+
 ## Storage
 
 The default attachment storage provider is `local`. To use MinIO locally, start

@@ -84,7 +84,7 @@ APP_BASE_URL=http://127.0.0.1:$(API_PORT)\n\
 API_KEY=$(API_KEY)\n\
 AI_SERVICE_SECRET=$(AI_SERVICE_SECRET)\n\
 CORS_ALLOWED_ORIGINS=http://localhost:$(WEB_PORT),http://127.0.0.1:$(WEB_PORT)" > apps/api/.env
-	@printf "APP_ENV=local\nENABLE_LIVE_LLM=$(ENABLE_LIVE_LLM)\nAWS_BEARER_TOKEN_BEDROCK=$(EFFECTIVE_AWS_BEARER_TOKEN_BEDROCK)\nBEDROCK_MODEL_ID=$(BEDROCK_MODEL_ID)\nAWS_REGION=$(AWS_REGION)\nENABLE_OTEL=false\nDEFAULT_ARCHITECTURE_MODE=centralized_orchestration\nRUNTIME_MAX_HANDOFFS=6\nRUNTIME_TIMEOUT_SECONDS=45\nCHAT_API_CALLBACK_TIMEOUT_SECONDS=10\n" > apps/agent-runtime/.env
+	@printf "APP_ENV=local\nENABLE_LIVE_LLM=$(ENABLE_LIVE_LLM)\nAWS_BEARER_TOKEN_BEDROCK=$(EFFECTIVE_AWS_BEARER_TOKEN_BEDROCK)\nAI_SERVICE_SECRET=$(AI_SERVICE_SECRET)\nBEDROCK_MODEL_ID=$(BEDROCK_MODEL_ID)\nAWS_REGION=$(AWS_REGION)\nENABLE_OTEL=false\nDEFAULT_ARCHITECTURE_MODE=centralized_orchestration\nRUNTIME_MAX_HANDOFFS=6\nRUNTIME_TIMEOUT_SECONDS=45\nCHAT_API_CALLBACK_TIMEOUT_SECONDS=10\n" > apps/agent-runtime/.env
 	@echo "NEXT_PUBLIC_API_BASE_URL=http://localhost:$(API_PORT)\n\
 NEXT_PUBLIC_API_KEY=$(API_KEY)" > apps/web/.env.local
 	@rm -rf apps/web/.next
@@ -121,9 +121,10 @@ api:
 runtime:
 	cd apps/agent-runtime && uv run uvicorn app.main:app --reload --port $(RUNTIME_PORT)
 
-# Runtime with multiple workers for parallel LLM execution (no hot-reload)
+# One HTTP worker keeps rotated credentials consistent. The execution pool and
+# isolated child processes already run LLM requests in parallel (no hot-reload).
 runtime-llm:
-	cd apps/agent-runtime && uv run uvicorn app.main:app --workers 4 --port $(RUNTIME_PORT)
+	cd apps/agent-runtime && uv run uvicorn app.main:app --workers 1 --port $(RUNTIME_PORT)
 
 web:
 	cd apps/web && npm run dev -- --port $(WEB_PORT)

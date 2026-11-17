@@ -24,6 +24,18 @@ class RunService:
             return None
         return run_to_schema(model)
 
+    def set_model_configuration(self, run_id: UUID, *, provider: str, model_name: str) -> None:
+        """Record the model actually selected by the execution runtime."""
+        model = self._db.get(RunModel, run_id)
+        if model is None:
+            return
+        model.experiment_json = {
+            **(model.experiment_json or {}),
+            "modelProvider": provider,
+            "modelName": model_name,
+        }
+        self._db.commit()
+
     def create_run(
         self,
         *,

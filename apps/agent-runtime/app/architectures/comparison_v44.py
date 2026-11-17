@@ -69,7 +69,7 @@ class SupervisorDelegation:
         return choice
 
 
-class ScopedSupervisorModel(shared.RecordedBedrockModel):
+class ScopedSupervisorModelMixin:
     def __init__(self, *, delegation, **kwargs):
         super().__init__(**kwargs)
         self.delegation = delegation
@@ -81,6 +81,14 @@ class ScopedSupervisorModel(shared.RecordedBedrockModel):
             raise RuntimeError("Supervisor specialist tool registry does not match the required scope")
         async for event in super().stream(messages, available, system_prompt, **kwargs):
             yield event
+
+
+class ScopedSupervisorModel(ScopedSupervisorModelMixin, shared.RecordedBedrockModel):
+    """Bedrock supervisor using the executor's per-turn tool scope."""
+
+
+class ScopedAnthropicSupervisorModel(ScopedSupervisorModelMixin, shared.RecordedAnthropicModel):
+    """Direct Anthropic supervisor with identical per-turn tool scope."""
 
 
 class ScopedSupervisorTools(shared.ToolEvents):
@@ -122,7 +130,9 @@ def _execute_supervisor(ctx, factory, prompt, review, config):
     tools = shared.specialist_tools(ctx, factory, prompt, on_completed=delegation.note_completed)
     final = shared.ControlledAgent(
         ctx, "supervisor", tools,
-        model_factory=partial(ScopedSupervisorModel, delegation=delegation),
+        model_factory=partial(
+            ScopedAnthropicSupervisorModel if ctx.settings.model_provider == "anthropic" else ScopedSupervisorModel,
+            delegation=delegation),
         tool_events=ScopedSupervisorTools(ctx, delegation),
     )(prompt)
     shared.check_deadline(ctx)

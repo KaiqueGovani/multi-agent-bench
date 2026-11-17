@@ -252,6 +252,19 @@ class ProcessingDispatcher:
             with urlopen(request, timeout=self._settings.ai_runtime_timeout_seconds) as response:
                 if response.status >= 400:
                     raise RuntimeError(f"AI runtime returned HTTP {response.status}")
+                # The runtime chooses an immutable provider/model snapshot at
+                # acceptance. Persist that authority instead of startup defaults
+                # or a separate settings read that could race a provider change.
+                try:
+                    accepted = json.loads(response.read())
+                except (ValueError, UnicodeDecodeError):
+                    accepted = None
+            if isinstance(accepted, dict):
+                provider = accepted.get("modelProvider")
+                model = accepted.get("modelName")
+                if provider in ("bedrock", "anthropic") and isinstance(model, str) and model:
+                    with SessionLocal() as db:
+                        RunService(db).set_model_configuration(run_id, provider=provider, model_name=model)
         except (HTTPError, URLError, OSError, RuntimeError) as exc:
             with SessionLocal() as db:
                 RunService(db).fail_run(run_id, reason=str(exc))

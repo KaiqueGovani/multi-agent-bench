@@ -40,11 +40,18 @@ def execute_isolated(executor):
         settings = asdict(executor.settings)
         # Provider credential is inherited through the environment, never serialized.
         settings["aws_bearer_token_bedrock"] = None
+        settings["anthropic_api_key"] = None
+        settings["ai_service_secret"] = None
         _write(folder / "task.json", {"request":executor.request.model_dump(by_alias=True,mode="json"),
                "settings":settings,"trace_id":executor.trace_id})
         env = os.environ.copy()
-        if executor.settings.aws_bearer_token_bedrock:
+        # Only the selected provider credential crosses this attempt boundary.
+        env.pop("AWS_BEARER_TOKEN_BEDROCK", None)
+        env.pop("ANTHROPIC_API_KEY", None)
+        if executor.settings.model_provider == "bedrock" and executor.settings.aws_bearer_token_bedrock:
             env["AWS_BEARER_TOKEN_BEDROCK"] = executor.settings.aws_bearer_token_bedrock
+        if executor.settings.model_provider == "anthropic" and executor.settings.anthropic_api_key:
+            env["ANTHROPIC_API_KEY"] = executor.settings.anthropic_api_key
         proc = subprocess.Popen([sys.executable,"-m","app.services.isolated_execution",str(folder)],
             cwd=root, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
         timed_out = threading.Event()

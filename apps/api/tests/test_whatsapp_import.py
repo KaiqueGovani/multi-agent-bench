@@ -282,3 +282,57 @@ def test_whatsapp_adapter_produces_channel_independent_message():
     assert normalized.text == "Olá"
     assert normalized.client_message_id == "message-source"
     assert normalized.metadata.model_extra["sourceRole"] == "customer"
+
+
+@pytest.mark.parametrize("channel", ["web_chat", "whatsapp"])
+@pytest.mark.parametrize(("provider", "model_name"), [
+    ("anthropic", "claude-haiku-4-5"),
+    ("bedrock", "us.anthropic.claude-sonnet-test-v1:0"),
+])
+def test_dispatch_persists_runtime_model_snapshot_for_every_channel(local_api, monkeypatch, channel, provider, model_name):
+    from io import BytesIO
+
+    client, factory, dispatched = local_api
+    headers = {"X-API-Key": "test-import-key"}
+    if channel == "whatsapp":
+        result = submit(client, capture()).json()
+    else:
+        conversation = client.post("/conversations", json={"channel": "web_chat"}, headers=headers).json()
+        result = client.post("/messages", data={
+            "conversationId": conversation["conversationId"], "text": "Qual o horário?",
+            "metadata_json": json.dumps({"runtimeMode": "real", "architectureMode": "centralized_orchestration"}),
+        }, headers=headers).json()
+    run_id = UUID(result["runId"])
+    with factory() as db:
+        initial = dict(db.get(RunModel, run_id).experiment_json)
+        assert initial["modelProvider"] == get_settings().default_model_provider
+
+    monkeypatch.setenv("AI_RUNTIME_URL", "http://runtime.test")
+    get_settings.cache_clear()
+
+    class Accepted(BytesIO):
+        status = 202
+
+    def runtime(request, timeout):
+        assert request.full_url == "http://runtime.test/runs"
+        # Emulate the runtime callback arriving before its acceptance response.
+        # Updating experiment metadata must preserve this completed run state.
+        with factory() as db:
+            model = db.get(RunModel, run_id)
+            model.status = "completed"
+            model.summary_json = {"totalTokens": 17}
+            db.commit()
+        return Accepted(json.dumps({
+            "accepted": True, "runId": str(run_id), "status": "accepted",
+            "modelProvider": provider, "modelName": model_name,
+            "apiKey": "not-application-data",
+        }).encode())
+
+    monkeypatch.setattr("app.services.processing_dispatcher.urlopen", runtime)
+    ProcessingDispatcher()._dispatch_external(**dispatched[-1][0])
+    with factory() as db:
+        run = db.get(RunModel, run_id)
+        assert run.experiment_json == {**initial, "modelProvider": provider, "modelName": model_name}
+        assert "not-application-data" not in json.dumps(run.experiment_json)
+        assert run.status == "completed"
+        assert run.summary_json == {"totalTokens": 17}

@@ -1,5 +1,5 @@
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 
 from dotenv import load_dotenv
@@ -13,9 +13,13 @@ class Settings:
     app_version: str = "0.1.0"
     environment: str = "local"
     log_level: str = "INFO"
+    model_provider: str = "bedrock"
     bedrock_model_id: str = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
+    anthropic_model_id: str = "claude-haiku-4-5-20251001"
+    anthropic_api_key: str | None = field(default=None, repr=False)
     aws_region: str = "us-east-1"
-    aws_bearer_token_bedrock: str | None = None
+    aws_bearer_token_bedrock: str | None = field(default=None, repr=False)
+    ai_service_secret: str | None = field(default=None, repr=False)
     enable_live_llm: bool = False
     enable_otel: bool = False
     otel_exporter_otlp_endpoint: str | None = None
@@ -42,9 +46,13 @@ def get_settings() -> Settings:
         app_version=os.getenv("APP_VERSION", Settings.app_version),
         environment=os.getenv("APP_ENV", Settings.environment),
         log_level=os.getenv("LOG_LEVEL", Settings.log_level),
+        model_provider=os.getenv("MODEL_PROVIDER", Settings.model_provider).strip().lower(),
         bedrock_model_id=os.getenv("BEDROCK_MODEL_ID", Settings.bedrock_model_id),
+        anthropic_model_id=os.getenv("ANTHROPIC_MODEL_ID", Settings.anthropic_model_id),
+        anthropic_api_key=os.getenv("ANTHROPIC_API_KEY") or Settings.anthropic_api_key,
         aws_region=os.getenv("AWS_REGION", Settings.aws_region),
         aws_bearer_token_bedrock=os.getenv("AWS_BEARER_TOKEN_BEDROCK") or Settings.aws_bearer_token_bedrock,
+        ai_service_secret=os.getenv("AI_SERVICE_SECRET") or Settings.ai_service_secret,
         enable_live_llm=_as_bool(os.getenv("ENABLE_LIVE_LLM"), Settings.enable_live_llm),
         enable_otel=_as_bool(os.getenv("ENABLE_OTEL"), Settings.enable_otel),
         otel_exporter_otlp_endpoint=os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT") or Settings.otel_exporter_otlp_endpoint,

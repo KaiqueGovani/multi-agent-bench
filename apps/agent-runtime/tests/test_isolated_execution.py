@@ -23,6 +23,34 @@ def test_worker_round_trip_relays_events_and_result():
     assert any(e.event_family=="response" and e.event_name=="final" for e in events.events)
 
 
+@pytest.mark.parametrize("provider", ["bedrock", "anthropic"])
+def test_worker_uses_snapshot_credential_without_serializing_secrets(monkeypatch, provider):
+    observed = []
+    real_popen = subprocess.Popen
+    monkeypatch.setenv("AWS_BEARER_TOKEN_BEDROCK", "stale-environment-token")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "stale-direct-token")
+    credential_name = "ANTHROPIC_API_KEY" if provider == "anthropic" else "AWS_BEARER_TOKEN_BEDROCK"
+    unused_credential = "AWS_BEARER_TOKEN_BEDROCK" if provider == "anthropic" else "ANTHROPIC_API_KEY"
+
+    def popen(args, **kwargs):
+        task = json.loads((Path(args[-1]) / "task.json").read_text())
+        assert task["settings"]["aws_bearer_token_bedrock"] is None
+        assert task["settings"]["anthropic_api_key"] is None
+        assert task["settings"]["ai_service_secret"] is None
+        assert unused_credential not in kwargs["env"]
+        observed.append(kwargs["env"][credential_name])
+        return real_popen(args, **kwargs)
+
+    monkeypatch.setattr(isolated.subprocess, "Popen", popen)
+    # Mock execution still crosses the real subprocess boundary without inference.
+    settings = Settings(model_provider=provider, aws_bearer_token_bedrock="rotated-snapshot-token",
+                        anthropic_api_key="rotated-snapshot-token",
+                        ai_service_secret="runtime-shared-secret", runtime_timeout_seconds=10)
+    result = isolated.execute_isolated(RuntimeExecutor(build_request(), settings=settings, callbacks=Events()))
+    assert result.final_text.startswith("[modo mock]")
+    assert observed == ["rotated-snapshot-token"]
+
+
 @pytest.mark.parametrize("cancel",[False,True,"signal_failure"])
 def test_global_deadline_kills_worker_and_descendant_and_closes_open_events(monkeypatch,tmp_path,cancel):
     events=Events(); launched=[]; real_popen=subprocess.Popen
