@@ -23,6 +23,7 @@ import { createPortal } from "react-dom";
 
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { observedAgentGraph } from "@/components/runtime/observed-agent-graph";
+import { routeSwarmEdge, type CardRect } from "@/components/runtime/edge-routing";
 import type { RunExecutionEvent } from "@/lib/types";
 import { ORCHESTRATOR_LABEL, formatDisplayTerminology } from "@/lib/ui-terminology";
 
@@ -312,7 +313,7 @@ const AgentNode = memo(function AgentNode({ data }: NodeProps<Node<AgentNodeData
     <div className="relative">
       <div
         ref={cardRef}
-        className={`w-44 rounded-2xl border px-3 py-2.5 shadow-sm motion-safe:transition-colors ${
+        className={`w-44 ${data.uniformHeight ? "min-h-[132px]" : ""} rounded-2xl border px-3 py-2.5 shadow-sm motion-safe:transition-colors ${
           active ? "border-amber-400 bg-amber-50 ring-2 ring-amber-500/20" : restingStyle
         }`}
         data-status={status}
@@ -446,10 +447,37 @@ const EDGE_COLORS: Record<EdgeState, string> = {
 };
 
 function AnimatedEdge(props: EdgeProps) {
-  const { sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, label } = props;
+  const { sourcePosition, targetPosition, data, label } = props;
+  const workflow = data?.workflow === true;
+  const swarm = data?.swarm === true;
+  const outward = (position: Position) => ({
+    x: position === Position.Left ? -6 : position === Position.Right ? 6 : 0,
+    y: position === Position.Top ? -6 : position === Position.Bottom ? 6 : 0,
+  });
+  const sourceOffset = workflow ? outward(sourcePosition) : { x: 0, y: 0 };
+  const targetOffset = workflow ? outward(targetPosition) : { x: 0, y: 0 };
+  const sourceX = props.sourceX + sourceOffset.x;
+  const sourceY = props.sourceY + sourceOffset.y;
+  const targetX = props.targetX + targetOffset.x;
+  const targetY = props.targetY + targetOffset.y;
   const state = (data?.state as EdgeState) ?? "idle";
   const markerPrefix = data?.markerPrefix;
   const reduceMotion = useReducedMotion();
+  const nodeLookup = useStore((store) => store.nodeLookup);
+  const cardRect = (id: string): CardRect | undefined => {
+    const node = nodeLookup.get(id);
+    return node?.measured.width && node.measured.height
+      ? { ...node.internals.positionAbsolute, width: node.measured.width, height: node.measured.height }
+      : undefined;
+  };
+  const sourceCard = swarm ? cardRect(props.source) : undefined;
+  const targetCard = swarm ? cardRect(props.target) : undefined;
+  const swarmRoute = sourceCard && targetCard
+    ? routeSwarmEdge(sourceCard, targetCard, [...nodeLookup.keys()].flatMap((id) => {
+      const rect = cardRect(id);
+      return rect ? [rect] : [];
+    }))
+    : undefined;
 
   const [bezierPath, bezierLabelX, bezierLabelY] = getBezierPath({
     sourceX,
@@ -465,7 +493,6 @@ function AnimatedEdge(props: EdgeProps) {
     ? `M ${sourceX},${sourceY} C ${sourceX + offset},${sourceY + bend} ${targetX - offset},${targetY + bend} ${targetX},${targetY}`
     : bezierPath;
 
-  const workflow = data?.workflow === true;
   const workflowBypass = workflow && data?.bypass === true;
   const routeOffset = typeof data?.lane === "number" ? 34 + data.lane * 18 : 34;
   const laneY = Math.min(sourceY, targetY) - routeOffset;
@@ -475,26 +502,36 @@ function AnimatedEdge(props: EdgeProps) {
     borderRadius: 8, offset: 12,
   });
   const bypassPath = `M ${sourceX},${sourceY} L ${sourceX},${laneY + corner} Q ${sourceX},${laneY} ${sourceX + Math.sign(targetX - sourceX) * corner},${laneY} L ${targetX - Math.sign(targetX - sourceX) * corner},${laneY} Q ${targetX},${laneY} ${targetX},${laneY + corner} L ${targetX},${targetY}`;
-  const renderedPath = workflow ? workflowBypass ? bypassPath : stepPath : edgePath;
+  const renderedPath = swarmRoute?.path ?? (workflow ? workflowBypass ? bypassPath : stepPath : edgePath);
   const labelX = workflow ? workflowBypass ? (sourceX + targetX) / 2 : stepLabelX : bezierLabelX;
   const labelY = workflow ? workflowBypass ? laneY : stepLabelY : bezierLabelY;
 
   const color = EDGE_COLORS[state];
-  const strokeWidth = state === "active" ? 2.5 : state === "recent" ? 2 : state === "settled" ? 1.6 : 1;
+  const strokeWidth = state === "active" ? 2.5 : state === "idle" ? 1.5 : 2;
   const animated = !reduceMotion && state === "active";
+  const neutralSequence = data?.sequence && !workflow;
+  const marker = `url(#${markerPrefix}-marker-${neutralSequence ? "sequence" : state})`;
 
   return (
-    <g data-edge-state={state} data-edge-route={workflow ? workflowBypass ? "workflow-bypass" : "workflow-forward" : undefined}>
+    <g
+      data-edge-state={state}
+      data-edge-kind={data?.sequence ? "sequence" : "communication"}
+      data-edge-direction={data?.bidirectional ? "both" : "forward"}
+      data-edge-route={swarm ? swarmRoute?.detour ? "swarm-detour" : "swarm-direct" : workflow ? workflowBypass ? "workflow-bypass" : "workflow-forward" : undefined}
+    >
       {label ? <title>{label}</title> : null}
       <BaseEdge
         path={renderedPath}
         style={{
-          stroke: data?.sequence ? "#64748b" : color,
-          strokeWidth: data?.sequence ? 1.4 : strokeWidth,
-          opacity: data?.sequence ? 0.8 : state === "idle" ? 0.6 : 0.9,
-          strokeDasharray: data?.sequence ? "5 5" : undefined,
+          stroke: neutralSequence ? "#64748b" : color,
+          strokeWidth,
+          strokeLinecap: "round",
+          strokeLinejoin: "round",
+          opacity: state === "idle" ? 0.6 : 0.95,
+          strokeDasharray: data?.sequence ? "6 5" : undefined,
         }}
-        markerEnd={`url(#${markerPrefix}-marker-${data?.sequence ? "sequence" : state})`}
+        markerStart={data?.bidirectional ? marker : undefined}
+        markerEnd={marker}
         label={typeof data?.labelText === "string" ? data.labelText : undefined}
         labelX={labelX}
         labelY={labelY - 10}
@@ -538,8 +575,8 @@ function EdgeMarkerDefs({ prefix }: { prefix: string }) {
             viewBox="0 0 10 10"
             refX="10"
             refY="5"
-            markerWidth="8"
-            markerHeight="8"
+            markerWidth="10"
+            markerHeight="10"
             markerUnits="userSpaceOnUse"
             orient="auto-start-reverse"
           >
@@ -559,11 +596,18 @@ const nodeTypes = { agent: AgentNode };
 const edgeTypes = { animated: AnimatedEdge };
 const flowFitOptions = { padding: 0.14, minZoom: 0.18, maxZoom: 1 };
 
+function fittedBounds(bounds: CardRect, edges: Edge[]) {
+  const top = Math.max(0, ...edges.filter((edge) => edge.data?.workflow && edge.data?.bypass)
+    .map((edge) => 54 + (typeof edge.data?.lane === "number" ? edge.data.lane * 18 : 0)));
+  const margin = edges.some((edge) => edge.data?.swarm) ? 24 : 0;
+  return { x: bounds.x - margin, y: bounds.y - top - margin, width: bounds.width + margin * 2, height: bounds.height + top + margin * 2 };
+}
+
 function FlowControls() {
-  const { getNodes, getNodesBounds, setViewport, zoomIn, zoomOut } = useReactFlow();
+  const { getNodes, getNodesBounds, getEdges, setViewport, zoomIn, zoomOut } = useReactFlow();
   const width = useStore((state) => state.width);
   const height = useStore((state) => state.height);
-  const fit = () => setViewport(getViewportForBounds(getNodesBounds(getNodes()), width, height, 0.18, 1, 0.14));
+  const fit = () => setViewport(getViewportForBounds(fittedBounds(getNodesBounds(getNodes()), getEdges()), width, height, 0.18, 1, 0.14));
   return (
     <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5 rounded-md border bg-card/95 p-0.5 shadow-sm">
       <button aria-label="Diminuir fluxo" className="flex h-9 w-9 items-center justify-center rounded text-muted-foreground hover:bg-muted focus-visible:outline-primary sm:h-7 sm:w-7" onClick={() => void zoomOut()} type="button"><Minus className="h-3.5 w-3.5" /></button>
@@ -574,7 +618,7 @@ function FlowControls() {
 }
 
 function FitGraph({ topology }: { topology: string }) {
-  const { getNodes, getNodesBounds, setViewport } = useReactFlow();
+  const { getNodes, getNodesBounds, getEdges, setViewport } = useReactFlow();
   const ready = useStore((state) => state.nodeLookup.size > 0 && [...state.nodeLookup.values()]
     .every((node) => Boolean(node.measured?.width && node.measured?.height)));
   const width = useStore((state) => state.width);
@@ -587,13 +631,13 @@ function FitGraph({ topology }: { topology: string }) {
       // not receive ReactFlow's dimension changes. Refit when the frame resizes.
       frame = requestAnimationFrame(() => {
         settledFrame = requestAnimationFrame(() => {
-          const bounds = getNodesBounds(getNodes());
+          const bounds = fittedBounds(getNodesBounds(getNodes()), getEdges());
           void setViewport(getViewportForBounds(bounds, width, height, 0.18, 1, 0.14));
         });
       });
     }
     return () => { cancelAnimationFrame(frame); cancelAnimationFrame(settledFrame); };
-  }, [getNodes, getNodesBounds, height, ready, setViewport, topology, width]);
+  }, [getNodes, getNodesBounds, getEdges, height, ready, setViewport, topology, width]);
   return null;
 }
 
@@ -613,11 +657,34 @@ function FlowWrapper({
   height?: number;
 }) {
   const markerPrefix = useId();
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const [canvasHeight, setCanvasHeight] = useState(height);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const panel = canvas?.closest<HTMLElement>('[data-testid="chat-flow-panel"]');
+    const parent = panel?.parentElement;
+    if (!canvas || !panel || !parent) {
+      setCanvasHeight(height);
+      return;
+    }
+    const resize = () => {
+      const panelBox = panel.getBoundingClientRect();
+      const available = Math.min(panel.clientHeight, parent.getBoundingClientRect().bottom - panelBox.top);
+      const headingHeight = canvas.getBoundingClientRect().top - panelBox.top;
+      setCanvasHeight(Math.min(height, Math.max(100, Math.floor(available - headingHeight - 8))));
+    };
+    const observer = new ResizeObserver(resize);
+    observer.observe(panel);
+    observer.observe(parent);
+    resize();
+    return () => observer.disconnect();
+  }, [height]);
   const markedEdges = useMemo(() => edges.map((edge) => ({
     ...edge,
     data: { ...edge.data, markerPrefix },
   })), [edges, markerPrefix]);
-  const topology = nodes.map(({ id, position }) => `${id}:${position.x},${position.y}`).join("|");
+  const topology = nodes.map(({ id, position }) => `${id}:${position.x},${position.y}`).join("|")
+    + edges.map(({ id, data }) => `${id}:${data?.lane ?? 0}`).join("|");
   return (
     <div className="min-w-0 max-w-full" data-testid={testId}>
       <p className="px-2 pb-1 text-[11px] text-muted-foreground sm:hidden">Use + para ampliar e arraste para explorar.</p>
@@ -627,7 +694,7 @@ function FlowWrapper({
         tabIndex={0}
         className="min-w-0 max-w-full overflow-hidden rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
       >
-        <div style={{ height }} className="relative w-full min-w-0">
+        <div ref={canvasRef} style={{ height: canvasHeight }} className="relative w-full min-w-0">
           <EdgeMarkerDefs prefix={markerPrefix} />
           <ReactFlow
             nodes={nodes}
@@ -700,11 +767,11 @@ const AGENT_NAME_MAP: Record<string, string> = {
 // Both runtime protocols expose these five peers. Positions are deliberately
 // independent of which subset ran, so the collaboration map stays familiar.
 const SWARM_ROSTER = [
-  { id: "coordinator", label: "Coordenador", aliases: ["swarm_coordinator", "coordinator_agent"], description: "Coordena a colaboração", x: 220, y: 110 },
+  { id: "coordinator", label: "Coordenador", aliases: ["swarm_coordinator", "coordinator_agent"], description: "Coordena a colaboração", x: 264, y: 110 },
   { id: "faq", label: "FAQ", aliases: ["faq_specialist", "faq_agent"], description: "Informações de atendimento", x: 0, y: 0 },
-  { id: "stock", label: "Estoque", aliases: ["stock_specialist", "stock_agent"], description: "Disponibilidade e preços", x: 440, y: 0 },
+  { id: "stock", label: "Estoque", aliases: ["stock_specialist", "stock_agent"], description: "Disponibilidade e preços", x: 528, y: 0 },
   { id: "attachments", label: "Anexos", aliases: ["image_specialist", "image_intake_agent", "attachments_specialist"], description: "Imagens e documentos", x: 0, y: 220 },
-  { id: "synthesizer", label: "Sintetizador", aliases: ["swarm_synthesizer", "synthesis_agent"], description: "Compõe a resposta final", x: 440, y: 220 },
+  { id: "synthesizer", label: "Sintetizador", aliases: ["swarm_synthesizer", "synthesis_agent"], description: "Compõe a resposta final", x: 528, y: 220 },
 ];
 
 function swarmRole(role: string) {
@@ -1087,7 +1154,7 @@ export function SwarmFlow({
         [];
       const invoked = agentEvents.length > 0 || Boolean(actor && getStatus(actor, terminal) !== "pending");
       const status = invoked ? graphNodeStatus(actor ? getStatus(actor, terminal) : "pending", agentEvents, isActive, terminal) : "not_invoked";
-      return makeNode(
+      const node = makeNode(
         peer.id,
         peer.label,
         peer.desc,
@@ -1100,6 +1167,8 @@ export function SwarmFlow({
         undefined,
         agentEvents,
       );
+      node.data.uniformHeight = true;
+      return node;
     });
 
     const peerIds = new Set(peerDefs.map((p) => p.id));
@@ -1159,7 +1228,11 @@ export function SwarmFlow({
       if (!from || !to) continue;
       const state = edgeStateFromEvents(executionEvents, from, to, terminal, swarmAltNames);
       const finalState: EdgeState = state === "idle" ? "settled" : state;
-      edgeMap.set(pair, { ...makeEdge(from, to, finalState), ...connectionHandles(byId.get(from)!, byId.get(to)!) });
+      edgeMap.set(pair, {
+        ...makeEdge(from, to, finalState),
+        ...connectionHandles(byId.get(from)!, byId.get(to)!),
+        data: { state: finalState, swarm: true },
+      });
     }
 
     return { nodes, edges: Array.from(edgeMap.values()) };
@@ -1219,7 +1292,7 @@ function ObservedAgentFlow({ architecture, executionEvents, runStatus, testId }:
     } else if (architecture === "swarm") {
       graph.agents.forEach(({ role }, index) => {
         const peer = SWARM_ROSTER.find((candidate) => candidate.id === role);
-        positions.set(role, peer ? { x: peer.x, y: peer.y } : { x: 660, y: (index - SWARM_ROSTER.length) * 148 });
+        positions.set(role, peer ? { x: peer.x, y: peer.y } : { x: 792, y: (index - SWARM_ROSTER.length) * 148 });
       });
     } else {
       if (root) positions.set(root.role, { x: 0, y: Math.max(0, peers.length - 1) * 74 });
@@ -1233,15 +1306,18 @@ function ObservedAgentFlow({ architecture, executionEvents, runStatus, testId }:
         : peer
           ? peer.description
           : agent === root && /supervisor/.test(agent.role) ? "Coordena os especialistas" : "Agente acionado";
-      return makeNode(agent.role, peer?.label ?? formatAgentName(agent.role), description,
+      const node = makeNode(agent.role, peer?.label ?? formatAgentName(agent.role), description,
         agent.status, !terminal, position.x, position.y,
         agent.status === "not_invoked" ? "muted" : undefined, agent.events.find((event) => event.nodeId)?.nodeId, undefined, agent.events);
+      node.data.uniformHeight = architecture === "swarm";
+      return node;
     });
     const byId = new Map(nodes.map((node) => [node.id, node]));
     // A reply on the same relationship is a result of that call, not a second
     // crossing route. Keep its recorded evidence in the agent detail popover.
     const connections = new Map<string, { from: string; to: string; status: string; returned: boolean; exchange: boolean; kind: "call" | "return" }>();
     for (const link of graph.links) {
+      if (link.from === link.to || !byId.has(link.from) || !byId.has(link.to)) continue;
       const key = [link.from, link.to].sort().join(":");
       const previous = connections.get(key);
       const reverse = previous && previous.from === link.to && previous.to === link.from;
@@ -1260,7 +1336,12 @@ function ObservedAgentFlow({ architecture, executionEvents, runStatus, testId }:
         ...makeEdge(link.from, link.to, state),
         ...connectionHandles(byId.get(link.from)!, byId.get(link.to)!),
         label: link.returned ? "Chamada e retorno registrados" : link.exchange ? "Comunicação registrada nos dois sentidos" : link.kind === "call" ? "Invocação registrada" : "Comunicação registrada",
-        data: { state, labelText: link.returned ? "retorno recebido" : link.exchange ? "troca de mensagens" : undefined },
+        data: {
+          state,
+          swarm: architecture === "swarm",
+          bidirectional: architecture !== "centralized" && (link.returned || link.exchange),
+          labelText: architecture === "centralized" ? link.returned ? "retorno recebido" : link.exchange ? "troca de mensagens" : undefined : undefined,
+        },
       };
     });
     // The workflow also exposes chronological order. Dashed connectors denote
@@ -1270,15 +1351,41 @@ function ObservedAgentFlow({ architecture, executionEvents, runStatus, testId }:
         const from = nodes[index - 1];
         const to = nodes[index];
         if (edges.some((edge) => edge.source === from.id && edge.target === to.id)) continue;
+        const state: EdgeState = to.data.status === "running" && !terminal ? "active" : from.data.status === "completed" ? "settled" : "idle";
         edges.push({
-          ...makeEdge(from.id, to.id, "idle"),
+          ...makeEdge(from.id, to.id, state),
           id: `${from.id}-${to.id}-sequence`,
           label: "Ordem de execução, sem comunicação direta registrada",
-          data: { state: "idle", sequence: true },
+          data: { state, sequence: true },
         });
       }
     }
-    const height = architecture === "workflow" ? 300 : architecture === "swarm" ? 340 : Math.max(230, Math.min(500, peers.length * 148 + 48));
+    if (architecture === "swarm") {
+      const invoked = [...new Set(observed.agents.map((agent) => swarmRole(agent.role)))];
+      for (let index = 1; index < invoked.length; index++) {
+        const current = invoked[index];
+        const earlier = invoked.slice(0, index);
+        if (edges.some((edge) => edge.target === current && earlier.includes(edge.source)
+          || edge.source === current && earlier.includes(edge.target))) continue;
+        const firstEvent = graph.agents.find((agent) => agent.role === current)?.events[0]?.sequenceNo ?? Infinity;
+        // Select the last completed invocation before this agent started, not
+        // the roster position. This expresses order without inventing a message.
+        const lastCompleted = earlier.map((role) => ({
+          role,
+          completedAt: graph.agents.find((agent) => agent.role === role)?.events
+            .filter((event) => event.eventFamily === "agent" && event.eventName === "completed" && event.sequenceNo < firstEvent).at(-1)?.sequenceNo ?? -1,
+        })).sort((a, b) => b.completedAt - a.completedAt)[0];
+        const previous = lastCompleted && lastCompleted.completedAt >= 0 ? lastCompleted.role : earlier.at(-1)!;
+        const state: EdgeState = byId.get(current)?.data.status === "running" && !terminal ? "active" : "settled";
+        edges.push({
+          ...makeEdge(previous, current, state),
+          id: `${previous}-${current}-sequence`,
+          label: "Ordem de execução, sem comunicação direta registrada",
+          data: { state, swarm: true, sequence: true },
+        });
+      }
+    }
+    const height = architecture === "workflow" ? 300 : architecture === "swarm" ? 380 : Math.max(230, Math.min(500, peers.length * 148 + 48));
     return { nodes, edges: architecture === "workflow" ? workflowConnections(nodes, edges) : edges, height };
   }, [architecture, executionEvents, terminal]);
   return (
@@ -1286,8 +1393,15 @@ function ObservedAgentFlow({ architecture, executionEvents, runStatus, testId }:
       {nodes.length ? (
         <>
           <p className="px-2 py-1 text-xs leading-relaxed text-muted-foreground">
-            {architecture === "workflow" ? "Etapas em ordem de execução. Linhas tracejadas indicam sequência; linhas contínuas, comunicação registrada." : architecture === "swarm" ? "Todos os agentes disponíveis. Cinza: não acionado; cores: execução registrada. As linhas mostram apenas comunicações registradas." : "Agentes e conexões registrados na execução. Retornos aparecem na mesma conexão."}
+            {architecture === "workflow" ? "Etapas em ordem de execução. Setas verdes indicam etapas concluídas." : architecture === "swarm" ? "Todos os agentes disponíveis. Os agentes não acionados permanecem em cinza." : "Agentes e conexões registrados na execução. Retornos aparecem na mesma conexão."}
           </p>
+          {architecture !== "centralized" ? (
+            <div aria-label="Legenda das conexões" className="flex flex-wrap gap-x-4 gap-y-1 px-2 pb-2 text-[11px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="text-base leading-none text-emerald-600">→</span> Comunicação registrada</span>
+              {architecture === "swarm" || edges.some((edge) => edge.data?.bidirectional) ? <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="text-base leading-none text-emerald-600">↔</span> {architecture === "swarm" ? "Chamada e retorno" : "Comunicação nos dois sentidos"}</span> : null}
+              <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="w-5 border-t-2 border-dashed border-current" /> Ordem de execução</span>
+            </div>
+          ) : null}
           <FlowWrapper nodes={nodes} edges={edges} testId={testId} height={height} />
         </>
       ) : (
