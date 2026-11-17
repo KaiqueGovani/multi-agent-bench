@@ -22,3 +22,7 @@ O nucleo da aplicacao nao deve depender do canal de entrada. Web Chat, WhatsApp 
 ## Commits
 
 Quando for solicitado criar commits neste repositorio, use mensagens claras, em ingles, seguindo Conventional Commits. Exemplos: `feat(api): add conversation schema`, `docs(poc): document initial architecture`, `fix(web): handle SSE reconnect`.
+
+## Push
+
+Envie as alteracoes verificadas para `main` por padrao. Use outra branch como destino apenas quando o usuario pedir explicitamente.
