@@ -28,6 +28,7 @@ import { EventTimeline } from "@/components/events/event-timeline";
 import { ConversationInspector } from "@/components/inspection/conversation-inspector";
 import { CentralizedFlow, SwarmFlow, WorkflowFlow } from "@/components/runtime/architecture-flow";
 import { ArchitectureComparisonOverview } from "@/components/runtime/architecture-comparison-overview";
+import { LlmSettings } from "@/components/runtime/llm-settings";
 import { formatArchitectureLabel as formatArchitectureLabelText } from "@/components/runtime/presentation";
 import { RunExecutionPanel } from "@/components/runtime/run-execution-panel";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -287,7 +288,7 @@ export function ChatWorkspace() {
               </p>
             </div>
           </div>
-          <div className="flex w-full shrink-0 items-center justify-between gap-2 sm:w-auto sm:justify-start">
+          <div className="flex w-full shrink-0 flex-wrap items-center justify-between gap-2 sm:w-auto sm:justify-start">
             <Button
               aria-label={isFlowOpen ? "Esconder fluxo" : "Mostrar fluxo"}
               aria-pressed={isFlowOpen}
@@ -315,6 +316,7 @@ export function ChatWorkspace() {
               onExecutionModeChange={setExecutionMode}
               runtimeStatus={runtimeStatus}
             />
+            <LlmSettings onStatusChange={setRuntimeStatus} runtimeStatus={runtimeStatus} />
             {openReviewTasks.length > 0 ? (
               <Link
                 aria-label={`Ver ${openReviewTasks.length} revisões abertas`}
@@ -944,6 +946,7 @@ function HeaderContextTooltip({
               {executionMode === "real" ? "agent runtime" : "mock runtime"}
             </p>
             <p>LLM: {formatRuntimeStatus(runtimeStatus)}</p>
+            {llm ? <p>Provedor: {llm.provider === "anthropic" ? "Anthropic" : "Amazon Bedrock"}</p> : null}
             {llm ? <p>Modelo: {llm.modelId}</p> : null}
             {runtimeStatus?.error ? <p>Erro: {runtimeStatus.error}</p> : null}
             <p>Arquitetura: {formatArchitectureMode(architectureMode)}</p>

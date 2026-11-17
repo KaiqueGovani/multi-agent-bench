@@ -34,6 +34,30 @@ Override with:
 NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
 ```
 
+## Changing the provider, model, or API key
+
+In the chat header, select **Bedrock** (or **Anthropic** when active). Choose
+**Amazon Bedrock** or **Anthropic (Claude)**. Each provider retains its own model
+and key, so switching back can reuse an existing credential.
+
+Paste a key and select **Carregar modelos** to populate the **Modelo** picker.
+Anthropic requires a new or previously configured Anthropic API key. Bedrock
+uses available inference profiles when permitted and otherwise offers a labeled
+catalog. **Outro modelo…** lets you enter a custom model identifier. Loading the
+list does not change the active provider or model and does not run inference.
+
+Select **Aplicar configuração** to apply the provider, model, and optional new
+key to subsequent web chat and WhatsApp runs immediately. Accepted runs retain
+their original configuration. The key input is masked and cleared after a
+successful update or closing the dialog. These settings are kept only in server
+memory until the runtime restarts; the browser does not save them. Updating the
+settings does not enable live mode if it is disabled.
+
+The API and agent runtime must both be running. Use a single runtime HTTP worker
+(the default `make runtime` and `make runtime-llm`); its execution pool still runs
+LLM requests in parallel. If `AI_SERVICE_SECRET` is set on the runtime, configure
+the same value on the API.
+
 ## Published experiment
 
 Run `npm ci` and `npm run dev` from `apps/web`, then open

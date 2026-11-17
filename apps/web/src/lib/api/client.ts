@@ -1,5 +1,6 @@
 import type {
   ArchitectureMode,
+  AvailableModelsResponse,
   ConversationListResponse,
   DashboardMetricsResponse,
   ConversationDetailResponse,
@@ -7,6 +8,7 @@ import type {
   ExecutionMode,
   HealthResponse,
   MessageListResponse,
+  ModelProvider,
   ProcessingEvent,
   Run,
   RunComparisonContextResponse,
@@ -14,6 +16,7 @@ import type {
   ResolveReviewTaskRequest,
   ReviewTask,
   ReviewTaskListResponse,
+  RuntimeHealthStatus,
   SendMessageResponse
 } from "@/lib/types";
 
@@ -100,6 +103,38 @@ export function getDashboardMetrics(): Promise<DashboardMetricsResponse> {
 
 export function getHealth(): Promise<HealthResponse> {
   return request<HealthResponse>("/health");
+}
+
+export function updateBedrockApiKey(apiKey: string): Promise<RuntimeHealthStatus> {
+  return request<RuntimeHealthStatus>("/settings/bedrock", {
+    method: "PUT",
+    body: JSON.stringify({ apiKey }),
+    cache: "no-store",
+  });
+}
+
+export function getLlmSettings(): Promise<RuntimeHealthStatus> {
+  return request<RuntimeHealthStatus>("/settings/llm", { cache: "no-store" });
+}
+
+export function getAvailableModels(settings: { provider: ModelProvider; apiKey?: string }): Promise<AvailableModelsResponse> {
+  return request<AvailableModelsResponse>("/settings/llm/models", {
+    method: "POST",
+    body: JSON.stringify(settings),
+    cache: "no-store",
+  });
+}
+
+export function updateLlmSettings(settings: {
+  provider: ModelProvider;
+  modelId: string;
+  apiKey?: string;
+}): Promise<RuntimeHealthStatus> {
+  return request<RuntimeHealthStatus>("/settings/llm", {
+    method: "PUT",
+    body: JSON.stringify(settings),
+    cache: "no-store",
+  });
 }
 
 export function getConversation(conversationId: string): Promise<ConversationDetailResponse> {

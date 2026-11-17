@@ -365,8 +365,8 @@ export async function installMockEventSource(page: Page) {
 }
 
 export async function mockFrontendApi(page: Page) {
-  // Match both 127.0.0.1:8000 and localhost:8000 since .env.local may use either.
-  const apiPattern = /^https?:\/\/(127\.0\.0\.1|localhost):8000\//;
+  // Match the default and alternate local API ports for either loopback hostname.
+  const apiPattern = /^https?:\/\/(127\.0\.0\.1|localhost):(8000|8100)\//;
   await page.route(apiPattern, async (route) => {
     const url = new URL(route.request().url());
     const method = route.request().method();

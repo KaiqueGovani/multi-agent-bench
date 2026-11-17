@@ -8,7 +8,23 @@ export type ArchitectureMode =
 
 export type ExecutionMode = "mock" | "real";
 
+export type ModelProvider = "bedrock" | "anthropic";
+
+export interface AvailableModel {
+  id: string;
+  name: string;
+}
+
+export interface AvailableModelsResponse {
+  provider: ModelProvider;
+  models: AvailableModel[];
+  source: "provider" | "catalog";
+}
+
 export interface LlmRuntimeStatus {
+  provider?: ModelProvider;
+  models?: Record<ModelProvider, string>;
+  credentialsConfigured?: Record<ModelProvider, boolean>;
   enabled: boolean;
   tokenConfigured: boolean;
   sdkAvailable: boolean;
