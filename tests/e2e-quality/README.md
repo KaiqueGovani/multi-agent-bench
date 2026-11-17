@@ -34,7 +34,10 @@ Pré-requisito: backend rodando (`make up` ou `docker compose -f infra/docker/do
 | Variable | Default | Description |
 |---|---|---|
 | `API_BASE_URL` | `http://127.0.0.1:8000` | Base URL of the running API |
-| `API_KEY` | `poc-dev-key-2026` | API key for `X-API-Key` header |
+| `API_KEY` | Key configured in `apps/api/.env` | API key for `X-API-Key` header; explicit environment value takes precedence |
+
+Run `make sync-env` to generate the shared local API key if it is not configured.
+The quality client reads that key without generating or rotating one of its own.
 
 ## How It Works
 

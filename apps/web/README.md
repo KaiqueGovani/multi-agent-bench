@@ -36,6 +36,11 @@ NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
 
 ## Changing the provider, model, or API key
 
+The small **Copiar chave da extensão** icon in the main header copies the local
+MAB API key so it can be pasted into the extension's connection settings. Local
+setup generates a random key shared by the API and web app and retains it across
+restarts. The copied value is the MAB connection key, separate from provider keys.
+
 In the chat header, select **Bedrock** (or **Anthropic** when active). Choose
 **Amazon Bedrock** or **Anthropic (Claude)**. Each provider retains its own model
 and key, so switching back can reuse an existing credential.

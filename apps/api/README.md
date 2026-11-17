@@ -111,13 +111,15 @@ send this in development through `apps/web/.env.local`:
 NEXT_PUBLIC_API_KEY=replace-with-a-local-development-key
 ```
 
-The value must match exactly. For the local POC setup used in this repository,
-both files can use:
+The value must match exactly. `make sync-env` generates a cryptographically
+random local key and writes the same value to both files. Existing custom keys
+are preserved; the former demonstration key is replaced. `make dev`, `make api`,
+and `make web` synchronize the key without replacing the rest of the local
+configuration. An explicit `API_KEY` environment or Make override is honored.
 
-```bash
-API_KEY=poc-dev-key-2026
-NEXT_PUBLIC_API_KEY=poc-dev-key-2026
-```
+Use the small copy-key icon in the main chat header, then paste that value into
+the extension's local connection settings. This is the MAB API key; provider
+credentials such as Bedrock and Anthropic keys stay separate.
 
 If the web app starts on a port other than `3000`, include that origin in
 `CORS_ALLOWED_ORIGINS` and restart the API. The default example allows both

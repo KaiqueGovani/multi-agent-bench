@@ -9,7 +9,7 @@ Cada mensagem recebida de texto pode ganhar a ação **Sugerir resposta · MAB**
 3. Para atualizar, use **Recarregar** na extensão e **depois recarregue a página do WhatsApp Web**. Confira a versão **0.3.5** e ative o MAB novamente pelo ícone. Recarregar somente a extensão deixa instâncias antigas na página, podendo duplicar ações ou produzir o erro “Extension context invalidated”.
 4. Abra uma conversa de teste e clique no ícone MAB para ativar as ações nas mensagens recebidas. Clique novamente no ícone para desativá-las.
 
-A chave da API usa `chrome.storage.session`. Fechar o Chrome, desabilitar, recarregar ou atualizar a extensão pode limpar essa sessão. Se necessário, use **Ajustar solicitação e conferir contexto → Configurar conexão local**, no cartão, ou **Opções da extensão**, no Chrome, para informar a chave **da API do MAB**. Essa configuração abre uma página interna isolada; a chave não entra no DOM do WhatsApp. Não informe uma chave Bedrock: o formulário a rejeita.
+A chave da API usa `chrome.storage.session`. Fechar o Chrome, desabilitar, recarregar ou atualizar a extensão pode limpar essa sessão. Copie a chave aleatória pelo pequeno ícone **Copiar chave da extensão** no cabeçalho da página principal do MAB. Em seguida, use **Ajustar solicitação e conferir contexto → Configurar conexão local**, no cartão, ou **Opções da extensão**, no Chrome, para colar a chave **da API do MAB**. Essa configuração abre uma página interna isolada; a chave não entra no DOM do WhatsApp. Não informe uma chave Bedrock: o formulário a rejeita.
 
 ## Fluxo do atendente
 

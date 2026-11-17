@@ -25,7 +25,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 E2E_DIR = ROOT / "tests" / "e2e-quality"
 sys.path.insert(0, str(E2E_DIR))
+sys.path.insert(0, str(ROOT / "scripts"))
 
+from local_api_key import configured_api_key  # noqa: E402
 from api_client import E2EClient  # noqa: E402
 from benchmark_client import BenchmarkClient, RunMetrics  # noqa: E402
 from _loader import load_yaml_scenarios  # noqa: E402
@@ -82,8 +84,8 @@ def parse_args(argv=None) -> argparse.Namespace:
     )
     p.add_argument(
         "--api-key",
-        default=os.getenv("API_KEY", "poc-dev-key-2026"),
-        help="API key. Default: env API_KEY or poc-dev-key-2026",
+        default=None,
+        help="API key. Default: env API_KEY or the configured apps/api/.env key",
     )
     p.add_argument(
         "--timeout",
@@ -96,7 +98,12 @@ def parse_args(argv=None) -> argparse.Namespace:
         default=str(E2E_DIR / "scenarios"),
         help="YAML scenarios directory. Default: tests/e2e-quality/scenarios",
     )
-    return p.parse_args(argv)
+    args = p.parse_args(argv)
+    try:
+        args.api_key = configured_api_key(ROOT, args.api_key if args.api_key is not None else os.getenv("API_KEY"))
+    except ValueError as error:
+        p.error(str(error))
+    return args
 
 
 def resolve_architectures(raw: str) -> list[str]:

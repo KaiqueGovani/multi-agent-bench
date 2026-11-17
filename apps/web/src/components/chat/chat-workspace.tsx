@@ -44,6 +44,7 @@ import { cn } from "@/lib/utils";
 import { MessageComposer } from "./message-composer";
 import { MessageList } from "./message-list";
 import { DeleteConversationDialog } from "./delete-conversation-dialog";
+import { CopyExtensionKey } from "./copy-extension-key";
 
 type WorkspaceTab = "conversa" | "visao-geral" | "atividade";
 
@@ -315,6 +316,7 @@ export function ChatWorkspace() {
               runtimeStatus={runtimeStatus}
             />
             <LlmSettings onStatusChange={setRuntimeStatus} runtimeStatus={runtimeStatus} />
+            <CopyExtensionKey />
             {conversationId ? (
               <Button aria-label="Excluir conversa" onClick={() => setDeleteTarget({ id: conversationId, title: conversation?.title || `Conversa ${shortId(conversationId)}` })} size="icon" type="button" variant="ghost">
                 <Trash2 aria-hidden="true" className="h-4 w-4 text-muted-foreground" />

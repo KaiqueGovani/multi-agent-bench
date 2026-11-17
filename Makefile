@@ -25,7 +25,13 @@ DB_PASSWORD        ?= postgres
 DB_URL             := postgresql+psycopg://$(DB_USER):$(DB_PASSWORD)@127.0.0.1:$(DB_PORT)/$(DB_NAME)
 
 # ── Secrets / keys ────────────────────────────────────────────────────
-API_KEY                  ?= poc-dev-key-2026
+# Resolve once, then export to parallel submakes and both services. Existing
+# non-demo keys survive restarts; fresh/legacy setups get 32 random bytes.
+ifeq ($(origin API_KEY),undefined)
+API_KEY := $(shell python3 scripts/local_api_key.py resolve)
+endif
+export API_KEY
+export NEXT_PUBLIC_API_KEY := $(API_KEY)
 AI_SERVICE_SECRET        ?= local-runtime-secret
 
 # ── LLM / Bedrock ─────────────────────────────────────────────────────
@@ -49,7 +55,7 @@ export AWS_BEARER_TOKEN_BEDROCK := $(EFFECTIVE_AWS_BEARER_TOKEN_BEDROCK)
 endif
 
 # ═══════════════════════════════════════════════════════════════════════
-.PHONY: up dev setup install sync-env infra db-migrate \
+.PHONY: up dev setup install sync-env sync-api-key infra db-migrate \
         api runtime web stop infra-down infra-reset infra-logs infra-ps \
         test test-api test-runtime clean test-quality test-quality-report \
         benchmark benchmark-live
@@ -58,7 +64,7 @@ endif
 up: infra install sync-env db-migrate dev
 
 # ── Start services (assumes setup done) ──────────────────────────────
-dev:
+dev: sync-api-key
 	@echo "Starting API (:$(API_PORT)) · Runtime (:$(RUNTIME_PORT)) · Web (:$(WEB_PORT))"
 	@make -j3 api runtime web
 
@@ -69,6 +75,9 @@ install:
 	cd apps/web && npm install
 
 # ── Generate all .env files from Makefile config ─────────────────────
+sync-api-key:
+	@python3 scripts/local_api_key.py sync
+
 sync-env:
 	@echo "Syncing .env files..."
 	@echo "APP_ENV=local\n\
@@ -81,12 +90,11 @@ MOCK_RUNTIME_STEP_DELAY_SECONDS=0.2\n\
 AI_RUNTIME_URL=http://127.0.0.1:$(RUNTIME_PORT)\n\
 AI_RUNTIME_TIMEOUT_SECONDS=20\n\
 APP_BASE_URL=http://127.0.0.1:$(API_PORT)\n\
-API_KEY=$(API_KEY)\n\
 AI_SERVICE_SECRET=$(AI_SERVICE_SECRET)\n\
 CORS_ALLOWED_ORIGINS=http://localhost:$(WEB_PORT),http://127.0.0.1:$(WEB_PORT)" > apps/api/.env
 	@printf "APP_ENV=local\nENABLE_LIVE_LLM=$(ENABLE_LIVE_LLM)\nAWS_BEARER_TOKEN_BEDROCK=$(EFFECTIVE_AWS_BEARER_TOKEN_BEDROCK)\nAI_SERVICE_SECRET=$(AI_SERVICE_SECRET)\nBEDROCK_MODEL_ID=$(BEDROCK_MODEL_ID)\nAWS_REGION=$(AWS_REGION)\nENABLE_OTEL=false\nDEFAULT_ARCHITECTURE_MODE=centralized_orchestration\nRUNTIME_MAX_HANDOFFS=6\nRUNTIME_TIMEOUT_SECONDS=45\nCHAT_API_CALLBACK_TIMEOUT_SECONDS=10\n" > apps/agent-runtime/.env
-	@echo "NEXT_PUBLIC_API_BASE_URL=http://localhost:$(API_PORT)\n\
-NEXT_PUBLIC_API_KEY=$(API_KEY)" > apps/web/.env.local
+	@echo "NEXT_PUBLIC_API_BASE_URL=http://localhost:$(API_PORT)" > apps/web/.env.local
+	@python3 scripts/local_api_key.py sync
 	@rm -rf apps/web/.next
 	@echo "  ✓ apps/api/.env"
 	@echo "  ✓ apps/agent-runtime/.env"
@@ -115,7 +123,7 @@ db-migrate:
 	cd apps/api && DATABASE_URL=$(DB_URL) uv run alembic upgrade head
 
 # ── Individual services ──────────────────────────────────────────────
-api:
+api: sync-api-key
 	cd apps/api && uv run uvicorn app.main:app --reload --port $(API_PORT)
 
 runtime:
@@ -126,7 +134,7 @@ runtime:
 runtime-llm:
 	cd apps/agent-runtime && uv run uvicorn app.main:app --workers 1 --port $(RUNTIME_PORT)
 
-web:
+web: sync-api-key
 	cd apps/web && npm run dev -- --port $(WEB_PORT)
 
 # ── Stop everything ──────────────────────────────────────────────────
