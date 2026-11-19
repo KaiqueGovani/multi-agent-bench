@@ -155,10 +155,10 @@
       state.get("tabs").append(button);
     }
     const run = progress.runs.find((item) => item.id === state.activeRun);
-    state.get("response").textContent = run?.text || run?.error || (run?.finished ? "Esta execução terminou sem texto disponível." : "Aguardando esta arquitetura…");
+    state.get("response").textContent = run?.text ? globalThis.MabWhatsAppFormatter.toWhatsApp(run.text) : run?.error || (run?.finished ? "Esta execução terminou sem texto disponível." : "Aguardando esta arquitetura…");
     state.get("metrics").textContent = [run?.status === "cancelled" ? "Execução cancelada" : run?.error || run?.status === "failed" ? "Falha na execução" : run?.finished && !run?.text ? run?.reviewRequired || run?.status === "human_review_required" ? "Revisão profissional · sem resposta" : "Finalizada sem resposta" : run?.reviewRequired ? "Revisão profissional indicada" : run?.finished ? "Sugestão pronta" : "Processando", run?.durationMs != null ? `${(run.durationMs / 1000).toFixed(1)} s` : "", run?.tokens != null ? `${run.tokens.toLocaleString("pt-BR")} tokens` : ""].filter(Boolean).join(" · ");
     state.get("copy").disabled = !run?.text;
-    state.get("insert").disabled = !run?.text || !run.finished || Boolean(run.error);
+    state.get("insert").disabled = Boolean(state.inserting) || !run?.text || !run.finished || Boolean(run.error);
   }
   async function poll(state, token, started = Date.now()) {
     if (!valid(state) || token !== sequence) return;
@@ -234,15 +234,17 @@
       state.get("context").addEventListener("change", () => renderContext(state)); state.get("target").addEventListener("input", () => renderContext(state));
       state.get("generate").addEventListener("click", (event) => { if (event.isTrusted) void generate(state); });
       state.get("new").addEventListener("click", (event) => { if (!event.isTrusted || !valid(state)) return; clearTimeout(state.timer); sequence++; state.capture.captureId = crypto.randomUUID(); state.imported = null; state.submitted = null; state.progress = null; resetProgress(state); state.get("new").hidden = true; state.get("results").hidden = true; setBusy(state, false); say(state, "Pronto para uma nova execução deste trecho."); });
-      state.get("copy").addEventListener("click", async (event) => { if (!event.isTrusted || !valid(state)) return; const run = state.progress?.runs.find((item) => item.id === state.activeRun); if (!run?.text) return; try { await navigator.clipboard.writeText(run.text); say(state, "Resposta copiada. Revise e cole quando desejar."); } catch { say(state, "Selecione o texto da sugestão para copiar manualmente.", true); } });
-      state.get("insert").addEventListener("click", (event) => {
-        if (!event.isTrusted || !valid(state)) return;
+      state.get("copy").addEventListener("click", async (event) => { if (!event.isTrusted || !valid(state)) return; const run = state.progress?.runs.find((item) => item.id === state.activeRun); if (!run?.text) return; try { await navigator.clipboard.writeText(globalThis.MabWhatsAppFormatter.toWhatsApp(run.text)); say(state, "Resposta copiada com formatação do WhatsApp. Revise e cole quando desejar."); } catch { say(state, "Selecione o texto da sugestão para copiar manualmente.", true); } });
+      state.get("insert").addEventListener("click", async (event) => {
+        if (!event.isTrusted || !valid(state) || state.inserting) return;
         const run = state.progress?.runs.find((item) => item.id === state.activeRun);
         if (!run?.text || !run.finished || run.error) return;
+        state.inserting = true; state.get("insert").disabled = true;
         try {
-          const result = globalThis.MabWhatsAppComposer.insertReply({ main: state.chat.main, isCurrent: () => valid(state), text: run.text });
+          const result = await globalThis.MabWhatsAppComposer.insertReply({ main: state.chat.main, isCurrent: () => valid(state), text: run.text });
           say(state, result.appended ? "Sugestão acrescentada ao rascunho existente. Revise e envie pelo WhatsApp quando desejar." : "Sugestão inserida na caixa de mensagem. Revise e envie pelo WhatsApp quando desejar.");
         } catch (error) { say(state, error.message || "Não foi possível inserir a sugestão. Use Copiar resposta.", true); }
+        finally { state.inserting = false; if (valid(state) && state.progress) renderResponse(state, state.progress); }
       });
       state.get("details").addEventListener("click", (event) => { if (event.isTrusted && valid(state) && state.imported) void rpc("mab:open-details", { conversationId: state.imported.conversationId }).catch((error) => say(state, error.message, true)); });
       state.get("settings").addEventListener("click", (event) => { if (event.isTrusted) void rpc("mab:open-settings").catch((error) => say(state, error.message, true)); });

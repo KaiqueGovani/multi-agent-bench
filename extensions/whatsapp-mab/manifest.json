@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "MAB · Assistente de atendimento",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "Gere uma sugestão do MAB diretamente abaixo de uma mensagem recebida no WhatsApp Web.",
   "minimum_chrome_version": "102",
   "permissions": [

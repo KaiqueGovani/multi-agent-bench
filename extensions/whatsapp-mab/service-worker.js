@@ -5,7 +5,7 @@ const client = new LocalMabClient({ getSettings: async () => (await chrome.stora
 chrome.action.onClicked.addListener(async (tab) => {
   try {
     if (!tab.id || !tab.url || new URL(tab.url).origin !== "https://web.whatsapp.com") throw new Error("Abra uma conversa no WhatsApp Web para usar o MAB.");
-    await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["extractor.js", "panel-core.js", "composer.js", "message-actions.js"] });
+    await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["extractor.js", "panel-core.js", "formatter.js", "composer.js", "message-actions.js"] });
     const results = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => globalThis.MabWhatsAppMessages.toggle() });
     const enabled = results[0]?.result?.enabled;
     await chrome.action.setBadgeText({ tabId: tab.id, text: enabled ? "ON" : "" });

@@ -10,7 +10,7 @@ const main=()=>`<div id="main"><header>Conversa fictícia</header>${message('a',
 function setup(options={}){
  const {window,document}=parseHTML(`<html><body>${main()}</body></html>`);const calls=[],copied=[];
  const context=vm.createContext({document,MutationObserver:window.MutationObserver,crypto:webcrypto,navigator:{clipboard:{writeText:async text=>copied.push(text)}},setTimeout:options.setTimeout||setTimeout,clearTimeout:options.clearTimeout||clearTimeout,Date:options.Date||Date,chrome:{runtime:{sendMessage:async request=>{calls.push(request);return{ok:true,value:request.type==='mab:import'?{conversationId:id,runIds:[id]}:{runs:[{id,name:'Centralizada',status:'completed',text:'Aceitamos Pix no contexto controlado.',finished:true}],finished:true,ready:1}};}}}});
- for(const file of ['extractor.js','panel-core.js','message-actions.js'])vm.runInContext(fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8'),context);
+ for(const file of ['extractor.js','panel-core.js','formatter.js','message-actions.js'])vm.runInContext(fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8'),context);
  context.MabWhatsAppMessages.toggle();
  return{window,document,context,calls,copied,host:(source)=>document.querySelector(`[data-id="${source}"] > [data-mab-ui="message-action"]`),close:()=>context.MabWhatsAppMessages.toggle()};
 }
@@ -124,7 +124,7 @@ test('inserção exige clique real, usa a resposta concluída da aba e revalida 
  click(s,shadow.getElementById('generate'));await flush();await flush();
  const insert=shadow.getElementById('insert');assert.equal(insert.disabled,false);
  click(s,shadow.querySelectorAll('[role=tab]')[1]);click(s,insert,false);assert.deepEqual(inserted,[]);
- click(s,insert);assert.deepEqual(inserted,['Sugestão workflow\nSegunda linha']);assert.match(shadow.getElementById('status').textContent,/acrescentada ao rascunho/);assert.deepEqual(s.copied,[]);
+ click(s,insert);await flush();assert.deepEqual(inserted,['Sugestão workflow\nSegunda linha']);assert.match(shadow.getElementById('status').textContent,/acrescentada ao rascunho/);assert.deepEqual(s.copied,[]);
  s.document.querySelector('footer [contenteditable]').setAttribute('aria-label','Campo de outra conversa');click(s,insert);assert.equal(inserted.length,1);s.close();
 });
 test('resposta pendente ou com erro não pode ser inserida, e falha de inserção fica visível',async()=>{
@@ -135,6 +135,25 @@ test('resposta pendente ou com erro não pode ser inserida, e falha de inserçã
  assert.equal(shadow.getElementById('insert').disabled,true);click(s,shadow.getElementById('insert'));assert.equal(attempts,0);
  click(s,shadow.querySelectorAll('[role=tab]')[1]);assert.equal(shadow.getElementById('insert').disabled,true);click(s,shadow.getElementById('insert'));assert.equal(attempts,0);
  click(s,shadow.querySelectorAll('[role=tab]')[2]);assert.equal(shadow.getElementById('insert').disabled,false);click(s,shadow.getElementById('insert'));assert.equal(attempts,1);assert.match(shadow.getElementById('status').textContent,/Confira o rascunho/);s.close();
+});
+
+test('preview e cópia usam o mesmo markup do WhatsApp e mantêm parágrafos',async()=>{
+ const s=setup(),shadow=open(s,'c');
+ s.context.chrome.runtime.sendMessage=async request=>({ok:true,value:request.type==='mab:import'?{conversationId:id,runIds:[id]}:{runs:[{id,name:'Centralizada',text:'## Disponibilidade\n\n**Produto de exemplo**\n- 23 caixas\n- Preço não informado',finished:true}],finished:true,ready:1}});
+ click(s,shadow.getElementById('generate'));await flush();await flush();
+ const expected='*Disponibilidade*\n\n*Produto de exemplo*\n- 23 caixas\n- Preço não informado';
+ assert.equal(shadow.getElementById('response').textContent,expected);
+ click(s,shadow.getElementById('copy'));await flush();assert.deepEqual(s.copied,[expected]);s.close();
+});
+
+test('aguarda confirmação assíncrona e bloqueia cliques duplicados durante a inserção',async()=>{
+ const s=setup(),shadow=open(s,'c');let resolveInsert,attempts=0;
+ s.context.MabWhatsAppComposer={insertReply:()=>{attempts++;return new Promise(resolve=>{resolveInsert=resolve;});}};
+ click(s,shadow.getElementById('generate'));await flush();await flush();
+ const insert=shadow.getElementById('insert');click(s,insert);assert.equal(insert.disabled,true);
+ click(s,insert);click(s,shadow.querySelector('[role=tab]'));assert.equal(insert.disabled,true);assert.equal(attempts,1);
+ assert.doesNotMatch(shadow.getElementById('status').textContent,/Sugestão inserida/);
+ resolveInsert({appended:false});await flush();assert.match(shadow.getElementById('status').textContent,/Sugestão inserida/);assert.equal(insert.disabled,false);s.close();
 });
 
 function pollingClock(){

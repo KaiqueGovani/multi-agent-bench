@@ -1,4 +1,4 @@
-# MAB no WhatsApp Web — extensão 0.3.5
+# MAB no WhatsApp Web — extensão 0.3.6
 
 Cada mensagem recebida de texto pode ganhar a ação **Sugerir resposta · MAB**. A solicitação é processada pelo MAB local e a sugestão aparece diretamente abaixo da mensagem escolhida. O fluxo não abre abas de revisão nem painéis flutuantes e não envia mensagens ao WhatsApp.
 
@@ -6,7 +6,7 @@ Cada mensagem recebida de texto pode ganhar a ação **Sugerir resposta · MAB**
 
 1. Inicie API, runtime e interface do MAB. O padrão é API `http://127.0.0.1:8000` e interface `http://127.0.0.1:3100`. Bedrock é configurado somente no servidor.
 2. No Chrome, abra `chrome://extensions`, ative **Modo do desenvolvedor** e use **Carregar sem compactação**. Selecione esta pasta `extensions/whatsapp-mab`.
-3. Para atualizar, use **Recarregar** na extensão e **depois recarregue a página do WhatsApp Web**. Confira a versão **0.3.5** e ative o MAB novamente pelo ícone. Recarregar somente a extensão deixa instâncias antigas na página, podendo duplicar ações ou produzir o erro “Extension context invalidated”.
+3. Para atualizar, use **Recarregar** na extensão e **depois recarregue a página do WhatsApp Web**. Confira a versão **0.3.6** e ative o MAB novamente pelo ícone. Recarregar somente a extensão deixa instâncias antigas na página, podendo duplicar ações ou produzir o erro “Extension context invalidated”.
 4. Abra uma conversa de teste e clique no ícone MAB para ativar as ações nas mensagens recebidas. Clique novamente no ícone para desativá-las.
 
 A chave da API usa `chrome.storage.session`. Fechar o Chrome, desabilitar, recarregar ou atualizar a extensão pode limpar essa sessão. Copie a chave aleatória pelo pequeno ícone **Copiar chave da extensão** no cabeçalho da página principal do MAB. Em seguida, use **Ajustar solicitação e conferir contexto → Configurar conexão local**, no cartão, ou **Opções da extensão**, no Chrome, para colar a chave **da API do MAB**. Essa configuração abre uma página interna isolada; a chave não entra no DOM do WhatsApp. Não informe uma chave Bedrock: o formulário a rejeita.
@@ -20,7 +20,7 @@ A chave da API usa `chrome.storage.session`. Fechar o Chrome, desabilitar, recar
 5. Clique em **Gerar sugestão**. O cartão mostra imediatamente o envio do trecho e depois o processamento no MAB. Durante a espera, há um indicador animado discreto e o estado de cada arquitetura, com a contagem das execuções finalizadas. Os estados vêm do MAB; não há porcentagem ou previsão de tempo. A resposta aparece no mesmo cartão; uma comparação tem abas para as três arquiteturas. Falhas e necessidade de revisão profissional ficam identificadas por arquitetura.
 6. Revise a resposta da arquitetura selecionada e use **Inserir na conversa** para preencher a caixa de mensagem do WhatsApp. Se já houver um rascunho, a sugestão é acrescentada ao final, separada por uma linha em branco. A extensão confere que a conversa continua aberta e nunca aciona o envio. **Copiar resposta** continua disponível; **Detalhes no MAB** abre a execução completa apenas quando solicitado.
 
-A inserção fica disponível somente para uma resposta concluída. Ela conserva as quebras de linha, confere a conversa antes e depois do foco e não substitui o rascunho existente. Se o campo não puder ser identificado com segurança, ou o rascunho contiver apenas imagem/emoji como elemento especial, a extensão mantém o conteúdo e orienta a cópia manual. Uma falha parcial pede que o atendente confira o rascunho antes de tentar de novo.
+A inserção fica disponível somente para uma resposta concluída. O preview, a cópia e a inserção convertem o Markdown comum do modelo para o markup do WhatsApp: negrito, títulos, tachado e links legíveis, preservando parágrafos, listas e código literal. A resposta original do MAB permanece intacta. A inserção confere a conversa antes e depois do foco e não substitui o rascunho existente. Se o campo não puder ser identificado com segurança, ou o rascunho contiver apenas imagem/emoji como elemento especial, a extensão mantém o conteúdo e orienta a cópia manual. Uma falha parcial pede que o atendente confira o rascunho antes de tentar de novo.
 
 Os campos de ajuste e seleção usam controles nativos que preservam a digitação dentro do cartão, sem transferir o foco para o compositor do WhatsApp.
 
@@ -46,7 +46,7 @@ Mensagens recém-renderizadas recebem a ação enquanto a extensão estiver ativ
 
 Os controles e as respostas da extensão são explicitamente excluídos da extração. Uma atualização do layout do WhatsApp pode exigir ajustes nos seletores. O extrator cobre `#main [data-id]`, rótulos acessíveis de remetente, `.selectable-text` e classes legadas. Ele não inventa mensagens ou participantes quando faltam dados.
 
-A edição usa comandos nativos de texto e quebra de linha, sem simular a tecla Enter. `execCommand` é uma API legada específica do navegador e é verificada em Chrome; se ela falhar, não há substituição direta do DOM. Referência: [MDN — execCommand](https://developer.mozilla.org/en-US/docs/Web/API/Document/execCommand).
+A edição oferece uma única colagem de texto completo ao editor, sem ler ou alterar o clipboard do sistema. Isso deixa o próprio editor criar as linhas e os parágrafos. Se a colagem não for tratada nem alterar o rascunho, há uma única tentativa de inserção nativa de texto. A confirmação aguarda a atualização do editor, lê quebras em blocos e `<br>`, e tolera espaços não separáveis e o marcador final de cursor. Quebras de linha ausentes e texto truncado continuam sendo falhas. Uma inserção parcial ou colagem já consumida nunca é repetida automaticamente. Não há substituição direta do DOM, simulação da tecla Enter ou acionamento do envio. Referências: [formatação do WhatsApp](https://faq.whatsapp.com/539178204879377/?cms_platform=web&locale=pt_BR) e [MDN — execCommand](https://developer.mozilla.org/en-US/docs/Web/API/Document/execCommand).
 
 Documentação primária: [activeTab](https://developer.chrome.com/docs/extensions/develop/concepts/activeTab), [scripting](https://developer.chrome.com/docs/extensions/reference/api/scripting), [storage.session](https://developer.chrome.com/docs/extensions/reference/api/storage).
 
