@@ -59,9 +59,10 @@ for (const scenario of scenarios) {
         expect(positions[1].x).toBeGreaterThan(positions[0].x);
         expect(positions[2].x).toBeGreaterThan(positions[1].x);
         expect(positions[3].x).toBeGreaterThan(positions[2].x);
-        await expect(flow.locator('[data-edge-route="workflow-bypass"]')).toHaveCount(1);
-        // Sample the actual rendered paths: a nonadjacent message may not run
-        // through another agent card, even when all four stages were called.
+        await expect(flow.locator('[data-edge-route="workflow-bypass"]')).toHaveCount(0);
+        await expect(flow.locator('[data-edge-kind="sequence"]')).toHaveCount(3);
+        // The stage-order connectors must stay between adjacent cards even
+        // when the trace records evidence sent to a nonadjacent recipient.
         const crossedCards = await flow.locator("path.react-flow__edge-path").evaluateAll((paths) => paths.flatMap((element) => {
           const path = element as SVGPathElement;
           const matrix = path.getScreenCTM();

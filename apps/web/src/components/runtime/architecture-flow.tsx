@@ -42,6 +42,7 @@ interface AgentNodeData {
   tone?: BadgeProps["variant"];
   nodeId?: string | null;
   events?: RunExecutionEvent[];
+  incomingEvidence?: RunExecutionEvent[];
   [key: string]: unknown;
 }
 
@@ -183,6 +184,33 @@ function ResponseDetail({ payload }: { payload: Record<string, unknown> | undefi
   );
 }
 
+function SynthesisEvidence({ events }: { events: RunExecutionEvent[] }) {
+  return (
+    <section data-testid="workflow-evidence-inputs" aria-label="Evidências para a síntese" className="border-b p-2.5 text-[11px]">
+      <h2 className="font-semibold">Evidências para a síntese</h2>
+      <p className="mt-1 text-muted-foreground">Mensagens direcionadas ao Sintetizador nos eventos registrados.</p>
+      {events.length ? events.map((event) => (
+        <details key={event.id} className="mt-2 rounded border bg-muted/20 p-2">
+          <summary className="cursor-pointer rounded font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
+            {formatAgentName(event.actorName ?? "")}{` · evento #${event.sequenceNo}`}
+          </summary>
+          <div className="mt-2 space-y-1.5">
+            <Badge variant={statusBadgeVariant(event.status)}>{formatNodeStatusLabel(event.status)}</Badge>
+            <ResponseDetail payload={event.payload} />
+          </div>
+        </details>
+      )) : <p className="mt-2 text-muted-foreground">Nenhuma evidência recebida registrada.</p>}
+    </section>
+  );
+}
+
+function synthesisEvidence(events: RunExecutionEvent[], recipients: string[]) {
+  return events.filter((event) => event.eventFamily === "communication" && event.eventName === "message"
+    && typeof event.payload?.to === "string" && recipients.includes(event.payload.to)
+    && Boolean(event.actorName) && event.actorName !== event.payload.to)
+    .sort((a, b) => a.sequenceNo - b.sequenceNo);
+}
+
 // ---------------------------------------------------------------------------
 // Custom node with hover popover
 // ---------------------------------------------------------------------------
@@ -212,7 +240,7 @@ function popoverPosition(card: HTMLElement): PopoverPosition {
 }
 
 const AgentNode = memo(function AgentNode({ data }: NodeProps<Node<AgentNodeData>>) {
-  const { actorName, description, status, statusLabel, active, tone, nodeId, events } = data;
+  const { actorName, description, status, statusLabel, active, tone, nodeId, events, incomingEvidence } = data;
   const [popoverPos, setPopoverPos] = useState<PopoverPosition | null>(null);
   const popoverId = useId();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -222,6 +250,7 @@ const AgentNode = memo(function AgentNode({ data }: NodeProps<Node<AgentNodeData
   const pinned = useRef(false);
   const agentEvents = (events ?? []) as RunExecutionEvent[];
   const eventCount = agentEvents.length;
+  const hasDetails = eventCount > 0 || Boolean(incomingEvidence?.length);
   const toolCount = new Set(
     agentEvents
       .filter((event) => event.eventFamily === "tool" && event.eventName === "started")
@@ -243,7 +272,7 @@ const AgentNode = memo(function AgentNode({ data }: NodeProps<Node<AgentNodeData
     if (restoreFocus) triggerRef.current?.focus();
   };
 
-  const popoverOpen = popoverPos !== null && eventCount > 0;
+  const popoverOpen = popoverPos !== null && hasDetails;
   const viewport = useStore((state) => popoverOpen ? state.transform : null);
   useEffect(() => {
     if (viewport && cardRef.current) setPopoverPos(popoverPosition(cardRef.current));
@@ -286,7 +315,7 @@ const AgentNode = memo(function AgentNode({ data }: NodeProps<Node<AgentNodeData
 
   const showPopover = () => {
     cancelDismiss();
-    if (cardRef.current && eventCount > 0) {
+    if (cardRef.current && hasDetails) {
       setPopoverPos(popoverPosition(cardRef.current));
     }
   };
@@ -364,7 +393,7 @@ const AgentNode = memo(function AgentNode({ data }: NodeProps<Node<AgentNodeData
             </span>
           ) : null}
         </div>
-        {eventCount > 0 ? (
+        {hasDetails ? (
           <button
             ref={triggerRef}
             type="button"
@@ -426,7 +455,10 @@ const AgentNode = memo(function AgentNode({ data }: NodeProps<Node<AgentNodeData
                   ×
                 </button>
               </div>
-              <AgentEventTimeline events={agentEvents} />
+              <div className="min-h-0 overflow-y-auto overscroll-contain">
+                {incomingEvidence !== undefined ? <SynthesisEvidence events={incomingEvidence} /> : null}
+                <AgentEventTimeline events={agentEvents} />
+              </div>
             </div>,
             document.body,
           )
@@ -528,7 +560,7 @@ function AnimatedEdge(props: EdgeProps) {
           strokeLinecap: "round",
           strokeLinejoin: "round",
           opacity: state === "idle" ? 0.6 : 0.95,
-          strokeDasharray: data?.sequence ? "6 5" : undefined,
+          strokeDasharray: data?.sequence && !workflow ? "6 5" : undefined,
         }}
         markerStart={data?.bidirectional ? marker : undefined}
         markerEnd={marker}
@@ -889,19 +921,19 @@ function makeEdge(source: string, target: string, state: EdgeState): Edge {
   };
 }
 
-function workflowConnections(nodes: Node<AgentNodeData>[], edges: Edge[]): Edge[] {
-  const byId = new Map(nodes.map((node, index) => [node.id, { node, index }]));
-  let lane = 0;
-  return edges.map((edge) => {
-    const source = byId.get(edge.source);
-    const target = byId.get(edge.target);
-    if (!source || !target) return edge;
-    const bypass = target.index - source.index !== 1;
+function workflowConnections(nodes: Node<AgentNodeData>[]): Edge[] {
+  // This view expresses stage order only. Recorded evidence belongs in the
+  // recipient's details, not in extra routes that resemble skipped stages.
+  return nodes.slice(1).map((target, index) => {
+    const source = nodes[index];
+    const state: EdgeState = source.data.status !== "completed" ? "idle"
+      : target.data.status === "running" ? "active"
+      : target.data.status === "completed" ? "settled" : "idle";
     return {
-      ...edge,
-      sourceHandle: bypass ? "top-out" : undefined,
-      targetHandle: bypass ? "top-in" : undefined,
-      data: { ...edge.data, workflow: true, bypass, lane: bypass ? lane++ : 0 },
+      ...makeEdge(source.id, target.id, state),
+      id: `${source.id}-${target.id}-sequence`,
+      label: "Ordem de execução",
+      data: { state, workflow: true, sequence: true },
     };
   });
 }
@@ -1060,11 +1092,6 @@ export function WorkflowFlow({
       { stage: "synthesize", actor: "workflow_synthesis_agent", altActors: ["synthesis_agent"], desc: "Sintetizar saída" },
     ];
 
-    const altNameMap = new Map<string, string[]>();
-    for (const step of sequence) {
-      altNameMap.set(step.actor, step.altActors);
-    }
-
     const nodes: Node<AgentNodeData>[] = sequence.map((step, i) => {
       const matching = stages.filter((s) => getStage(s) === step.stage).at(-1);
       const actorName = getActorName(matching) ?? step.actor;
@@ -1085,37 +1112,24 @@ export function WorkflowFlow({
         })
         .sort((a, b) => a.sequenceNo - b.sequenceNo);
       const status = graphNodeStatus(projectedStatus, agentEvents, active, terminal);
-      return makeNode(step.actor, formatAgentName(actorName), step.desc, status, !terminal, i * 200, 0, tone, getNodeId(matching), undefined, agentEvents);
+      const node = makeNode(step.actor, formatAgentName(actorName), step.desc, status, !terminal, i * 200, 0, tone, getNodeId(matching), undefined, agentEvents);
+      if (step.stage === "synthesize") node.data.incomingEvidence = synthesisEvidence(executionEvents, [step.actor, actorName, ...step.altActors, "synthesizer"]);
+      return node;
     });
 
-    const edges: Edge[] = nodes.slice(0, -1).map((n, i) => {
-      const next = nodes[i + 1];
-      const edge = makeEdge(n.id, next.id, edgeStateFromEvents(executionEvents, n.id, next.id, terminal, altNameMap));
-      return { ...edge, data: { ...edge.data, sequence: true } };
-    });
-    // Optional stages stay visible. When the execution bypasses them, draw the
-    // observed path between the last executed stage and the next executed one.
-    const executed = nodes.filter(({ data }) =>
-      ["running", "completed", "failed", "human_review_required", "interrupted"].includes(data.status));
-    for (let i = 1; i < executed.length; i++) {
-      const previous = executed[i - 1];
-      const current = executed[i];
-      if (current.position.x - previous.position.x > 200 && previous.data.status === "completed") {
-        edges.push({
-          ...makeEdge(previous.id, current.id, current.data.status === "running" ? "active" : "settled"),
-          label: "Fluxo entre etapas executadas",
-          data: { state: current.data.status === "running" ? "active" : "settled", bypass: true, sequence: true },
-        });
-      }
-    }
-
-    return { nodes, edges: workflowConnections(nodes, edges) };
+    return { nodes, edges: workflowConnections(nodes) };
   }, [activeActorName, executionEvents, runStatus, stages]);
 
   if (usesObservedAgentTrace(executionEvents)) {
     return <ObservedAgentFlow architecture="workflow" executionEvents={executionEvents} runStatus={runStatus} testId="runtime-visual-workflow" />;
   }
-  return <FlowWrapper nodes={nodes} edges={edges} testId="runtime-visual-workflow" height={300} />;
+  return (
+    <div className="min-w-0 max-w-full">
+      <p className="px-2 py-1 text-xs leading-relaxed text-muted-foreground">Ordem das etapas. Etapas não acionadas permanecem identificadas nos cartões.</p>
+      <div aria-label="Legenda das conexões" className="px-2 pb-2 text-[11px] text-muted-foreground">→ Ordem de execução</div>
+      <FlowWrapper nodes={nodes} edges={edges} testId="runtime-visual-workflow" height={300} />
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -1310,6 +1324,9 @@ function ObservedAgentFlow({ architecture, executionEvents, runStatus, testId }:
         agent.status, !terminal, position.x, position.y,
         agent.status === "not_invoked" ? "muted" : undefined, agent.events.find((event) => event.nodeId)?.nodeId, undefined, agent.events);
       node.data.uniformHeight = architecture === "swarm";
+      if (architecture === "workflow" && ["synthesizer", "synthesis_agent", "workflow_synthesis_agent"].includes(agent.role)) {
+        node.data.incomingEvidence = synthesisEvidence(executionEvents, [agent.role]);
+      }
       return node;
     });
     const byId = new Map(nodes.map((node) => [node.id, node]));
@@ -1344,22 +1361,6 @@ function ObservedAgentFlow({ architecture, executionEvents, runStatus, testId }:
         },
       };
     });
-    // The workflow also exposes chronological order. Dashed connectors denote
-    // ordering only; they do not claim an agent-to-agent message was recorded.
-    if (architecture === "workflow") {
-      for (let index = 1; index < nodes.length; index++) {
-        const from = nodes[index - 1];
-        const to = nodes[index];
-        if (edges.some((edge) => edge.source === from.id && edge.target === to.id)) continue;
-        const state: EdgeState = to.data.status === "running" && !terminal ? "active" : from.data.status === "completed" ? "settled" : "idle";
-        edges.push({
-          ...makeEdge(from.id, to.id, state),
-          id: `${from.id}-${to.id}-sequence`,
-          label: "Ordem de execução, sem comunicação direta registrada",
-          data: { state, sequence: true },
-        });
-      }
-    }
     if (architecture === "swarm") {
       const invoked = [...new Set(observed.agents.map((agent) => swarmRole(agent.role)))];
       for (let index = 1; index < invoked.length; index++) {
@@ -1386,20 +1387,24 @@ function ObservedAgentFlow({ architecture, executionEvents, runStatus, testId }:
       }
     }
     const height = architecture === "workflow" ? 300 : architecture === "swarm" ? 380 : Math.max(230, Math.min(500, peers.length * 148 + 48));
-    return { nodes, edges: architecture === "workflow" ? workflowConnections(nodes, edges) : edges, height };
+    return { nodes, edges: architecture === "workflow" ? workflowConnections(nodes) : edges, height };
   }, [architecture, executionEvents, terminal]);
   return (
     <div className="min-w-0 max-w-full" data-testid="observed-agent-flow" data-layout={architecture}>
       {nodes.length ? (
         <>
           <p className="px-2 py-1 text-xs leading-relaxed text-muted-foreground">
-            {architecture === "workflow" ? "Etapas em ordem de execução. Setas verdes indicam etapas concluídas." : architecture === "swarm" ? "Todos os agentes disponíveis. Os agentes não acionados permanecem em cinza." : "Agentes e conexões registrados na execução. Retornos aparecem na mesma conexão."}
+            {architecture === "workflow" ? "Etapas em ordem de execução. As evidências recebidas ficam nos detalhes do Sintetizador." : architecture === "swarm" ? "Todos os agentes disponíveis. Os agentes não acionados permanecem em cinza." : "Agentes e conexões registrados na execução. Retornos aparecem na mesma conexão."}
           </p>
           {architecture !== "centralized" ? (
             <div aria-label="Legenda das conexões" className="flex flex-wrap gap-x-4 gap-y-1 px-2 pb-2 text-[11px] text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="text-base leading-none text-emerald-600">→</span> Comunicação registrada</span>
-              {architecture === "swarm" || edges.some((edge) => edge.data?.bidirectional) ? <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="text-base leading-none text-emerald-600">↔</span> {architecture === "swarm" ? "Chamada e retorno" : "Comunicação nos dois sentidos"}</span> : null}
-              <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="w-5 border-t-2 border-dashed border-current" /> Ordem de execução</span>
+              {architecture === "workflow" ? (
+                <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="text-base leading-none text-emerald-600">→</span> Ordem de execução</span>
+              ) : <>
+                <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="text-base leading-none text-emerald-600">→</span> Comunicação registrada</span>
+                <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="text-base leading-none text-emerald-600">↔</span> Chamada e retorno</span>
+                <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="w-5 border-t-2 border-dashed border-current" /> Ordem de execução</span>
+              </>}
             </div>
           ) : null}
           <FlowWrapper nodes={nodes} edges={edges} testId={testId} height={height} />

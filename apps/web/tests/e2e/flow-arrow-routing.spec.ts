@@ -5,20 +5,21 @@ import type { RunExecutionEvent } from "../../src/lib/types";
 import { installMockEventSource, mockFrontendApi, mockIds } from "./support/mock-runtime-fixtures";
 
 type Scenario = "swarm" | "workflow" | "workflow-reverse" | "workflow-exchange";
+type RunState = "completed" | "running" | "failed";
 const evidence = path.resolve(__dirname, "../../../../research-data/local/ui-polish");
 
-async function openFlow(page: Page, scenario: Scenario) {
+async function openFlow(page: Page, scenario: Scenario, state: RunState = "completed") {
   const swarm = scenario === "swarm";
   const conversationId = swarm ? mockIds.swarmConversation : mockIds.workflowConversation;
   const runId = swarm ? mockIds.swarmRun : mockIds.workflowRun;
   const architecture = swarm ? "decentralized_swarm" : "structured_workflow";
   const events: RunExecutionEvent[] = [];
-  const add = (eventFamily: string, eventName: string, actorName: string, payload: Record<string, unknown>) => {
+  const add = (eventFamily: string, eventName: string, actorName: string, payload: Record<string, unknown>, status?: string) => {
     events.push({
       id: `arrow-${events.length}`, sequenceNo: events.length + 1,
       runId, conversationId, messageId: "arrow-message", correlationId: "arrow-correlation",
       eventFamily, eventName, actorName, source: "ai_service",
-      status: eventName === "started" ? "running" : "completed",
+      status: status ?? (eventName === "started" ? "running" : "completed"),
       createdAt: "2026-11-17T18:00:00Z", payload,
     } as RunExecutionEvent);
   };
@@ -37,13 +38,20 @@ async function openFlow(page: Page, scenario: Scenario) {
     invocation("synthesizer");
   } else {
     invocation("router");
-    invocation("faq");
-    add("communication", "message", "faq", { to: "synthesizer", text: "Evidência para síntese" });
-    invocation("synthesizer");
-    if (scenario === "workflow-reverse") {
-      add("communication", "message", "synthesizer", { to: "router", text: "Retorno ao início do fluxo" });
-    } else if (scenario === "workflow-exchange") {
-      add("communication", "message", "synthesizer", { to: "faq", text: "Retorno para o especialista" });
+    invocation("stock");
+    add("communication", "message", "stock", { to: "synthesizer", text: "Estoque: 23 caixas na fonte controlada." });
+    if (state === "completed") {
+      invocation("faq");
+      add("communication", "message", "faq", { to: "synthesizer", text: "FAQ: prazo geral informado pela fonte controlada." });
+      invocation("synthesizer");
+      if (scenario === "workflow-reverse") {
+        add("communication", "message", "synthesizer", { to: "router", text: "Retorno ao início do fluxo" });
+      } else if (scenario === "workflow-exchange") {
+        add("communication", "message", "synthesizer", { to: "faq", text: "Retorno para o especialista" });
+      }
+    } else {
+      add("agent", "started", "faq", { agentInvocationId: "faq-1" });
+      if (state === "failed") add("agent", "failed", "faq", { agentInvocationId: "faq-1" }, "failed");
     }
   }
 
@@ -51,14 +59,14 @@ async function openFlow(page: Page, scenario: Scenario) {
   await mockFrontendApi(page);
   await page.route(`**/runs/${runId}/execution`, (route) => route.fulfill({ json: {
     executionEvents: events,
-    projection: { architectureMode: architecture, runStatus: "completed", architectureView: { actors: {}, stages: [], handoffs: [] }, metrics: {}, state: {} },
-    run: { id: runId, status: "completed", experiment: { architectureKey: architecture, comparisonProtocol: "architectural-comparison-v4.4" } },
+    projection: { architectureMode: architecture, runStatus: state, architectureView: { actors: {}, stages: [], handoffs: [] }, metrics: {}, state: {} },
+    run: { id: runId, status: state, experiment: { architectureKey: architecture, comparisonProtocol: "architectural-comparison-v4.4" } },
   } }));
   await page.goto(`/?conversationId=${conversationId}`);
   await page.getByTestId("flow-toggle").click();
   const flow = page.getByTestId(`runtime-visual-${swarm ? "swarm" : "workflow"}`);
-  await expect(flow.locator(".react-flow__node")).toHaveCount(swarm ? 5 : 3);
-  await expect(flow.locator("path.react-flow__edge-path")).toHaveCount(scenario === "workflow-reverse" ? 3 : 2);
+  await expect(flow.locator(".react-flow__node")).toHaveCount(swarm ? 5 : state === "completed" ? 4 : 3);
+  await expect(flow.locator("path.react-flow__edge-path")).toHaveCount(swarm || state !== "completed" ? 2 : 3);
   return flow;
 }
 
@@ -147,12 +155,11 @@ for (const viewport of [
       const flow = await openFlow(page, scenario);
       const sequence = flow.locator('[data-edge-kind="sequence"]');
       const communication = flow.locator('[data-edge-kind="communication"]');
-      await expect(sequence).toHaveCount(1);
-      await expect(sequence).toHaveAttribute("data-edge-state", /^(settled|recent)$/);
-      await expect(sequence.locator("path.react-flow__edge-path")).toHaveCSS("stroke-dasharray", /[1-9]/);
-      await expect(communication).toHaveCount(scenario === "workflow-reverse" ? 2 : 1);
-
       if (scenario === "swarm") {
+        await expect(sequence).toHaveCount(1);
+        await expect(sequence).toHaveAttribute("data-edge-state", /^(settled|recent)$/);
+        await expect(sequence.locator("path.react-flow__edge-path")).toHaveCSS("stroke-dasharray", /[1-9]/);
+        await expect(communication).toHaveCount(1);
         await expect(communication).toHaveAttribute("data-edge-direction", "both");
         const callAndReturn = communication.locator("path.react-flow__edge-path");
         await expect(callAndReturn).toHaveAttribute("marker-start", /url\(#.+\)/);
@@ -167,17 +174,22 @@ for (const viewport of [
         expect(edges.some(({ id, kind }) => id?.includes("synthesizer") && kind === "sequence")).toBe(true);
         expect(edges.some(({ id, kind }) => id?.includes("synthesizer") && kind === "communication")).toBe(false);
       } else {
-        await expect(sequence).toHaveAttribute("data-edge-route", "workflow-forward");
-        await expect(sequence).toHaveAttribute("data-edge-direction", "forward");
-        if (scenario === "workflow-reverse") {
-          await expect(flow.locator('[data-edge-route="workflow-bypass"]')).toHaveCount(1);
-        } else if (scenario === "workflow-exchange") {
-          await expect(communication).toHaveAttribute("data-edge-direction", "both");
-          const exchange = communication.locator("path.react-flow__edge-path");
-          await expect(exchange).toHaveAttribute("marker-start", /url\(#.+\)/);
-          await expect(exchange).toHaveAttribute("marker-end", /url\(#.+\)/);
-          await expect(communication).toHaveAttribute("data-edge-route", "workflow-forward");
+        await expect(sequence).toHaveCount(3);
+        await expect(communication).toHaveCount(0);
+        await expect(flow.locator('[data-edge-route="workflow-bypass"]')).toHaveCount(0);
+        await expect(flow.locator('[data-edge-direction="both"]')).toHaveCount(0);
+        const edges = await flow.locator(".react-flow__edge").evaluateAll((elements) => elements.map((edge) => edge.getAttribute("data-id")));
+        expect(edges).toEqual(["router-stock-sequence", "stock-faq-sequence", "faq-synthesizer-sequence"]);
+        for (const edge of await sequence.all()) {
+          await expect(edge).toHaveAttribute("data-edge-state", /^(settled|recent)$/);
+          await expect(edge).toHaveAttribute("data-edge-route", "workflow-forward");
+          await expect(edge).toHaveAttribute("data-edge-direction", "forward");
+          await expect(edge.locator("path.react-flow__edge-path")).toHaveCSS("stroke-dasharray", "none");
+          await expect(edge.locator("path.react-flow__edge-path")).not.toHaveAttribute("marker-start", /url\(#.+\)/);
+          await expect(edge.locator("path.react-flow__edge-path")).toHaveAttribute("marker-end", /url\(#.+\)/);
         }
+        await expect(page.getByLabel("Legenda das conexões")).toContainText("Ordem de execução");
+        await expect(page.getByLabel("Legenda das conexões")).not.toContainText("Comunicação");
       }
       await expect.poll(() => geometryProblems(flow)).toEqual([]);
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -185,4 +197,21 @@ for (const viewport of [
       await flow.screenshot({ path: path.join(evidence, `flow-arrow-${scenario}-${viewport.name}.png`) });
     });
   }
+}
+
+for (const state of ["running", "failed"] as const) {
+  test(`workflow keeps a single ordered chain when the current stage is ${state}`, async ({ page }) => {
+    const flow = await openFlow(page, "workflow", state);
+    await expect(flow.locator('.react-flow__node[data-id="faq"] [data-status]')).toHaveAttribute("data-status", state);
+    await expect(flow.locator('.react-flow__node[data-id="synthesizer"]')).toHaveCount(0);
+    await expect(flow.locator('[data-edge-kind="communication"]')).toHaveCount(0);
+    await expect(flow.locator('[data-edge-route="workflow-bypass"]')).toHaveCount(0);
+    const sequence = flow.locator('[data-edge-kind="sequence"]');
+    await expect(sequence).toHaveCount(2);
+    const edges = await flow.locator(".react-flow__edge").evaluateAll((elements) => elements.map((edge) => edge.getAttribute("data-id")));
+    expect(edges).toEqual(["router-stock-sequence", "stock-faq-sequence"]);
+    for (const edge of await sequence.all()) await expect(edge.locator("path.react-flow__edge-path")).toHaveCSS("stroke-dasharray", "none");
+    await expect(flow.locator('[data-edge-state="active"]')).toHaveCount(state === "running" ? 1 : 0);
+    await expect.poll(() => geometryProblems(flow)).toEqual([]);
+  });
 }

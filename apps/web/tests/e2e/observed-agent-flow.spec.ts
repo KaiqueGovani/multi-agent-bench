@@ -26,6 +26,70 @@ const events = [
   event(10, "agent", "completed", "supervisor", { agentInvocationId: "supervisor-1", outputText: "A fonte controlada informa 17 frascos de dipirona." }),
 ];
 
+const stockEvidence = "Fonte de estoque controlada: 23 caixas; preço não informado.";
+const faqEvidence = "Fonte FAQ controlada: prazo geral de até 90 minutos, sem confirmar pedido.";
+const workflowEvents = [
+  event(1, "agent", "started", "router", { agentInvocationId: "router-1" }),
+  event(2, "agent", "completed", "router", { agentInvocationId: "router-1" }),
+  event(3, "agent", "started", "stock", { agentInvocationId: "stock-1" }),
+  event(4, "agent", "completed", "stock", { agentInvocationId: "stock-1", outputText: stockEvidence }),
+  event(5, "communication", "message", "stock", { to: "synthesizer", text: stockEvidence }),
+  event(6, "agent", "started", "faq", { agentInvocationId: "faq-1" }),
+  event(7, "agent", "completed", "faq", { agentInvocationId: "faq-1", outputText: faqEvidence }),
+  event(8, "communication", "message", "faq", { to: "synthesizer", text: faqEvidence }),
+  event(9, "agent", "started", "synthesizer", { agentInvocationId: "synthesizer-1" }),
+  event(10, "agent", "completed", "synthesizer", { agentInvocationId: "synthesizer-1", outputText: "Resposta final com as duas evidências." }),
+].map((entry) => ({ ...entry, runId: mockIds.workflowRun, conversationId: mockIds.workflowConversation }));
+
+test("workflow presentation preserves recorded evidence links without inventing specialist handoffs", () => {
+  const graph = observedAgentGraph([...workflowEvents].reverse(), true);
+  expect(graph.agents.map((agent) => agent.role)).toEqual(["router", "stock", "faq", "synthesizer"]);
+  expect(graph.links).toEqual([
+    { from: "stock", to: "synthesizer", kind: "return", status: "completed" },
+    { from: "faq", to: "synthesizer", kind: "return", status: "completed" },
+  ]);
+  expect(graph.links.some((link) => link.from === "stock" && link.to === "faq")).toBe(false);
+});
+
+test("workflow shows one execution chain and keeps specialist evidence in synthesis details", async ({ page }) => {
+  await installMockEventSource(page);
+  await mockFrontendApi(page);
+  await page.route(`**/runs/${mockIds.workflowRun}/execution`, (route) => route.fulfill({ json: {
+    executionEvents: workflowEvents,
+    projection: {
+      architectureMode: "structured_workflow", runStatus: "completed",
+      architectureView: { actors: {}, stages: [], handoffs: [] }, metrics: {}, state: {},
+    },
+    run: {
+      id: mockIds.workflowRun, status: "completed",
+      experiment: { architectureKey: "structured_workflow", comparisonProtocol: "architectural-comparison-v4.4" },
+    },
+  } }));
+  await page.goto(`/?conversationId=${mockIds.workflowConversation}`);
+  await page.getByTestId("flow-toggle").click();
+  const flow = page.getByTestId("runtime-visual-workflow");
+  await expect(flow.locator(".react-flow__node")).toHaveCount(4);
+  await expect(flow.locator(".react-flow__edge")).toHaveCount(3);
+  await expect(flow.locator('[data-edge-kind="communication"]')).toHaveCount(0);
+  await expect(flow.locator('[data-edge-route="workflow-bypass"]')).toHaveCount(0);
+  expect(await flow.locator(".react-flow__edge").evaluateAll((elements) => elements.map((edge) => edge.getAttribute("data-id")))).toEqual([
+    "router-stock-sequence", "stock-faq-sequence", "faq-synthesizer-sequence",
+  ]);
+  for (const edge of await flow.locator('[data-edge-kind="sequence"]').all()) {
+    await expect(edge.locator("path.react-flow__edge-path")).toHaveCSS("stroke-dasharray", "none");
+  }
+
+  await flow.getByRole("button", { name: "Eventos de Sintetizador", exact: true }).click();
+  const incoming = page.getByTestId("workflow-evidence-inputs");
+  await expect(incoming).toContainText("Evidências para a síntese");
+  await incoming.getByText("Estoque · evento #5", { exact: true }).click();
+  await expect(incoming.getByText(stockEvidence, { exact: true })).toBeVisible();
+  await incoming.getByText("FAQ · evento #8", { exact: true }).click();
+  await expect(incoming.getByText(faqEvidence, { exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(incoming).toHaveCount(0);
+});
+
 test("graph requires agent invocation evidence and explicit parent/return records", () => {
   const graph = observedAgentGraph([...events, event(11, "tool", "completed", "faq")], true);
   expect(graph.agents.map((agent) => agent.role)).toEqual(["supervisor", "stock"]);
